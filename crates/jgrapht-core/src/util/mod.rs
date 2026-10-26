@@ -2,6 +2,7 @@
 
 pub mod heap;
 pub mod java;
+pub mod sampler;
 
 use std::cmp::Ordering;
 
@@ -158,5 +159,39 @@ pub fn radix_sort(values: &mut [u32]) {
             *slot += 1;
         }
         values.copy_from_slice(&buffer);
+    }
+}
+
+/// Compares doubles up to a tolerance (`ToleranceDoubleComparator`).
+#[derive(Debug, Clone, Copy)]
+pub struct ToleranceDoubleComparator {
+    epsilon: f64,
+}
+
+impl ToleranceDoubleComparator {
+    pub const DEFAULT_EPSILON: f64 = 1e-9;
+    pub fn new(epsilon: f64) -> crate::Result<Self> {
+        if epsilon <= 0.0 {
+            return Err(crate::GraphError::InvalidArgument("Tolerance must be positive".into()));
+        }
+        Ok(ToleranceDoubleComparator { epsilon })
+    }
+    /// Negative, zero or positive like `Comparator.compare`.
+    pub fn compare(&self, a: f64, b: f64) -> i32 {
+        if (a - b).abs() < self.epsilon {
+            0
+        } else {
+            match a.total_cmp(&b) {
+                std::cmp::Ordering::Less => -1,
+                std::cmp::Ordering::Equal => 0,
+                std::cmp::Ordering::Greater => 1,
+            }
+        }
+    }
+}
+
+impl Default for ToleranceDoubleComparator {
+    fn default() -> Self {
+        ToleranceDoubleComparator { epsilon: Self::DEFAULT_EPSILON }
     }
 }

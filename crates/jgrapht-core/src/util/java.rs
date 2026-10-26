@@ -86,6 +86,8 @@ pub trait RandomSource {
     /// Uniform in `[0, 1)`.
     fn next_double(&mut self) -> f64;
     fn next_boolean(&mut self) -> bool;
+    /// Uniform in `[0, 1)` with float precision.
+    fn next_float(&mut self) -> f32;
 }
 
 impl RandomSource for JavaRandom {
@@ -98,6 +100,9 @@ impl RandomSource for JavaRandom {
     fn next_boolean(&mut self) -> bool {
         JavaRandom::next_boolean(self)
     }
+    fn next_float(&mut self) -> f32 {
+        JavaRandom::next_float(self)
+    }
 }
 
 impl<R: rand::RngCore> RandomSource for R {
@@ -109,6 +114,17 @@ impl<R: rand::RngCore> RandomSource for R {
     }
     fn next_boolean(&mut self) -> bool {
         rand::Rng::random_bool(self, 0.5)
+    }
+    fn next_float(&mut self) -> f32 {
+        rand::Rng::random::<f32>(self)
+    }
+}
+
+/// `Collections.shuffle(list, rng)`: Fisher–Yates from the back, `swap(i - 1, nextInt(i))`.
+pub fn java_shuffle<T>(list: &mut [T], rng: &mut impl RandomSource) {
+    for i in (2..=list.len()).rev() {
+        let j = rng.next_int_bound(i);
+        list.swap(i - 1, j);
     }
 }
 
