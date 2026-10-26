@@ -572,3 +572,48 @@ pub fn min_cost_flow<G: DirectedGraph>(
         flow,
     })
 }
+
+/// A minimum cost flow problem (`MinimumCostFlowProblem`): node supplies (positive for sources,
+/// negative for sinks) and per-arc capacity bounds and costs. The graph is kept by the caller.
+#[derive(Debug, Clone)]
+pub struct MinimumCostFlowProblem<V, E> {
+    supply: HashMap<V, i32>,
+    lower_bounds: Option<HashMap<E, i32>>,
+    upper_bounds: HashMap<E, i32>,
+    costs: HashMap<E, i32>,
+}
+
+impl<V: Eq + std::hash::Hash, E: Eq + std::hash::Hash> MinimumCostFlowProblem<V, E> {
+    /// Lower capacity bounds are all zero.
+    pub fn new(
+        supply: HashMap<V, i32>,
+        upper_bounds: HashMap<E, i32>,
+        costs: HashMap<E, i32>,
+    ) -> Self {
+        MinimumCostFlowProblem {
+            supply,
+            lower_bounds: None,
+            upper_bounds,
+            costs,
+        }
+    }
+    pub fn with_lower_bounds(mut self, lower: HashMap<E, i32>) -> Self {
+        self.lower_bounds = Some(lower);
+        self
+    }
+    /// Supply of `v` (0 if it is not a source or sink).
+    pub fn node_supply(&self, v: &V) -> i32 {
+        self.supply.get(v).copied().unwrap_or(0)
+    }
+    pub fn arc_capacity_lower_bound(&self, e: &E) -> i32 {
+        self.lower_bounds
+            .as_ref()
+            .map_or(0, |m| m.get(e).copied().unwrap_or(0))
+    }
+    pub fn arc_capacity_upper_bound(&self, e: &E) -> i32 {
+        self.upper_bounds[e]
+    }
+    pub fn arc_cost(&self, e: &E) -> i32 {
+        self.costs[e]
+    }
+}

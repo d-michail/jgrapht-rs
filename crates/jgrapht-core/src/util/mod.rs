@@ -199,3 +199,30 @@ impl Default for ToleranceDoubleComparator {
         }
     }
 }
+
+/// Yields the given elements once each in random order (`ElementsSequenceGenerator`): each step
+/// swaps a uniformly chosen element with the last one. The random source is passed per call.
+#[derive(Debug, Clone)]
+pub struct ElementsSequenceGenerator<T> {
+    elements: Vec<T>,
+}
+
+impl<T> ElementsSequenceGenerator<T> {
+    pub fn new(elements: impl IntoIterator<Item = T>) -> Self {
+        ElementsSequenceGenerator {
+            elements: elements.into_iter().collect(),
+        }
+    }
+
+    pub fn has_next(&self) -> bool {
+        !self.elements.is_empty()
+    }
+
+    pub fn next(&mut self, rng: &mut impl java::RandomSource) -> Option<T> {
+        if self.elements.is_empty() {
+            return None;
+        }
+        let index = rng.next_int_bound(self.elements.len());
+        Some(self.elements.swap_remove(index))
+    }
+}

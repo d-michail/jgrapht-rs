@@ -375,8 +375,7 @@ mod closest_first {
     #[test]
     fn test_radius_with_cross_component_is_rejected() {
         let g = create_directed_graph();
-        let r =
-            ClosestFirstIterator::build(&g, None, 5.0, rheaps::tree::PairingHeap::new());
+        let r = ClosestFirstIterator::build(&g, None, 5.0, rheaps::tree::PairingHeap::new());
         assert!(r.is_err());
     }
 

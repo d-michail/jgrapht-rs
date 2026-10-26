@@ -17,6 +17,7 @@ mod graph_views;
 mod graph_walk_test;
 mod graphs_test;
 mod listenable_graph_test;
+mod netgen_tests;
 mod simple_directed_graph_test;
 mod traverse_tests;
 mod util_tests;

@@ -8,6 +8,7 @@
 //! skips them.
 
 pub mod named;
+pub mod netgen;
 mod random;
 mod structured;
 

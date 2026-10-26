@@ -1,0 +1,150 @@
+0->2 cap=9 cost=37
+0->23 cap=12 cost=2
+0->24 cap=101 cost=2147483647
+1->11 cap=313 cost=17
+1->14 cap=43 cost=2147483647
+1->17 cap=60 cost=40
+1->29 cap=2147483647 cost=14
+1->9 cap=69 cost=49
+10->13 cap=86 cost=25
+11->12 cap=313 cost=14
+12->10 cap=77 cost=33
+12->15 cap=55 cost=9
+12->16 cap=98 cost=0
+12->20 cap=2147483647 cost=34
+12->21 cap=91 cost=23
+12->22 cap=2147483647 cost=33
+12->28 cap=313 cost=14
+12->4 cap=2147483647 cost=42
+12->8 cap=40 cost=-3
+13->12 cap=76 cost=31
+13->22 cap=76 cost=22
+13->23 cap=83 cost=3
+13->25 cap=88 cost=2147483647
+13->5 cap=2147483647 cost=31
+13->6 cap=10 cost=20
+13->8 cap=2147483647 cost=2147483647
+13->9 cap=2147483647 cost=2147483647
+14->23 cap=313 cost=31
+14->25 cap=45 cost=8
+15->12 cap=60 cost=2147483647
+15->26 cap=313 cost=23
+15->3 cap=9 cost=15
+15->4 cap=2147483647 cost=21
+15->9 cap=2147483647 cost=28
+16->11 cap=35 cost=-2
+16->19 cap=2147483647 cost=2147483647
+16->22 cap=101 cost=-3
+16->24 cap=90 cost=-2
+16->28 cap=2147483647 cost=43
+17->15 cap=313 cost=36
+18->19 cap=2147483647 cost=36
+18->29 cap=93 cost=8
+19->21 cap=86 cost=16
+19->7 cap=2147483647 cost=32
+2->12 cap=73 cost=7
+2->18 cap=77 cost=22
+2->20 cap=68 cost=12
+2->26 cap=79 cost=19
+2->27 cap=80 cost=19
+2->3 cap=86 cost=13
+20->14 cap=2147483647 cost=-3
+20->16 cap=75 cost=31
+20->21 cap=88 cost=22
+20->22 cap=58 cost=36
+20->25 cap=101 cost=26
+20->29 cap=101 cost=43
+20->4 cap=86 cost=45
+21->10 cap=95 cost=-3
+21->11 cap=98 cost=2
+21->22 cap=80 cost=22
+21->4 cap=67 cost=23
+21->8 cap=2147483647 cost=-1
+22->14 cap=28 cost=25
+22->18 cap=45 cost=19
+22->24 cap=81 cost=2147483647
+22->26 cap=101 cost=28
+22->8 cap=101 cost=2147483647
+23->25 cap=71 cost=48
+23->6 cap=313 cost=24
+24->23 cap=23 cost=24
+24->7 cap=2147483647 cost=17
+25->27 cap=2147483647 cost=16
+27->26 cap=27 cost=28
+3->17 cap=37 cost=36
+3->18 cap=86 cost=10
+3->8 cap=9 cost=49
+3->9 cap=2147483647 cost=37
+4->14 cap=313 cost=2147483647
+4->25 cap=15 cost=19
+5->12 cap=2147483647 cost=46
+5->14 cap=8 cost=7
+5->18 cap=29 cost=4
+5->20 cap=26 cost=30
+5->22 cap=2147483647 cost=-5
+5->28 cap=8 cost=30
+5->4 cap=15 cost=3
+5->9 cap=26 cost=44
+6->11 cap=2147483647 cost=2147483647
+6->13 cap=55 cost=48
+6->17 cap=2147483647 cost=41
+6->2 cap=86 cost=43
+6->20 cap=59 cost=38
+6->25 cap=67 cost=32
+6->27 cap=313 cost=-1
+6->8 cap=36 cost=21
+7->16 cap=101 cost=37
+7->18 cap=29 cost=2147483647
+7->2 cap=61 cost=48
+7->20 cap=17 cost=2147483647
+7->25 cap=2147483647 cost=2147483647
+7->3 cap=44 cost=16
+7->4 cap=10 cost=-4
+7->6 cap=75 cost=39
+7->8 cap=24 cost=3
+8->16 cap=94 cost=20
+8->2 cap=23 cost=-3
+8->20 cap=101 cost=15
+8->22 cap=34 cost=1
+8->25 cap=48 cost=-2
+8->27 cap=2147483647 cost=50
+8->4 cap=44 cost=6
+9->13 cap=2 cost=29
+9->16 cap=46 cost=2147483647
+9->19 cap=95 cost=44
+9->21 cap=81 cost=21
+9->25 cap=18 cost=2147483647
+9->28 cap=2147483647 cost=33
+9->3 cap=40 cost=15
+9->5 cap=86 cost=20
+9->6 cap=2147483647 cost=35
+s0=101
+s10=0
+s11=0
+s12=0
+s13=0
+s14=0
+s15=0
+s16=0
+s17=0
+s18=0
+s19=0
+s1=313
+s20=0
+s21=0
+s22=0
+s23=0
+s24=0
+s25=0
+s26=-238
+s27=-157
+s28=-16
+s29=-89
+s2=86
+s3=0
+s4=0
+s5=0
+s6=0
+s7=0
+s8=0
+s9=0

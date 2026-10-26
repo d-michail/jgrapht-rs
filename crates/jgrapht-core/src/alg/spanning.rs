@@ -2,10 +2,10 @@
 
 use super::util::Indexed;
 use crate::graph::{DirectedGraph, Graph};
-use rheaps::tree::PairingHeap;
 use crate::util::{OrderedF64, UnionFind};
 use crate::{GraphError, Result};
 use rheaps::AddressableHeap;
+use rheaps::tree::PairingHeap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SpanningTree<E> {

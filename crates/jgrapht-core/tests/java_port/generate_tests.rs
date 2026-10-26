@@ -204,7 +204,10 @@ mod graph_generator_test {
         result: &GeneratorResult<String>,
     ) {
         assert_eq!(g.vertex_count(), rows * cols);
-        assert_eq!(g.edge_count(), ((rows - 1) * cols + (cols - 1) * rows) * if g.graph_type().directed { 2 } else { 1 });
+        assert_eq!(
+            g.edge_count(),
+            ((rows - 1) * cols + (cols - 1) * rows) * if g.graph_type().directed { 2 } else { 1 }
+        );
         let (mut corner, mut border, mut inner) = (0, 0, 0);
         for v in g.vertices() {
             let neighbors: HashSet<String> = g.neighbor_set_of(v);
