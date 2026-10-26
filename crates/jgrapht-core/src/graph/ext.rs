@@ -44,6 +44,22 @@ pub trait GraphExt: Graph {
         })
     }
 
+    /// Edges entering `v` with the vertex they come from (all incident edges if undirected).
+    fn incoming_of<'a>(
+        &'a self,
+        v: &'a Self::Vertex,
+    ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)> {
+        let directed = self.graph_type().directed;
+        self.edges_of(v).filter_map(move |e| {
+            let (s, t) = self.edge_endpoints(e)?;
+            if directed {
+                (t == v).then_some((e, s))
+            } else {
+                Some((e, if s == v { t } else { s }))
+            }
+        })
+    }
+
     /// Vertices reachable over one edge (see [`GraphExt::outgoing_of`]); repeats for parallel edges.
     fn out_neighbors_of<'a>(
         &'a self,

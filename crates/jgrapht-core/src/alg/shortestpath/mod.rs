@@ -6,6 +6,8 @@
 mod astar;
 mod bellman_ford;
 mod bfs;
+mod bidirectional;
+mod delta_stepping;
 mod dijkstra;
 mod floyd_warshall;
 mod johnson;
@@ -16,6 +18,8 @@ mod yen;
 pub use astar::AStar;
 pub use bellman_ford::BellmanFord;
 pub use bfs::BfsShortestPath;
+pub use bidirectional::BidirectionalDijkstra;
+pub use delta_stepping::DeltaStepping;
 pub use dijkstra::Dijkstra;
 pub use floyd_warshall::floyd_warshall;
 pub use johnson::johnson;

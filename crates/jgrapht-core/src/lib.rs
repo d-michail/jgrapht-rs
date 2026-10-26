@@ -1,4 +1,9 @@
-#![allow(clippy::needless_range_loop, clippy::collapsible_if, clippy::type_complexity, clippy::manual_is_multiple_of)]
+#![allow(
+    clippy::needless_range_loop,
+    clippy::collapsible_if,
+    clippy::type_complexity,
+    clippy::manual_is_multiple_of
+)]
 //! A Rust port of the [JGraphT](https://jgrapht.org) core library.
 //!
 //! Unlike the Java original, graphs are expressed as *traits*
