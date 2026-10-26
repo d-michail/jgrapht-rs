@@ -48,7 +48,7 @@ fn weights_and_union() {
     h.add_edge_with_vertices(4, 5).unwrap();
     let u = GraphUnion::new(&g, &h);
     assert_eq!(u.vertex_count(), 5);
-    assert_eq!(u.edge_count(), 3); // h's e0 shares its id with g's e0, so they merge
+    assert_eq!(u.edge_count(), 4); // default edges are unique across graphs
 }
 
 #[derive(Default)]
