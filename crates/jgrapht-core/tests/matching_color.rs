@@ -1,0 +1,152 @@
+use jgrapht::alg::color::*;
+use jgrapht::alg::matching::*;
+use jgrapht::alg::partition::*;
+use jgrapht::generate::*;
+use jgrapht::*;
+use rand::{Rng, SeedableRng, rngs::StdRng};
+
+fn brute_max_matching(edges: &[(usize, usize, f64)], used: u32, i: usize, weighted: bool) -> f64 {
+    if i == edges.len() {
+        return 0.0;
+    }
+    let (a, b, w) = edges[i];
+    let skip = brute_max_matching(edges, used, i + 1, weighted);
+    if used & (1 << a) == 0 && used & (1 << b) == 0 {
+        let gain = if weighted { w } else { 1.0 };
+        skip.max(gain + brute_max_matching(edges, used | 1 << a | 1 << b, i + 1, weighted))
+    } else {
+        skip
+    }
+}
+
+fn weighted_edges<G: Graph<Vertex = usize>>(g: &G) -> Vec<(usize, usize, f64)> {
+    g.edges()
+        .map(|e| {
+            (
+                *g.edge_source(e).unwrap(),
+                *g.edge_target(e).unwrap(),
+                g.edge_weight(e).unwrap(),
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn bipartite_partition_works() {
+    let mut g = UGraph::<usize>::simple();
+    CompleteBipartite(3, 2).generate_indexed(&mut g).unwrap();
+    let (a, b) = bipartite_partition(&g).unwrap();
+    assert_eq!((a.len(), b.len()), (3, 2));
+    let mut tri = UGraph::<usize>::simple();
+    Ring(5).generate_indexed(&mut tri).unwrap();
+    assert!(!is_bipartite(&tri));
+}
+
+#[test]
+fn matchings_against_brute_force() {
+    let mut rng = StdRng::seed_from_u64(1);
+    for _ in 0..40 {
+        let mut g = UGraph::<usize>::simple().weighted();
+        Gnp {
+            n: 10,
+            p: 0.3,
+            loops: false,
+            rng: StdRng::seed_from_u64(rng.random()),
+        }
+        .generate_indexed(&mut g)
+        .unwrap();
+        for e in g.edges().cloned().collect::<Vec<_>>() {
+            g.set_edge_weight(&e, rng.random_range(1..9) as f64)
+                .unwrap();
+        }
+        let edges = weighted_edges(&g);
+        let m = edmonds_blossom(&g);
+        assert!(is_matching(&g, &m.edges));
+        assert_eq!(m.len() as f64, brute_max_matching(&edges, 0, 0, false));
+        let greedy = greedy_matching(&g);
+        assert!(is_matching(&g, &greedy.edges));
+        assert!(2.0 * greedy.weight >= brute_max_matching(&edges, 0, 0, true) - 1e-9);
+    }
+    // odd cycle forces a blossom
+    let mut g = UGraph::<usize>::simple();
+    Ring(7).generate_indexed(&mut g).unwrap();
+    assert_eq!(edmonds_blossom(&g).len(), 3);
+}
+
+#[test]
+fn bipartite_matchings() {
+    let mut rng = StdRng::seed_from_u64(2);
+    for _ in 0..40 {
+        let mut g = UGraph::<usize>::simple().weighted();
+        Gnp {
+            n: 9,
+            p: 0.5,
+            loops: false,
+            rng: StdRng::seed_from_u64(rng.random()),
+        }
+        .generate_indexed(&mut g)
+        .unwrap();
+        // keep only edges between evens and odds so the graph is bipartite
+        for e in g.edges().cloned().collect::<Vec<_>>() {
+            let (a, b) = (*g.edge_source(&e).unwrap(), *g.edge_target(&e).unwrap());
+            if (a + b) % 2 == 0 {
+                g.remove_edge(&e);
+            } else {
+                g.set_edge_weight(&e, rng.random_range(1..9) as f64)
+                    .unwrap();
+            }
+        }
+        let edges = weighted_edges(&g);
+        let hk = hopcroft_karp(&g).unwrap();
+        assert!(is_matching(&g, &hk.edges));
+        assert_eq!(hk.len() as f64, brute_max_matching(&edges, 0, 0, false));
+        let hu = maximum_weight_bipartite_matching(&g).unwrap();
+        assert!(is_matching(&g, &hu.edges));
+        assert_eq!(hu.weight, brute_max_matching(&edges, 0, 0, true));
+    }
+    let mut tri = UGraph::<usize>::simple();
+    Ring(3).generate_indexed(&mut tri).unwrap();
+    assert!(hopcroft_karp(&tri).is_err());
+}
+
+#[test]
+fn colorings() {
+    let mut rng = StdRng::seed_from_u64(4);
+    for _ in 0..20 {
+        let mut g = UGraph::<usize>::simple();
+        Gnp {
+            n: 30,
+            p: 0.2,
+            loops: false,
+            rng: StdRng::seed_from_u64(rng.random()),
+        }
+        .generate_indexed(&mut g)
+        .unwrap();
+        let max_deg = g.vertices().map(|v| g.degree_of(v)).max().unwrap();
+        for c in [
+            greedy_coloring(&g),
+            largest_degree_first_coloring(&g),
+            smallest_degree_last_coloring(&g),
+            saturation_degree_coloring(&g),
+        ] {
+            assert!(is_proper_coloring(&g, &c.colors));
+            assert!(c.count <= max_deg + 1);
+        }
+    }
+    let mut ring = UGraph::<usize>::simple();
+    Ring(6).generate_indexed(&mut ring).unwrap();
+    assert_eq!(saturation_degree_coloring(&ring).count, 2);
+    let mut k5 = UGraph::<usize>::simple();
+    Complete(5).generate_indexed(&mut k5).unwrap();
+    assert_eq!(chordal_coloring(&k5).unwrap().count, 5);
+    assert!(chordal_coloring(&ring).is_none());
+}
+
+#[test]
+fn refinement_separates_degrees() {
+    let mut star = UGraph::<usize>::simple();
+    Star(5).generate_indexed(&mut star).unwrap();
+    let c = color_refinement(&star);
+    assert_ne!(c[&0], c[&1]);
+    assert_eq!(c[&1], c[&4]);
+}
