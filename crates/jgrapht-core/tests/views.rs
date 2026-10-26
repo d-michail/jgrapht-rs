@@ -33,7 +33,7 @@ fn subgraphs() {
     assert_eq!((s.vertex_count(), s.edge_count()), (3, 2));
     assert!(!s.contains_vertex(&4));
     assert_eq!(s.out_edges_of(&3).count(), 0);
-    let m = MaskSubgraph::new(&g, |v: &u32| v.is_multiple_of(2), |_: &DefaultEdge| true);
+    let m = MaskSubgraph::new(&g, |v: &u32| !v.is_multiple_of(2), |_: &DefaultEdge| false);
     assert_eq!((m.vertex_count(), m.edge_count()), (2, 0));
 }
 
@@ -42,7 +42,7 @@ fn weights_and_union() {
     let g = path_digraph();
     let uw = AsUnweighted(&g);
     assert_eq!(uw.total_weight(), 3.0);
-    let w = AsWeighted::from_fn(&uw, |_| 5.0);
+    let w = AsWeighted::from_function(&uw, |_| 5.0, false, false).unwrap();
     assert_eq!(w.total_weight(), 15.0);
     let mut h = DiGraph::<u32>::simple();
     h.add_edge_with_vertices(4, 5).unwrap();

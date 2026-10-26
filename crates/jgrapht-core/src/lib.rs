@@ -28,11 +28,11 @@ pub mod walk;
 pub use error::{GraphError, Result};
 pub use graph::{
     BaseGraph, DefaultEdge, DiGraph, DirectedGraph, Graph, GraphExt, GraphMut, GraphMutExt, UGraph,
-    UndirectedGraph, graph_equals, graph_hash,
+    UndirectedGraph, graph_equals, graph_hash, graph_to_string,
 };
 pub use graph_type::GraphType;
 pub use view::{
     AsSubgraph, AsUndirected, AsUnweighted, AsWeighted, EdgeReversed, GraphUnion, MaskSubgraph,
-    Unmodifiable,
+    Unmodifiable, WeightCombiner,
 };
 pub use walk::{GraphMapping, GraphWalk};

@@ -23,6 +23,8 @@ pub enum GraphError {
     NoVertexFactory,
     #[error("edge already associated with different endpoints")]
     IntrusiveEdge,
+    #[error("unsupported operation: {0}")]
+    Unsupported(String),
     #[error("invalid graph walk: {0}")]
     InvalidGraphWalk(String),
     #[error("invalid argument: {0}")]

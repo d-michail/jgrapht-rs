@@ -36,8 +36,8 @@ pub fn yen_k_shortest_paths<G: Graph>(
             let banned_vertices: HashSet<&G::Vertex> = last.vertices[..i].iter().collect();
             let masked = MaskSubgraph::new(
                 g,
-                |v: &G::Vertex| !banned_vertices.contains(v),
-                |e: &G::Edge| !banned_edges.contains(e),
+                |v: &G::Vertex| banned_vertices.contains(v),
+                |e: &G::Edge| banned_edges.contains(e),
             );
             let Some(tail) = Dijkstra::new(&masked).path(spur, sink)? else {
                 continue;

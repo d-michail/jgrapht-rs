@@ -47,32 +47,50 @@ pub trait Graph {
         v: &'a Self::Vertex,
     ) -> impl Iterator<Item = &'a Self::Edge>;
 
-    /// Edges entering `v`; every incident edge for undirected graphs (`incomingEdgesOf`).
-    fn in_edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge> {
-        let directed = self.graph_type().directed;
-        self.edges_of(v)
-            .filter(move |e| !directed || self.edge_target(e) == Some(v))
+    /// Whether this particular edge is directed. Only mixed graphs (unions of directed and
+    /// undirected graphs) can answer differently from [`GraphType::directed`].
+    fn is_edge_directed(&self, _e: &Self::Edge) -> bool {
+        self.graph_type().directed
     }
-    /// Edges leaving `v`; every incident edge for undirected graphs (`outgoingEdgesOf`).
-    fn out_edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge> {
-        let directed = self.graph_type().directed;
+    /// Edges entering `v`; undirected edges count as entering (`incomingEdgesOf`).
+    fn in_edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge> {
         self.edges_of(v)
-            .filter(move |e| !directed || self.edge_source(e) == Some(v))
+            .filter(move |e| !self.is_edge_directed(e) || self.edge_target(e) == Some(v))
+    }
+    /// Edges leaving `v`; undirected edges count as leaving (`outgoingEdgesOf`).
+    fn out_edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge> {
+        self.edges_of(v)
+            .filter(move |e| !self.is_edge_directed(e) || self.edge_source(e) == Some(v))
     }
     /// `inDegreeOf`: incoming edge count; equals [`Graph::degree_of`] for undirected graphs.
     fn in_degree_of(&self, v: &Self::Vertex) -> usize {
-        if self.graph_type().directed {
+        let t = self.graph_type();
+        if t.directed {
             self.in_edges_of(v).count()
+        } else if t.mixed {
+            self.in_edges_of(v).map(|e| self.mixed_weight(e)).sum()
         } else {
             self.degree_of(v)
         }
     }
     /// `outDegreeOf`: outgoing edge count; equals [`Graph::degree_of`] for undirected graphs.
     fn out_degree_of(&self, v: &Self::Vertex) -> usize {
-        if self.graph_type().directed {
+        let t = self.graph_type();
+        if t.directed {
             self.out_edges_of(v).count()
+        } else if t.mixed {
+            self.out_edges_of(v).map(|e| self.mixed_weight(e)).sum()
         } else {
             self.degree_of(v)
+        }
+    }
+    #[doc(hidden)]
+    /// Degree contribution of an edge in a mixed graph: undirected loops count twice.
+    fn mixed_weight(&self, e: &Self::Edge) -> usize {
+        if !self.is_edge_directed(e) && self.edge_source(e) == self.edge_target(e) {
+            2
+        } else {
+            1
         }
     }
 
@@ -187,4 +205,44 @@ pub fn graph_hash<G: Graph>(g: &G) -> u64 {
         total = total.wrapping_add(h(&(h(e), ends, w)));
     }
     total
+}
+
+/// JGraphT's `AbstractGraph.toString`: `([v1, v2], [(v1,v2)])` — directed edges render as
+/// `(s,t)`, others as `{s,t}`; edges other than [`DefaultEdge`] are prefixed with `label=`.
+pub fn graph_to_string<G>(g: &G) -> String
+where
+    G: Graph,
+    G::Vertex: std::fmt::Display,
+    G::Edge: std::fmt::Display + 'static,
+{
+    use std::fmt::Write;
+    let labelled = std::any::TypeId::of::<G::Edge>() != std::any::TypeId::of::<DefaultEdge>();
+    let mut out = String::from("([");
+    for (i, v) in g.vertices().enumerate() {
+        if i > 0 {
+            out.push_str(", ");
+        }
+        let _ = write!(out, "{v}");
+    }
+    out.push_str("], [");
+    for (i, e) in g.edges().enumerate() {
+        if i > 0 {
+            out.push_str(", ");
+        }
+        if labelled {
+            let _ = write!(out, "{e}=");
+        }
+        let (open, close) = if g.is_edge_directed(e) {
+            ('(', ')')
+        } else {
+            ('{', '}')
+        };
+        let (s, t) = (
+            g.edge_source(e).expect("edge"),
+            g.edge_target(e).expect("edge"),
+        );
+        let _ = write!(out, "{open}{s},{t}{close}");
+    }
+    out.push_str("])");
+    out
 }

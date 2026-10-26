@@ -7,6 +7,8 @@ pub struct GraphType {
     pub weighted: bool,
     pub allows_cycles: bool,
     pub modifiable: bool,
+    /// Mixed graphs contain both directed and undirected edges (`directed` is then `false`).
+    pub mixed: bool,
 }
 
 impl GraphType {
@@ -19,6 +21,7 @@ impl GraphType {
             weighted: false,
             allows_cycles: true,
             modifiable: true,
+            mixed: false,
         }
     }
     /// Multigraph: parallel edges, no loops.
@@ -45,7 +48,18 @@ impl GraphType {
         self
     }
     pub const fn is_undirected(&self) -> bool {
-        !self.directed
+        !self.directed && !self.mixed
+    }
+    pub const fn is_mixed(&self) -> bool {
+        self.mixed
+    }
+    pub const fn is_directed(&self) -> bool {
+        self.directed
+    }
+    pub const fn as_mixed(mut self) -> Self {
+        self.directed = false;
+        self.mixed = true;
+        self
     }
     pub const fn is_simple(&self) -> bool {
         !self.multiple_edges && !self.self_loops

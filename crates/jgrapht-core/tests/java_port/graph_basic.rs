@@ -532,9 +532,9 @@ mod equals_and_hash_code_test {
         let weights = |a: f64, b: f64, c: f64| {
             std::collections::HashMap::from([(e12, a), (e23, b), (e31, c)])
         };
-        let g3 = AsWeighted::new(&g1, weights(10.0, 20.0, 30.0), 1.0);
-        let g4 = AsWeighted::new(&g2, weights(10.0, 20.0, 30.0), 1.0);
-        let g5 = AsWeighted::new(&g2, weights(100.0, 200.0, 300.0), 1.0);
+        let g3 = AsWeighted::new(&g1, weights(10.0, 20.0, 30.0));
+        let g4 = AsWeighted::new(&g2, weights(10.0, 20.0, 30.0));
+        let g5 = AsWeighted::new(&g2, weights(100.0, 200.0, 300.0));
         assert!(g1 == g2);
         assert_eq!(graph_hash(&g2), graph_hash(&g1));
         assert!(graph_equals(&g3, &g4));

@@ -431,29 +431,9 @@ where
     E: fmt::Display + Clone + Eq + Hash + 'static,
     D: Direction,
 {
-    /// JGraphT's `toString`: `([v1, v2], [(v1,v2)])`; undirected edges render as `{v1,v2}` and
-    /// edges other than [`DefaultEdge`] are prefixed with `label=`.
+    /// JGraphT's `toString`; see [`super::graph_to_string`].
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "([")?;
-        for (i, v) in self.vertices.keys().enumerate() {
-            if i > 0 {
-                write!(f, ", ")?;
-            }
-            write!(f, "{v}")?;
-        }
-        write!(f, "], [")?;
-        let labelled = std::any::TypeId::of::<E>() != std::any::TypeId::of::<DefaultEdge>();
-        for (i, (e, r)) in self.edges.iter().enumerate() {
-            if i > 0 {
-                write!(f, ", ")?;
-            }
-            if labelled {
-                write!(f, "{e}=")?;
-            }
-            let (open, close) = if D::DIRECTED { ('(', ')') } else { ('{', '}') };
-            write!(f, "{open}{},{}{close}", r.src, r.tgt)?;
-        }
-        write!(f, "])")
+        f.write_str(&super::graph_to_string(self))
     }
 }
 
