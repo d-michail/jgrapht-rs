@@ -33,3 +33,10 @@ mechanism that has no Rust counterpart (serialization, JVM collections, thread-s
 | `graph/AsGraphUnionTest` | `graph_views::as_graph_union_test` | done (shared edge weights are per graph, see note in file) |
 | `graph/MaskVertexSetTest`, `graph/MaskEdgeSetTest` | - | n/a: Java `Set` classes |
 | `graph/SerializationTest`, `graph/concurrent/AsSynchronizedGraphTest` | - | n/a |
+| `graph/builder/GraphBuilderTest`, `graph/builder/GraphTypeBuilderTest` | `graph_builder` | done (`vertexClass` reflection n/a) |
+| `traverse/*` (AbstractGraphIteratorTest, CrossComponentIteratorTest, Breadth/Depth/ClosestFirst, IgnoreDirection, EdgeSelection, TopologicalOrder, LexBreadthFirst, MaximumCardinality, DegeneracyOrdering, RandomWalkVertexIterator) | `traverse_tests` | done (`GraphDelegator` call-counting check of `testNonCrossComponentTraversal` n/a) |
+
+Note: `rheaps::tree::PairingHeap` breaks ties between equal keys differently from JHeaps' `PairingHeap`
+(its `combine` walks the children oldest-first, JHeaps newest-first). Closest-first order and equal-weight
+shortest paths depend on this, so `util::heap::JavaPairingHeap` reproduces JHeaps exactly and is the
+default heap of the algorithms.

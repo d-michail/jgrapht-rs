@@ -4,8 +4,8 @@ use super::util::Indexed;
 use crate::graph::{DirectedGraph, Graph};
 use crate::util::{OrderedF64, UnionFind};
 use crate::{GraphError, Result};
-use rheaps::AddressableHeap;
-use rheaps::tree::PairingHeap;
+use rheaps::{AddressableHeap, DecreaseKeyHeap};
+use crate::util::heap::JavaPairingHeap as PairingHeap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct SpanningTree<E> {

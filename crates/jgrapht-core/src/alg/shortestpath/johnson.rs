@@ -4,7 +4,7 @@ use super::{AllPairsPaths, SingleSourcePaths};
 use crate::Result;
 use crate::graph::Graph;
 use crate::util::OrderedF64;
-use rheaps::tree::PairingHeap;
+use crate::util::heap::JavaPairingHeap as PairingHeap;
 use std::collections::HashMap;
 
 /// Johnson's all-pairs algorithm: Bellman–Ford potentials, then Dijkstra from every vertex on

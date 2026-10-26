@@ -5,7 +5,7 @@ use crate::graph::Graph;
 use crate::util::OrderedF64;
 use crate::walk::GraphWalk;
 use rheaps::DecreaseKeyHeap;
-use rheaps::tree::PairingHeap;
+use crate::util::heap::JavaPairingHeap as PairingHeap;
 use std::marker::PhantomData;
 
 /// Dijkstra's algorithm. Fails with `InvalidArgument` on negative edge weights.

@@ -270,13 +270,14 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Graph for BaseGra
             .map(|r| if self.ty.weighted { r.weight } else { 1.0 })
     }
     fn edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
+        // JGraphT order: incoming edges first, then outgoing edges (self-loops only once)
         let a = self.vertices.get(v);
-        let out = a.into_iter().flat_map(|a| a.out.iter());
-        let inc = a.into_iter().flat_map(|a| a.inc.iter()).filter(move |e| {
-            // directed self-loops are already in `out`
-            D::DIRECTED && self.edges[*e].src != self.edges[*e].tgt
-        });
-        out.chain(inc)
+        let inc = a.into_iter().flat_map(|a| a.inc.iter());
+        let out = a
+            .into_iter()
+            .flat_map(|a| a.out.iter())
+            .filter(move |e| !D::DIRECTED || self.edges[*e].src != self.edges[*e].tgt);
+        inc.chain(out)
     }
     fn in_edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
         let a = self.vertices.get(v);

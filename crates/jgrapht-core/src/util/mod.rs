@@ -1,5 +1,8 @@
 //! Small shared helpers.
 
+pub mod heap;
+pub mod java;
+
 use std::cmp::Ordering;
 
 /// `f64` with a total order (`f64::total_cmp`), usable as a heap key.
