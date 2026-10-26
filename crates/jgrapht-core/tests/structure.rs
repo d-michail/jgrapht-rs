@@ -84,7 +84,7 @@ fn eulerian() {
     Ring(5).generate_indexed(&mut g).unwrap();
     let w = eulerian_cycle(&g).unwrap();
     assert_eq!(w.length(), 5);
-    assert_eq!(w.start, w.end);
+    assert_eq!(w.start_vertex(), w.end_vertex());
     assert!(w.is_valid(&g));
     assert!(!is_eulerian(&ug(&[(1, 2), (2, 3)])));
     let d = dg(&[(1, 2), (2, 3), (3, 1), (1, 4), (4, 1)]);

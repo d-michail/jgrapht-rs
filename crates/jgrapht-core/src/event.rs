@@ -16,7 +16,8 @@ pub trait GraphListener<V, E> {
 /// Wraps a mutable graph and notifies listeners about every successful change.
 pub struct Listenable<G: Graph> {
     graph: G,
-    listeners: Vec<Box<dyn GraphListener<G::Vertex, G::Edge>>>,
+    listeners: Vec<(usize, Box<dyn GraphListener<G::Vertex, G::Edge>>)>,
+    next_listener: usize,
 }
 
 impl<G: Graph> Listenable<G> {
@@ -24,10 +25,21 @@ impl<G: Graph> Listenable<G> {
         Listenable {
             graph,
             listeners: Vec::new(),
+            next_listener: 0,
         }
     }
-    pub fn add_listener(&mut self, l: impl GraphListener<G::Vertex, G::Edge> + 'static) {
-        self.listeners.push(Box::new(l));
+    /// Registers a listener and returns an id for [`Listenable::remove_listener`].
+    pub fn add_listener(&mut self, l: impl GraphListener<G::Vertex, G::Edge> + 'static) -> usize {
+        let id = self.next_listener;
+        self.next_listener += 1;
+        self.listeners.push((id, Box::new(l)));
+        id
+    }
+    /// Unregisters a listener; returns whether it was registered.
+    pub fn remove_listener(&mut self, id: usize) -> bool {
+        let before = self.listeners.len();
+        self.listeners.retain(|(i, _)| *i != id);
+        self.listeners.len() != before
     }
     pub fn clear_listeners(&mut self) {
         self.listeners.clear();
@@ -91,7 +103,9 @@ impl<G: GraphMut> GraphMut for Listenable<G> {
     fn add_vertex(&mut self, v: G::Vertex) -> bool {
         let added = self.graph.add_vertex(v.clone());
         if added {
-            self.listeners.iter_mut().for_each(|l| l.vertex_added(&v));
+            self.listeners
+                .iter_mut()
+                .for_each(|(_, l)| l.vertex_added(&v));
         }
         added
     }
@@ -105,7 +119,9 @@ impl<G: GraphMut> GraphMut for Listenable<G> {
             self.remove_edge(e);
         }
         self.graph.remove_vertex(v);
-        self.listeners.iter_mut().for_each(|l| l.vertex_removed(v));
+        self.listeners
+            .iter_mut()
+            .for_each(|(_, l)| l.vertex_removed(v));
         true
     }
 
@@ -114,7 +130,7 @@ impl<G: GraphMut> GraphMut for Listenable<G> {
         if added {
             self.listeners
                 .iter_mut()
-                .for_each(|l| l.edge_added(&e, u, v));
+                .for_each(|(_, l)| l.edge_added(&e, u, v));
         }
         Ok(added)
     }
@@ -130,7 +146,7 @@ impl<G: GraphMut> GraphMut for Listenable<G> {
         self.graph.remove_edge(e);
         self.listeners
             .iter_mut()
-            .for_each(|l| l.edge_removed(e, &s, &t));
+            .for_each(|(_, l)| l.edge_removed(e, &s, &t));
         true
     }
 
@@ -140,7 +156,7 @@ impl<G: GraphMut> GraphMut for Listenable<G> {
         if let Some(old) = old {
             self.listeners
                 .iter_mut()
-                .for_each(|l| l.edge_weight_changed(e, old, w));
+                .for_each(|(_, l)| l.edge_weight_changed(e, old, w));
         }
         Ok(())
     }

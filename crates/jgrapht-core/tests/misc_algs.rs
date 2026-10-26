@@ -100,7 +100,14 @@ fn tours() {
     }
     let opt = held_karp_tour(&g).unwrap();
     assert!(opt.is_valid(&g));
-    assert_eq!((opt.length(), opt.start, opt.end), (8, 0, 0));
+    assert_eq!(
+        (
+            opt.length(),
+            opt.start_vertex().copied(),
+            opt.end_vertex().copied()
+        ),
+        (8, Some(0), Some(0))
+    );
     for t in [
         nearest_neighbor_tour(&g).unwrap(),
         insertion_tour(&g, Insertion::Nearest).unwrap(),

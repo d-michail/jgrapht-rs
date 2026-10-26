@@ -35,8 +35,6 @@ pub fn all_simple_paths<G: Graph>(
     ) {
         if v == t && !es.is_empty() {
             out.push(GraphWalk {
-                start: ix.vertex(vs[0]),
-                end: ix.vertex(t),
                 vertices: ix.vertices_of(vs),
                 edges: es.iter().map(|&k| ix.es[k].clone()).collect(),
                 weight: es.iter().map(|&k| ix.w[k]).sum(),
@@ -210,8 +208,6 @@ fn disjoint<G: DirectedGraph>(
         let mut vertices = vec![ix.vertex(s0)];
         vertices.extend(es.iter().map(|&k| ix.vertex(ix.ends[k].1)));
         paths.push(GraphWalk {
-            start: ix.vertex(s0),
-            end: ix.vertex(t0),
             vertices,
             weight: es.iter().map(|&k| ix.w[k]).sum(),
             edges: es.iter().map(|&k| ix.es[k].clone()).collect(),

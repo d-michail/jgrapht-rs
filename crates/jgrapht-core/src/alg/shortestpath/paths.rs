@@ -35,8 +35,6 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> SingleSourcePaths<V, E> {
         vertices.reverse();
         edges.reverse();
         Some(GraphWalk {
-            start: self.source.clone(),
-            end: v.clone(),
             vertices,
             edges,
             weight,

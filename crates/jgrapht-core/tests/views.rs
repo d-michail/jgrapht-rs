@@ -86,6 +86,6 @@ fn walks() {
     assert!(w.is_valid(&g));
     let a = GraphWalk::from_vertices(&g, vec![1, 2, 3]).unwrap();
     let b = GraphWalk::from_vertices(&g, vec![3, 4]).unwrap();
-    assert_eq!(a.concat(&b).unwrap(), w);
+    assert_eq!(a.concat_sum(&b).unwrap(), w);
     assert!(GraphWalk::from_vertices(&g, vec![1, 3]).is_none());
 }

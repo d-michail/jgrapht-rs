@@ -117,8 +117,6 @@ impl<G: Graph> BidirectionalDijkstra<'_, G> {
             cur = p;
         }
         Ok(Some(GraphWalk {
-            start: s.clone(),
-            end: t.clone(),
             vertices,
             edges,
             weight: mu,

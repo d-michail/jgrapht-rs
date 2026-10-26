@@ -51,8 +51,6 @@ pub fn yen_k_shortest_paths<G: Graph>(
             let mut edges = root_edges.to_vec();
             edges.extend(tail.edges);
             let cand = GraphWalk {
-                start: source.clone(),
-                end: sink.clone(),
                 vertices,
                 edges,
                 weight: root_weight + tail.weight,

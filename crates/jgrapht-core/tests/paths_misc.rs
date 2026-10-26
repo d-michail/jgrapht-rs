@@ -79,7 +79,14 @@ fn eulerian_trails() {
     assert!(eulerian_cycle(&g).is_none());
     let d = dg(&[(1, 2, 1.0), (2, 3, 1.0), (3, 1, 1.0), (3, 4, 1.0)]);
     let p = eulerian_path(&d).unwrap();
-    assert_eq!((p.start, p.end, p.length()), (3, 4, 4).clone());
+    assert_eq!(
+        (
+            p.start_vertex().copied(),
+            p.end_vertex().copied(),
+            p.length()
+        ),
+        (Some(3), Some(4), 4)
+    );
 }
 
 #[test]

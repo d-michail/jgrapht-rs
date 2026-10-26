@@ -96,8 +96,6 @@ fn euler_walk<G: Graph>(g: &G, closed: bool) -> Option<GraphWalk<G::Vertex, G::E
         .map(|k| ix.w[k])
         .sum();
     Some(GraphWalk {
-        start: vertices[0].clone(),
-        end: vertices[vertices.len() - 1].clone(),
         vertices,
         edges,
         weight,
