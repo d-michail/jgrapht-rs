@@ -219,6 +219,26 @@ pub trait GraphMutExt: GraphMut {
         Ok(changed)
     }
 
+    /// Removes one edge between `u` and `v` and returns it (`removeEdge(u, v)`).
+    fn remove_edge_between(&mut self, u: &Self::Vertex, v: &Self::Vertex) -> Option<Self::Edge> {
+        let e = self.get_edge(u, v).cloned()?;
+        self.remove_edge(&e);
+        Some(e)
+    }
+
+    /// Removes every edge between `u` and `v` and returns them (`removeAllEdges(u, v)`);
+    /// `None` if either vertex is missing.
+    fn remove_all_edges(&mut self, u: &Self::Vertex, v: &Self::Vertex) -> Option<Vec<Self::Edge>> {
+        if !self.contains_vertex(u) || !self.contains_vertex(v) {
+            return None;
+        }
+        let es: Vec<_> = self.edges_between(u, v).cloned().collect();
+        for e in &es {
+            self.remove_edge(e);
+        }
+        Some(es)
+    }
+
     fn remove_edges_between(&mut self, u: &Self::Vertex, v: &Self::Vertex) -> bool {
         let es: Vec<_> = self.edges_between(u, v).cloned().collect();
         es.iter().fold(false, |ch, e| self.remove_edge(e) | ch)

@@ -84,14 +84,7 @@ impl<G: Graph> Graph for Listenable<G> {
         self.graph.edges_between(u, v)
     }
 }
-impl<G: DirectedGraph> DirectedGraph for Listenable<G> {
-    fn in_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        self.graph.in_edges_of(v)
-    }
-    fn out_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        self.graph.out_edges_of(v)
-    }
-}
+impl<G: DirectedGraph> DirectedGraph for Listenable<G> {}
 impl<G: UndirectedGraph> UndirectedGraph for Listenable<G> {}
 
 impl<G: GraphMut> GraphMut for Listenable<G> {
@@ -154,5 +147,9 @@ impl<G: GraphMut> GraphMut for Listenable<G> {
 
     fn new_edge(&mut self) -> Result<G::Edge> {
         self.graph.new_edge()
+    }
+
+    fn new_vertex(&mut self) -> Result<G::Vertex> {
+        self.graph.new_vertex()
     }
 }

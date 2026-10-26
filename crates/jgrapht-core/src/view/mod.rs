@@ -59,14 +59,7 @@ impl<G: Graph + ?Sized> Graph for &G {
     }
 }
 
-impl<G: DirectedGraph + ?Sized> DirectedGraph for &G {
-    fn in_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        (**self).in_edges_of(v)
-    }
-    fn out_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        (**self).out_edges_of(v)
-    }
-}
+impl<G: DirectedGraph + ?Sized> DirectedGraph for &G {}
 
 impl<G: UndirectedGraph + ?Sized> UndirectedGraph for &G {}
 
@@ -118,14 +111,7 @@ impl<G: Graph> Graph for Unmodifiable<G> {
         self.0.edges_between(u, v)
     }
 }
-impl<G: DirectedGraph> DirectedGraph for Unmodifiable<G> {
-    fn in_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        self.0.in_edges_of(v)
-    }
-    fn out_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        self.0.out_edges_of(v)
-    }
-}
+impl<G: DirectedGraph> DirectedGraph for Unmodifiable<G> {}
 impl<G: UndirectedGraph> UndirectedGraph for Unmodifiable<G> {}
 
 /// Directed graph with every edge reversed.
@@ -176,14 +162,7 @@ impl<G: DirectedGraph> Graph for EdgeReversed<G> {
         self.0.edges_between(v, u)
     }
 }
-impl<G: DirectedGraph> DirectedGraph for EdgeReversed<G> {
-    fn in_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        self.0.out_edges_of(v)
-    }
-    fn out_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        self.0.in_edges_of(v)
-    }
-}
+impl<G: DirectedGraph> DirectedGraph for EdgeReversed<G> {}
 
 /// Undirected view of a directed graph: edge direction is ignored.
 #[derive(Debug, Clone)]

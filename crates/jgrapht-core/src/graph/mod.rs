@@ -47,6 +47,35 @@ pub trait Graph {
         v: &'a Self::Vertex,
     ) -> impl Iterator<Item = &'a Self::Edge>;
 
+    /// Edges entering `v`; every incident edge for undirected graphs (`incomingEdgesOf`).
+    fn in_edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge> {
+        let directed = self.graph_type().directed;
+        self.edges_of(v)
+            .filter(move |e| !directed || self.edge_target(e) == Some(v))
+    }
+    /// Edges leaving `v`; every incident edge for undirected graphs (`outgoingEdgesOf`).
+    fn out_edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge> {
+        let directed = self.graph_type().directed;
+        self.edges_of(v)
+            .filter(move |e| !directed || self.edge_source(e) == Some(v))
+    }
+    /// `inDegreeOf`: incoming edge count; equals [`Graph::degree_of`] for undirected graphs.
+    fn in_degree_of(&self, v: &Self::Vertex) -> usize {
+        if self.graph_type().directed {
+            self.in_edges_of(v).count()
+        } else {
+            self.degree_of(v)
+        }
+    }
+    /// `outDegreeOf`: outgoing edge count; equals [`Graph::degree_of`] for undirected graphs.
+    fn out_degree_of(&self, v: &Self::Vertex) -> usize {
+        if self.graph_type().directed {
+            self.out_edges_of(v).count()
+        } else {
+            self.degree_of(v)
+        }
+    }
+
     fn get_edge<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> Option<&'a Self::Edge> {
         self.edges_between(u, v).next()
     }
@@ -67,17 +96,9 @@ pub trait Graph {
     }
 }
 
-/// A graph whose edges have a direction.
-pub trait DirectedGraph: Graph {
-    fn in_edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge>;
-    fn out_edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge>;
-    fn in_degree_of(&self, v: &Self::Vertex) -> usize {
-        self.in_edges_of(v).count()
-    }
-    fn out_degree_of(&self, v: &Self::Vertex) -> usize {
-        self.out_edges_of(v).count()
-    }
-}
+/// Marker for graphs whose edges have a direction. (The incoming/outgoing accessors live on
+/// [`Graph`], where they degrade to "all incident edges" for undirected graphs.)
+pub trait DirectedGraph: Graph {}
 
 /// Marker for graphs whose edges are unordered pairs.
 pub trait UndirectedGraph: Graph {}
@@ -96,6 +117,15 @@ pub trait GraphMut: Graph {
     fn set_edge_weight(&mut self, e: &Self::Edge, w: f64) -> Result<()>;
     /// Produces a fresh edge object from the graph's edge factory.
     fn new_edge(&mut self) -> Result<Self::Edge>;
+    /// Produces a fresh vertex object from the graph's vertex factory.
+    fn new_vertex(&mut self) -> Result<Self::Vertex>;
+
+    /// Creates a vertex with the graph's factory and adds it (`addVertex()` in JGraphT).
+    fn add_new_vertex(&mut self) -> Result<Self::Vertex> {
+        let v = self.new_vertex()?;
+        self.add_vertex(v.clone());
+        Ok(v)
+    }
 
     /// Creates an edge with the graph's factory. `Ok(None)` mirrors JGraphT returning `null`.
     fn add_edge(&mut self, u: &Self::Vertex, v: &Self::Vertex) -> Result<Option<Self::Edge>> {

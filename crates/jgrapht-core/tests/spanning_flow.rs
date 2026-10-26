@@ -204,20 +204,11 @@ fn min_cost_flow_works() {
         (2, 3, 0.0),
         (1, 2, 0.0),
     ]);
-    let cap = |e: &DefaultEdge| match e.0 {
-        0 => 4.0,
-        1 => 2.0,
-        2 => 3.0,
-        3 => 5.0,
-        _ => 10.0,
-    };
-    let cost = |e: &DefaultEdge| match e.0 {
-        0 => 1.0,
-        1 => 2.0,
-        2 => 3.0,
-        3 => 1.0,
-        _ => 1.0,
-    };
+    // edges in insertion order: 0-1, 0-2, 1-3, 2-3, 1-2
+    let order: Vec<DefaultEdge> = g.edges().copied().collect();
+    let pos = |e: &DefaultEdge| order.iter().position(|x| x == e).unwrap();
+    let cap = |e: &DefaultEdge| [4.0, 2.0, 3.0, 5.0, 10.0][pos(e)];
+    let cost = |e: &DefaultEdge| [1.0, 2.0, 3.0, 1.0, 1.0][pos(e)];
     let r = min_cost_flow(&g, &0, &3, None, cap, cost).unwrap();
     assert_eq!(r.flow_value, 6.0);
     // cheapest: 0-1-2-3 costs 3, 0-1-3 costs 4, 0-2-3 costs 3: fill 0-1 (4) and 0-2 (2)

@@ -19,6 +19,10 @@ pub enum GraphError {
     Unmodifiable,
     #[error("graph has no edge factory")]
     NoEdgeFactory,
+    #[error("graph has no vertex factory")]
+    NoVertexFactory,
+    #[error("edge already associated with different endpoints")]
+    IntrusiveEdge,
     #[error("invalid argument: {0}")]
     InvalidArgument(String),
 }

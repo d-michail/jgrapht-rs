@@ -7,6 +7,8 @@
 
 mod common;
 
+mod graph_basic;
 mod graph_metrics_test;
 mod graph_tests_test;
 mod graphs_test;
+mod simple_directed_graph_test;

@@ -78,14 +78,7 @@ impl<G: Graph> Graph for AsWeighted<G> {
         self.graph.edges_between(u, v)
     }
 }
-impl<G: DirectedGraph> DirectedGraph for AsWeighted<G> {
-    fn in_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        self.graph.in_edges_of(v)
-    }
-    fn out_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        self.graph.out_edges_of(v)
-    }
-}
+impl<G: DirectedGraph> DirectedGraph for AsWeighted<G> {}
 impl<G: UndirectedGraph> UndirectedGraph for AsWeighted<G> {}
 
 /// Treats every edge weight as `1.0`.
@@ -136,12 +129,5 @@ impl<G: Graph> Graph for AsUnweighted<G> {
         self.0.edges_between(u, v)
     }
 }
-impl<G: DirectedGraph> DirectedGraph for AsUnweighted<G> {
-    fn in_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        self.0.in_edges_of(v)
-    }
-    fn out_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        self.0.out_edges_of(v)
-    }
-}
+impl<G: DirectedGraph> DirectedGraph for AsUnweighted<G> {}
 impl<G: UndirectedGraph> UndirectedGraph for AsUnweighted<G> {}

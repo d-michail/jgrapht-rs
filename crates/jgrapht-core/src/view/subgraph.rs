@@ -143,18 +143,6 @@ impl<G: Graph, MV: Mask<G::Vertex>, ME: Mask<G::Edge>> Graph for MaskSubgraph<G,
 impl<G: DirectedGraph, MV: Mask<G::Vertex>, ME: Mask<G::Edge>> DirectedGraph
     for MaskSubgraph<G, MV, ME>
 {
-    fn in_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        let ok = self.vertex_ok(v);
-        self.graph
-            .in_edges_of(v)
-            .filter(move |e| ok && self.edge_ok(e))
-    }
-    fn out_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
-        let ok = self.vertex_ok(v);
-        self.graph
-            .out_edges_of(v)
-            .filter(move |e| ok && self.edge_ok(e))
-    }
 }
 impl<G: UndirectedGraph, MV: Mask<G::Vertex>, ME: Mask<G::Edge>> UndirectedGraph
     for MaskSubgraph<G, MV, ME>

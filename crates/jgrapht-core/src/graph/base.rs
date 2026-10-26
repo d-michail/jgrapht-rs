@@ -9,9 +9,23 @@ use std::marker::PhantomData;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DefaultEdge(pub u64);
 
+static NEXT_DEFAULT_EDGE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1_000_000);
+
 impl DefaultEdge {
-    pub fn from_id(id: u64) -> Self {
-        DefaultEdge(id)
+    /// A process-wide unique edge, mirroring the identity of `new DefaultEdge()` in Java.
+    pub fn new() -> Self {
+        DefaultEdge(NEXT_DEFAULT_EDGE.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
+    }
+    /// Edge factory for [`BaseGraph::with_edge_factory`]; the per-graph counter is ignored because
+    /// default edges are unique across all graphs.
+    pub fn from_id(_: u64) -> Self {
+        Self::new()
+    }
+}
+
+impl Default for DefaultEdge {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -68,6 +82,8 @@ pub struct BaseGraph<V, E = DefaultEdge, D = Undirected> {
     edges: IndexMap<E, EdgeRec<V>>,
     next_id: u64,
     factory: Option<fn(u64) -> E>,
+    next_vertex: u64,
+    vertex_factory: Option<fn(u64) -> V>,
     _dir: PhantomData<D>,
 }
 
@@ -118,8 +134,16 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> BaseGraph<V, E, D
             edges: IndexMap::new(),
             next_id: 0,
             factory,
+            next_vertex: 0,
+            vertex_factory: None,
             _dir: PhantomData,
         }
+    }
+
+    /// Installs a vertex factory used by [`GraphMut::add_new_vertex`]: `factory(0)`, `factory(1)`, ...
+    pub fn with_vertex_factory(mut self, factory: fn(u64) -> V) -> Self {
+        self.vertex_factory = Some(factory);
+        self
     }
 
     /// Marks the graph as weighted (builder style).
@@ -157,34 +181,35 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> BaseGraph<V, E, D
 }
 
 impl<V: Clone + Eq + Hash, D: Direction> BaseGraph<V, DefaultEdge, D> {
-    fn with_type(ty: GraphType) -> Self {
+    /// Graph with an arbitrary [`GraphType`] (direction comes from `D`) and [`DefaultEdge`]s.
+    pub fn with_graph_type(ty: GraphType) -> Self {
         Self::with_edge_factory(ty, DefaultEdge::from_id)
     }
     /// No loops, no parallel edges.
     pub fn simple() -> Self {
-        Self::with_type(GraphType::simple())
+        Self::with_graph_type(GraphType::simple())
     }
     /// Parallel edges allowed, loops not.
     pub fn multi() -> Self {
-        Self::with_type(GraphType::multigraph())
+        Self::with_graph_type(GraphType::multigraph())
     }
     /// Self-loops allowed, parallel edges not (JGraphT's `Default*Graph`).
     pub fn with_loops() -> Self {
-        Self::with_type(GraphType {
+        Self::with_graph_type(GraphType {
             self_loops: true,
             ..GraphType::simple()
         })
     }
     /// Parallel edges and loops allowed.
     pub fn pseudo() -> Self {
-        Self::with_type(GraphType::pseudograph())
+        Self::with_graph_type(GraphType::pseudograph())
     }
 }
 
 impl<V: Clone + Eq + Hash> BaseGraph<V, DefaultEdge, Directed> {
     /// Directed acyclic graph: edge insertion that would close a cycle fails.
     pub fn dag() -> Self {
-        Self::with_type(GraphType {
+        Self::with_graph_type(GraphType {
             allows_cycles: false,
             ..GraphType::simple()
         })
@@ -236,6 +261,35 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Graph for BaseGra
         });
         out.chain(inc)
     }
+    fn in_edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
+        let a = self.vertices.get(v);
+        // undirected graphs keep every incident edge in `out`
+        let (inc, out) = if D::DIRECTED {
+            (a.map(|a| &a.inc), None)
+        } else {
+            (None, a.map(|a| &a.out))
+        };
+        inc.into_iter()
+            .flat_map(|s| s.iter())
+            .chain(out.into_iter().flat_map(|s| s.iter()))
+    }
+    fn out_edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
+        self.out_edges(v)
+    }
+    fn in_degree_of(&self, v: &V) -> usize {
+        match self.vertices.get(v) {
+            None => 0,
+            Some(a) if D::DIRECTED => a.inc.len(),
+            Some(_) => self.degree_of(v),
+        }
+    }
+    fn out_degree_of(&self, v: &V) -> usize {
+        match self.vertices.get(v) {
+            None => 0,
+            Some(a) if D::DIRECTED => a.out.len(),
+            Some(_) => self.degree_of(v),
+        }
+    }
     fn edges_between<'a>(&'a self, u: &'a V, v: &'a V) -> impl Iterator<Item = &'a E> {
         self.out_edges(u).filter(move |e| {
             let r = &self.edges[*e];
@@ -248,20 +302,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Graph for BaseGra
     }
 }
 
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> DirectedGraph for BaseGraph<V, E, Directed> {
-    fn in_edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
-        self.vertices.get(v).into_iter().flat_map(|a| a.inc.iter())
-    }
-    fn out_edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
-        self.out_edges(v)
-    }
-    fn in_degree_of(&self, v: &V) -> usize {
-        self.vertices.get(v).map_or(0, |a| a.inc.len())
-    }
-    fn out_degree_of(&self, v: &V) -> usize {
-        self.vertices.get(v).map_or(0, |a| a.out.len())
-    }
-}
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> DirectedGraph for BaseGraph<V, E, Directed> {}
 
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> UndirectedGraph for BaseGraph<V, E, Undirected> {}
 
@@ -290,8 +331,18 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphMut for Base
         if !self.vertices.contains_key(u) || !self.vertices.contains_key(v) {
             return Err(GraphError::VertexNotFound);
         }
-        if self.edges.contains_key(&e) {
-            return Ok(false);
+        if let Some(r) = self.edges.get(&e) {
+            // the same edge object may not be reused for different endpoints
+            let same = if D::DIRECTED {
+                &r.src == u && &r.tgt == v
+            } else {
+                (&r.src == u && &r.tgt == v) || (&r.src == v && &r.tgt == u)
+            };
+            return if same {
+                Ok(false)
+            } else {
+                Err(GraphError::IntrusiveEdge)
+            };
         }
         if u == v && !self.ty.self_loops {
             return Err(GraphError::LoopsNotAllowed);
@@ -343,6 +394,17 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphMut for Base
         Ok(())
     }
 
+    fn new_vertex(&mut self) -> Result<V> {
+        let f = self.vertex_factory.ok_or(GraphError::NoVertexFactory)?;
+        loop {
+            let v = f(self.next_vertex);
+            self.next_vertex += 1;
+            if !self.vertices.contains_key(&v) {
+                return Ok(v);
+            }
+        }
+    }
+
     fn new_edge(&mut self) -> Result<E> {
         let f = self.factory.ok_or(GraphError::NoEdgeFactory)?;
         loop {
@@ -352,5 +414,61 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphMut for Base
                 return Ok(e);
             }
         }
+    }
+}
+
+impl<V, E, D> fmt::Display for BaseGraph<V, E, D>
+where
+    V: fmt::Display + Clone + Eq + Hash,
+    E: fmt::Display + Clone + Eq + Hash + 'static,
+    D: Direction,
+{
+    /// JGraphT's `toString`: `([v1, v2], [(v1,v2)])`; undirected edges render as `{v1,v2}` and
+    /// edges other than [`DefaultEdge`] are prefixed with `label=`.
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "([")?;
+        for (i, v) in self.vertices.keys().enumerate() {
+            if i > 0 {
+                write!(f, ", ")?;
+            }
+            write!(f, "{v}")?;
+        }
+        write!(f, "], [")?;
+        let labelled = std::any::TypeId::of::<E>() != std::any::TypeId::of::<DefaultEdge>();
+        for (i, (e, r)) in self.edges.iter().enumerate() {
+            if i > 0 {
+                write!(f, ", ")?;
+            }
+            if labelled {
+                write!(f, "{e}=")?;
+            }
+            let (open, close) = if D::DIRECTED { ('(', ')') } else { ('{', '}') };
+            write!(f, "{open}{},{}{close}", r.src, r.tgt)?;
+        }
+        write!(f, "])")
+    }
+}
+
+/// JGraphT's `AbstractGraph.equals`: same direction, vertex set, edge set (by edge value) with the
+/// same endpoints (unordered when undirected) and weights.
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> PartialEq for BaseGraph<V, E, D> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.vertices.len() != other.vertices.len() || self.edges.len() != other.edges.len() {
+            return false;
+        }
+        if !self.vertices.keys().all(|v| other.vertices.contains_key(v)) {
+            return false;
+        }
+        self.edges.iter().all(|(e, r)| match other.edges.get(e) {
+            None => false,
+            Some(o) => {
+                let ends = if D::DIRECTED {
+                    r.src == o.src && r.tgt == o.tgt
+                } else {
+                    (r.src == o.src && r.tgt == o.tgt) || (r.src == o.tgt && r.tgt == o.src)
+                };
+                ends && r.weight.to_bits() == o.weight.to_bits() || (ends && r.weight == o.weight)
+            }
+        })
     }
 }

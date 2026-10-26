@@ -91,16 +91,6 @@ where
     A: DirectedGraph,
     B: DirectedGraph<Vertex = A::Vertex, Edge = A::Edge>,
 {
-    fn in_edges_of(&self, v: &A::Vertex) -> impl Iterator<Item = &A::Edge> {
-        self.a
-            .in_edges_of(v)
-            .chain(self.b.in_edges_of(v).filter(|e| !self.a.contains_edge(e)))
-    }
-    fn out_edges_of(&self, v: &A::Vertex) -> impl Iterator<Item = &A::Edge> {
-        self.a
-            .out_edges_of(v)
-            .chain(self.b.out_edges_of(v).filter(|e| !self.a.contains_edge(e)))
-    }
 }
 impl<A, B> UndirectedGraph for GraphUnion<A, B>
 where
