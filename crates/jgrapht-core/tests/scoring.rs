@@ -21,10 +21,7 @@ fn centralities_on_star_and_path() {
         betweenness_centrality(&star, false, true).vertices[&0],
         1.0
     ));
-    assert!(close(
-        b.edges.values().copied().sum::<f64>(),
-        25.0
-    )); // each leaf pair path + direct
+    assert!(close(b.edges.values().copied().sum::<f64>(), 25.0)); // each leaf pair path + direct
     let wb = betweenness_centrality(&star, true, false);
     assert!(close(wb.vertices[&0], 10.0));
     let d = degree_centrality(&star, true);

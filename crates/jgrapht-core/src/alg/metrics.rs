@@ -71,7 +71,9 @@ pub fn girth<G: Graph>(g: &G) -> Option<usize> {
         dist[s] = 0;
         let mut q = VecDeque::from([s]);
         while let Some(v) = q.pop_front() {
-            let nbrs = ix.out[v].iter().chain(if ix.directed { &ix.inn[v][..] } else { &[] });
+            let nbrs = ix.out[v]
+                .iter()
+                .chain(if ix.directed { &ix.inn[v][..] } else { &[] });
             for &(u, k) in nbrs {
                 if u == v {
                     return Some(1);
