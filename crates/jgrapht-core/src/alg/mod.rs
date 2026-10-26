@@ -1,5 +1,6 @@
 //! Graph algorithms.
 
+pub mod centers;
 pub mod chordal;
 pub mod clique;
 pub mod clustering;
@@ -7,8 +8,12 @@ pub mod color;
 pub mod connectivity;
 pub mod cover;
 pub mod cycle;
+pub mod decomposition;
+pub mod densest;
+pub mod drawing;
 pub mod eulerian;
 pub mod flow;
+pub mod isomorphism;
 pub mod lca;
 pub mod linkprediction;
 pub mod matching;
@@ -16,7 +21,9 @@ pub mod metrics;
 pub mod partition;
 pub mod scoring;
 pub mod shortestpath;
+pub mod spanner;
 pub mod spanning;
+pub mod steiner;
 pub mod tour;
 pub mod transform;
 pub mod transitive;

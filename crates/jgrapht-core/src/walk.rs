@@ -128,16 +128,19 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     }
 }
 
-/// Bidirectional mapping between vertices/edges of two graphs (`GraphMapping`).
+/// Bidirectional mapping of vertices and edges from one graph (`V`, `E`) to another
+/// (`V2`, `E2`, defaulting to the same types).
 #[derive(Debug, Clone)]
-pub struct GraphMapping<V, E> {
-    pub vertex_forward: HashMap<V, V>,
-    pub vertex_backward: HashMap<V, V>,
-    pub edge_forward: HashMap<E, E>,
-    pub edge_backward: HashMap<E, E>,
+pub struct GraphMapping<V, E, V2 = V, E2 = E> {
+    pub vertex_forward: HashMap<V, V2>,
+    pub vertex_backward: HashMap<V2, V>,
+    pub edge_forward: HashMap<E, E2>,
+    pub edge_backward: HashMap<E2, E>,
 }
 
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> Default for GraphMapping<V, E> {
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, V2: Clone + Eq + Hash, E2: Clone + Eq + Hash>
+    Default for GraphMapping<V, E, V2, E2>
+{
     fn default() -> Self {
         GraphMapping {
             vertex_forward: HashMap::new(),
@@ -148,28 +151,30 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> Default for GraphMapping<V, E> 
     }
 }
 
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphMapping<V, E> {
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, V2: Clone + Eq + Hash, E2: Clone + Eq + Hash>
+    GraphMapping<V, E, V2, E2>
+{
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn map_vertex(&mut self, from: V, to: V) {
+    pub fn map_vertex(&mut self, from: V, to: V2) {
         self.vertex_forward.insert(from.clone(), to.clone());
         self.vertex_backward.insert(to, from);
     }
-    pub fn map_edge(&mut self, from: E, to: E) {
+    pub fn map_edge(&mut self, from: E, to: E2) {
         self.edge_forward.insert(from.clone(), to.clone());
         self.edge_backward.insert(to, from);
     }
-    pub fn vertex(&self, from: &V) -> Option<&V> {
+    pub fn vertex(&self, from: &V) -> Option<&V2> {
         self.vertex_forward.get(from)
     }
-    pub fn vertex_inverse(&self, to: &V) -> Option<&V> {
+    pub fn vertex_inverse(&self, to: &V2) -> Option<&V> {
         self.vertex_backward.get(to)
     }
-    pub fn edge(&self, from: &E) -> Option<&E> {
+    pub fn edge(&self, from: &E) -> Option<&E2> {
         self.edge_forward.get(from)
     }
-    pub fn edge_inverse(&self, to: &E) -> Option<&E> {
+    pub fn edge_inverse(&self, to: &E2) -> Option<&E> {
         self.edge_backward.get(to)
     }
 }
