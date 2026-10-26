@@ -78,7 +78,7 @@ New workspace crate `crates/jgrapht-io` (lib name `jgrapht_io`), depending on `j
 | 10 | TSPLIB importer | 24 | depends on the TSP data in `tour` |
 
 **Decisions to confirm before starting:**
-- Hand-written parsers instead of ANTLR (no Rust ANTLR runtime worth depending on; the grammars are small; `pest`/`winnow` are the fallback if DOT gets unwieldy).
+- **Decided: hand-written parsers** for CSV, JSON, GML and DOT, replacing the Java ANTLR grammars (`CSV.g4`, `Json.g4`, `Gml.g4`, `DOT.g4`). No parser-generator dependency, no JVM in the build. `antlr4rust` and the newer `antlr-rust-runtime` were considered and rejected (young third-party runtimes, unknown license for the latter). Fidelity is kept by porting the Java listener logic (value conversion, error messages) and by driving each parser with the Java tests, plus the Java importers as oracle for odd inputs.
 - Exporters must match Java output byte for byte (the tests compare strings), including attribute ordering. Use insertion-ordered maps in the shared layer.
 - XML comparison in tests: the Java tests use XMLUnit; write a small canonicalising comparer in the test utils.
 - Dependencies: `quick-xml`, `thiserror`; no `serde` in the core path (optional feature later).
