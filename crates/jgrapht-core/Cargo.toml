@@ -1,0 +1,16 @@
+[package]
+name = "jgrapht-core"
+description = "A Rust port of the JGraphT core library, built around graph traits"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+name = "jgrapht"
+
+[dependencies]
+rheaps = "0.16"
+indexmap = "2"
+thiserror = "2"
+rand = "0.9"
