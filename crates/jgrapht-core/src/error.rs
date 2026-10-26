@@ -11,6 +11,8 @@ pub enum GraphError {
     LoopsNotAllowed,
     #[error("adding the edge would create a cycle")]
     CycleProhibited,
+    #[error("graph contains a negative-weight cycle")]
+    NegativeCycle,
     #[error("graph is not weighted")]
     NotWeighted,
     #[error("graph is unmodifiable")]

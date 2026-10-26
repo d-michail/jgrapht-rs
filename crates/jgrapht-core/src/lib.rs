@@ -6,6 +6,7 @@
 //! graphs, ...) are plain wrapper types. Vertices and edges are user supplied
 //! values (`Clone + Eq + Hash`).
 
+pub mod alg;
 pub mod error;
 pub mod event;
 pub mod generate;
