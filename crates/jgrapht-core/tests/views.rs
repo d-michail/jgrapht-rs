@@ -8,7 +8,7 @@ fn path_digraph() -> DiGraph<u32> {
     let mut g = DiGraph::<u32>::simple().weighted();
     for (a, b, w) in [(1, 2, 1.0), (2, 3, 2.0), (3, 4, 3.0)] {
         g.add_edge_with_vertices(a, b).unwrap();
-        let e = g.get_edge(&a, &b).unwrap().clone();
+        let e = *g.get_edge(&a, &b).unwrap();
         g.set_edge_weight(&e, w).unwrap();
     }
     g
@@ -33,7 +33,7 @@ fn subgraphs() {
     assert_eq!((s.vertex_count(), s.edge_count()), (3, 2));
     assert!(!s.contains_vertex(&4));
     assert_eq!(s.out_edges_of(&3).count(), 0);
-    let m = MaskSubgraph::new(&g, |v: &u32| v % 2 == 0, |_: &DefaultEdge| true);
+    let m = MaskSubgraph::new(&g, |v: &u32| v.is_multiple_of(2), |_: &DefaultEdge| true);
     assert_eq!((m.vertex_count(), m.edge_count()), (2, 0));
 }
 

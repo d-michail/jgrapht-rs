@@ -1,6 +1,6 @@
 //! Shortest path algorithms.
 //!
-//! Heap-based algorithms ([`Dijkstra`], [`AStar`], [`Johnson`]) are generic over any
+//! Heap-based algorithms ([`Dijkstra`], [`AStar`], [`johnson`]) are generic over any
 //! [`rheaps::DecreaseKeyHeap`]; the pairing heap is the default.
 
 mod astar;
