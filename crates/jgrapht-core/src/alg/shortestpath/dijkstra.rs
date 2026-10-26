@@ -3,9 +3,9 @@ use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::Result;
 use crate::graph::Graph;
 use crate::util::OrderedF64;
+use crate::util::heap::JavaPairingHeap as PairingHeap;
 use crate::walk::GraphWalk;
 use rheaps::DecreaseKeyHeap;
-use crate::util::heap::JavaPairingHeap as PairingHeap;
 use std::marker::PhantomData;
 
 /// Dijkstra's algorithm. Fails with `InvalidArgument` on negative edge weights.

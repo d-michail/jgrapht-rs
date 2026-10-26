@@ -34,7 +34,12 @@ pub struct JavaPairingHeap<K, V> {
 
 impl<K, V> Default for JavaPairingHeap<K, V> {
     fn default() -> Self {
-        JavaPairingHeap { nodes: Vec::new(), free: Vec::new(), root: NIL, len: 0 }
+        JavaPairingHeap {
+            nodes: Vec::new(),
+            free: Vec::new(),
+            root: NIL,
+            len: 0,
+        }
     }
 }
 
@@ -149,7 +154,13 @@ impl<K: Ord, V> AddressableHeap<K, V> for JavaPairingHeap<K, V> {
     type Handle = JavaPairingHandle;
 
     fn insert(&mut self, key: K, value: V) -> JavaPairingHandle {
-        let node = Node { entry: Some((key, value)), o_c: NIL, y_s: NIL, o_s: NIL, generation: 0 };
+        let node = Node {
+            entry: Some((key, value)),
+            o_c: NIL,
+            y_s: NIL,
+            o_s: NIL,
+            generation: 0,
+        };
         let index = match self.free.pop() {
             Some(i) => {
                 let generation = self.nodes[i].generation;
@@ -163,7 +174,10 @@ impl<K: Ord, V> AddressableHeap<K, V> for JavaPairingHeap<K, V> {
         };
         self.root = self.link(self.root, index);
         self.len += 1;
-        JavaPairingHandle { index, generation: self.nodes[index].generation }
+        JavaPairingHandle {
+            index,
+            generation: self.nodes[index].generation,
+        }
     }
 
     fn peek(&self) -> Option<(JavaPairingHandle, &K, &V)> {
@@ -172,7 +186,14 @@ impl<K: Ord, V> AddressableHeap<K, V> for JavaPairingHeap<K, V> {
         }
         let n = &self.nodes[self.root];
         let (k, v) = n.entry.as_ref()?;
-        Some((JavaPairingHandle { index: self.root, generation: n.generation }, k, v))
+        Some((
+            JavaPairingHandle {
+                index: self.root,
+                generation: n.generation,
+            },
+            k,
+            v,
+        ))
     }
 
     fn pop(&mut self) -> Option<(K, V)> {
@@ -231,7 +252,9 @@ impl<K: Ord, V> AddressableHeap<K, V> for JavaPairingHeap<K, V> {
 
 impl<K: Ord, V> DecreaseKeyHeap<K, V> for JavaPairingHeap<K, V> {
     fn decrease_key(&mut self, handle: JavaPairingHandle, key: K) -> Result<(), DecreaseKeyError> {
-        let n = self.check(handle).map_err(DecreaseKeyError::InvalidHandle)?;
+        let n = self
+            .check(handle)
+            .map_err(DecreaseKeyError::InvalidHandle)?;
         let ord = key.cmp(self.key_of(n));
         if ord == std::cmp::Ordering::Greater {
             return Err(DecreaseKeyError::NotDecreased);

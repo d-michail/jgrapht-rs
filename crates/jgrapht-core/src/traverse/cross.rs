@@ -4,8 +4,8 @@
 use super::events::{TraversalListener, TraversalListeners};
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
-use crate::{GraphError, Result};
 use crate::util::heap::JavaPairingHeap as PairingHeap;
+use crate::{GraphError, Result};
 use rheaps::{AddressableHeap, DecreaseKeyHeap};
 use std::collections::{HashMap, VecDeque};
 use std::vec::IntoIter;

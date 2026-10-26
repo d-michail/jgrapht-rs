@@ -18,3 +18,4 @@ mod graphs_test;
 mod listenable_graph_test;
 mod simple_directed_graph_test;
 mod traverse_tests;
+mod util_tests;

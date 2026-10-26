@@ -65,3 +65,98 @@ impl UnionFind {
         self.sets
     }
 }
+
+/// Bijection between a set of vertices and `0..n` (JGraphT's `VertexToIntegerMapping`).
+#[derive(Debug, Clone)]
+pub struct VertexToIntegerMapping<V> {
+    vertex_map: std::collections::HashMap<V, usize>,
+    index_list: Vec<V>,
+}
+
+impl<V: Clone + Eq + std::hash::Hash> VertexToIntegerMapping<V> {
+    /// Indexes the vertices in iteration order; duplicates are an error.
+    pub fn new(vertices: impl IntoIterator<Item = V>) -> crate::Result<Self> {
+        let mut vertex_map = std::collections::HashMap::new();
+        let mut index_list = Vec::new();
+        for v in vertices {
+            if vertex_map.insert(v.clone(), index_list.len()).is_some() {
+                return Err(crate::GraphError::InvalidArgument(
+                    "elements are not unique".into(),
+                ));
+            }
+            index_list.push(v);
+        }
+        Ok(VertexToIntegerMapping {
+            vertex_map,
+            index_list,
+        })
+    }
+    pub fn vertex_map(&self) -> &std::collections::HashMap<V, usize> {
+        &self.vertex_map
+    }
+    pub fn index_list(&self) -> &[V] {
+        &self.index_list
+    }
+}
+
+/// Factories for fresh vertices/edges, the Rust form of JGraphT's `SupplierUtil`.
+pub mod supplier {
+    /// Integers `start, start + 1, ...`
+    pub fn integer_supplier(start: i32) -> impl FnMut() -> i32 {
+        let mut next = start;
+        move || {
+            next += 1;
+            next - 1
+        }
+    }
+    /// Longs `start, start + 1, ...`
+    pub fn long_supplier(start: i64) -> impl FnMut() -> i64 {
+        let mut next = start;
+        move || {
+            next += 1;
+            next - 1
+        }
+    }
+    /// Decimal strings `"start", "start + 1", ...`
+    pub fn string_supplier(start: i32) -> impl FnMut() -> String {
+        let mut next = integer_supplier(start);
+        move || next().to_string()
+    }
+    /// Pseudo-random, version-4 style UUID strings (not cryptographically random).
+    pub fn random_uuid_string_supplier() -> impl FnMut() -> String {
+        let mut rng = super::java::JavaRandom::from_time();
+        move || {
+            let (a, b) = (rng.next_long() as u64, rng.next_long() as u64);
+            let a = (a & 0xffff_ffff_ffff_0fff) | 0x4000;
+            let b = (b & 0x3fff_ffff_ffff_ffff) | 0x8000_0000_0000_0000;
+            format!(
+                "{:08x}-{:04x}-{:04x}-{:04x}-{:012x}",
+                a >> 32,
+                (a >> 16) & 0xffff,
+                a & 0xffff,
+                b >> 48,
+                b & 0xffff_ffff_ffff
+            )
+        }
+    }
+}
+
+/// LSD radix sort of non-negative integers (JGraphT's `RadixSort`), stable, base 256.
+pub fn radix_sort(values: &mut [u32]) {
+    let mut buffer = vec![0u32; values.len()];
+    for shift in (0..32).step_by(8) {
+        let mut counts = [0usize; 257];
+        for &v in values.iter() {
+            counts[((v >> shift) & 0xff) as usize + 1] += 1;
+        }
+        for i in 0..256 {
+            counts[i + 1] += counts[i];
+        }
+        for &v in values.iter() {
+            let slot = &mut counts[((v >> shift) & 0xff) as usize];
+            buffer[*slot] = v;
+            *slot += 1;
+        }
+        values.copy_from_slice(&buffer);
+    }
+}

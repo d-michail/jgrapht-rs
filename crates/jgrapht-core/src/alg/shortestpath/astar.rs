@@ -1,10 +1,10 @@
 use super::search::search;
 use crate::graph::Graph;
 use crate::util::OrderedF64;
+use crate::util::heap::JavaPairingHeap as PairingHeap;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use rheaps::DecreaseKeyHeap;
-use crate::util::heap::JavaPairingHeap as PairingHeap;
 use std::marker::PhantomData;
 
 /// A* search. `heuristic(v, target)` must never overestimate the remaining distance
