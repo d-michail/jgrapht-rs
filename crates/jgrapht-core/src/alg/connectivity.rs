@@ -249,3 +249,49 @@ pub fn biconnectivity<G: Graph>(g: &G) -> Biconnectivity<G::Vertex, G::Edge> {
 pub fn is_biconnected<G: Graph>(g: &G) -> bool {
     crate::graph::props::is_connected(g) && biconnectivity(g).articulation_points.is_empty()
 }
+
+/// Block–cut tree of an undirected graph: one node per block and per articulation point, with
+/// an edge between a cut vertex and every block containing it.
+#[derive(Debug, Clone)]
+pub struct BlockCutTree<V> {
+    /// Vertices of each block.
+    pub blocks: Vec<Vec<V>>,
+    pub cut_vertices: Vec<V>,
+    /// `(block index, cut vertex index)` pairs.
+    pub edges: Vec<(usize, usize)>,
+}
+
+pub fn block_cut_tree<G: Graph>(g: &G) -> BlockCutTree<G::Vertex> {
+    let bc = biconnectivity(g);
+    let mut blocks: Vec<Vec<G::Vertex>> = Vec::new();
+    for b in &bc.blocks {
+        let mut vs: Vec<G::Vertex> = Vec::new();
+        for e in b {
+            for v in [g.edge_source(e).unwrap(), g.edge_target(e).unwrap()] {
+                if !vs.contains(v) {
+                    vs.push(v.clone());
+                }
+            }
+        }
+        blocks.push(vs);
+    }
+    // isolated vertices form singleton blocks
+    for v in g.vertices() {
+        if g.edges_of(v).next().is_none() {
+            blocks.push(vec![v.clone()]);
+        }
+    }
+    let mut edges = Vec::new();
+    for (ci, c) in bc.articulation_points.iter().enumerate() {
+        for (bi, b) in blocks.iter().enumerate() {
+            if b.contains(c) {
+                edges.push((bi, ci));
+            }
+        }
+    }
+    BlockCutTree {
+        blocks,
+        cut_vertices: bc.articulation_points,
+        edges,
+    }
+}

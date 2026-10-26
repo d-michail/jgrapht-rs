@@ -9,6 +9,10 @@ Heap-based algorithms (Dijkstra, A\*, Prim, Johnson, ...) use the priority queue
 [`rheaps`](https://crates.io/crates/rheaps), the Rust port of JHeaps.
 
 > Status: early. The API is not stable and the crate is not yet published.
+>
+> Not ported yet: maximum weight matching for large general graphs (blossom V), planar
+> embeddings, contraction hierarchies / transit node routing, network-simplex and
+> capacity-scaling min-cost flow, and the I/O, extension and optimisation modules of JGraphT.
 
 ## Quick start
 
@@ -59,20 +63,27 @@ Edges are values too: use the built-in `DefaultEdge`, or your own type via
 - **Traversal:** BFS, DFS (pre/post-order), topological order, closest-first, random walk,
   lexicographic BFS, maximum cardinality search, degeneracy ordering
 - **Connectivity & structure:** connected and strongly connected components (Tarjan,
-  Kosaraju), condensation, articulation points/bridges/blocks, Eulerian circuits, simple
-  cycles (Johnson), cycle bases, chordal graphs, transitive closure/reduction, LCA
+  Kosaraju), condensation, articulation points/bridges/blocks and the block–cut tree, Eulerian
+  circuits and trails, simple cycles (Johnson), cycle bases, chordal graphs, transitive
+  closure/reduction, LCA, planarity testing (left–right), (sub)graph isomorphism,
+  Hamiltonian cycles/paths, negative cycle detection, simple paths, edge- and vertex-disjoint
+  shortest paths
 - **Spanning trees & flows:** Kruskal, Prim, Borůvka, minimum/maximum arborescences
   (Chu–Liu/Edmonds), max flow (Edmonds–Karp, Dinic, push–relabel), minimum s–t cuts,
   Gomory–Hu trees, Stoer–Wagner, minimum cost flow
-- **Matching & colouring:** Hopcroft–Karp, Hungarian, Edmonds' blossom, greedy matching;
+- **Matching & colouring:** Hopcroft–Karp, Hungarian, Edmonds' blossom, greedy and path-growing matching, exact
+  weighted matching for small graphs;
   greedy / largest-degree-first / smallest-degree-last / DSATUR / chordal colouring, colour refinement
 - **Combinatorial:** maximal cliques (Bron–Kerbosch), independent sets, vertex covers
   (greedy, 2-approximations, König), bipartite partitioning
 - **Analysis:** betweenness, closeness, harmonic, degree, PageRank, eigenvector, Katz,
   coreness, clustering coefficients, diameter/radius/center/periphery/girth,
   link prediction and similarity measures, label propagation, k-spanning-tree clustering
-- **Tours & transforms:** nearest-neighbour, insertion, double-tree, 2-opt, Held–Karp;
-  complement, line graph, edge contraction
+- **Tours & transforms:** nearest-neighbour, insertion, double-tree, Christofides, 2-opt,
+  Held–Karp; complement, line graph, edge contraction
+- **Other:** Steiner trees (KMB, Dreyfus–Wagner), greedy spanners, tree decompositions
+  (min-degree, min-fill), densest subgraph (greedy, Goldberg), k-center, circular / random /
+  Fruchterman–Reingold layouts
 - **Generators:** complete, bipartite, ring, path, star, wheel, grid, hypercube, G(n,p), G(n,m),
   Barabási–Albert, Watts–Strogatz, Prüfer trees
 

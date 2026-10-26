@@ -343,3 +343,108 @@ pub fn is_matching<G: Graph>(g: &G, edges: &[G::Edge]) -> bool {
             None => false,
         })
 }
+
+/// Path-growing 1/2-approximation of maximum weight matching (Drake & Hougardy), linear time.
+pub fn path_growing_matching<G: Graph>(g: &G) -> Matching<G::Edge> {
+    let ix = Indexed::new(g);
+    let n = ix.n();
+    let mut removed = vec![false; n];
+    let (mut m1, mut m2): (Vec<usize>, Vec<usize>) = (Vec::new(), Vec::new());
+    let (mut w1, mut w2) = (0.0, 0.0);
+    for start in 0..n {
+        if removed[start] {
+            continue;
+        }
+        let (mut x, mut to_first) = (start, true);
+        loop {
+            let heaviest = ix.out[x]
+                .iter()
+                .chain(&ix.inn[x])
+                .filter(|&&(u, _)| u != x && !removed[u])
+                .max_by(|a, b| ix.w[a.1].total_cmp(&ix.w[b.1]))
+                .copied();
+            removed[x] = true;
+            let Some((y, k)) = heaviest else { break };
+            if to_first {
+                m1.push(k);
+                w1 += ix.w[k];
+            } else {
+                m2.push(k);
+                w2 += ix.w[k];
+            }
+            to_first = !to_first;
+            x = y;
+        }
+    }
+    // each list is a union of paths: extract a maximum-weight matching from the heavier one
+    let chosen = if w1 >= w2 { m1 } else { m2 };
+    let mut taken = vec![false; n];
+    let mut by_weight = chosen;
+    by_weight.sort_by(|&a, &b| ix.w[b].total_cmp(&ix.w[a]));
+    let mut mate = vec![None; n];
+    for k in by_weight {
+        let (a, b) = ix.ends[k];
+        if !taken[a] && !taken[b] {
+            taken[a] = true;
+            taken[b] = true;
+            mate[a] = Some(b);
+            mate[b] = Some(a);
+        }
+    }
+    matching_of(&ix, &mate)
+}
+
+/// Exact maximum weight matching by dynamic programming over vertex subsets, `O(2^n n)`.
+/// Limited to 24 vertices; meant for small instances and as a test oracle.
+pub fn maximum_weight_matching_exact<G: Graph>(g: &G) -> Result<Matching<G::Edge>> {
+    let ix = Indexed::new(g);
+    let n = ix.n();
+    if n > 24 {
+        return Err(GraphError::InvalidArgument(
+            "exact matching is limited to 24 vertices".into(),
+        ));
+    }
+    let mut best = vec![vec![f64::NEG_INFINITY; n]; n];
+    for (k, &(a, b)) in ix.ends.iter().enumerate() {
+        if a != b && ix.w[k] > best[a][b] {
+            best[a][b] = ix.w[k];
+            best[b][a] = ix.w[k];
+        }
+    }
+    let full = 1usize << n;
+    // value[mask] = best matching weight using only vertices in mask; choice for reconstruction
+    let mut value = vec![0.0f64; full];
+    let mut choice = vec![usize::MAX; full];
+    for mask in 1..full {
+        let v = mask.trailing_zeros() as usize;
+        let rest = mask & (mask - 1);
+        value[mask] = value[rest]; // leave v unmatched
+        let mut others = rest;
+        while others != 0 {
+            let u = others.trailing_zeros() as usize;
+            others &= others - 1;
+            if best[v][u] > 0.0 {
+                let cand = best[v][u] + value[rest & !(1 << u)];
+                if cand > value[mask] {
+                    value[mask] = cand;
+                    choice[mask] = u;
+                }
+            }
+        }
+    }
+    let mut mate = vec![None; n];
+    let mut mask = full - 1;
+    while mask != 0 {
+        let v = mask.trailing_zeros() as usize;
+        let rest = mask & (mask - 1);
+        if choice[mask] == usize::MAX {
+            mask = rest;
+        } else {
+            let u = choice[mask];
+            mate[v] = Some(u);
+            mate[u] = Some(v);
+            mask = rest & !(1 << u);
+        }
+    }
+    Ok(matching_of(&ix, &mate))
+}
