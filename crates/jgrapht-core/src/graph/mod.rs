@@ -133,3 +133,58 @@ pub trait GraphMut: Graph {
         Ok(self.add_edge_with(u, v, e.clone())?.then_some(e))
     }
 }
+
+/// JGraphT's `AbstractGraph.equals`: same direction, same vertex set, and every edge of `a` is an
+/// edge of `b` (by edge value) with the same endpoints (unordered when undirected) and weight.
+pub fn graph_equals<A, B>(a: &A, b: &B) -> bool
+where
+    A: Graph,
+    B: Graph<Vertex = A::Vertex, Edge = A::Edge>,
+{
+    if a.graph_type().directed != b.graph_type().directed
+        || a.vertex_count() != b.vertex_count()
+        || a.edge_count() != b.edge_count()
+    {
+        return false;
+    }
+    if !a.vertices().all(|v| b.contains_vertex(v)) {
+        return false;
+    }
+    let directed = a.graph_type().directed;
+    a.edges().all(|e| {
+        let (Some((s, t)), Some((bs, bt))) = (a.edge_endpoints(e), b.edge_endpoints(e)) else {
+            return false;
+        };
+        let ends = if directed {
+            s == bs && t == bt
+        } else {
+            (s == bs && t == bt) || (s == bt && t == bs)
+        };
+        ends && a.edge_weight(e).map(f64::to_bits) == b.edge_weight(e).map(f64::to_bits)
+    })
+}
+
+/// Hash consistent with [`graph_equals`] (insertion-order independent; edge direction matters
+/// only for directed graphs).
+pub fn graph_hash<G: Graph>(g: &G) -> u64 {
+    use std::hash::Hasher;
+    fn h<T: Hash>(t: &T) -> u64 {
+        let mut s = std::collections::hash_map::DefaultHasher::new();
+        t.hash(&mut s);
+        s.finish()
+    }
+    let directed = g.graph_type().directed;
+    let mut total = g.vertices().map(h).fold(0u64, u64::wrapping_add);
+    for e in g.edges() {
+        let (s, t) = g.edge_endpoints(e).expect("edge endpoints");
+        let (hs, ht) = (h(s), h(t));
+        let ends = if directed {
+            hs.wrapping_mul(31).wrapping_add(ht)
+        } else {
+            hs.wrapping_add(ht)
+        };
+        let w = g.edge_weight(e).map_or(0, f64::to_bits);
+        total = total.wrapping_add(h(&(h(e), ends, w)));
+    }
+    total
+}

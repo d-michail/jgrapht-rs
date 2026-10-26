@@ -106,6 +106,39 @@ pub trait DirectedExt: DirectedGraph {
     fn predecessor_list_of(&self, v: &Self::Vertex) -> Vec<Self::Vertex> {
         self.predecessors_of(v).cloned().collect()
     }
+    /// Every vertex from which `v` is reachable (excluding `v` unless it lies on a cycle).
+    fn ancestors_of(&self, v: &Self::Vertex) -> std::collections::HashSet<Self::Vertex> {
+        let mut seen = std::collections::HashSet::new();
+        let mut stack = vec![v];
+        while let Some(x) = stack.pop() {
+            for p in self.predecessors_of(x) {
+                if seen.insert(p.clone()) {
+                    stack.push(p);
+                }
+            }
+        }
+        seen
+    }
+    /// Every vertex reachable from `v` (excluding `v` unless it lies on a cycle).
+    fn descendants_of(&self, v: &Self::Vertex) -> std::collections::HashSet<Self::Vertex> {
+        let mut seen = std::collections::HashSet::new();
+        let mut stack = vec![v];
+        while let Some(x) = stack.pop() {
+            for p in self.successors_of(x) {
+                if seen.insert(p.clone()) {
+                    stack.push(p);
+                }
+            }
+        }
+        seen
+    }
+    /// Vertices in a topological order (sources in insertion order first); `None` if cyclic.
+    fn topological_order(&self) -> Option<Vec<Self::Vertex>>
+    where
+        Self: Sized,
+    {
+        crate::traverse::topological_sort(self).map(|v| v.into_iter().cloned().collect())
+    }
     fn vertex_has_successors(&self, v: &Self::Vertex) -> bool {
         self.out_edges_of(v).next().is_some()
     }

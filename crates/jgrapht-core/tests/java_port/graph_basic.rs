@@ -357,3 +357,277 @@ mod generic_graphs_test {
         assert_eq!(g.degree_of(&v2), 2);
     }
 }
+
+// ---------------------------------------------------------------- EqualsAndHashCodeTest
+// (`testHashcodeEquals`, `testUndirectedEquality`, ... included)
+
+mod equals_and_hash_code_test {
+    use super::*;
+    use jgrapht::graph::{Directed, Undirected};
+    use jgrapht::{graph_equals, graph_hash};
+    use std::hash::{Hash, Hasher};
+
+    const V1: &str = "v1";
+    const V2: &str = "v2";
+    const V3: &str = "v3";
+    const V4: &str = "v4";
+
+    fn hash_of<T: Hash>(t: &T) -> u64 {
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        t.hash(&mut h);
+        h.finish()
+    }
+
+    fn triangle_with_isolated<D: jgrapht::graph::Direction>(
+        order: [&'static str; 4],
+        g: &mut BaseGraph<&'static str, DefaultEdge, D>,
+        edges: &[(DefaultEdge, &'static str, &'static str)],
+    ) {
+        for v in order {
+            g.add_vertex(v);
+        }
+        for (e, s, t) in edges {
+            g.add_edge_with(s, t, *e).unwrap();
+        }
+    }
+
+    fn check_default_graph<D: jgrapht::graph::Direction>(
+        new: impl Fn() -> BaseGraph<&'static str, DefaultEdge, D>,
+    ) {
+        let (e12, e23, e31) = (DefaultEdge::new(), DefaultEdge::new(), DefaultEdge::new());
+        let mut g1 = new();
+        triangle_with_isolated(
+            [V1, V2, V3, V4],
+            &mut g1,
+            &[(e12, V1, V2), (e23, V2, V3), (e31, V3, V1)],
+        );
+        let mut g2 = new();
+        triangle_with_isolated(
+            [V4, V3, V2, V1],
+            &mut g2,
+            &[(e31, V3, V1), (e23, V2, V3), (e12, V1, V2)],
+        );
+        let mut g3 = new();
+        triangle_with_isolated([V4, V3, V2, V1], &mut g3, &[(e31, V3, V1), (e23, V2, V3)]);
+        assert!(g2 == g1);
+        assert!(g3 != g2);
+        assert_eq!(hash_of(&g2), hash_of(&g1));
+    }
+
+    #[test]
+    fn test_default_directed_graph() {
+        check_default_graph(DiGraph::<&str>::with_loops);
+    }
+
+    #[test]
+    fn test_simple_graph() {
+        check_default_graph(UGraph::<&str>::simple);
+    }
+
+    fn string_graph() -> BaseGraph<&'static str, String, Directed> {
+        BaseGraph::without_edge_factory(GraphType {
+            self_loops: true,
+            ..GraphType::simple()
+        })
+    }
+
+    #[test]
+    fn test_graphs_with_non_intrusive_edge() {
+        let mut g1 = string_graph();
+        g1.add_vertices([V1, V2, V3]);
+        g1.add_edge_with(&V1, &V2, "v1v2".into()).unwrap();
+        g1.add_edge_with(&V3, &V1, "v3v1".into()).unwrap();
+        let mut g2 = string_graph();
+        g2.add_vertices([V3, V2, V1]);
+        g2.add_edge_with(&V3, &V1, "v3v1".into()).unwrap();
+        g2.add_edge_with(&V1, &V2, "v1v2".into()).unwrap();
+        let mut g3 = string_graph();
+        g3.add_vertices([V3, V2, V1]);
+        g3.add_edge_with(&V3, &V1, "v3v1".into()).unwrap();
+        g3.add_edge_with(&V1, &V2, "v1v2".into()).unwrap();
+        g3.add_edge_with(&V2, &V3, "v2v3".into()).unwrap();
+        assert!(g1 == g2);
+        assert!(g2 != g3);
+        assert_eq!(hash_of(&g2), hash_of(&g1));
+    }
+
+    #[test]
+    fn test_pseudograph() {
+        let (e121, e23, e31, e122, e11) = (
+            DefaultEdge::new(),
+            DefaultEdge::new(),
+            DefaultEdge::new(),
+            DefaultEdge::new(),
+            DefaultEdge::new(),
+        );
+        let mut g1 = UGraph::<&str>::pseudo();
+        g1.add_vertices([V1, V2, V3]);
+        for (e, s, t) in [
+            (e121, V1, V2),
+            (e23, V2, V3),
+            (e31, V3, V1),
+            (e122, V1, V2),
+            (e11, V1, V1),
+        ] {
+            g1.add_edge_with(&s, &t, e).unwrap();
+        }
+        let mut g2 = UGraph::<&str>::pseudo();
+        g2.add_vertices([V3, V2, V1]);
+        for (e, s, t) in [
+            (e11, V1, V1),
+            (e121, V1, V2),
+            (e31, V3, V1),
+            (e23, V2, V3),
+            (e122, V1, V2),
+        ] {
+            g2.add_edge_with(&s, &t, e).unwrap();
+        }
+        let mut g3 = UGraph::<&str>::pseudo();
+        g3.add_vertices([V3, V2, V1]);
+        for (e, s, t) in [(e11, V1, V1), (e121, V1, V2), (e31, V3, V1), (e23, V2, V3)] {
+            g3.add_edge_with(&s, &t, e).unwrap();
+        }
+        assert!(g1 == g2);
+        assert!(g2 != g3);
+        assert_eq!(hash_of(&g2), hash_of(&g1));
+    }
+
+    #[derive(Clone, PartialEq, Eq, Hash, Debug)]
+    struct CustomEdge(String);
+
+    #[test]
+    fn test_graphs_with_custom_edges() {
+        let make = |a: &str, b: &str| {
+            let mut g = BaseGraph::<&str, CustomEdge, Undirected>::without_edge_factory(
+                GraphType::simple(),
+            );
+            g.add_vertices([V1, V2, V3]);
+            g.add_edge_with(&V1, &V2, CustomEdge(a.into())).unwrap();
+            g.add_edge_with(&V3, &V1, CustomEdge(b.into())).unwrap();
+            g
+        };
+        let (g1, g2, g3) = (
+            make("v1-v2", "v3-v1"),
+            make("v1-v2", "v3-v1"),
+            make("v1::v2", "v3-v1"),
+        );
+        assert!(g1 == g2);
+        assert!(g2 != g3);
+        assert_eq!(hash_of(&g2), hash_of(&g1));
+    }
+
+    #[test]
+    fn test_as_weighted_graphs() {
+        let (e12, e23, e31) = (DefaultEdge::new(), DefaultEdge::new(), DefaultEdge::new());
+        let build = |order: [(DefaultEdge, &'static str, &'static str); 3]| {
+            let mut g = UGraph::<&str>::simple();
+            g.add_vertices([V1, V2, V3]);
+            for (e, s, t) in order {
+                g.add_edge_with(&s, &t, e).unwrap();
+            }
+            g
+        };
+        let g1 = build([(e12, V1, V2), (e23, V2, V3), (e31, V3, V1)]);
+        let g2 = build([(e12, V1, V2), (e23, V2, V3), (e31, V3, V1)]);
+        let weights = |a: f64, b: f64, c: f64| {
+            std::collections::HashMap::from([(e12, a), (e23, b), (e31, c)])
+        };
+        let g3 = AsWeighted::new(&g1, weights(10.0, 20.0, 30.0), 1.0);
+        let g4 = AsWeighted::new(&g2, weights(10.0, 20.0, 30.0), 1.0);
+        let g5 = AsWeighted::new(&g2, weights(100.0, 200.0, 300.0), 1.0);
+        assert!(g1 == g2);
+        assert_eq!(graph_hash(&g2), graph_hash(&g1));
+        assert!(graph_equals(&g3, &g4));
+        assert_eq!(graph_hash(&g4), graph_hash(&g3));
+        assert!(!graph_equals(&g4, &g5));
+    }
+
+    fn int_edge_graph<D: jgrapht::graph::Direction>(weighted: bool) -> BaseGraph<i32, i32, D> {
+        let g = BaseGraph::<i32, i32, D>::without_edge_factory(GraphType::simple());
+        if weighted { g.weighted() } else { g }
+    }
+
+    #[test]
+    fn test_hashcode_equals() {
+        let make = |w: f64| {
+            let mut g = int_edge_graph::<Directed>(true);
+            g.add_vertices([0, 1]);
+            g.add_edge_with(&0, &1, 1).unwrap();
+            g.set_edge_weight(&1, w).unwrap();
+            g
+        };
+        assert_ne!(make(2.0 + 1e-8), make(2.0 - 1e-8));
+    }
+
+    #[test]
+    fn test_undirected_equality() {
+        let make = |a: i32, b: i32| {
+            let mut g = int_edge_graph::<Undirected>(false);
+            g.add_vertices([0, 1]);
+            g.add_edge_with(&a, &b, 1).unwrap();
+            g
+        };
+        let (g, h) = (make(0, 1), make(1, 0));
+        assert_eq!(graph_hash(&g), graph_hash(&h));
+        assert_eq!(g, h);
+    }
+
+    #[test]
+    fn test_directed_equality() {
+        let make = |a: i32, b: i32| {
+            let mut g = int_edge_graph::<Directed>(false);
+            g.add_vertices([0, 1]);
+            g.add_edge_with(&a, &b, 1).unwrap();
+            g
+        };
+        let (g, h) = (make(0, 1), make(1, 0));
+        assert_ne!(graph_hash(&g), graph_hash(&h));
+        assert_ne!(g, h);
+    }
+}
+
+// ---------------------------------------------------------------- CloneTest / AsUnmodifiableGraphTest
+// `ParanoidGraph` (equal-but-not-identical vertices), `null` arguments and the
+// `UnsupportedOperationException` checks of `AsUnmodifiableGraph` are enforced by the Rust type
+// system (`Unmodifiable` simply does not implement `GraphMut`).
+
+mod clone_and_unmodifiable_test {
+    use super::*;
+
+    #[test]
+    fn test_clone_specifics_bug() {
+        let mut g1 = UGraph::<&str>::simple();
+        g1.add_vertices(["1", "2", "3"]);
+        g1.add_edge(&"1", &"2").unwrap();
+        g1.add_edge(&"2", &"3").unwrap();
+        let mut g2 = g1.clone();
+        assert_eq!(g2.edge_count(), 2);
+        let e = *g2.get_edge(&"1", &"2").unwrap();
+        assert!(g2.remove_edge(&e));
+        assert!(g2.remove_edge_between(&"2", &"3").is_some());
+        assert_eq!(g2.edge_count(), 0);
+        assert_eq!(g1.edge_count(), 2); // the original is untouched
+    }
+
+    fn unmodifiable_fixture() -> (UGraph<&'static str>, DefaultEdge) {
+        let mut base = UGraph::<&str>::with_loops().weighted();
+        base.add_vertices(["v1", "v2", "v3", "v4"]);
+        let e12 = base.add_weighted_edge(&"v1", &"v2", 6.0).unwrap().unwrap();
+        base.add_weighted_edge(&"v2", &"v3", 456.0).unwrap();
+        base.add_weighted_edge(&"v2", &"v4", 0.587).unwrap();
+        base.add_weighted_edge(&"v4", &"v4", 6781234453486.0)
+            .unwrap();
+        (base, e12)
+    }
+
+    #[test]
+    fn test_unmodifiable_reads_through() {
+        let (base, e12) = unmodifiable_fixture();
+        let view = Unmodifiable(&base);
+        assert!(!view.graph_type().modifiable);
+        assert_eq!(view.vertex_count(), 4);
+        assert_eq!(view.edge_count(), 4);
+        assert_eq!(view.edge_weight(&e12), Some(6.0));
+        assert_eq!(base.edge_weight(&e12), Some(6.0));
+    }
+}

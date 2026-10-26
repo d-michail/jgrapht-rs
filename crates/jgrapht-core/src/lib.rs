@@ -28,7 +28,7 @@ pub mod walk;
 pub use error::{GraphError, Result};
 pub use graph::{
     BaseGraph, DefaultEdge, DiGraph, DirectedGraph, Graph, GraphExt, GraphMut, GraphMutExt, UGraph,
-    UndirectedGraph,
+    UndirectedGraph, graph_equals, graph_hash,
 };
 pub use graph_type::GraphType;
 pub use view::{

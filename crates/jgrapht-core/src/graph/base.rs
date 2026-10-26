@@ -9,7 +9,8 @@ use std::marker::PhantomData;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DefaultEdge(pub u64);
 
-static NEXT_DEFAULT_EDGE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1_000_000);
+static NEXT_DEFAULT_EDGE: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(1_000_000);
 
 impl DefaultEdge {
     /// A process-wide unique edge, mirroring the identity of `new DefaultEdge()` in Java.
@@ -212,6 +213,13 @@ impl<V: Clone + Eq + Hash> BaseGraph<V, DefaultEdge, Directed> {
         Self::with_graph_type(GraphType {
             allows_cycles: false,
             ..GraphType::simple()
+        })
+    }
+    /// Directed acyclic multigraph (parallel edges allowed).
+    pub fn dag_multi() -> Self {
+        Self::with_graph_type(GraphType {
+            allows_cycles: false,
+            ..GraphType::multigraph()
         })
     }
 }
@@ -449,26 +457,15 @@ where
     }
 }
 
-/// JGraphT's `AbstractGraph.equals`: same direction, vertex set, edge set (by edge value) with the
-/// same endpoints (unordered when undirected) and weights.
+/// JGraphT's `AbstractGraph.equals` (see [`super::graph_equals`]).
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> PartialEq for BaseGraph<V, E, D> {
     fn eq(&self, other: &Self) -> bool {
-        if self.vertices.len() != other.vertices.len() || self.edges.len() != other.edges.len() {
-            return false;
-        }
-        if !self.vertices.keys().all(|v| other.vertices.contains_key(v)) {
-            return false;
-        }
-        self.edges.iter().all(|(e, r)| match other.edges.get(e) {
-            None => false,
-            Some(o) => {
-                let ends = if D::DIRECTED {
-                    r.src == o.src && r.tgt == o.tgt
-                } else {
-                    (r.src == o.src && r.tgt == o.tgt) || (r.src == o.tgt && r.tgt == o.src)
-                };
-                ends && r.weight.to_bits() == o.weight.to_bits() || (ends && r.weight == o.weight)
-            }
-        })
+        super::graph_equals(self, other)
+    }
+}
+
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Hash for BaseGraph<V, E, D> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write_u64(super::graph_hash(self));
     }
 }
