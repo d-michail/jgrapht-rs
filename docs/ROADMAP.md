@@ -9,7 +9,8 @@ Status on 2026-10-27. Source of truth for what is ported: `crates/jgrapht-core/t
 | core `graph/`, views, events, `traverse/`, `util/`, `generate/` (incl. netgen) | ported, tests ported (about 400 tests passing, `tests/java_port`) | done |
 | core `alg/` | 312 files, 230 test files, **1509 tests** | functional ports of most families (`alg/*.rs`), almost none of the tests |
 | `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | not started |
-| other modules (opt, ext, guava, unimi-dsi, osm, demo) | see "Out of scope" | no |
+| `jgrapht-opt` (sparse and fastutil graphs) | 22 files (about 2.5k loc), 4 test files | not started, in scope (Phase 3b) |
+| other modules (ext, guava, unimi-dsi, osm, demo) | see "Out of scope" | no |
 
 The existing `alg/` is a *functional* port: one function per family (`maximal_cliques`, `simple_cycles`, `nearest_neighbor_tour`, ...). The Java test suite exercises the individual *classes* (every Bron–Kerbosch variant, every simple-cycle algorithm, every TSP heuristic, ...) and often depends on their exact tie-breaking. Porting the tests therefore means growing the algorithm layer class by class, and checking the results against Java.
 
@@ -82,6 +83,15 @@ New workspace crate `crates/jgrapht-io` (lib name `jgrapht_io`), depending on `j
 - XML comparison in tests: the Java tests use XMLUnit; write a small canonicalising comparer in the test utils.
 - Dependencies: `quick-xml`, `thiserror`; no `serde` in the core path (optional feature later).
 
+## Phase 3b: `jgrapht-opt` (sparse and map-based graph implementations)
+
+New workspace crate `crates/jgrapht-opt` (lib name `jgrapht_opt`), depending on `jgrapht-core`. Java: `org.jgrapht.opt.graph.sparse` (CSR-based, immutable, integer vertices and edges) and `org.jgrapht.opt.graph.fastutil` (map graphs on primitive-keyed maps); 4 test files (`SparseIntGraphTest` 814 loc, `IncomingOutgoingEdgesTest`, `FastUtilMapGraphTest`, `FastUtilMapIntVertexGraphTest`).
+
+- **Sparse graphs** (`SparseIntDirectedGraph`, `SparseIntUndirectedGraph` and the weighted variants): `CSRBooleanMatrix`, the specifics classes (no-incoming / incoming, with and without reindexing; incidence-matrix undirected), `CompleteIntegerSet`, `IncomingEdgesSupport`. They implement the `Graph` trait only (immutable: `GraphMut` is deliberately not implemented), take an edge list in the constructor, and use `usize` vertices and edges. This is where the trait design pays off: algorithms written against `Graph` run unchanged on them.
+- **Map graphs**: `FastutilMapGraph` and the integer-vertex variant. In Rust these are `BaseGraph` with a different map backend, so the work is a pluggable storage strategy in `BaseGraph` (a `Specifics` parameter like JGraphT's `GraphSpecificsStrategy`) rather than new graph types. Check first whether `hashbrown`/`FxHashMap` and dense `Vec` backends for `usize` vertices are enough; do not add a fastutil clone.
+- Tests: `SparseIntGraphTest` and `IncomingOutgoingEdgesTest` (the latter also runs against core graphs), plus the two map-graph tests via the new backends. A benchmark comparing `BaseGraph` and the sparse graphs on Dijkstra and BFS (ties in with the `perf/` benchmarks of Phase 4).
+- Prerequisite: Phase 1 steps that touch the `Graph` trait are done, so the trait surface is stable (do the backend work after Phase 1d at the latest).
+
 ## Phase 4: hardening and release
 
 - README: Java-to-Rust mapping table, per-package status, how to run the Java-port suite.
@@ -94,7 +104,6 @@ New workspace crate `crates/jgrapht-io` (lib name `jgrapht_io`), depending on `j
 
 | Module | Size | Plan |
 |---|---|---|
-| `jgrapht-opt` | 22 files, 4 test files | Array/sparse/succinct graph implementations. Reasonable later as a `jgrapht-opt` crate for large graphs (compact `Graph` impls), after Phase 3. |
 | `jgrapht-ext` | 3 files | JGraphX/Swing adapters: skip. |
 | `jgrapht-guava`, `jgrapht-unimi-dsi`, `jgrapht-osm`, `jgrapht-demo` | Java-library bridges, OSM import, demos | skip; Rust-native equivalents could come later. |
 
@@ -105,6 +114,7 @@ New workspace crate `crates/jgrapht-io` (lib name `jgrapht_io`), depending on `j
 3. Phase 3 formats 1 to 5 (DIMACS, CSV, graph6, JSON, GML) in parallel with Phase 1e/1f, since they are independent and give early user-visible value.
 4. Phase 1e to 1i (the big ones: cycles/tours, flows, blossom V, planar, shortest-path speed-up techniques).
 5. Phase 3 formats 6 to 10 (DOT, GraphML, GEXF, ...).
-6. Phase 2 (parallel delta-stepping), then Phase 4.
+6. Phase 3b (`jgrapht-opt`), after the `Graph` trait surface has settled.
+7. Phase 2 (parallel delta-stepping), then Phase 4.
 
-Rough size: Phase 1 is about 1500 tests and about 60k lines of Java to port; Phase 3 about 283 tests and 14k lines.
+Rough size: Phase 1 is about 1500 tests and about 60k lines of Java to port; Phase 3 about 283 tests and 14k lines; Phase 3b 4 test files and 2.5k lines.
