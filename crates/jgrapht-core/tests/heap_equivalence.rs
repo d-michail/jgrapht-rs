@@ -1,6 +1,6 @@
-//! Differential test: `rheaps` 0.16.1's pairing heap must pop equal keys in the same order as
+//! Differential test: `rheaps` 0.16.2's pairing heap must pop equal keys in the same order as
 //! our JHeaps-faithful `JavaPairingHeap` (verified against the real JHeaps 0.15 jar by replaying a
-//! 2000-step insert/pop/decrease-key script). Plain insert/pop agree; decrease-key and delete do not.
+//! 2000-step insert/pop/decrease-key script). Insert/pop, decrease-key and delete all agree as of 0.16.2.
 
 use jgrapht::util::heap::JavaPairingHeap;
 use rand::{Rng, SeedableRng, rngs::StdRng};
@@ -37,7 +37,10 @@ fn run(allow_dec: bool, allow_del: bool) {
                     let i = live[rng.random_range(0..live.len())];
                     let cur = *a.key(ha[i].unwrap()).unwrap();
                     let nk = cur - rng.random_range(0..3);
-                    assert_eq!(a.decrease_key(ha[i].unwrap(), nk).is_ok(), b.decrease_key(hb[i].unwrap(), nk).is_ok());
+                    assert_eq!(
+                        a.decrease_key(ha[i].unwrap(), nk).is_ok(),
+                        b.decrease_key(hb[i].unwrap(), nk).is_ok()
+                    );
                 }
                 9 if allow_del => {
                     let live: Vec<usize> = (0..ha.len()).filter(|&i| ha[i].is_some()).collect();
@@ -45,7 +48,11 @@ fn run(allow_dec: bool, allow_del: bool) {
                         continue;
                     }
                     let i = live[rng.random_range(0..live.len())];
-                    assert_eq!(a.delete(ha[i].unwrap()).unwrap(), b.delete(hb[i].unwrap()).unwrap(), "seed {seed}");
+                    assert_eq!(
+                        a.delete(ha[i].unwrap()).unwrap(),
+                        b.delete(hb[i].unwrap()).unwrap(),
+                        "seed {seed}"
+                    );
                     ha[i] = None;
                     hb[i] = None;
                 }
@@ -67,12 +74,10 @@ fn insert_pop_only() {
     run(false, false);
 }
 #[test]
-#[ignore = "rheaps 0.16.1 cut_from_parent uses swap_remove, which reorders siblings; JHeaps keeps their order"]
 fn with_decrease_key() {
     run(true, false);
 }
 #[test]
-#[ignore = "same cause as with_decrease_key"]
 fn with_delete() {
     run(false, true);
 }

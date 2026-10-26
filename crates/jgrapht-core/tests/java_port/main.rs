@@ -8,6 +8,7 @@
 mod common;
 
 mod directed_acyclic_graph_test;
+mod generate_tests;
 mod graph_basic;
 mod graph_builder;
 mod graph_metrics_test;

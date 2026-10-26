@@ -41,14 +41,10 @@ fn mst_algorithms_agree() {
     let mut rng = StdRng::seed_from_u64(3);
     for _ in 0..20 {
         let mut g = UGraph::<usize>::simple().weighted();
-        Gnm {
-            n: 25,
-            m: 80,
-            loops: false,
-            rng: StdRng::seed_from_u64(rng.random()),
-        }
-        .generate_indexed(&mut g)
-        .unwrap();
+        GnmRandomGraphGenerator::new(25, 80, StdRng::seed_from_u64(rng.random()), false, false)
+            .unwrap()
+            .generate_indexed(&mut g)
+            .unwrap();
         for e in g.edges().cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(0..10) as f64)
                 .unwrap();
@@ -139,14 +135,10 @@ fn flow_algorithms_agree_randomly() {
     let mut rng = StdRng::seed_from_u64(5);
     for _ in 0..20 {
         let mut g = DiGraph::<usize>::simple().weighted();
-        Gnm {
-            n: 12,
-            m: 40,
-            loops: false,
-            rng: StdRng::seed_from_u64(rng.random()),
-        }
-        .generate_indexed(&mut g)
-        .unwrap();
+        GnmRandomGraphGenerator::new(12, 40, StdRng::seed_from_u64(rng.random()), false, false)
+            .unwrap()
+            .generate_indexed(&mut g)
+            .unwrap();
         for e in g.edges().cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(1..10) as f64)
                 .unwrap();
@@ -162,14 +154,10 @@ fn gomory_hu_and_stoer_wagner() {
     let mut rng = StdRng::seed_from_u64(9);
     for _ in 0..10 {
         let mut g = UGraph::<usize>::simple().weighted();
-        Gnp {
-            n: 9,
-            p: 0.5,
-            loops: false,
-            rng: StdRng::seed_from_u64(rng.random()),
-        }
-        .generate_indexed(&mut g)
-        .unwrap();
+        GnpRandomGraphGenerator::new(9, 0.5, StdRng::seed_from_u64(rng.random()), false)
+            .unwrap()
+            .generate_indexed(&mut g)
+            .unwrap();
         for e in g.edges().cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(1..8) as f64)
                 .unwrap();

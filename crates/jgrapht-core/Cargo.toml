@@ -10,7 +10,7 @@ license.workspace = true
 name = "jgrapht"
 
 [dependencies]
-rheaps = "0.16.1"
+rheaps = "0.16.2"
 indexmap = "2"
 thiserror = "2"
 rand = "0.9"

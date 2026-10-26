@@ -1,5 +1,5 @@
 use jgrapht::alg::shortestpath::*;
-use jgrapht::generate::{Gnm, GraphGenerator};
+use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
 use jgrapht::*;
 use rand::{Rng, SeedableRng, rngs::StdRng};
 use rheaps::tree::FibonacciHeap;
@@ -129,14 +129,10 @@ fn algorithms_agree_on_random_graphs() {
     let mut rng = StdRng::seed_from_u64(7);
     for _ in 0..10 {
         let mut g = DiGraph::<usize>::simple().weighted();
-        Gnm {
-            n: 25,
-            m: 90,
-            loops: false,
-            rng: StdRng::seed_from_u64(rng.random()),
-        }
-        .generate_indexed(&mut g)
-        .unwrap();
+        GnmRandomGraphGenerator::new(25, 90, StdRng::seed_from_u64(rng.random()), false, false)
+            .unwrap()
+            .generate_indexed(&mut g)
+            .unwrap();
         let es: Vec<_> = g.edges().cloned().collect();
         for e in es {
             g.set_edge_weight(&e, rng.random_range(0..20) as f64)
@@ -183,14 +179,10 @@ fn bidirectional_and_delta_stepping() {
         macro_rules! check {
             ($g:expr) => {{
                 let mut g = $g;
-                Gnm {
-                    n: 30,
-                    m: 120,
-                    loops: false,
-                    rng: StdRng::seed_from_u64(seed),
-                }
-                .generate_indexed(&mut g)
-                .unwrap();
+                GnmRandomGraphGenerator::new(30, 120, StdRng::seed_from_u64(seed), false, false)
+                    .unwrap()
+                    .generate_indexed(&mut g)
+                    .unwrap();
                 let es: Vec<_> = g.edges().cloned().collect();
                 for e in es {
                     g.set_edge_weight(&e, weights.random_range(1..30) as f64)

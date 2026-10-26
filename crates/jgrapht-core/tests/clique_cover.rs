@@ -7,14 +7,10 @@ use rand::{Rng, SeedableRng, rngs::StdRng};
 
 fn random(seed: u64, n: usize, p: f64) -> UGraph<usize> {
     let mut g = UGraph::<usize>::simple();
-    Gnp {
-        n,
-        p,
-        loops: false,
-        rng: StdRng::seed_from_u64(seed),
-    }
-    .generate_indexed(&mut g)
-    .unwrap();
+    GnpRandomGraphGenerator::new(n, p, StdRng::seed_from_u64(seed), false)
+        .unwrap()
+        .generate_indexed(&mut g)
+        .unwrap();
     g
 }
 

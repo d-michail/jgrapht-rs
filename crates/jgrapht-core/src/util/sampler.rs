@@ -1,26 +1,27 @@
 //! Walker's alias method for sampling from a discrete distribution in `O(1)`.
 
-use super::java::RandomSource;
 use super::ToleranceDoubleComparator;
+use super::java::RandomSource;
 use crate::{GraphError, Result};
 
-pub struct AliasMethodSampler<R> {
-    rng: R,
+pub struct AliasMethodSampler {
     comparator: ToleranceDoubleComparator,
     prob: Vec<f64>,
     alias: Vec<usize>,
 }
 
-impl<R: RandomSource> AliasMethodSampler<R> {
-    pub fn new(p: &[f64], rng: R) -> Result<Self> {
-        Self::with_epsilon(p, rng, ToleranceDoubleComparator::DEFAULT_EPSILON)
+impl AliasMethodSampler {
+    pub fn new(p: &[f64]) -> Result<Self> {
+        Self::with_epsilon(p, ToleranceDoubleComparator::DEFAULT_EPSILON)
     }
 
-    pub fn with_epsilon(p: &[f64], rng: R, epsilon: f64) -> Result<Self> {
+    pub fn with_epsilon(p: &[f64], epsilon: f64) -> Result<Self> {
         let comparator = ToleranceDoubleComparator::new(epsilon)?;
         let bad = || GraphError::InvalidArgument("Non valid probability distribution".into());
         if p.is_empty() {
-            return Err(GraphError::InvalidArgument("Probabilities cannot be empty".into()));
+            return Err(GraphError::InvalidArgument(
+                "Probabilities cannot be empty".into(),
+            ));
         }
         let mut sum = 0.0;
         for &x in p {
@@ -35,7 +36,8 @@ impl<R: RandomSource> AliasMethodSampler<R> {
         let mut p = p.to_vec();
         let n = p.len();
         let threshold = 1.0 / n as f64;
-        let (mut large, mut small): (Vec<usize>, Vec<usize>) = (Vec::with_capacity(n), Vec::with_capacity(n));
+        let (mut large, mut small): (Vec<usize>, Vec<usize>) =
+            (Vec::with_capacity(n), Vec::with_capacity(n));
         for (j, &x) in p.iter().enumerate() {
             if comparator.compare(x, threshold) > 0 {
                 large.push(j);
@@ -63,13 +65,21 @@ impl<R: RandomSource> AliasMethodSampler<R> {
         while let Some(j) = large.pop() {
             prob[j] = 1.0;
         }
-        Ok(AliasMethodSampler { rng, comparator, prob, alias })
+        Ok(AliasMethodSampler {
+            comparator,
+            prob,
+            alias,
+        })
     }
 
-    /// Draws an index according to the distribution.
-    pub fn next(&mut self) -> usize {
-        let u = self.rng.next_double() * self.prob.len() as f64;
+    /// Draws an index according to the distribution using `rng`.
+    pub fn next(&self, rng: &mut impl RandomSource) -> usize {
+        let u = rng.next_double() * self.prob.len() as f64;
         let j = u.floor() as usize;
-        if self.comparator.compare(u - j as f64, self.prob[j]) <= 0 { j } else { self.alias[j] }
+        if self.comparator.compare(u - j as f64, self.prob[j]) <= 0 {
+            j
+        } else {
+            self.alias[j]
+        }
     }
 }

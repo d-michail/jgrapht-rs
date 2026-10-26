@@ -128,14 +128,10 @@ fn approximate_and_exact_weighted_matching() {
     let mut rng = StdRng::seed_from_u64(12);
     for _ in 0..30 {
         let mut g = UGraph::<usize>::simple().weighted();
-        Gnp {
-            n: 10,
-            p: 0.4,
-            loops: false,
-            rng: StdRng::seed_from_u64(rng.random()),
-        }
-        .generate_indexed(&mut g)
-        .unwrap();
+        GnpRandomGraphGenerator::new(10, 0.4, StdRng::seed_from_u64(rng.random()), false)
+            .unwrap()
+            .generate_indexed(&mut g)
+            .unwrap();
         for e in g.edges().cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(1..10) as f64)
                 .unwrap();

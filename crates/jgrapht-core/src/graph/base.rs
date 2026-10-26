@@ -414,13 +414,10 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphMut for Base
 
     fn new_vertex(&mut self) -> Result<V> {
         let f = self.vertex_factory.ok_or(GraphError::NoVertexFactory)?;
-        loop {
-            let v = f(self.next_vertex);
-            self.next_vertex += 1;
-            if !self.vertices.contains_key(&v) {
-                return Ok(v);
-            }
-        }
+        // Like a Java supplier: no check against existing vertices (callers see `add_vertex` fail).
+        let v = f(self.next_vertex);
+        self.next_vertex += 1;
+        Ok(v)
     }
 
     fn new_edge(&mut self) -> Result<E> {

@@ -29,14 +29,10 @@ fn isomorphic_after_relabeling() {
     for _ in 0..20 {
         let g = {
             let mut g = UGraph::<usize>::simple();
-            Gnp {
-                n: 9,
-                p: 0.35,
-                loops: false,
-                rng: StdRng::seed_from_u64(rng.random()),
-            }
-            .generate_indexed(&mut g)
-            .unwrap();
+            GnpRandomGraphGenerator::new(9, 0.35, StdRng::seed_from_u64(rng.random()), false)
+                .unwrap()
+                .generate_indexed(&mut g)
+                .unwrap();
             g
         };
         let mut perm: Vec<usize> = (0..9).collect();

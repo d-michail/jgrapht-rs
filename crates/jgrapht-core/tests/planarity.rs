@@ -131,12 +131,14 @@ fn sparse_random_graphs_vs_edge_bound() {
     for _ in 0..30 {
         let g = {
             let mut g = UGraph::<usize>::simple();
-            Gnm {
-                n: 10,
-                m: rng.random_range(5..30),
-                loops: false,
-                rng: StdRng::seed_from_u64(rng.random()),
-            }
+            GnmRandomGraphGenerator::new(
+                10,
+                rng.random_range(5..30),
+                StdRng::seed_from_u64(rng.random()),
+                false,
+                false,
+            )
+            .unwrap()
             .generate_indexed(&mut g)
             .unwrap();
             g

@@ -12,14 +12,10 @@ use rand::{Rng, SeedableRng, rngs::StdRng};
 
 fn gnp(seed: u64, n: usize, p: f64) -> UGraph<usize> {
     let mut g = UGraph::<usize>::simple().weighted();
-    Gnp {
-        n,
-        p,
-        loops: false,
-        rng: StdRng::seed_from_u64(seed),
-    }
-    .generate_indexed(&mut g)
-    .unwrap();
+    GnpRandomGraphGenerator::new(n, p, StdRng::seed_from_u64(seed), false)
+        .unwrap()
+        .generate_indexed(&mut g)
+        .unwrap();
     let mut rng = StdRng::seed_from_u64(seed ^ 0xabc);
     for e in g.edges().cloned().collect::<Vec<_>>() {
         g.set_edge_weight(&e, rng.random_range(1..10) as f64)

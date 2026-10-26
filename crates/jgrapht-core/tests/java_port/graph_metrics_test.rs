@@ -155,12 +155,7 @@ fn test_multi_graph_directed() {
 #[test]
 fn test_directed_graphs() {
     // reuse one generator (and its random stream) for ten graphs, like the Java test
-    let mut gen_ = Gnp {
-        n: 10,
-        p: 0.55,
-        loops: false,
-        rng: StdRng::seed_from_u64(0),
-    };
+    let mut gen_ = GnpRandomGraphGenerator::new(10, 0.55, StdRng::seed_from_u64(0), false).unwrap();
     for _ in 0..10 {
         let mut graph = DiGraph::<i32>::simple();
         generate_ints(&mut graph, &mut gen_);
@@ -175,12 +170,13 @@ fn test_count_triangles() {
     for _ in 0..300 {
         let n = 20 + random.random_range(0..100);
         let mut graph = UGraph::<i32>::simple();
-        let mut generator = BarabasiAlbert {
-            m0: 10 + random.random_range(0..10),
-            m: 1 + random.random_range(0..7),
+        let mut generator = BarabasiAlbertGraphGenerator::new(
+            10 + random.random_range(0..10),
+            1 + random.random_range(0..7),
             n,
-            rng: StdRng::seed_from_u64(random.random()),
-        };
+            StdRng::seed_from_u64(random.random()),
+        )
+        .unwrap();
         generate_ints(&mut graph, &mut generator);
         let vs: Vec<i32> = graph.vertices().copied().collect();
         assert_eq!(
@@ -196,12 +192,9 @@ fn test_count_triangles_2() {
     for _ in 0..100 {
         let n = 1 + random.random_range(0..100);
         let mut graph = UGraph::<i32>::simple();
-        let mut generator = Gnp {
-            n,
-            p: 0.55,
-            loops: false,
-            rng: StdRng::seed_from_u64(random.random()),
-        };
+        let mut generator =
+            GnpRandomGraphGenerator::new(n, 0.55, StdRng::seed_from_u64(random.random()), false)
+                .unwrap();
         generate_ints(&mut graph, &mut generator);
         let vs: Vec<i32> = graph.vertices().copied().collect();
         assert_eq!(

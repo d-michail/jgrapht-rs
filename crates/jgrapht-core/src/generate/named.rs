@@ -3,7 +3,7 @@
 
 use super::{GeneralizedPetersen, GraphGenerator, Star, Structure, Windmill, WindmillMode};
 use crate::graph::{Directed, Undirected};
-use crate::{BaseGraph, DefaultEdge, GraphMut, UGraph};
+use crate::{BaseGraph, DefaultEdge, Graph, GraphMut, UGraph};
 use std::collections::HashMap;
 
 /// Renumbers arbitrary labels in order of first appearance and returns the structure.
@@ -54,10 +54,22 @@ pub fn build(s: Structure) -> UGraph<usize> {
 #[allow(dead_code)]
 type _Unused = BaseGraph<usize, DefaultEdge, Directed>;
 
+/// Runs a generator into a scratch graph and records its structure.
+fn structure_of(mut gen_: impl GraphGenerator) -> Structure {
+    let mut g = UGraph::<usize>::pseudo();
+    gen_.generate_indexed(&mut g).expect("valid parameters");
+    Structure {
+        vertex_count: g.vertex_count(),
+        edges: g
+            .edges()
+            .map(|e| (*g.edge_source(e).unwrap(), *g.edge_target(e).unwrap()))
+            .collect(),
+        groups: Default::default(),
+    }
+}
+
 pub fn generalized_petersen(n: usize, k: usize) -> Structure {
-    GeneralizedPetersen { n, k }
-        .structure(false)
-        .expect("valid parameters")
+    structure_of(GeneralizedPetersen { n, k })
 }
 pub fn petersen() -> Structure {
     generalized_petersen(5, 2)
@@ -78,16 +90,14 @@ pub fn mobius_kantor() -> Structure {
     generalized_petersen(8, 3)
 }
 pub fn butterfly() -> Structure {
-    Windmill {
+    structure_of(Windmill {
         mode: WindmillMode::DutchWindmill,
         m: 2,
         n: 3,
-    }
-    .structure(false)
-    .expect("valid")
+    })
 }
 pub fn claw() -> Structure {
-    Star(4).structure(false).expect("valid")
+    structure_of(Star(4))
 }
 
 pub fn bull() -> Structure {

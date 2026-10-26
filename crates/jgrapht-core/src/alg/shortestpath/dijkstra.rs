@@ -3,7 +3,7 @@ use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::Result;
 use crate::graph::Graph;
 use crate::util::OrderedF64;
-use crate::util::heap::JavaPairingHeap as PairingHeap;
+use rheaps::tree::PairingHeap;
 use crate::walk::GraphWalk;
 use rheaps::DecreaseKeyHeap;
 use std::marker::PhantomData;

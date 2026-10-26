@@ -36,7 +36,8 @@ mechanism that has no Rust counterpart (serialization, JVM collections, thread-s
 | `graph/builder/GraphBuilderTest`, `graph/builder/GraphTypeBuilderTest` | `graph_builder` | done (`vertexClass` reflection n/a) |
 | `traverse/*` (AbstractGraphIteratorTest, CrossComponentIteratorTest, Breadth/Depth/ClosestFirst, IgnoreDirection, EdgeSelection, TopologicalOrder, LexBreadthFirst, MaximumCardinality, DegeneracyOrdering, RandomWalkVertexIterator) | `traverse_tests` | done (`GraphDelegator` call-counting check of `testNonCrossComponentTraversal` n/a) |
 
-Note: `rheaps::tree::PairingHeap` breaks ties between equal keys differently from JHeaps' `PairingHeap`
-(its `combine` walks the children oldest-first, JHeaps newest-first). Closest-first order and equal-weight
-shortest paths depend on this, so `util::heap::JavaPairingHeap` reproduces JHeaps exactly and is the
-default heap of the algorithms.
+| `generate/*` (18 files: GraphGenerator, NamedGraph, GeneralizedPetersen, Gnp/Gnm (+bipartite), BarabasiAlbert(+Forest), DirectedScaleFree, Kleinberg, LCD, Prufer, WattsStrogatz, RandomRegular, PlantedPartition, Complement, Windmill) | `generate_tests` | done (seeded tests match Java via `JavaRandom`); `netgen/*` not ported yet |
+
+Note: `rheaps` 0.16.2 matches JHeaps' tie-breaking for insert/pop, decrease-key and delete
+(`tests/heap_equivalence.rs`), so the algorithms use `rheaps::tree::PairingHeap`.
+`util::heap::JavaPairingHeap` is kept as the oracle (verified against the real JHeaps jar).

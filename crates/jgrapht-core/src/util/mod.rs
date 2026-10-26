@@ -172,7 +172,9 @@ impl ToleranceDoubleComparator {
     pub const DEFAULT_EPSILON: f64 = 1e-9;
     pub fn new(epsilon: f64) -> crate::Result<Self> {
         if epsilon <= 0.0 {
-            return Err(crate::GraphError::InvalidArgument("Tolerance must be positive".into()));
+            return Err(crate::GraphError::InvalidArgument(
+                "Tolerance must be positive".into(),
+            ));
         }
         Ok(ToleranceDoubleComparator { epsilon })
     }
@@ -192,6 +194,8 @@ impl ToleranceDoubleComparator {
 
 impl Default for ToleranceDoubleComparator {
     fn default() -> Self {
-        ToleranceDoubleComparator { epsilon: Self::DEFAULT_EPSILON }
+        ToleranceDoubleComparator {
+            epsilon: Self::DEFAULT_EPSILON,
+        }
     }
 }
