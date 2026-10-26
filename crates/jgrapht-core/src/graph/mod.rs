@@ -1,6 +1,7 @@
 //! Graph traits and the default implementation.
 
 mod base;
+pub mod builder;
 mod ext;
 pub mod props;
 

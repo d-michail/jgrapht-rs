@@ -141,6 +141,15 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> BaseGraph<V, E, D
         }
     }
 
+    /// The edge factory, if any.
+    pub fn edge_factory(&self) -> Option<fn(u64) -> E> {
+        self.factory
+    }
+    /// The vertex factory, if any.
+    pub fn vertex_factory(&self) -> Option<fn(u64) -> V> {
+        self.vertex_factory
+    }
+
     /// Installs a vertex factory used by [`GraphMut::add_new_vertex`]: `factory(0)`, `factory(1)`, ...
     pub fn with_vertex_factory(mut self, factory: fn(u64) -> V) -> Self {
         self.vertex_factory = Some(factory);

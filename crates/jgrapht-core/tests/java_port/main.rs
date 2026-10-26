@@ -9,6 +9,7 @@ mod common;
 
 mod directed_acyclic_graph_test;
 mod graph_basic;
+mod graph_builder;
 mod graph_metrics_test;
 mod graph_tests_test;
 mod graph_views;
