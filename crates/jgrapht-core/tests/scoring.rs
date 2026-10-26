@@ -74,9 +74,9 @@ fn core_and_clustering() {
 #[test]
 fn metrics() {
     let path = build(UGraph::<usize>::simple(), Linear(5));
-    assert_eq!((diameter(&path, false), radius(&path, false)), (4.0, 2.0));
-    assert_eq!(center(&path, false), [2]);
-    let mut p = periphery(&path, false);
+    assert_eq!((diameter(&path), radius(&path)), (4.0, 2.0));
+    assert_eq!(center(&path), [2]);
+    let mut p = periphery(&path);
     p.sort();
     assert_eq!(p, [0, 4]);
     assert_eq!(girth(&path), None);
@@ -86,5 +86,5 @@ fn metrics() {
         Some(3)
     );
     let disc = build(UGraph::<usize>::simple(), Empty(2));
-    assert!(diameter(&disc, false).is_infinite() || diameter(&disc, false) == 0.0);
+    assert!(diameter(&disc).is_infinite());
 }

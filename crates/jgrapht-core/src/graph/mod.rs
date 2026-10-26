@@ -5,7 +5,10 @@ mod ext;
 pub mod props;
 
 pub use base::{BaseGraph, DefaultEdge, DiGraph, Directed, Direction, UGraph, Undirected};
-pub use ext::{DirectedExt, GraphExt, GraphMutExt};
+pub use ext::{
+    DirectedExt, GraphExt, GraphMutExt, remove_vertex_and_preserve_connectivity,
+    remove_vertices_and_preserve_connectivity,
+};
 
 use crate::{GraphType, Result};
 use std::hash::Hash;

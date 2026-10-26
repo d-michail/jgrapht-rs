@@ -385,5 +385,5 @@ fn count_triangles_sets(nb: &[HashSet<usize>]) -> usize {
 
 /// Number of triangles (undirected view).
 pub fn count_triangles<G: Graph>(g: &G) -> usize {
-    count_triangles_sets(&undirected_neighbors(&Indexed::new(g)))
+    super::metrics::number_of_triangles(g) as usize
 }

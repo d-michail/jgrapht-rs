@@ -168,6 +168,13 @@ impl<V: Clone + Eq + Hash, D: Direction> BaseGraph<V, DefaultEdge, D> {
     pub fn multi() -> Self {
         Self::with_type(GraphType::multigraph())
     }
+    /// Self-loops allowed, parallel edges not (JGraphT's `Default*Graph`).
+    pub fn with_loops() -> Self {
+        Self::with_type(GraphType {
+            self_loops: true,
+            ..GraphType::simple()
+        })
+    }
     /// Parallel edges and loops allowed.
     pub fn pseudo() -> Self {
         Self::with_type(GraphType::pseudograph())

@@ -30,6 +30,7 @@ impl<R: Rng> GraphGenerator for Gnp<R> {
         Ok(Structure {
             vertex_count: self.n,
             edges,
+            ..Default::default()
         })
     }
 }
@@ -54,6 +55,7 @@ impl<R: Rng> GraphGenerator for Gnm<R> {
         Ok(Structure {
             vertex_count: self.n,
             edges,
+            ..Default::default()
         })
     }
 }
@@ -101,6 +103,7 @@ impl<R: Rng> GraphGenerator for BarabasiAlbert<R> {
         Ok(Structure {
             vertex_count: n,
             edges,
+            ..Default::default()
         })
     }
 }
@@ -142,6 +145,7 @@ impl<R: Rng> GraphGenerator for WattsStrogatz<R> {
         Ok(Structure {
             vertex_count: n,
             edges,
+            ..Default::default()
         })
     }
 }
@@ -162,6 +166,7 @@ impl<R: Rng> GraphGenerator for Prufer<R> {
             return Ok(Structure {
                 vertex_count: n,
                 edges: if n == 2 { vec![(0, 1)] } else { vec![] },
+                ..Default::default()
             });
         }
         let seq = match &self.sequence {
@@ -187,6 +192,7 @@ impl<R: Rng> GraphGenerator for Prufer<R> {
         Ok(Structure {
             vertex_count: n,
             edges,
+            ..Default::default()
         })
     }
 }

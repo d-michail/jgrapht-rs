@@ -5,22 +5,26 @@
 //! Edges the target graph refuses (parallel edges in a simple graph, ...) are skipped, as
 //! in JGraphT.
 
+pub mod named;
 mod random;
 mod structured;
 
 pub use random::{BarabasiAlbert, Gnm, Gnp, Prufer, WattsStrogatz};
 pub use structured::{
-    Complete, CompleteBipartite, Empty, Grid, Hypercube, Linear, Ring, Star, Wheel,
+    Complete, CompleteBipartite, Empty, GeneralizedPetersen, Grid, Hypercube, Linear, Ring, Star,
+    Wheel, Windmill, WindmillMode,
 };
 
 use crate::graph::GraphMut;
 use crate::{GraphError, Result};
 
 /// Index-based description of a generated graph.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Structure {
     pub vertex_count: usize,
     pub edges: Vec<(usize, usize)>,
+    /// Named groups of vertex indices (JGraphT's generator "result map"), e.g. `"star"`.
+    pub groups: std::collections::BTreeMap<&'static str, Vec<usize>>,
 }
 
 pub trait GraphGenerator {

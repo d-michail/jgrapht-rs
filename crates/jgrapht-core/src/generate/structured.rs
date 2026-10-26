@@ -5,6 +5,7 @@ fn s(vertex_count: usize, edges: Vec<(usize, usize)>) -> Result<Structure> {
     Ok(Structure {
         vertex_count,
         edges,
+        groups: Default::default(),
     })
 }
 
@@ -148,5 +149,84 @@ impl GraphGenerator for Hypercube {
             }
         }
         s(n, edges)
+    }
+}
+
+/// Generalized Petersen graph `GP(n, k)`: vertices alternate outer `u_i = 2i` and inner
+/// `v_i = 2i + 1`; groups `"regular"` (outer polygon) and `"star"` (inner star polygon).
+pub struct GeneralizedPetersen {
+    pub n: usize,
+    pub k: usize,
+}
+impl GraphGenerator for GeneralizedPetersen {
+    fn structure(&mut self, _: bool) -> Result<Structure> {
+        let (n, k) = (self.n, self.k);
+        if n < 3 {
+            return invalid("n must be larger or equal than 3");
+        }
+        if k < 1 || k as f64 > ((n - 1) as f64 / 2.0).floor() {
+            return invalid("k must be in the range [1, floor((n-1)/2.0)]");
+        }
+        let mut edges = Vec::new();
+        for i in 0..n {
+            edges.push((2 * i, 2 * ((i + 1) % n)));
+            edges.push((2 * i, 2 * i + 1));
+            edges.push((2 * i + 1, 2 * ((i + k) % n) + 1));
+        }
+        let mut st = s(2 * n, edges)?;
+        st.groups.insert("regular", (0..n).map(|i| 2 * i).collect());
+        st.groups
+            .insert("star", (0..n).map(|i| 2 * i + 1).collect());
+        Ok(st)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WindmillMode {
+    /// `m` copies of the complete graph `K_n` sharing one vertex.
+    Windmill,
+    /// `m` copies of the cycle `C_n` sharing one vertex.
+    DutchWindmill,
+}
+
+/// Windmill and Dutch windmill graphs; vertex 0 is the shared centre.
+pub struct Windmill {
+    pub mode: WindmillMode,
+    pub m: usize,
+    pub n: usize,
+}
+impl GraphGenerator for Windmill {
+    fn structure(&mut self, _: bool) -> Result<Structure> {
+        if self.m < 2 {
+            return invalid("m must be larger or equal than 2");
+        }
+        if self.n < 3 {
+            return invalid("n must be larger or equal than 3");
+        }
+        let (mut edges, mut next) = (Vec::new(), 1usize);
+        for _ in 0..self.m {
+            let mut sub = vec![0usize];
+            for _ in 1..self.n {
+                sub.push(next);
+                next += 1;
+            }
+            match self.mode {
+                WindmillMode::DutchWindmill => {
+                    for r in 0..sub.len() {
+                        edges.push((sub[r], sub[(r + 1) % self.n]));
+                    }
+                }
+                WindmillMode::Windmill => {
+                    for r in 0..sub.len() - 1 {
+                        for t in r + 1..sub.len() {
+                            edges.push((sub[r], sub[t]));
+                        }
+                    }
+                }
+            }
+        }
+        let mut st = s(next, edges)?;
+        st.groups.insert("center", vec![0]);
+        Ok(st)
     }
 }

@@ -1,93 +1,236 @@
-//! Graph metrics: eccentricity, diameter, radius, center, periphery, girth.
+//! Graph metrics (JGraphT's `GraphMetrics` and `GraphMeasurer`): eccentricity, diameter, radius,
+//! center, periphery, girth, triangle counts. Distances are weighted shortest-path distances
+//! (all `1.0` for unweighted graphs).
 
+use super::shortestpath::floyd_warshall;
 use super::util::Indexed;
 use crate::graph::Graph;
-use crate::util::OrderedF64;
-use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
-/// Eccentricity of every vertex (`INFINITY` if some vertex is unreachable from it).
-pub fn eccentricities<G: Graph>(g: &G, weighted: bool) -> HashMap<G::Vertex, f64> {
-    let ix = Indexed::new(g);
-    (0..ix.n())
-        .map(|s| {
-            let mut dist = vec![f64::INFINITY; ix.n()];
-            dist[s] = 0.0;
-            let mut heap = BinaryHeap::from([Reverse((OrderedF64(0.0), s))]);
-            while let Some(Reverse((OrderedF64(d), v))) = heap.pop() {
-                if d > dist[v] {
-                    continue;
-                }
-                for &(u, k) in &ix.out[v] {
-                    let nd = d + if weighted { ix.w[k] } else { 1.0 };
-                    if nd < dist[u] {
-                        dist[u] = nd;
-                        heap.push(Reverse((OrderedF64(nd), u)));
+const TOLERANCE: f64 = 1e-9;
+
+fn same(a: f64, b: f64) -> bool {
+    a == b || (a - b).abs() <= TOLERANCE * a.abs().max(b.abs()).max(1.0)
+}
+
+/// Computes eccentricities once (via Floyd–Warshall) and derives diameter, radius and the
+/// center/periphery vertex sets.
+pub struct GraphMeasurer<V> {
+    vertices: Vec<V>,
+    eccentricity: Vec<f64>,
+    pair_weight: Vec<Vec<f64>>,
+    diameter: f64,
+    radius: f64,
+}
+
+impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
+    pub fn new<G: Graph<Vertex = V>>(g: &G) -> crate::Result<Self> {
+        let ap = floyd_warshall(g)?;
+        let vertices: Vec<V> = g.vertices().cloned().collect();
+        let n = vertices.len();
+        let pair_weight: Vec<Vec<f64>> = (0..n)
+            .map(|i| {
+                (0..n)
+                    .map(|j| ap.weight(&vertices[i], &vertices[j]))
+                    .collect()
+            })
+            .collect();
+        let directed = g.graph_type().directed;
+        let mut ecc = vec![0.0f64; n];
+        for i in 0..n {
+            for j in 0..n {
+                if i != j && (directed || i < j) {
+                    ecc[i] = ecc[i].max(pair_weight[i][j]);
+                    if !directed {
+                        ecc[j] = ecc[j].max(pair_weight[i][j]);
                     }
                 }
             }
-            (ix.vertex(s), dist.into_iter().fold(0.0, f64::max))
+        }
+        let (diameter, radius) = if n == 0 {
+            (0.0, 0.0)
+        } else {
+            (
+                ecc.iter().copied().fold(0.0, f64::max),
+                ecc.iter().copied().fold(f64::INFINITY, f64::min),
+            )
+        };
+        Ok(GraphMeasurer {
+            vertices,
+            eccentricity: ecc,
+            pair_weight,
+            diameter,
+            radius,
         })
-        .collect()
+    }
+    pub fn diameter(&self) -> f64 {
+        self.diameter
+    }
+    pub fn radius(&self) -> f64 {
+        self.radius
+    }
+    /// Eccentricity of every vertex, in vertex order.
+    pub fn vertex_eccentricity_map(&self) -> Vec<(V, f64)> {
+        self.vertices
+            .iter()
+            .cloned()
+            .zip(self.eccentricity.iter().copied())
+            .collect()
+    }
+    /// Vertices whose eccentricity equals the radius.
+    pub fn graph_center(&self) -> Vec<V> {
+        self.select(|i| same(self.eccentricity[i], self.radius))
+    }
+    /// Vertices whose eccentricity equals the diameter.
+    pub fn graph_periphery(&self) -> Vec<V> {
+        self.select(|i| same(self.eccentricity[i], self.diameter))
+    }
+    /// Vertices `u` that have some `v` with `d(u, v) = ecc(u) = ecc(v)`.
+    pub fn graph_pseudo_periphery(&self) -> Vec<V> {
+        self.select(|u| {
+            (0..self.vertices.len()).any(|v| {
+                same(self.pair_weight[u][v], self.eccentricity[u])
+                    && same(self.eccentricity[u], self.eccentricity[v])
+            })
+        })
+    }
+    fn select(&self, f: impl Fn(usize) -> bool) -> Vec<V> {
+        (0..self.vertices.len())
+            .filter(|&i| f(i))
+            .map(|i| self.vertices[i].clone())
+            .collect()
+    }
 }
 
-/// Largest eccentricity (`0.0` for the empty graph).
-pub fn diameter<G: Graph>(g: &G, weighted: bool) -> f64 {
-    eccentricities(g, weighted)
-        .values()
-        .copied()
-        .fold(0.0, f64::max)
+/// Eccentricities (`INFINITY` if some vertex is unreachable).
+pub fn eccentricities<G: Graph>(g: &G) -> HashMap<G::Vertex, f64> {
+    GraphMeasurer::new(g)
+        .map(|m| m.vertex_eccentricity_map().into_iter().collect())
+        .unwrap_or_default()
 }
 
-/// Smallest eccentricity.
-pub fn radius<G: Graph>(g: &G, weighted: bool) -> f64 {
-    eccentricities(g, weighted)
-        .values()
-        .copied()
-        .fold(f64::INFINITY, f64::min)
+/// Largest eccentricity; `0.0` for the empty graph.
+pub fn diameter<G: Graph>(g: &G) -> f64 {
+    GraphMeasurer::new(g).map_or(f64::NEG_INFINITY, |m| m.diameter())
 }
 
-/// Vertices whose eccentricity equals the radius.
-pub fn center<G: Graph>(g: &G, weighted: bool) -> Vec<G::Vertex> {
-    let e = eccentricities(g, weighted);
-    let r = e.values().copied().fold(f64::INFINITY, f64::min);
-    g.vertices().filter(|v| e[*v] == r).cloned().collect()
+/// Smallest eccentricity; `0.0` for the empty graph.
+pub fn radius<G: Graph>(g: &G) -> f64 {
+    GraphMeasurer::new(g).map_or(f64::NEG_INFINITY, |m| m.radius())
 }
 
-/// Vertices whose eccentricity equals the diameter.
-pub fn periphery<G: Graph>(g: &G, weighted: bool) -> Vec<G::Vertex> {
-    let e = eccentricities(g, weighted);
-    let d = e.values().copied().fold(0.0, f64::max);
-    g.vertices().filter(|v| e[*v] == d).cloned().collect()
+pub fn center<G: Graph>(g: &G) -> Vec<G::Vertex> {
+    GraphMeasurer::new(g)
+        .map(|m| m.graph_center())
+        .unwrap_or_default()
 }
 
-/// Length of the shortest cycle in an undirected simple graph (`None` for forests).
+pub fn periphery<G: Graph>(g: &G) -> Vec<G::Vertex> {
+    GraphMeasurer::new(g)
+        .map(|m| m.graph_periphery())
+        .unwrap_or_default()
+}
+
+/// Length of the shortest cycle, `None` for acyclic graphs. Self-loops give 1; parallel edges in
+/// undirected graphs and 2-cycles in directed graphs give 2.
 pub fn girth<G: Graph>(g: &G) -> Option<usize> {
     let ix = Indexed::new(g);
     let n = ix.n();
-    let mut best: Option<usize> = None;
-    for s in 0..n {
-        let (mut dist, mut parent_edge) = (vec![usize::MAX; n], vec![usize::MAX; n]);
-        dist[s] = 0;
-        let mut q = VecDeque::from([s]);
-        while let Some(v) = q.pop_front() {
-            let nbrs = ix.out[v]
-                .iter()
-                .chain(if ix.directed { &ix.inn[v][..] } else { &[] });
-            for &(u, k) in nbrs {
-                if u == v {
-                    return Some(1);
+    if ix.ends.iter().any(|&(a, b)| a == b) {
+        return Some(1);
+    }
+    let mut best = usize::MAX;
+    if !ix.directed {
+        for s in 0..n {
+            let (mut dist, mut parent_edge) = (vec![usize::MAX; n], vec![usize::MAX; n]);
+            dist[s] = 0;
+            let mut q = VecDeque::from([s]);
+            while let Some(v) = q.pop_front() {
+                if 2 * dist[v] + 1 >= best {
+                    break;
                 }
-                if dist[u] == usize::MAX {
-                    dist[u] = dist[v] + 1;
-                    parent_edge[u] = k;
-                    q.push_back(u);
-                } else if parent_edge[v] != k {
-                    let len = dist[u] + dist[v] + 1;
-                    best = Some(best.map_or(len, |b| b.min(len)));
+                for &(u, k) in &ix.out[v] {
+                    if k == parent_edge[v] {
+                        continue;
+                    }
+                    if dist[u] == usize::MAX {
+                        dist[u] = dist[v] + 1;
+                        parent_edge[u] = k;
+                        q.push_back(u);
+                    } else {
+                        best = best.min(dist[u] + dist[v] + 1);
+                    }
+                }
+            }
+        }
+    } else {
+        for s in 0..n {
+            let mut dist = vec![usize::MAX; n];
+            dist[s] = 0;
+            let mut q = VecDeque::from([s]);
+            'bfs: while let Some(v) = q.pop_front() {
+                if dist[v] + 1 >= best {
+                    break;
+                }
+                for &(u, _) in &ix.out[v] {
+                    if u == s {
+                        best = best.min(dist[v] + 1);
+                        break 'bfs;
+                    }
+                    if dist[u] == usize::MAX {
+                        dist[u] = dist[v] + 1;
+                        q.push_back(u);
+                    }
                 }
             }
         }
     }
-    best
+    (best != usize::MAX).then_some(best)
+}
+
+/// Triangle count of an undirected graph; with parallel edges every combination of one edge per
+/// side counts (`GraphMetrics.getNumberOfTriangles`). Self-loops are ignored.
+pub fn number_of_triangles<G: Graph>(g: &G) -> u64 {
+    let ix = Indexed::new(g);
+    let n = ix.n();
+    let mut mult: HashMap<(usize, usize), u64> = HashMap::new();
+    for &(a, b) in &ix.ends {
+        if a != b {
+            *mult.entry((a.min(b), a.max(b))).or_default() += 1;
+        }
+    }
+    let mut higher: Vec<HashSet<usize>> = vec![HashSet::new(); n];
+    for &(a, b) in mult.keys() {
+        higher[a].insert(b);
+    }
+    let mut total = 0;
+    for (&(u, v), &m1) in &mult {
+        for &w in &higher[v] {
+            if let (Some(&m2), Some(&m3)) = (mult.get(&(v, w)), mult.get(&(u, w))) {
+                total += m1 * m2 * m3;
+            }
+        }
+    }
+    total
+}
+
+/// Cubic-time reference triangle count over a vertex subset, for testing.
+pub fn naive_count_triangles<G: Graph>(g: &G, subset: &[G::Vertex]) -> u64 {
+    let count = |a: &G::Vertex, b: &G::Vertex| g.edges_between(a, b).count() as u64;
+    let multi = g.graph_type().multiple_edges;
+    let mut total = 0;
+    for i in 0..subset.len() {
+        for j in i + 1..subset.len() {
+            for k in j + 1..subset.len() {
+                let (u, v, w) = (&subset[i], &subset[j], &subset[k]);
+                let (x, y, z) = (count(u, v), count(v, w), count(w, u));
+                total += if multi {
+                    x * y * z
+                } else {
+                    (x > 0 && y > 0 && z > 0) as u64
+                };
+            }
+        }
+    }
+    total
 }
