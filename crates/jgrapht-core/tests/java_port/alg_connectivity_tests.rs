@@ -7,8 +7,9 @@ use jgrapht::alg::interfaces::StrongConnectivityAlgorithm;
 use jgrapht::event::Listenable;
 use jgrapht::generate::*;
 use jgrapht::graph::props;
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
+use rand::SeedableRng;
+use rand::rngs::StdRng;
 use std::collections::{BTreeSet, HashSet};
 use std::hash::Hash;
 
@@ -732,7 +733,8 @@ mod block_cutpoint_graph {
 
     #[test]
     fn random_graph_test() {
-        let mut gen_ = GnpRandomGraphGenerator::new(50, 0.5, JavaRandom::new(0), false).unwrap();
+        let mut gen_ =
+            GnpRandomGraphGenerator::new(50, 0.5, StdRng::seed_from_u64(0), false).unwrap();
         for _ in 0..5 {
             let mut g = UGraph::<i32>::simple().with_vertex_factory(|i| i as i32);
             gen_.generate_default(&mut g).unwrap();
@@ -742,7 +744,8 @@ mod block_cutpoint_graph {
 
     #[test]
     fn random_directed_graph_test() {
-        let mut gen_ = GnpRandomGraphGenerator::new(50, 0.5, JavaRandom::new(0), false).unwrap();
+        let mut gen_ =
+            GnpRandomGraphGenerator::new(50, 0.5, StdRng::seed_from_u64(0), false).unwrap();
         for _ in 0..5 {
             let mut g = DiGraph::<i32>::simple().with_vertex_factory(|i| i as i32);
             gen_.generate_default(&mut g).unwrap();
@@ -906,7 +909,7 @@ mod tree_dynamic_connectivity {
 
     fn generate_tree(nodes: usize, start: usize, seed: i64) -> UGraph<usize> {
         let mut tree = UGraph::<usize>::simple();
-        BarabasiAlbertForestGenerator::new(1, nodes, JavaRandom::new(seed))
+        BarabasiAlbertForestGenerator::new(1, nodes, StdRng::seed_from_u64(seed as u64))
             .unwrap()
             .generate(&mut tree, |i| i + start)
             .unwrap();

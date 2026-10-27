@@ -10,10 +10,11 @@ use super::spanning::prim;
 use super::util::Pair;
 use crate::graph::Graph;
 use crate::traverse::DepthFirstIterator;
-use crate::util::java::JavaRandom;
 use crate::view::AsSubgraph;
 use crate::{GraphError, Result};
 use indexmap::{IndexMap, IndexSet};
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashMap;
 use std::hash::Hash;
 
@@ -363,7 +364,7 @@ pub struct EsauWilliamsCapacitatedMinimumSpanningTree<'g, G: Graph> {
     number_of_operations: usize,
     best: Solution<G::Vertex>,
     executed: bool,
-    rng: JavaRandom,
+    rng: StdRng,
 }
 
 impl<'g, G: Graph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
@@ -379,12 +380,12 @@ impl<'g, G: Graph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
             number_of_operations,
             best: Solution::empty(),
             executed: false,
-            rng: JavaRandom::from_time(),
+            rng: StdRng::from_os_rng(),
         })
     }
 
-    pub fn with_seed(mut self, seed: i64) -> Self {
-        self.rng = JavaRandom::new(seed);
+    pub fn with_seed(mut self, seed: u64) -> Self {
+        self.rng = StdRng::seed_from_u64(seed);
         self
     }
 
@@ -432,7 +433,7 @@ impl<'g, G: Graph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
             if best_vertices.is_empty() {
                 break;
             }
-            let pick = (self.rng.next_double() * best_vertices.len() as f64) as usize;
+            let pick = self.rng.random_range(0..best_vertices.len());
             let to_move = &best_vertices[pick];
             let label_move = best.label(to_move);
             let closest_move = &closest_vertex[to_move];
@@ -707,7 +708,7 @@ impl<'g, G: Graph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G> {
                 number_of_operations: self.options.number_of_operations,
                 best: Solution::empty(),
                 executed: false,
-                rng: JavaRandom::from_time(),
+                rng: StdRng::from_os_rng(),
             }
             .solution(),
         }

@@ -7,8 +7,9 @@ use jgrapht::alg::spanner::GreedyMultiplicativeSpanner;
 use jgrapht::alg::spanning::*;
 use jgrapht::alg::util::Pair;
 use jgrapht::generate::*;
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::{HashMap, HashSet};
 
 fn s(x: &str) -> String {
@@ -89,8 +90,8 @@ mod minimum_spanning_tree {
 
                 #[test]
                 fn test_random_instances() {
-                    let mut rng = JavaRandom::new(33);
-                    let mut weights = JavaRandom::new(34);
+                    let mut rng = StdRng::seed_from_u64(33);
+                    let mut weights = StdRng::seed_from_u64(34);
                     for _ in 0..100 {
                         let mut g = UGraph::<i32>::pseudo()
                             .weighted()
@@ -98,7 +99,7 @@ mod minimum_spanning_tree {
                         GnpRandomGraphGenerator::new(
                             200,
                             0.5,
-                            JavaRandom::new(rng.next_long()),
+                            StdRng::seed_from_u64(rng.random()),
                             false,
                         )
                         .unwrap()
@@ -106,7 +107,7 @@ mod minimum_spanning_tree {
                         .unwrap();
                         let edges: Vec<_> = g.edges().cloned().collect();
                         for e in edges {
-                            g.set_edge_weight(&e, weights.next_double()).unwrap();
+                            g.set_edge_weight(&e, weights.random::<f64>()).unwrap();
                         }
                         let a = $solver::new(&g).spanning_tree().weight;
                         let b = $other::new(&g).spanning_tree().weight;
