@@ -439,10 +439,14 @@ impl EventDrivenImporter for JsonEventDrivenImporter {
                 self.edges_collection
             ))
         })?;
-        let Value::Array(edges) = edges else {
-            return Err(IoError::Import(
-                "JSON edge collection must be an array".into(),
-            ));
+        let edges = match edges {
+            Value::Array(edges) => edges.as_slice(),
+            Value::Null => &[],
+            _ => {
+                return Err(IoError::Import(
+                    "JSON edge collection must be an array or null".into(),
+                ));
+            }
         };
         for edge in edges {
             let Value::Object(edge) = edge else {
