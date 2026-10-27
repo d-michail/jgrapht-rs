@@ -309,22 +309,13 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Graph for BaseGra
         }
     }
     fn edges_between<'a>(&'a self, u: &'a V, v: &'a V) -> impl Iterator<Item = &'a E> {
-        // scan the shorter of u's outgoing and v's incoming edges (parallel edges keep their
-        // insertion order in both lists)
-        let (au, av) = (self.vertices.get(u), self.vertices.get(v));
-        let v_side = |b: &'a Adj<E>| if D::DIRECTED { &b.inc } else { &b.out };
-        let from_u = match (au, av) {
-            (Some(a), Some(b)) => a.out.len() <= v_side(b).len(),
-            _ => true,
-        };
-        let list = if from_u {
-            au.map(|a| &a.out)
-        } else {
-            av.map(v_side)
-        };
-        list.into_iter().flat_map(|s| s.iter()).filter(move |e| {
+        self.out_edges(u).filter(move |e| {
             let r = &self.edges[*e];
-            (&r.src == u && &r.tgt == v) || (!D::DIRECTED && &r.src == v && &r.tgt == u)
+            if D::DIRECTED {
+                &r.tgt == v
+            } else {
+                (&r.src == u && &r.tgt == v) || (&r.src == v && &r.tgt == u)
+            }
         })
     }
 }
