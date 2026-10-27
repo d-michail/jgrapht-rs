@@ -1,7 +1,7 @@
 # Port of the JGraphT test suite
 
 Each Java test class under `jgrapht-core/src/test/java/org/jgrapht` maps to a Rust module in this
-test binary (`cargo test --test java_port`). Test method names are snake_cased Java names.
+test binary (`cargo test --test port_alg`, `port_graph`, `port_generate`, `port_traverse`, `port_util`). Test method names are snake_cased Java names.
 
 Legend: **done** = every `@Test` ported; **partial** = some skipped (see notes); **n/a** = tests a Java
 mechanism that has no Rust counterpart (serialization, JVM collections, thread-safety wrappers...).

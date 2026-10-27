@@ -1,13 +1,13 @@
 # jgrapht-rs roadmap
 
-Status on 2026-10-27. Source of truth for what is ported: `crates/jgrapht-core/tests/java_port/STATUS.md`.
+Status on 2026-10-27. Source of truth for what is ported: `crates/jgrapht-core/tests/STATUS.md`.
 
 ## Where we are
 
 | Area | Java | Rust |
 |---|---|---|
-| core `graph/`, views, events, `traverse/`, `util/`, `generate/` (incl. netgen) | ported, tests ported (about 400 tests passing, `tests/java_port`) | done |
-| core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1f (isomorphism, flow, tour, cycle done; 1458 ported tests pass in `tests/java_port`); 1g (matching) and 1i (shortest paths) still functional. See `FIDELITY_ROADMAP.md` for deviations from Java |
+| core `graph/`, views, events, `traverse/`, `util/`, `generate/` (incl. netgen) | ported, tests ported (about 400 tests passing, `tests/port_*`) | done |
+| core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1f (isomorphism, flow, tour, cycle done; 1458 ported tests pass in `tests/port_*`); 1g (matching) and 1i (shortest paths) still functional. See `FIDELITY_ROADMAP.md` for deviations from Java |
 | `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | not started |
 | `jgrapht-opt` (sparse and fastutil graphs) | 22 files (about 2.5k loc), 4 test files | not started, in scope (Phase 3b) |
 | other modules (ext, guava, unimi-dsi, osm, demo) | see "Out of scope" | no |
@@ -18,7 +18,7 @@ The existing `alg/` is a *functional* port: one function per family (`maximal_cl
 
 1. Tests drive the work: a Java test file is ported together with whatever main code it needs.
 2. Fidelity where the tests need it (iteration order, tie-breaking, seeded `Random`). Idiomatic Rust everywhere else (traits, `Result`, borrowed iterators).
-3. Java is the oracle. JDK 21 and Maven are installed, so for anything order- or seed-dependent we generate golden output from the real implementation (done for netgen: `tests/java_port/fixtures/netgen_seed7.txt`, and the JHeaps jar for heaps).
+3. Java is the oracle. JDK 21 and Maven are installed, so for anything order- or seed-dependent we generate golden output from the real implementation (done for netgen: `tests/port_generate/fixtures/netgen_seed7.txt`, and the JHeaps jar for heaps).
 4. One commit per package or per format, pushed to `origin master`, no `Co-Authored-By`. `STATUS.md` updated in the same commit.
 5. N/A is allowed only for Java-only constructs (serialization, reflection, synchronized wrappers, Java collections classes) and is recorded in `STATUS.md`.
 
@@ -27,7 +27,7 @@ The existing `alg/` is a *functional* port: one function per family (`maximal_cl
 - **Interface traits.** Mirror `alg/interfaces/` (39 files) as traits where more than one implementation exists: `MatchingAlgorithm`, `SpanningTreeAlgorithm`, `VertexColoringAlgorithm`, `CliqueAlgorithm`, `MaximumFlowAlgorithm`, `MinimumCostFlowAlgorithm`, `SimpleCycleAlgorithm`, `HamiltonianCycleAlgorithm`, `TSPAlgorithm`, `VertexScoringAlgorithm`, `ClusteringAlgorithm`, `LCAAlgorithm`, `VertexCoverAlgorithm`, `IsomorphismInspector`, ... Existing functions become thin wrappers, so nothing already written breaks.
 - **`alg/util`** (6 test files, 20 tests): `NeighborCache`, `UnorderedPair`, `FixedSizeIntegerQueue`, `VertexDegreeComparator`, `Pair`/`Triple`, `Extension*` (probably N/A).
 - **Java iteration order.** Introduce `util::JavaHashMap`/`JavaHashSet` only if a test cannot be satisfied with insertion order; decide per package, using the Java oracle. (BarabasiAlbert, DirectedScaleFree and RandomRegular already use approximations that are unverified against Java.)
-- **Test layout.** `tests/java_port/alg/<package>.rs`, one module per Java test file, plus a script that lists Java test files not yet in `STATUS.md`.
+- **Test layout.** `tests/port_alg/<package>.rs`, one module per Java test file, plus a script that lists Java test files not yet in `STATUS.md`.
 - **Golden-file helper.** A small `scripts/java-oracle/` (javac + the 1.5.3 jar plus the netgen-style trick of compiling checkout sources against it) to produce expected outputs on demand.
 
 ## Phase 1: port `alg/` tests, package by package
