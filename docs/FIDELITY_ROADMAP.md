@@ -43,7 +43,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 | C5 | `tour/legacy.rs` (nearest neighbour, insertion, double tree, 2-opt, Held–Karp) | the tour classes | |
 | C6 | `tour/legacy.rs`: `christofides_tour` **[needs 1g]** | `ChristofidesThreeHalvesApproxMetricTSP` on the Java matching | |
 | C7 | `cycle/legacy.rs` (`has_cycle`, `simple_cycles`, `cycle_basis`, `cycle_to_walk`) | `CycleDetector`, the simple-cycle classes, cycle-basis classes | |
-| C8 | `hamiltonian.rs` (backtracking) | `tour` Hamiltonian-path/cycle classes | |
+| C8 | **done** `hamiltonian.rs` (deleted; its one test now uses `BacktrackingHamiltonianPath`, Java has no general exact Hamiltonian cycle search) | `tour` Hamiltonian-path/cycle classes | |
 | C9 | `eulerian.rs` | `HierholzerEulerianCycle` | |
 | C10 | `chordal.rs` | `ChordalityInspector` | |
 | C11 | `planarity.rs` (left-right) | `BoyerMyrvoldPlanarityInspector`; `props::is_planar` delegates | many callers |

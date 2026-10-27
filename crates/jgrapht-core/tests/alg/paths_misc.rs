@@ -1,6 +1,5 @@
 use jgrapht::alg::connectivity::block_cut_tree;
 use jgrapht::alg::eulerian::*;
-use jgrapht::alg::hamiltonian::*;
 use jgrapht::alg::matching::*;
 use jgrapht::alg::paths::*;
 use jgrapht::alg::tour::*;
@@ -91,21 +90,33 @@ fn eulerian_trails() {
 
 #[test]
 fn hamiltonian() {
+    // Java has no exact Hamiltonian cycle search for general graphs (see `alg_tour_tests`), so
+    // this only checks the path search.
+    fn path<G: Graph>(g: &G) -> Option<GraphWalk<G::Vertex, G::Edge>> {
+        BacktrackingHamiltonianPath::new()
+            .get_path(g)
+            .unwrap()
+            .path()
+            .cloned()
+    }
     let mut ring = UGraph::<usize>::simple();
     Ring(8).generate_indexed(&mut ring).unwrap();
-    assert!(hamiltonian_cycle(&ring).unwrap().is_valid(&ring));
+    assert!(path(&ring).unwrap().is_valid(&ring));
     let mut star = UGraph::<usize>::simple();
     Star(5).generate_indexed(&mut star).unwrap();
-    assert!(hamiltonian_cycle(&star).is_none() && hamiltonian_path(&star).is_none());
+    assert!(path(&star).is_none());
     let mut line = UGraph::<usize>::simple();
     Linear(6).generate_indexed(&mut line).unwrap();
-    assert!(hamiltonian_path(&line).unwrap().is_valid(&line) && hamiltonian_cycle(&line).is_none());
+    assert!(path(&line).unwrap().is_valid(&line));
     let mut k33 = UGraph::<usize>::simple();
     CompleteBipartite(3, 3).generate_indexed(&mut k33).unwrap();
-    assert!(hamiltonian_cycle(&k33).is_some());
+    assert!(path(&k33).is_some());
     let mut k23 = UGraph::<usize>::simple();
     CompleteBipartite(2, 3).generate_indexed(&mut k23).unwrap();
-    assert!(hamiltonian_cycle(&k23).is_none());
+    assert!(path(&k23).is_some());
+    let mut k24 = UGraph::<usize>::simple();
+    CompleteBipartite(2, 4).generate_indexed(&mut k24).unwrap();
+    assert!(path(&k24).is_none());
 }
 
 #[test]

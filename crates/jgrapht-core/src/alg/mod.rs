@@ -15,7 +15,6 @@ pub mod densest;
 pub mod drawing;
 pub mod eulerian;
 pub mod flow;
-pub mod hamiltonian;
 pub mod holes;
 pub mod interfaces;
 pub mod isomorphism;
