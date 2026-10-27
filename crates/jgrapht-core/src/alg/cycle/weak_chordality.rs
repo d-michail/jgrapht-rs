@@ -1,7 +1,8 @@
 use crate::graph::{Graph, GraphExt};
+use crate::util::java_int_hash_set::JavaIntHashSet;
 use crate::walk::GraphWalk;
 use indexmap::IndexSet;
-use std::collections::{BTreeSet, HashSet, VecDeque};
+use std::collections::{HashSet, VecDeque};
 
 /// An undirected multigraph over vertex indices: the graph or its complement.
 struct Adj {
@@ -275,12 +276,13 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         if separator.is_empty() {
             return co_connected_components;
         }
-        // Java keeps these in HashSets of small integers, which iterate in ascending order
-        let mut buckets_by_label: Vec<BTreeSet<usize>> =
-            (0..separator.len()).map(|_| BTreeSet::new()).collect();
+        let mut buckets_by_label: Vec<JavaIntHashSet> = (0..separator.len())
+            .map(|_| JavaIntHashSet::new())
+            .collect();
+        buckets_by_label[0] = JavaIntHashSet::with_expected_size(separator.len());
         let mut labels: Vec<i64> = vec![-1; n];
         for &(v, _) in separator {
-            buckets_by_label[0].insert(v);
+            buckets_by_label[0].insert(v as i32);
             labels[v] = 0;
         }
         let mut min_label = 0usize;
@@ -290,16 +292,18 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
             loop {
                 while !buckets_by_label[min_label].is_empty() {
                     let vertex = buckets_by_label[min_label]
-                        .pop_first()
+                        .first()
                         .expect("non-empty bucket");
+                    buckets_by_label[min_label].remove(vertex);
+                    let vertex = vertex as usize;
                     co_connected_component.push(vertex);
                     labels[vertex] = -1;
                     for &opposite in &adj.neighbors[vertex] {
                         let opposite_label = labels[opposite];
                         if opposite_label != -1 {
                             let l = opposite_label as usize;
-                            buckets_by_label[l].remove(&opposite);
-                            buckets_by_label[l + 1].insert(opposite);
+                            buckets_by_label[l].remove(opposite as i32);
+                            buckets_by_label[l + 1].insert(opposite as i32);
                             labels[opposite] = opposite_label + 1;
                         }
                     }
@@ -311,9 +315,10 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
             }
             // reload: the vertices stuck in the next bucket start over
             if min_label != 0 && min_label < buckets_by_label.len() {
-                let bucket = std::mem::take(&mut buckets_by_label[min_label]);
-                for vertex in bucket {
-                    labels[vertex] = 0;
+                let vertices: Vec<i32> = buckets_by_label[min_label].iter().collect();
+                buckets_by_label[min_label].clear();
+                for vertex in vertices {
+                    labels[vertex as usize] = 0;
                     buckets_by_label[0].insert(vertex);
                 }
             }

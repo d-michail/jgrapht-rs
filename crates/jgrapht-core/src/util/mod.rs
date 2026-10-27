@@ -4,6 +4,8 @@ pub mod heap;
 pub mod java;
 pub mod sampler;
 
+pub(crate) mod java_int_hash_set;
+
 use std::cmp::Ordering;
 
 /// `f64` with a total order (`f64::total_cmp`), usable as a heap key.
