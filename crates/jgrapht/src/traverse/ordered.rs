@@ -184,7 +184,7 @@ impl<'g, G: DirectedGraph + 'g> TopologicalOrderIterator<'g, G> {
         let mut in_degree = HashMap::new();
         for v in g.vertices() {
             let mut d = 0;
-            for e in g.in_edges_of(v).unwrap() {
+            for e in g.in_edges_of(v)? {
                 if g.opposite_vertex(e, v) == Some(v) {
                     return Err(GraphError::CycleProhibited);
                 }

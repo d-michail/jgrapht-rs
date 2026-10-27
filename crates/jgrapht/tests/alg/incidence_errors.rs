@@ -8,6 +8,7 @@ use jgrapht::alg::scoring::{EigenvectorCentrality, KatzCentrality, PageRank};
 use jgrapht::alg::shortestpath::{AllDirectedPaths, DagAllPathsCounter};
 use jgrapht::graph::sparse::{IncomingEdgesSupport, SparseIntDirectedGraph};
 use jgrapht::graph::{DirectedExt, GraphExt};
+use jgrapht::traverse::TopologicalOrderIterator;
 use jgrapht::{GraphError, Result};
 
 fn no_incoming_graph() -> SparseIntDirectedGraph {
@@ -39,6 +40,7 @@ fn fallible_graph_helpers_preserve_incidence_errors() {
     assert_unsupported(graph.try_predecessor_list_of(&2));
     assert_unsupported(graph.try_ancestors_of(&3));
     assert_unsupported(graph.try_vertex_has_predecessors(&2));
+    assert_unsupported(TopologicalOrderIterator::new(&graph));
 }
 
 #[test]
