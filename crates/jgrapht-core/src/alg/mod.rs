@@ -26,6 +26,7 @@ pub mod paths;
 pub mod planarity;
 pub mod scoring;
 pub mod shortestpath;
+pub mod similarity;
 pub mod spanner;
 pub mod spanning;
 pub mod steiner;

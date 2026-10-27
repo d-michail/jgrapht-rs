@@ -971,3 +971,256 @@ mod goldberg_maximum_density_subgraph_tests {
         ]
     );
 }
+
+mod zhang_shasha_tree_edit_distance_test {
+    use super::*;
+    use OperationType::*;
+    use jgrapht::alg::similarity::{EditOperation, OperationType, ZhangShashaTreeEditDistance};
+
+    const ARTICLE_TREE_1: &[(i32, i32)] = &[(1, 2), (1, 3), (2, 4), (2, 5), (5, 6)];
+    const ARTICLE_TREE_2: &[(i32, i32)] = &[(1, 5), (1, 3), (5, 2), (2, 4), (2, 6)];
+    const TREE_1: &[(i32, i32)] = &[
+        (1, 2),
+        (1, 4),
+        (2, 5),
+        (3, 6),
+        (4, 10),
+        (5, 6),
+        (5, 7),
+        (5, 9),
+        (7, 8),
+        (10, 4),
+    ];
+    const TREE_2: &[(i32, i32)] = &[
+        (0, 1),
+        (0, 3),
+        (1, 4),
+        (1, 0),
+        (2, 5),
+        (3, 0),
+        (3, 9),
+        (4, 5),
+        (4, 6),
+        (4, 8),
+        (4, 1),
+        (5, 2),
+        (5, 4),
+        (6, 7),
+        (6, 4),
+        (7, 6),
+        (8, 4),
+        (9, 3),
+    ];
+    const TREE_3: &[(i32, i32)] = &[
+        (0, 3),
+        (0, 6),
+        (0, 4),
+        (0, 9),
+        (1, 8),
+        (1, 2),
+        (2, 5),
+        (2, 1),
+        (2, 4),
+        (3, 0),
+        (4, 7),
+        (4, 2),
+        (4, 0),
+        (5, 2),
+        (6, 0),
+        (7, 4),
+        (8, 1),
+        (9, 0),
+    ];
+
+    fn read_graph(edges: &[(i32, i32)]) -> UGraph<i32> {
+        let mut g = UGraph::<i32>::simple();
+        for &(a, b) in edges {
+            g.add_edge_with_vertices(a, b).unwrap();
+        }
+        g
+    }
+
+    fn one_vertex() -> UGraph<i32> {
+        let mut g = UGraph::<i32>::simple();
+        g.add_vertex(1);
+        g
+    }
+
+    fn op(ty: OperationType, a: i32, b: Option<i32>) -> EditOperation<i32> {
+        EditOperation::new(ty, a, b)
+    }
+
+    fn test_on_trees(
+        t1: &UGraph<i32>,
+        r1: i32,
+        t2: &UGraph<i32>,
+        r2: i32,
+        expected_distance: f64,
+        expected: &[EditOperation<i32>],
+    ) {
+        let mut ted = ZhangShashaTreeEditDistance::new(t1, r1, t2, r2).unwrap();
+        assert!((ted.distance() - expected_distance).abs() < 1e-9);
+        let actual: HashSet<EditOperation<i32>> = ted.edit_operations().iter().cloned().collect();
+        assert_eq!(actual, expected.iter().cloned().collect::<HashSet<_>>());
+    }
+
+    #[test]
+    fn test_ted_tree_with_one_vertex_to_tree_with_one_vertex() {
+        test_on_trees(
+            &one_vertex(),
+            1,
+            &one_vertex(),
+            1,
+            0.0,
+            &[op(Change, 1, Some(1))],
+        );
+    }
+
+    #[test]
+    fn test_ted_tree_with_one_vertex_to_article_tree_2() {
+        let expected = [
+            op(Change, 1, Some(1)),
+            op(Insert, 2, None),
+            op(Insert, 3, None),
+            op(Insert, 4, None),
+            op(Insert, 5, None),
+            op(Insert, 6, None),
+        ];
+        test_on_trees(
+            &one_vertex(),
+            1,
+            &read_graph(ARTICLE_TREE_2),
+            1,
+            5.0,
+            &expected,
+        );
+    }
+
+    #[test]
+    fn test_ted_article_tree_1_to_tree_with_one_vertex() {
+        let expected = [
+            op(Change, 1, Some(1)),
+            op(Remove, 2, None),
+            op(Remove, 3, None),
+            op(Remove, 4, None),
+            op(Remove, 5, None),
+            op(Remove, 6, None),
+        ];
+        test_on_trees(
+            &read_graph(ARTICLE_TREE_1),
+            1,
+            &one_vertex(),
+            1,
+            5.0,
+            &expected,
+        );
+    }
+
+    #[test]
+    fn test_ted_article_tree_1_to_article_tree_2() {
+        let expected = [
+            op(Remove, 5, None),
+            op(Insert, 5, None),
+            op(Change, 1, Some(1)),
+            op(Change, 2, Some(2)),
+            op(Change, 3, Some(3)),
+            op(Change, 4, Some(4)),
+            op(Change, 6, Some(6)),
+        ];
+        test_on_trees(
+            &read_graph(ARTICLE_TREE_1),
+            1,
+            &read_graph(ARTICLE_TREE_2),
+            1,
+            2.0,
+            &expected,
+        );
+    }
+
+    #[test]
+    fn test_ted_tree_1_to_article_tree_2() {
+        let expected = [
+            op(Change, 1, Some(1)),
+            op(Remove, 4, None),
+            op(Change, 10, Some(3)),
+            op(Remove, 2, None),
+            op(Change, 5, Some(5)),
+            op(Remove, 9, None),
+            op(Remove, 7, None),
+            op(Remove, 8, None),
+            op(Insert, 2, None),
+            op(Change, 6, Some(6)),
+            op(Remove, 3, None),
+            op(Insert, 4, None),
+        ];
+        test_on_trees(
+            &read_graph(TREE_1),
+            1,
+            &read_graph(ARTICLE_TREE_2),
+            1,
+            9.0,
+            &expected,
+        );
+    }
+
+    #[test]
+    fn test_ted_article_tree_1_to_tree_1() {
+        let expected = [
+            op(Change, 1, Some(1)),
+            op(Insert, 4, None),
+            op(Change, 3, Some(10)),
+            op(Change, 2, Some(2)),
+            op(Change, 5, Some(5)),
+            op(Insert, 9, None),
+            op(Insert, 7, None),
+            op(Insert, 8, None),
+            op(Change, 6, Some(6)),
+            op(Insert, 3, None),
+            op(Remove, 4, None),
+        ];
+        test_on_trees(
+            &read_graph(ARTICLE_TREE_1),
+            1,
+            &read_graph(TREE_1),
+            1,
+            7.0,
+            &expected,
+        );
+    }
+
+    #[test]
+    fn test_ted_tree_2_to_tree_3() {
+        let expected = [
+            op(Change, 0, Some(0)),
+            op(Remove, 3, None),
+            op(Change, 9, Some(9)),
+            op(Remove, 1, None),
+            op(Change, 4, Some(4)),
+            op(Remove, 8, None),
+            op(Remove, 6, None),
+            op(Change, 7, Some(7)),
+            op(Remove, 5, None),
+            op(Change, 2, Some(2)),
+            op(Insert, 5, None),
+            op(Insert, 1, None),
+            op(Insert, 8, None),
+            op(Insert, 6, None),
+            op(Insert, 3, None),
+        ];
+        test_on_trees(
+            &read_graph(TREE_2),
+            0,
+            &read_graph(TREE_3),
+            0,
+            10.0,
+            &expected,
+        );
+    }
+
+    #[test]
+    fn rejects_non_trees() {
+        let mut g = read_graph(&[(1, 2), (2, 3), (3, 1)]);
+        g.add_vertex(9);
+        assert!(ZhangShashaTreeEditDistance::new(&g, 1, &one_vertex(), 1).is_err());
+    }
+}
