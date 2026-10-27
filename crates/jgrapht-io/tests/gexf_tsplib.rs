@@ -11,6 +11,7 @@ fn gexf_round_trip_preserves_edges_and_weights() {
     let edge = graph.add_edge(&1, &2).unwrap().unwrap();
     graph.set_edge_weight(&edge, 4.5).unwrap();
     let mut exporter: GexfExporter<usize, DefaultEdge> = GexfExporter::new();
+    exporter.set_export_edge_weights(true);
     let xml = exporter.export_to_string(&graph).unwrap();
     assert!(xml.contains("defaultedgetype=\"directed\""));
     assert!(xml.contains("weight=\"4.5\""));

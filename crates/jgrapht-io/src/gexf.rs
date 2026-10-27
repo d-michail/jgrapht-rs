@@ -1,9 +1,12 @@
 //! Basic GEXF 1.2 import and export support.
 
 use crate::exporter::format_f64;
-use crate::{BaseExporter, GraphExporter, GraphImporter, IntegerIdProvider, IoError, Result};
+use crate::{
+    Attribute, AttributeMap, AttributeType, BaseExporter, EventDrivenImporter, GraphExporter,
+    GraphImporter, ImportEvent, IntegerIdProvider, IoError, Result,
+};
 use indexmap::IndexMap;
-use jgrapht::{Graph, GraphMut};
+use jgrapht::{DefaultEdge, Graph, GraphMut};
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
 use std::collections::HashMap;
@@ -35,119 +38,397 @@ fn attr<R: Read>(
 #[derive(Debug)]
 struct Node {
     id: String,
+    attributes: AttributeMap,
 }
 
 #[derive(Debug)]
 struct Edge {
+    id: Option<String>,
     source: String,
     target: String,
     weight: Option<f64>,
+    attributes: AttributeMap,
 }
 
-fn parse<R: Read>(input: R) -> Result<(Vec<Node>, Vec<Edge>)> {
+#[derive(Debug)]
+enum Item {
+    Node(Node),
+    Edge(Edge),
+}
+
+#[derive(Debug, Clone)]
+struct AttributeDefinition {
+    name: String,
+    kind: AttributeType,
+}
+
+fn gexf_type(value: &str) -> AttributeType {
+    match value {
+        "boolean" => AttributeType::Boolean,
+        "integer" | "short" | "byte" => AttributeType::Int,
+        "long" | "biginteger" => AttributeType::Long,
+        "float" => AttributeType::Float,
+        "double" | "bigdecimal" => AttributeType::Double,
+        _ => AttributeType::String,
+    }
+}
+
+fn parse<R: Read>(input: R) -> Result<Vec<Item>> {
     let mut reader = Reader::from_reader(BufReader::new(input));
     reader.config_mut().trim_text(true);
     let mut buffer = Vec::new();
-    let mut nodes = Vec::new();
-    let mut edges = Vec::new();
+    let mut items = Vec::new();
+    let mut node_definitions = HashMap::new();
+    let mut edge_definitions = HashMap::new();
+    let mut definition_class = None::<String>;
+    let mut current_node = None::<Node>;
+    let mut current_edge = None::<Edge>;
+    let mut nodes_depth = 0usize;
+    let mut edges_depth = 0usize;
+    let mut ignored_depth = 0usize;
+    let mut root_seen = false;
+    let mut graph_seen = false;
     loop {
         match reader
             .read_event_into(&mut buffer)
             .map_err(|error| IoError::Import(format!("GEXF XML error: {error}")))?
         {
-            Event::Start(element) | Event::Empty(element) => match element.local_name().as_ref() {
-                b"node" => nodes.push(Node {
-                    id: attr(&reader, &element, b"id")?
-                        .ok_or_else(|| IoError::Import("GEXF node is missing id".into()))?,
-                }),
-                b"edge" => edges.push(Edge {
-                    source: attr(&reader, &element, b"source")?
-                        .ok_or_else(|| IoError::Import("GEXF edge is missing source".into()))?,
-                    target: attr(&reader, &element, b"target")?
-                        .ok_or_else(|| IoError::Import("GEXF edge is missing target".into()))?,
-                    weight: attr(&reader, &element, b"weight")?
-                        .map(|value| value.parse())
-                        .transpose()
-                        .map_err(|_| IoError::Import("invalid GEXF edge weight".into()))?,
-                }),
-                _ => {}
-            },
+            Event::Start(element) => {
+                if ignored_depth > 0 {
+                    ignored_depth += 1;
+                    buffer.clear();
+                    continue;
+                }
+                match element.local_name().as_ref() {
+                    b"gexf" => root_seen = true,
+                    b"graph" => graph_seen = true,
+                    b"nodes" if current_node.is_some() => ignored_depth = 1,
+                    b"nodes" => nodes_depth += 1,
+                    b"edges" if current_node.is_some() => ignored_depth = 1,
+                    b"edges" => edges_depth += 1,
+                    b"attributes" => definition_class = attr(&reader, &element, b"class")?,
+                    b"attribute" => add_definition(
+                        &reader,
+                        &element,
+                        definition_class.as_deref(),
+                        &mut node_definitions,
+                        &mut edge_definitions,
+                    )?,
+                    b"node" => {
+                        if nodes_depth == 0 {
+                            return Err(IoError::Import("GEXF node must be inside nodes".into()));
+                        }
+                        current_node = Some(read_node(&reader, &element)?);
+                    }
+                    b"edge" => {
+                        if edges_depth == 0 {
+                            return Err(IoError::Import("GEXF edge must be inside edges".into()));
+                        }
+                        current_edge = Some(read_edge(&reader, &element)?);
+                    }
+                    b"attvalue" => add_attvalue(
+                        &reader,
+                        &element,
+                        current_node.as_mut(),
+                        current_edge.as_mut(),
+                        &node_definitions,
+                        &edge_definitions,
+                    )?,
+                    _ => {}
+                }
+            }
+            Event::Empty(element) => {
+                if ignored_depth > 0 {
+                    buffer.clear();
+                    continue;
+                }
+                match element.local_name().as_ref() {
+                    b"node" => {
+                        if nodes_depth == 0 {
+                            return Err(IoError::Import("GEXF node must be inside nodes".into()));
+                        }
+                        items.push(Item::Node(read_node(&reader, &element)?));
+                    }
+                    b"edge" => {
+                        if edges_depth == 0 {
+                            return Err(IoError::Import("GEXF edge must be inside edges".into()));
+                        }
+                        items.push(Item::Edge(read_edge(&reader, &element)?));
+                    }
+                    b"attribute" => add_definition(
+                        &reader,
+                        &element,
+                        definition_class.as_deref(),
+                        &mut node_definitions,
+                        &mut edge_definitions,
+                    )?,
+                    b"attvalue" => add_attvalue(
+                        &reader,
+                        &element,
+                        current_node.as_mut(),
+                        current_edge.as_mut(),
+                        &node_definitions,
+                        &edge_definitions,
+                    )?,
+                    _ => {}
+                }
+            }
+            Event::End(element) => {
+                if ignored_depth > 0 {
+                    ignored_depth -= 1;
+                    buffer.clear();
+                    continue;
+                }
+                match element.local_name().as_ref() {
+                    b"node" => {
+                        if let Some(node) = current_node.take() {
+                            items.push(Item::Node(node));
+                        }
+                    }
+                    b"edge" => {
+                        if let Some(edge) = current_edge.take() {
+                            items.push(Item::Edge(edge));
+                        }
+                    }
+                    b"nodes" => nodes_depth = nodes_depth.saturating_sub(1),
+                    b"edges" => edges_depth = edges_depth.saturating_sub(1),
+                    b"attributes" => definition_class = None,
+                    _ => {}
+                }
+            }
             Event::Eof => break,
+            Event::DocType(_) => {
+                return Err(IoError::Import(
+                    "GEXF document types are not supported".into(),
+                ));
+            }
             _ => {}
         }
         buffer.clear();
     }
-    Ok((nodes, edges))
+    if !root_seen || !graph_seen {
+        return Err(IoError::Import("input is not a GEXF graph".into()));
+    }
+    Ok(items)
+}
+
+fn read_node<R: Read>(reader: &Reader<BufReader<R>>, element: &BytesStart<'_>) -> Result<Node> {
+    let id = attr(reader, element, b"id")?
+        .ok_or_else(|| IoError::Import("GEXF node is missing id".into()))?;
+    let mut attributes = AttributeMap::new();
+    if let Some(label) = attr(reader, element, b"label")? {
+        attributes.insert("label".into(), Attribute::from(label));
+    }
+    Ok(Node { id, attributes })
+}
+
+fn read_edge<R: Read>(reader: &Reader<BufReader<R>>, element: &BytesStart<'_>) -> Result<Edge> {
+    Ok(Edge {
+        id: attr(reader, element, b"id")?,
+        source: attr(reader, element, b"source")?
+            .ok_or_else(|| IoError::Import("GEXF edge is missing source".into()))?,
+        target: attr(reader, element, b"target")?
+            .ok_or_else(|| IoError::Import("GEXF edge is missing target".into()))?,
+        weight: attr(reader, element, b"weight")?
+            .map(|v| v.parse())
+            .transpose()
+            .map_err(|_| IoError::Import("invalid GEXF edge weight".into()))?,
+        attributes: AttributeMap::new(),
+    })
+}
+
+fn add_definition<R: Read>(
+    reader: &Reader<BufReader<R>>,
+    element: &BytesStart<'_>,
+    class: Option<&str>,
+    nodes: &mut HashMap<String, AttributeDefinition>,
+    edges: &mut HashMap<String, AttributeDefinition>,
+) -> Result<()> {
+    let Some(class) = class else {
+        return Ok(());
+    };
+    let id = attr(reader, element, b"id")?
+        .ok_or_else(|| IoError::Import("GEXF attribute is missing id".into()))?;
+    let name = attr(reader, element, b"title")?.unwrap_or_else(|| id.clone());
+    let kind = gexf_type(
+        attr(reader, element, b"type")?
+            .as_deref()
+            .unwrap_or("string"),
+    );
+    let definition = AttributeDefinition { name, kind };
+    if class == "node" {
+        nodes.insert(id, definition);
+    } else if class == "edge" {
+        edges.insert(id, definition);
+    }
+    Ok(())
+}
+
+fn add_attvalue<R: Read>(
+    reader: &Reader<BufReader<R>>,
+    element: &BytesStart<'_>,
+    node: Option<&mut Node>,
+    edge: Option<&mut Edge>,
+    node_defs: &HashMap<String, AttributeDefinition>,
+    edge_defs: &HashMap<String, AttributeDefinition>,
+) -> Result<()> {
+    let id = attr(reader, element, b"for")?
+        .ok_or_else(|| IoError::Import("GEXF attvalue is missing for".into()))?;
+    let value = attr(reader, element, b"value")?
+        .ok_or_else(|| IoError::Import("GEXF attvalue is missing value".into()))?;
+    if let Some(node) = node
+        && let Some(def) = node_defs.get(&id)
+    {
+        node.attributes
+            .insert(def.name.clone(), Attribute::new(value, def.kind));
+    } else if let Some(edge) = edge
+        && let Some(def) = edge_defs.get(&id)
+    {
+        edge.attributes
+            .insert(def.name.clone(), Attribute::new(value, def.kind));
+    }
+    Ok(())
 }
 
 type VertexFactory<V> = Box<dyn FnMut(&str) -> V>;
+type VertexAttributeConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
+type EdgeAttributeConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()>>;
 
-pub struct GexfImporter<V> {
+pub struct GexfImporter<V, E = DefaultEdge> {
     vertex_factory: Option<VertexFactory<V>>,
+    vertex_attribute_consumer: Option<VertexAttributeConsumer<V>>,
+    edge_attribute_consumer: Option<EdgeAttributeConsumer<E>>,
+    schema_validation: bool,
 }
 
-impl<V> GexfImporter<V> {
+impl<V, E> GexfImporter<V, E> {
     pub fn new() -> Self {
         Self {
             vertex_factory: None,
+            vertex_attribute_consumer: None,
+            edge_attribute_consumer: None,
+            schema_validation: true,
         }
     }
     pub fn set_vertex_factory(&mut self, factory: impl FnMut(&str) -> V + 'static) {
         self.vertex_factory = Some(Box::new(factory));
     }
+    pub fn set_vertex_attribute_consumer(
+        &mut self,
+        consumer: impl FnMut(&V, &str, &Attribute) -> Result<()> + 'static,
+    ) {
+        self.vertex_attribute_consumer = Some(Box::new(consumer));
+    }
+    pub fn set_edge_attribute_consumer(
+        &mut self,
+        consumer: impl FnMut(&E, &str, &Attribute) -> Result<()> + 'static,
+    ) {
+        self.edge_attribute_consumer = Some(Box::new(consumer));
+    }
+    pub fn set_schema_validation(&mut self, enabled: bool) {
+        self.schema_validation = enabled;
+    }
+    pub const fn schema_validation(&self) -> bool {
+        self.schema_validation
+    }
 }
-impl<V> Default for GexfImporter<V> {
+impl<V, E> Default for GexfImporter<V, E> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<V, G> GraphImporter<G> for GexfImporter<V>
+impl<V, E, G> GraphImporter<G> for GexfImporter<V, E>
 where
-    G: GraphMut<Vertex = V>,
+    G: GraphMut<Vertex = V, Edge = E>,
     V: Clone,
+    E: Clone,
 {
     fn import_graph<R: Read>(&mut self, graph: &mut G, input: R) -> Result<()> {
-        let (nodes, edges) = parse(input)?;
+        let items = parse(input)?;
         let mut vertices = HashMap::new();
-        for node in nodes {
-            if vertices.contains_key(&node.id) {
-                return Err(IoError::Import(format!(
-                    "duplicate GEXF node id {:?}",
-                    node.id
-                )));
-            }
-            let vertex = if let Some(factory) = self.vertex_factory.as_mut() {
-                let vertex = factory(&node.id);
-                if !graph.add_vertex(vertex.clone()) {
-                    return Err(IoError::Import(
-                        "GEXF vertex factory produced duplicate".into(),
-                    ));
+        let mut declared = std::collections::HashSet::new();
+        for item in items {
+            match item {
+                Item::Node(node) => {
+                    if !declared.insert(node.id.clone()) {
+                        return Err(IoError::Import(format!(
+                            "duplicate GEXF node id {:?}",
+                            node.id
+                        )));
+                    }
+                    let vertex =
+                        map_vertex(graph, &mut vertices, &node.id, self.vertex_factory.as_mut())?;
+                    if let Some(consumer) = self.vertex_attribute_consumer.as_mut() {
+                        consumer(&vertex, "ID", &Attribute::from(node.id))?;
+                        for (name, value) in &node.attributes {
+                            consumer(&vertex, name, value)?;
+                        }
+                    }
                 }
-                vertex
-            } else {
-                graph.add_new_vertex()?
-            };
-            vertices.insert(node.id, vertex);
-        }
-        for edge in edges {
-            let source = vertices.get(&edge.source).ok_or_else(|| {
-                IoError::Import(format!("GEXF source {:?} does not exist", edge.source))
-            })?;
-            let target = vertices.get(&edge.target).ok_or_else(|| {
-                IoError::Import(format!("GEXF target {:?} does not exist", edge.target))
-            })?;
-            let inserted = graph
-                .add_edge(source, target)?
-                .ok_or_else(|| IoError::Import("graph rejected GEXF edge".into()))?;
-            if graph.graph_type().weighted
-                && let Some(weight) = edge.weight
-            {
-                graph.set_edge_weight(&inserted, weight)?;
+                Item::Edge(edge) => {
+                    let source = map_vertex(
+                        graph,
+                        &mut vertices,
+                        &edge.source,
+                        self.vertex_factory.as_mut(),
+                    )?;
+                    let target = map_vertex(
+                        graph,
+                        &mut vertices,
+                        &edge.target,
+                        self.vertex_factory.as_mut(),
+                    )?;
+                    let inserted = graph
+                        .add_edge(&source, &target)?
+                        .ok_or_else(|| IoError::Import("graph rejected GEXF edge".into()))?;
+                    if graph.graph_type().weighted
+                        && let Some(weight) = edge.weight
+                    {
+                        graph.set_edge_weight(&inserted, weight)?;
+                    }
+                    if let Some(consumer) = self.edge_attribute_consumer.as_mut() {
+                        if let Some(id) = edge.id {
+                            consumer(&inserted, "ID", &Attribute::from(id))?;
+                        }
+                        consumer(&inserted, "source", &Attribute::from(edge.source))?;
+                        consumer(&inserted, "target", &Attribute::from(edge.target))?;
+                        for (name, value) in &edge.attributes {
+                            consumer(&inserted, name, value)?;
+                        }
+                    }
+                }
             }
         }
         Ok(())
     }
+}
+
+fn map_vertex<V, E, G>(
+    graph: &mut G,
+    vertices: &mut HashMap<String, V>,
+    id: &str,
+    factory: Option<&mut VertexFactory<V>>,
+) -> Result<V>
+where
+    G: GraphMut<Vertex = V, Edge = E>,
+    V: Clone,
+{
+    if let Some(vertex) = vertices.get(id) {
+        return Ok(vertex.clone());
+    }
+    let vertex = if let Some(factory) = factory {
+        factory(id)
+    } else {
+        graph.new_vertex()?
+    };
+    if !graph.add_vertex(vertex.clone()) {
+        return Err(IoError::Import(
+            "GEXF vertex factory produced duplicate".into(),
+        ));
+    }
+    vertices.insert(id.to_owned(), vertex.clone());
+    Ok(vertex)
 }
 
 fn escape(value: &str) -> String {
@@ -158,29 +439,232 @@ fn escape(value: &str) -> String {
         .replace('"', "&quot;")
 }
 
+pub type GexfEdge = (String, String, Option<f64>);
+
+pub struct GexfEventDrivenImporter {
+    schema_validation: bool,
+}
+impl GexfEventDrivenImporter {
+    pub fn new() -> Self {
+        Self {
+            schema_validation: true,
+        }
+    }
+    pub fn set_schema_validation(&mut self, enabled: bool) {
+        self.schema_validation = enabled;
+    }
+    pub const fn schema_validation(&self) -> bool {
+        self.schema_validation
+    }
+}
+impl Default for GexfEventDrivenImporter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl EventDrivenImporter for GexfEventDrivenImporter {
+    type Vertex = String;
+    type Edge = GexfEdge;
+    fn import_events<R, F>(&mut self, input: R, mut emit: F) -> Result<()>
+    where
+        R: Read,
+        F: FnMut(ImportEvent<Self::Vertex, Self::Edge>) -> Result<()>,
+    {
+        emit(ImportEvent::Start)?;
+        for item in parse(input)? {
+            match item {
+                Item::Node(node) => {
+                    emit(ImportEvent::Vertex(node.id.clone()))?;
+                    emit(ImportEvent::VertexAttribute(
+                        node.id.clone(),
+                        "ID".into(),
+                        Attribute::from(node.id.clone()),
+                    ))?;
+                    for (name, value) in node.attributes {
+                        emit(ImportEvent::VertexAttribute(node.id.clone(), name, value))?;
+                    }
+                }
+                Item::Edge(edge) => {
+                    let value = (edge.source, edge.target, edge.weight);
+                    emit(ImportEvent::Edge(value.clone()))?;
+                    if let Some(id) = edge.id {
+                        emit(ImportEvent::EdgeAttribute(
+                            value.clone(),
+                            "ID".into(),
+                            Attribute::from(id),
+                        ))?;
+                    }
+                    for (name, attribute) in edge.attributes {
+                        emit(ImportEvent::EdgeAttribute(value.clone(), name, attribute))?;
+                    }
+                }
+            }
+        }
+        emit(ImportEvent::End)
+    }
+}
+
+pub type SimpleGexfImporter<V, E = DefaultEdge> = GexfImporter<V, E>;
+pub type SimpleGexfEventDrivenImporter = GexfEventDrivenImporter;
+
 pub struct GexfExporter<V, E> {
     base: BaseExporter<V, E>,
-    export_weights: bool,
+    parameters: std::collections::HashSet<GexfParameter>,
+    creator: Option<String>,
+    keywords: Option<String>,
+    description: Option<String>,
+    node_attributes: IndexMap<String, GexfAttributeDetails>,
+    edge_attributes: IndexMap<String, GexfAttributeDetails>,
+    next_node_attribute: usize,
+    next_edge_attribute: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum GexfParameter {
+    ExportEdgeWeights,
+    ExportEdgeLabels,
+    ExportEdgeTypes,
+    ExportMeta,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GexfAttributeCategory {
+    Node,
+    Edge,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GexfAttributeType {
+    Boolean,
+    Integer,
+    Long,
+    Float,
+    Double,
+    String,
+    ListString,
+    AnyUri,
+}
+impl GexfAttributeType {
+    const fn as_str(self) -> &'static str {
+        match self {
+            Self::Boolean => "boolean",
+            Self::Integer => "integer",
+            Self::Long => "long",
+            Self::Float => "float",
+            Self::Double => "double",
+            Self::String => "string",
+            Self::ListString => "liststring",
+            Self::AnyUri => "anyURI",
+        }
+    }
+}
+#[derive(Debug, Clone)]
+struct GexfAttributeDetails {
+    id: String,
+    kind: GexfAttributeType,
+    default: Option<String>,
+    options: Option<String>,
 }
 
 impl<V, E> GexfExporter<V, E>
 where
     V: Clone + Eq + Hash + 'static,
+    E: Clone + Eq + Hash + 'static,
 {
     pub fn new() -> Self {
         let mut ids = IntegerIdProvider::new();
+        let mut edge_ids = IntegerIdProvider::with_start(0);
+        let mut parameters = std::collections::HashSet::new();
+        parameters.insert(GexfParameter::ExportMeta);
+        let mut base = BaseExporter::new(move |vertex| ids.id(vertex));
+        base.set_edge_id_provider(move |edge| edge_ids.id(edge));
         Self {
-            base: BaseExporter::new(move |vertex| ids.id(vertex)),
-            export_weights: true,
+            base,
+            parameters,
+            creator: Some("The JGraphT Library".into()),
+            keywords: None,
+            description: None,
+            node_attributes: IndexMap::new(),
+            edge_attributes: IndexMap::new(),
+            next_node_attribute: 0,
+            next_edge_attribute: 0,
         }
     }
     pub fn set_export_edge_weights(&mut self, enabled: bool) {
-        self.export_weights = enabled;
+        self.set_parameter(GexfParameter::ExportEdgeWeights, enabled);
+    }
+    pub fn set_parameter(&mut self, parameter: GexfParameter, enabled: bool) {
+        if enabled {
+            self.parameters.insert(parameter);
+        } else {
+            self.parameters.remove(&parameter);
+        }
+    }
+    pub fn parameter(&self, parameter: GexfParameter) -> bool {
+        self.parameters.contains(&parameter)
+    }
+    pub fn set_creator(&mut self, value: impl Into<String>) {
+        self.creator = Some(value.into());
+    }
+    pub fn set_keywords(&mut self, value: impl Into<String>) {
+        self.keywords = Some(value.into());
+    }
+    pub fn set_description(&mut self, value: impl Into<String>) {
+        self.description = Some(value.into());
+    }
+    pub fn set_vertex_attribute_provider(
+        &mut self,
+        provider: impl Fn(&V) -> AttributeMap + 'static,
+    ) {
+        self.base.set_vertex_attribute_provider(provider);
+    }
+    pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
+        self.base.set_edge_attribute_provider(provider);
+    }
+    pub fn register_attribute(
+        &mut self,
+        name: impl Into<String>,
+        category: GexfAttributeCategory,
+        kind: GexfAttributeType,
+        default: Option<String>,
+        options: Option<String>,
+    ) -> Result<()> {
+        let name = name.into();
+        let lower = name.to_ascii_lowercase();
+        let reserved = match category {
+            GexfAttributeCategory::Node => matches!(lower.as_str(), "id" | "label"),
+            GexfAttributeCategory::Edge => matches!(
+                lower.as_str(),
+                "id" | "type" | "label" | "source" | "target" | "weight"
+            ),
+        };
+        if reserved {
+            return Err(IoError::Export(format!("reserved GEXF attribute {name:?}")));
+        }
+        let (map, next) = match category {
+            GexfAttributeCategory::Node => {
+                (&mut self.node_attributes, &mut self.next_node_attribute)
+            }
+            GexfAttributeCategory::Edge => {
+                (&mut self.edge_attributes, &mut self.next_edge_attribute)
+            }
+        };
+        let id = next.to_string();
+        *next += 1;
+        map.insert(
+            name,
+            GexfAttributeDetails {
+                id,
+                kind,
+                default,
+                options,
+            },
+        );
+        Ok(())
     }
 }
 impl<V, E> Default for GexfExporter<V, E>
 where
     V: Clone + Eq + Hash + 'static,
+    E: Clone + Eq + Hash + 'static,
 {
     fn default() -> Self {
         Self::new()
@@ -191,14 +675,27 @@ impl<V, E, G> GraphExporter<G> for GexfExporter<V, E>
 where
     G: Graph<Vertex = V, Edge = E>,
     V: Clone + Eq + Hash + 'static,
-    E: Clone + Eq + Hash,
+    E: Clone + Eq + Hash + 'static,
 {
     fn export_graph<W: Write>(&mut self, graph: &G, mut output: W) -> Result<()> {
         writeln!(output, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")?;
         writeln!(
             output,
-            "<gexf xmlns=\"http://www.gexf.net/1.2draft\" version=\"1.2\">"
+            "<gexf xmlns=\"http://www.gexf.net/1.2draft\" version=\"1.2\" xsi:schemaLocation=\"http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
         )?;
+        if self.parameter(GexfParameter::ExportMeta) {
+            writeln!(output, "  <meta>")?;
+            if let Some(value) = &self.creator {
+                writeln!(output, "    <creator>{}</creator>", escape(value))?;
+            }
+            if let Some(value) = &self.description {
+                writeln!(output, "    <description>{}</description>", escape(value))?;
+            }
+            if let Some(value) = &self.keywords {
+                writeln!(output, "    <keywords>{}</keywords>", escape(value))?;
+            }
+            writeln!(output, "  </meta>")?;
+        }
         writeln!(
             output,
             "  <graph mode=\"static\" defaultedgetype=\"{}\">",
@@ -208,20 +705,24 @@ where
                 "undirected"
             }
         )?;
+        write_attribute_declarations(&mut output, "node", &self.node_attributes)?;
+        write_attribute_declarations(&mut output, "edge", &self.edge_attributes)?;
         writeln!(output, "    <nodes>")?;
         let mut ids = IndexMap::new();
         for vertex in graph.vertices() {
             let id = self.base.vertex_id(vertex)?;
             ids.insert(vertex.clone(), id.clone());
-            writeln!(
-                output,
-                "      <node id=\"{}\" label=\"{}\"/>",
-                escape(&id),
-                escape(&id)
+            let attributes = self.base.vertex_attributes(vertex).unwrap_or_default();
+            write_gexf_component(
+                &mut output,
+                "node",
+                &format!("id=\"{}\" label=\"{}\"", escape(&id), escape(&id)),
+                &attributes,
+                &self.node_attributes,
             )?;
         }
         writeln!(output, "    </nodes>\n    <edges>")?;
-        for (index, edge) in graph.edges().enumerate() {
+        for edge in graph.edges() {
             let source = graph
                 .edge_source(edge)
                 .ok_or_else(|| IoError::Export("edge has no source".into()))?;
@@ -231,20 +732,135 @@ where
             write!(
                 output,
                 "      <edge id=\"{}\" source=\"{}\" target=\"{}\"",
-                index,
+                escape(
+                    &self.base.edge_id(edge).ok_or_else(|| IoError::Export(
+                        "GEXF edge id provider is missing".into()
+                    ))?
+                ),
                 escape(&ids[source]),
                 escape(&ids[target])
             )?;
-            if self.export_weights {
+            if self.parameter(GexfParameter::ExportEdgeTypes) {
+                write!(
+                    output,
+                    " type=\"{}\"",
+                    if graph.graph_type().directed {
+                        "directed"
+                    } else {
+                        "undirected"
+                    }
+                )?;
+            }
+            if self.parameter(GexfParameter::ExportEdgeWeights) {
                 write!(
                     output,
                     " weight=\"{}\"",
                     format_f64(graph.edge_weight(edge).unwrap_or(1.0))
                 )?;
             }
-            writeln!(output, "/>")?;
+            let attributes = self.base.edge_attributes(edge).unwrap_or_default();
+            if self.parameter(GexfParameter::ExportEdgeLabels)
+                && let Some(label) = attributes.get("label")
+            {
+                write!(output, " label=\"{}\"", escape(label.value()))?;
+            }
+            if self.edge_attributes.iter().any(|(name, details)| {
+                attributes
+                    .get(name)
+                    .is_some_and(|value| details.default.as_deref() != Some(value.value()))
+            }) {
+                writeln!(output, ">")?;
+                write_attvalues(&mut output, &attributes, &self.edge_attributes, "        ")?;
+                writeln!(output, "      </edge>")?;
+            } else {
+                writeln!(output, "/>")?;
+            }
         }
         writeln!(output, "    </edges>\n  </graph>\n</gexf>")?;
         Ok(())
     }
+}
+
+fn write_attribute_declarations<W: Write>(
+    output: &mut W,
+    class: &str,
+    attributes: &IndexMap<String, GexfAttributeDetails>,
+) -> Result<()> {
+    if attributes.is_empty() {
+        return Ok(());
+    }
+    writeln!(output, "    <attributes class=\"{class}\">")?;
+    for (name, details) in attributes {
+        if details.default.is_none() && details.options.is_none() {
+            writeln!(
+                output,
+                "      <attribute id=\"{}\" title=\"{}\" type=\"{}\"/>",
+                details.id,
+                escape(name),
+                details.kind.as_str()
+            )?;
+        } else {
+            writeln!(
+                output,
+                "      <attribute id=\"{}\" title=\"{}\" type=\"{}\">",
+                details.id,
+                escape(name),
+                details.kind.as_str()
+            )?;
+            if let Some(value) = &details.default {
+                writeln!(output, "        <default>{}</default>", escape(value))?;
+            }
+            if let Some(value) = &details.options {
+                writeln!(output, "        <options>{}</options>", escape(value))?;
+            }
+            writeln!(output, "      </attribute>")?;
+        }
+    }
+    writeln!(output, "    </attributes>")?;
+    Ok(())
+}
+
+fn write_attvalues<W: Write>(
+    output: &mut W,
+    attributes: &AttributeMap,
+    registered: &IndexMap<String, GexfAttributeDetails>,
+    indent: &str,
+) -> Result<()> {
+    writeln!(output, "{indent}<attvalues>")?;
+    for (name, details) in registered {
+        if let Some(value) = attributes.get(name)
+            && details.default.as_deref() != Some(value.value())
+        {
+            writeln!(
+                output,
+                "{indent}  <attvalue for=\"{}\" value=\"{}\"/>",
+                details.id,
+                escape(value.value())
+            )?;
+        }
+    }
+    writeln!(output, "{indent}</attvalues>")?;
+    Ok(())
+}
+
+fn write_gexf_component<W: Write>(
+    output: &mut W,
+    element: &str,
+    structural: &str,
+    attributes: &AttributeMap,
+    registered: &IndexMap<String, GexfAttributeDetails>,
+) -> Result<()> {
+    let has_values = registered.iter().any(|(name, details)| {
+        attributes
+            .get(name)
+            .is_some_and(|value| details.default.as_deref() != Some(value.value()))
+    });
+    if has_values {
+        writeln!(output, "      <{element} {structural}>")?;
+        write_attvalues(output, attributes, registered, "        ")?;
+        writeln!(output, "      </{element}>")?;
+    } else {
+        writeln!(output, "      <{element} {structural}/>")?;
+    }
+    Ok(())
 }
