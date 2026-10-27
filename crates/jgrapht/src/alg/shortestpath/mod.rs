@@ -66,9 +66,10 @@ pub use crate::alg::metrics::GraphMeasurer;
 pub use dijkstra::{Dijkstra, DijkstraShortestPath};
 pub use disjoint::{BhandariKDisjointShortestPaths, SuurballeKDisjointShortestPaths};
 pub use eppstein::{EppsteinKShortestPath, EppsteinShortestPathIterator};
-pub use floyd_warshall::{FloydWarshallShortestPaths, floyd_warshall};
+pub use floyd_warshall::FloydWarshallShortestPaths;
+pub(crate) use floyd_warshall::floyd_warshall;
 pub use int_vertex::{IntVertex, IntVertexDijkstraShortestPath};
-pub use johnson::{JohnsonShortestPaths, johnson};
+pub use johnson::JohnsonShortestPaths;
 pub use many_to_many::{DefaultManyToManyShortestPaths, DijkstraManyToManyShortestPaths};
 pub use multi_objective::{
     LabelCorrectingMultiObjectiveShortestPath, MartinShortestPath, MultiObjectiveSingleSourcePaths,
@@ -81,7 +82,7 @@ pub use transit_node_routing::{
 pub use tree_measurer::TreeMeasurer;
 pub use yen::{
     AStarSpurEngine, BoundedPrunedYenKShortestPath, BoundedPrunedYenStats, DijkstraSpurEngine,
-    SpurShortestPathEngine, YenKShortestPath, YenShortestPathIterator, yen_k_shortest_paths,
+    SpurShortestPathEngine, YenKShortestPath, YenShortestPathIterator,
 };
 
 use crate::Result;

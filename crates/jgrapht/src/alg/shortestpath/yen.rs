@@ -72,7 +72,7 @@ pub struct YenShortestPathIterator<'g, G: Graph, P = AllowAllPaths> {
     failed: bool,
 }
 
-impl<'g, G: IncidenceGraph> YenShortestPathIterator<'g, G, AllowAllPaths> {
+impl<'g, G: OutgoingGraph> YenShortestPathIterator<'g, G, AllowAllPaths> {
     /// Constructs an instance of the algorithm for given `graph`, `source` and
     /// `sink`.
     pub fn new(graph: &'g G, source: &G::Vertex, sink: &G::Vertex) -> Result<Self> {
@@ -80,7 +80,7 @@ impl<'g, G: IncidenceGraph> YenShortestPathIterator<'g, G, AllowAllPaths> {
     }
 }
 
-impl<'g, G: IncidenceGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, P> {
+impl<'g, G: OutgoingGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, P> {
     pub fn with_validator(
         graph: &'g G,
         source: &G::Vertex,
@@ -220,7 +220,7 @@ impl<'g, G: IncidenceGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, 
     }
 }
 
-impl<G: IncidenceGraph, P: PathValidator<G>> Iterator for YenShortestPathIterator<'_, G, P> {
+impl<G: OutgoingGraph, P: PathValidator<G>> Iterator for YenShortestPathIterator<'_, G, P> {
     type Item = Result<GraphWalk<G::Vertex, G::Edge>>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -252,7 +252,7 @@ pub struct YenKShortestPath<'g, G: Graph, P = AllowAllPaths> {
     validator: P,
 }
 
-impl<'g, G: IncidenceGraph> YenKShortestPath<'g, G, AllowAllPaths> {
+impl<'g, G: Graph> YenKShortestPath<'g, G, AllowAllPaths> {
     /// Constructs an instance of the algorithm for the given `graph`.
     pub fn new(graph: &'g G) -> Self {
         Self {
@@ -262,7 +262,7 @@ impl<'g, G: IncidenceGraph> YenKShortestPath<'g, G, AllowAllPaths> {
     }
 }
 
-impl<'g, G: IncidenceGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, P> {
+impl<'g, G: OutgoingGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, P> {
     pub fn with_validator(graph: &'g G, validator: P) -> Self {
         Self { graph, validator }
     }
@@ -291,16 +291,6 @@ impl<'g, G: IncidenceGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G,
         }
         Ok(result)
     }
-}
-
-/// Compatibility function retained for the pre-class API.
-pub fn yen_k_shortest_paths<G: IncidenceGraph>(
-    graph: &G,
-    source: &G::Vertex,
-    sink: &G::Vertex,
-    k: usize,
-) -> Result<Vec<GraphWalk<G::Vertex, G::Edge>>> {
-    YenKShortestPath::new(graph).get_paths(source, sink, k)
 }
 
 /// Statistics collected by [`BoundedPrunedYenKShortestPath`].

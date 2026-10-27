@@ -27,7 +27,7 @@ use std::collections::HashMap;
 /// Johnson's all-pairs algorithm: Bellman–Ford potentials, then Dijkstra from every vertex on
 /// reweighted edges. Good for sparse graphs with negative weights; `Err(NegativeCycle)` if the
 /// graph has a negative cycle.
-pub fn johnson<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
+pub(crate) fn johnson<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
     // a virtual source reaching every vertex at cost 0 == all potentials start at 0
     let mut h: HashMap<&G::Vertex, f64> = g.vertices().map(|v| (v, 0.0)).collect();
     relax_all(g, &mut h, &mut HashMap::new())?;
@@ -91,6 +91,11 @@ impl<'g, G: OutgoingGraph> JohnsonShortestPaths<'g, G> {
     }
 
     /// Returns the graph over which this set of paths is defined.
+    /// The shortest paths between every pair of vertices.
+    pub fn all_pairs(&self) -> &AllPairsPaths<G::Vertex, G::Edge> {
+        &self.paths
+    }
+
     pub fn graph(&self) -> &G {
         self.graph
     }

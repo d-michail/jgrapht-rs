@@ -70,7 +70,7 @@ mod precomputation {
         let h = hierarchy(&graph);
         assert!(matches!(
             TransitNodeRoutingPrecomputation::new(&h).with_transit_vertex_count(1),
-            Err(GraphError::InvalidArgument(_))
+            Err(GraphError::InvalidParameter { name: "transit_vertex_count", .. })
         ));
     }
 

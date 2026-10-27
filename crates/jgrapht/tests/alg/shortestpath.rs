@@ -142,9 +142,15 @@ fn negative_weights() {
         BellmanFord::new(&cyc).single_source(&1).err(),
         Some(GraphError::NegativeCycle)
     );
-    assert_eq!(floyd_warshall(&cyc).err(), Some(GraphError::NegativeCycle));
-    assert_eq!(johnson(&cyc).err(), Some(GraphError::NegativeCycle));
-    let ap = johnson(&g).unwrap();
+    assert_eq!(
+        FloydWarshallShortestPaths::new(&cyc).err(),
+        Some(GraphError::NegativeCycle)
+    );
+    assert_eq!(
+        JohnsonShortestPaths::new(&cyc).err(),
+        Some(GraphError::NegativeCycle)
+    );
+    let ap = JohnsonShortestPaths::new(&g).unwrap().all_pairs().clone();
     assert_eq!(ap.weight(&1, &2), 2.0);
     assert_eq!(ap.path(&1, &2).unwrap().vertices, [1, 3, 2]);
 }
@@ -180,11 +186,11 @@ fn yen() {
         (4, 6, 1.0),
         (5, 6, 2.0),
     ]);
-    let ps = yen_k_shortest_paths(&g, &1, &6, 3).unwrap();
+    let ps = YenKShortestPath::new(&g).get_paths(&1, &6, 3).unwrap();
     let ws: Vec<_> = ps.iter().map(|p| p.weight).collect();
     assert_eq!(ws, [5.0, 7.0, 8.0]);
     assert!(ps.iter().all(|p| p.is_valid(&g)));
-    assert_eq!(yen_k_shortest_paths(&g, &1, &6, 100).unwrap().len(), 7);
+    assert_eq!(YenKShortestPath::new(&g).get_paths(&1, &6, 100).unwrap().len(), 7);
 }
 
 #[test]
@@ -201,8 +207,8 @@ fn algorithms_agree_on_random_graphs() {
             g.set_edge_weight(&e, rng.random_range(0..20) as f64)
                 .unwrap();
         }
-        let fw = floyd_warshall(&g).unwrap();
-        let jo = johnson(&g).unwrap();
+        let fw = FloydWarshallShortestPaths::new(&g).unwrap().all_pairs().clone();
+        let jo = JohnsonShortestPaths::new(&g).unwrap().all_pairs().clone();
         for s in 0..25 {
             let d = Dijkstra::new(&g).single_source(&s).unwrap();
             let b = BellmanFord::new(&g).single_source(&s).unwrap();

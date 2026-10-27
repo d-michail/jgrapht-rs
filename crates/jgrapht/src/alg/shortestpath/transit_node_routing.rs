@@ -227,10 +227,10 @@ impl<'h, 'g, G: Graph> TransitNodeRoutingPrecomputation<'h, 'g, G> {
     /// Sets the number of highest-level vertices used as transit vertices.
     pub fn with_transit_vertex_count(mut self, count: usize) -> Result<Self> {
         if count > self.hierarchy.vertices().len() {
-            return Err(GraphError::InvalidArgument(
-                "number of transit vertices is larger than the number of vertices in the graph"
-                    .into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "transit_vertex_count",
+                requirement: crate::ParameterRequirement::AtMost(self.hierarchy.vertices().len() as u64),
+            });
         }
         self.transit_vertex_count = count;
         Ok(self)

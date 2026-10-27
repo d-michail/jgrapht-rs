@@ -21,7 +21,7 @@ use std::collections::HashMap;
 
 /// All-pairs shortest paths in `O(V^3)`. Negative weights are fine; a negative cycle gives
 /// `Err(NegativeCycle)`.
-pub fn floyd_warshall<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
+pub(crate) fn floyd_warshall<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
     let vs: Vec<&G::Vertex> = g.vertices().collect();
     let n = vs.len();
     let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
@@ -110,6 +110,11 @@ impl<'g, G: OutgoingGraph> FloydWarshallShortestPaths<'g, G> {
     /// Returns the graph over which this set of paths is defined.
     pub fn graph(&self) -> &G {
         self.graph
+    }
+
+    /// The shortest paths between every pair of vertices.
+    pub fn all_pairs(&self) -> &AllPairsPaths<G::Vertex, G::Edge> {
+        &self.paths
     }
 
     /// Get the total number of shortest paths. Does not count the paths from a vertex to itself.

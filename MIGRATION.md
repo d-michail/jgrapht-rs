@@ -60,6 +60,17 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 15: shortest paths
+
+* Removed: `yen_k_shortest_paths(g, s, t, k)` (use `YenKShortestPath::new(g).get_paths(s, t, k)`),
+  `EppsteinKShortestPath::paths` (use `get_paths`), and the public `floyd_warshall(g)` and
+  `johnson(g)` functions (use `FloydWarshallShortestPaths::new(g)?.all_pairs()` and
+  `JohnsonShortestPaths::new(g)?.all_pairs()`, which return the same `AllPairsPaths`).
+* `YenKShortestPath`, `YenShortestPathIterator` and `BoundedPrunedYenKShortestPath` require only
+  `OutgoingGraph`; `DijkstraClosestFirstIterator` and the many-to-many helpers have narrower bounds.
+* `ALTAdmissibleHeuristic` with no landmarks is `InvalidParameter { name: "landmarks", NonEmpty }`;
+  too many transit vertices is `InvalidParameter { name: "transit_vertex_count", AtMost(n) }`.
+
 ## Step 14: matching, tours, spanning, flow
 
 * `UndirectedGraph` is required (was a run-time `InvalidGraph(Undirected)`) by: the dense and

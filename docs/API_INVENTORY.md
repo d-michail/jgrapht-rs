@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1473 | 345 | 120 | 361 | 13 | 19 | 421 | 194 |
+| `jgrapht` | 1471 | 345 | 120 | 357 | 13 | 19 | 423 | 194 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -55,8 +55,6 @@ Each needs an owner in R3/R5/R6.
 | `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ContractionHierarchyBidirectionalDijkstra::path` | `INFINITY` |
 | `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ManyToManyPaths::weight` | `INFINITY` |
 | `jgrapht/src/alg/shortestpath/dijkstra.rs` | `DecreaseKeyHeap::with_heap` | `INFINITY` |
-| `jgrapht/src/alg/shortestpath/floyd_warshall.rs` | `floyd_warshall` | `INFINITY` |
-| `jgrapht/src/alg/shortestpath/johnson.rs` | `johnson` | `INFINITY` |
 | `jgrapht/src/alg/shortestpath/mod.rs` | `ShortestPathAlgorithm::path_weight` | `INFINITY` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `AllPairsPaths::weight` | `INFINITY` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `ListSingleSourcePaths::weight` | `INFINITY` |
@@ -164,7 +162,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/shortestpath/bidirectional.rs` | `BidirectionalDijkstra::path` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ContractionHierarchyBidirectionalDijkstra::path` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/shortestpath/dag_all_paths.rs` | `DagAllPathsCounter::count_all_paths` | 0 unwrap, 3 expect/panic/assert |
-| `jgrapht/src/alg/shortestpath/floyd_warshall.rs` | `floyd_warshall` | 0 unwrap, 2 expect/panic/assert |
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `TransitNodeRoutingShortestPath::path` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/shortestpath/yen.rs` | `BoundedPrunedYenKShortestPath::get_paths` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/spanning.rs` | `prim` | 0 unwrap, 1 expect/panic/assert |
@@ -894,9 +891,8 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/shortestpath/disjoint.rs` | `SuurballeKDisjointShortestPaths::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/eppstein.rs` | `EppsteinKShortestPath::get_paths` | Result | `Result<Vec<GraphWalk<G::Vertex, G::Edge>>>` |
 | `jgrapht/src/alg/shortestpath/eppstein.rs` | `EppsteinKShortestPath::new` | unchecked constructor | `Self` |
-| `jgrapht/src/alg/shortestpath/eppstein.rs` | `EppsteinKShortestPath::paths` | Result | `Result<Vec<GraphWalk<G::Vertex, G::Edge>>>` |
 | `jgrapht/src/alg/shortestpath/eppstein.rs` | `EppsteinShortestPathIterator::new` | Result | `Result<Self>` |
-| `jgrapht/src/alg/shortestpath/floyd_warshall.rs` | `floyd_warshall` | Result | `Result<AllPairsPaths<G::Vertex, G::Edge>>` |
+| `jgrapht/src/alg/shortestpath/floyd_warshall.rs` | `FloydWarshallShortestPaths::all_pairs` | state query | `&AllPairsPaths<G::Vertex, G::Edge>` |
 | `jgrapht/src/alg/shortestpath/floyd_warshall.rs` | `FloydWarshallShortestPaths::first_hop` | Option | `Option<G::Vertex>` |
 | `jgrapht/src/alg/shortestpath/floyd_warshall.rs` | `FloydWarshallShortestPaths::graph` | state query | `&G` |
 | `jgrapht/src/alg/shortestpath/floyd_warshall.rs` | `FloydWarshallShortestPaths::last_hop` | Option | `Option<G::Vertex>` |
@@ -904,7 +900,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/shortestpath/floyd_warshall.rs` | `FloydWarshallShortestPaths::shortest_paths_count` | state query | `usize` |
 | `jgrapht/src/alg/shortestpath/int_vertex.rs` | `IntVertex::dense_index` | Option | `Option<usize>` |
 | `jgrapht/src/alg/shortestpath/int_vertex.rs` | `IntVertexDijkstraShortestPath::new` | unchecked constructor | `Self` |
-| `jgrapht/src/alg/shortestpath/johnson.rs` | `johnson` | Result | `Result<AllPairsPaths<G::Vertex, G::Edge>>` |
+| `jgrapht/src/alg/shortestpath/johnson.rs` | `JohnsonShortestPaths::all_pairs` | state query | `&AllPairsPaths<G::Vertex, G::Edge>` |
 | `jgrapht/src/alg/shortestpath/johnson.rs` | `JohnsonShortestPaths::graph` | state query | `&G` |
 | `jgrapht/src/alg/shortestpath/johnson.rs` | `JohnsonShortestPaths::new` | Result | `Result<Self>` |
 | `jgrapht/src/alg/shortestpath/many_to_many.rs` | `DefaultManyToManyShortestPaths::get_many_to_many_paths` | Result | `Result<ManyToManyPaths<G::Vertex, G::Edge>>` |
@@ -962,7 +958,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `VoronoiDiagram::voronoi_cell_id` | state query | `i64` |
 | `jgrapht/src/alg/shortestpath/tree_measurer.rs` | `TreeMeasurer::graph_center` | Result | `Result<Vec<G::Vertex>>` |
 | `jgrapht/src/alg/shortestpath/tree_measurer.rs` | `TreeMeasurer::new` | unchecked constructor | `Self` |
-| `jgrapht/src/alg/shortestpath/yen.rs` | `yen_k_shortest_paths` | Result | `Result<Vec<GraphWalk<G::Vertex, G::Edge>>>` |
 | `jgrapht/src/alg/shortestpath/yen.rs` | `AStarSpurEngine::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/yen.rs` | `BoundedPrunedYenKShortestPath::engine_name` | state query | `&'static str` |
 | `jgrapht/src/alg/shortestpath/yen.rs` | `BoundedPrunedYenKShortestPath::get_paths` | Result | `Result<Vec<GraphWalk<G::Vertex, G::Edge>>>` |

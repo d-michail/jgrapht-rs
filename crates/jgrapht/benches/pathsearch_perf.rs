@@ -63,7 +63,7 @@ fn k_shortest_paths(c: &mut Criterion) {
         b.iter(|| {
             black_box(
                 EppsteinKShortestPath::new(&g)
-                    .paths(&0, &(n - 1), k)
+                    .get_paths(&0, &(n - 1), k)
                     .unwrap()
                     .len(),
             )

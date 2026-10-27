@@ -340,3 +340,31 @@ mod flow_matching_tours {
         // a directed graph is a compile error: the matchers take an `UndirectedGraph`
     }
 }
+
+mod path_enumeration {
+    use jgrapht::alg::shortestpath::YenKShortestPath;
+    use jgrapht::graph::sparse::{FullIncoming, NoIncoming, SparseIntDirectedWeightedGraph};
+
+    /// Three routes from 0 to 3 with lengths 3, 4 and 6.
+    const EDGES: [(usize, usize, f64); 5] = [
+        (0, 1, 1.0),
+        (1, 3, 2.0),
+        (0, 2, 2.0),
+        (2, 3, 2.0),
+        (0, 3, 6.0),
+    ];
+
+    fn lengths<V, E>(paths: &[jgrapht::GraphWalk<V, E>]) -> Vec<f64> {
+        paths.iter().map(|p| p.weight).collect()
+    }
+
+    #[test]
+    fn yen_runs_without_an_incoming_index() {
+        let no = SparseIntDirectedWeightedGraph::<NoIncoming>::from_edges(4, &EDGES).unwrap();
+        let full = SparseIntDirectedWeightedGraph::<FullIncoming>::from_edges(4, &EDGES).unwrap();
+        let on_no = YenKShortestPath::new(&no).get_paths(&0, &3, 5).unwrap();
+        let on_full = YenKShortestPath::new(&full).get_paths(&0, &3, 5).unwrap();
+        assert_eq!(lengths(&on_no), [3.0, 4.0, 6.0]);
+        assert_eq!(lengths(&on_no), lengths(&on_full));
+    }
+}

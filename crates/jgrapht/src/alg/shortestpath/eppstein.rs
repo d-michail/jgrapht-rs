@@ -558,16 +558,6 @@ impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinKShortestPath<'g, G> {
             .take(k)
             .collect())
     }
-
-    /// Compatibility alias for [`Self::get_paths`].
-    pub fn paths(
-        &self,
-        source: &G::Vertex,
-        sink: &G::Vertex,
-        k: usize,
-    ) -> Result<Vec<GraphWalk<G::Vertex, G::Edge>>> {
-        self.get_paths(source, sink, k)
-    }
 }
 
 fn reverse_shortest_path_tree<G: IncomingGraph>(

@@ -52,7 +52,7 @@ pub struct DefaultManyToManyShortestPaths<'g, G: Graph + 'g> {
     algorithm_factory: Box<dyn Fn(&'g G) -> Box<dyn ShortestPathAlgorithm<G> + 'g> + 'g>,
 }
 
-impl<'g, G: IncomingGraph + 'g + IncidenceGraph> DefaultManyToManyShortestPaths<'g, G> {
+impl<'g, G: 'g + IncidenceGraph> DefaultManyToManyShortestPaths<'g, G> {
     /// Constructs a new instance of the algorithm for a given `graph`. The `function` is
     /// defaulted to returning `BidirectionalDijkstraShortestPath`.
     pub fn new(graph: &'g G) -> Self {
@@ -99,7 +99,7 @@ impl<'g, G: IncomingGraph + 'g + IncidenceGraph> DefaultManyToManyShortestPaths<
     }
 }
 
-impl<G: IncomingGraph> ShortestPathAlgorithm<G> for DefaultManyToManyShortestPaths<'_, G> {
+impl<G: Graph> ShortestPathAlgorithm<G> for DefaultManyToManyShortestPaths<'_, G> {
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         if !self.graph.contains_vertex(source) {
             return Err(GraphError::VertexNotFound);

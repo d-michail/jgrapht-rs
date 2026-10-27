@@ -69,9 +69,10 @@ impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
     {
         let landmarks: Vec<_> = landmarks.into_iter().collect();
         if landmarks.is_empty() {
-            return Err(GraphError::InvalidArgument(
-                "at least one landmark must be provided".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "landmarks",
+                requirement: crate::ParameterRequirement::NonEmpty,
+            });
         }
         for landmark in &landmarks {
             if !graph.contains_vertex(landmark) {
