@@ -1,5 +1,6 @@
 //! Connected components, strong connectivity, biconnectivity and condensation.
 
+use super::flow::MaximumFlowAlgorithm;
 use super::interfaces::StrongConnectivityAlgorithm;
 use super::util::Indexed;
 use crate::event::GraphListener;
@@ -950,13 +951,13 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
         Self::with_flow(
             graph,
             |g, s, t| {
-                super::flow::edmonds_karp(g, s, t)
-                    .map(|f| f.value)
+                super::flow::EdmondsKarpMFImpl::new(g)
+                    .and_then(|mut ek| ek.maximum_flow_value(s, t))
                     .unwrap_or(0.0)
             },
             |g, s, t| {
-                super::flow::edmonds_karp(g, s, t)
-                    .map(|f| f.value)
+                super::flow::EdmondsKarpMFImpl::new(g)
+                    .and_then(|mut ek| ek.maximum_flow_value(s, t))
                     .unwrap_or(0.0)
             },
         )

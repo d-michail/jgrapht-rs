@@ -15,7 +15,7 @@ Items marked **[needs 1g]** or **[needs 1i]** wait for the matching or shortest-
 | # | Item | Java | Rust today | Work |
 |---|---|---|---|---|
 | A1 (done) | `ColorRefinementAlgorithm` (`alg/color.rs`) | partition refinement, `O((n+m) log n)` | ported partition refinement, shared with the colour-refinement isomorphism inspector | Java tests were already ported; added a 10,000-vertex path scaling guard |
-| A2 | `TreeDynamicConnectivity` (`alg/tree_connectivity.rs`) | Euler-tour tree on `AVLTree` (worst-case `O(log n)`) | treap (expected `O(log n)`) | port `util/AVLTree` (1151 lines) and `util/DoublyLinkedList` (2065 lines) with `AVLTreeTest` and `DoublyLinkedListTest`; switch the connectivity structure over |
+| A2 (done) | `TreeDynamicConnectivity` (`alg/tree_connectivity.rs`) | Euler-tour tree on `AVLTree` (worst-case `O(log n)`) | ported Euler tours over arena-index `AvlTree` and `DoublyLinkedList` | utility tests ported with a 100,000-node AVL height guard; connectivity public behaviour preserved |
 | A3 | `WeakChordalityInspector` buckets | `HashSet<Integer>`, `O(1)` ops, ascending order for small ints | `BTreeSet`, extra `log` factor | add a `JavaIntHashSet` that reproduces Java's iteration order with `O(1)` operations |
 | A4 | `ApBetweennessCentrality` | Apfloat arbitrary precision | exact `BigRational` | decide: keep as documented deviation (exact is a superset of the Apfloat behaviour but costs differ) or emulate Apfloat precision |
 | A5 | `FarthestInsertionHeuristicTSP` | keeps its default initial sub-tour across calls | recomputed | persist state as Java does |
@@ -37,8 +37,8 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 | # | Helper | Replace by | Callers to update |
 |---|---|---|---|
 | C1 | `isomorphism/legacy.rs` (backtracking) | VF2 / AHU / colour-refinement inspectors; delete the non-induced variants (no Java counterpart) | `generate_tests`, anything using `count_isomorphisms` |
-| C2 | `flow/legacy.rs`: `max_flow`, `edmonds_karp`, `dinic`, `push_relabel`, `minimum_st_cut`, `gomory_hu_tree` | the class implementations in `flow/` | `densest.rs`, `paths.rs`, `connectivity.rs`, netgen |
-| C3 | `flow/legacy.rs`: `min_cost_flow` (SPFA successive shortest paths) | `CapacityScalingMinimumCostFlow` (about 43 references) | same, plus tests |
+| C2 | **done** `flow/legacy.rs`: `max_flow`, `edmonds_karp`, `dinic`, `push_relabel`, `minimum_st_cut`, `gomory_hu_tree` (deleted; Goldberg and k-connectivity now use `PushRelabelMFImpl` and `EdmondsKarpMFImpl`, the old `goldberg_densest_subgraph` is gone) | the class implementations in `flow/` | |
+| C3 | `flow/legacy.rs`: `min_cost_flow` (SPFA successive shortest paths) and its `MinimumCostFlowProblem` struct | `CapacityScalingMinimumCostFlow`. Remaining callers: `paths.rs` (goes with C13/1i, Suurballe) and netgen, which must return `MinimumCostFlowProblemImpl` | `paths.rs`, `generate/netgen` |
 | C4 | **done** `flow/legacy.rs`: `stoer_wagner` (deleted, callers use B1) | B1 | |
 | C5 | `tour/legacy.rs` (nearest neighbour, insertion, double tree, 2-opt, Held–Karp) | the tour classes | |
 | C6 | `tour/legacy.rs`: `christofides_tour` **[needs 1g]** | `ChristofidesThreeHalvesApproxMetricTSP` on the Java matching | |

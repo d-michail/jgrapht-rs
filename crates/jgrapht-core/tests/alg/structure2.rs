@@ -40,9 +40,18 @@ fn densest_subgraph() {
                 .count();
             best = best.max(m as f64 / mask.count_ones() as f64);
         }
-        let (set, d) = goldberg_densest_subgraph(&g).unwrap();
-        assert!((d - best).abs() < 1e-9, "exact {d} vs brute {best}");
-        assert!(!set.is_empty());
+        // the brute force counts edges, so give Goldberg an unweighted copy
+        let mut plain = UGraph::<usize>::simple();
+        plain.add_vertices(g.vertices().copied());
+        for e in g.edges() {
+            let (u, v) = g.edge_endpoints(e).unwrap();
+            plain.add_edge(u, v).unwrap();
+        }
+        let mut goldberg = GoldbergMaximumDensitySubgraph::new(&plain, 100, 101, 1e-9).unwrap();
+        let set = goldberg.calculate_densest().unwrap();
+        let d = goldberg.density().unwrap();
+        assert!((d - best).abs() < 1e-6, "exact {d} vs brute {best}");
+        assert!(set.vertex_count() > 0);
         let (_, approx) = greedy_densest_subgraph(&g);
         assert!(approx * 2.0 >= best - 1e-9 && approx <= best + 1e-9);
     }

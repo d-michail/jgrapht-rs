@@ -94,36 +94,36 @@ fn clrs() -> DiGraph<u32> {
 #[test]
 fn max_flow_algorithms() {
     let g = clrs();
-    for alg in [
-        MaxFlowAlgorithm::EdmondsKarp,
-        MaxFlowAlgorithm::Dinic,
-        MaxFlowAlgorithm::PushRelabel,
-    ] {
-        let f = max_flow(&g, &0, &5, alg).unwrap();
-        assert_eq!(f.value, 23.0, "{alg:?}");
+    let flows = [
+        EdmondsKarpMFImpl::new(&g).unwrap().maximum_flow(&0, &5).unwrap(),
+        DinicMFImpl::new(&g).unwrap().maximum_flow(&0, &5).unwrap(),
+        PushRelabelMFImpl::new(&g).unwrap().maximum_flow(&0, &5).unwrap(),
+    ];
+    for f in flows {
+        assert_eq!(f.value, 23.0);
         // flow conservation at inner vertices
         for v in 1..5u32 {
             let inflow: f64 = g
                 .edges()
                 .filter(|e| g.edge_target(e) == Some(&v))
-                .map(|e| f.flow[e])
+                .map(|e| f.flow(e).unwrap())
                 .sum();
             let outflow: f64 = g
                 .edges()
                 .filter(|e| g.edge_source(e) == Some(&v))
-                .map(|e| f.flow[e])
+                .map(|e| f.flow(e).unwrap())
                 .sum();
             assert!((inflow - outflow).abs() < 1e-9);
         }
         assert!(
             g.edges()
-                .all(|e| f.flow[e] <= g.edge_weight(e).unwrap() + 1e-9)
+                .all(|e| f.flow(e).unwrap() <= g.edge_weight(e).unwrap() + 1e-9)
         );
     }
-    let cut = minimum_st_cut(&g, &0, &5).unwrap();
-    assert_eq!(cut.weight, 23.0);
+    let mut cut = PushRelabelMFImpl::new(&g).unwrap();
+    assert_eq!(cut.calculate_min_cut(&0, &5).unwrap(), 23.0);
     assert_eq!(
-        cut.cut_edges
+        cut.cut_edges()
             .iter()
             .map(|e| g.edge_weight(e).unwrap())
             .sum::<f64>(),
@@ -144,9 +144,24 @@ fn flow_algorithms_agree_randomly() {
             g.set_edge_weight(&e, rng.random_range(1..10) as f64)
                 .unwrap();
         }
-        let a = edmonds_karp(&g, &0, &11).unwrap().value;
-        assert_eq!(a, dinic(&g, &0, &11).unwrap().value);
-        assert_eq!(a, push_relabel(&g, &0, &11).unwrap().value);
+        let a = EdmondsKarpMFImpl::new(&g)
+            .unwrap()
+            .maximum_flow_value(&0, &11)
+            .unwrap();
+        assert_eq!(
+            a,
+            DinicMFImpl::new(&g)
+                .unwrap()
+                .maximum_flow_value(&0, &11)
+                .unwrap()
+        );
+        assert_eq!(
+            a,
+            PushRelabelMFImpl::new(&g)
+                .unwrap()
+                .maximum_flow_value(&0, &11)
+                .unwrap()
+        );
     }
 }
 
@@ -163,12 +178,13 @@ fn gomory_hu_and_stoer_wagner() {
             g.set_edge_weight(&e, rng.random_range(1..8) as f64)
                 .unwrap();
         }
-        let tree = gomory_hu_tree(&g).unwrap();
+        let mut tree = GusfieldEquivalentFlowTree::new(&g).unwrap();
+        let mut dinic = DinicMFImpl::new(&g).unwrap();
         let mut global = f64::INFINITY;
         for a in 0..9 {
             for b in a + 1..9 {
-                let expect = dinic(&g, &a, &b).unwrap().value;
-                assert_eq!(tree.min_cut_value(&a, &b), Some(expect));
+                let expect = dinic.maximum_flow_value(&a, &b).unwrap();
+                assert_eq!(tree.maximum_flow_value(&a, &b).unwrap(), expect);
                 global = global.min(expect);
             }
         }
