@@ -1,6 +1,6 @@
 //! Fluent graph construction (JGraphT's `GraphBuilder` and `GraphTypeBuilder`).
 
-use super::base::{BaseGraph, Directed, Direction, Undirected};
+use super::base::{BaseGraph, DefaultGraphSpecifics, Directed, Direction, Undirected};
 use super::{Graph, GraphMut, GraphMutExt};
 use crate::view::Unmodifiable;
 use crate::{GraphError, GraphType, Result};
@@ -192,8 +192,8 @@ impl<V, E, D: Direction> GraphTypeBuilder<V, E, D> {
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphTypeBuilder<V, E, D> {
     pub fn build_graph(self) -> BaseGraph<V, E, D> {
         let g = match self.edge_factory {
-            Some(f) => BaseGraph::with_edge_factory(self.ty, f),
-            None => BaseGraph::without_edge_factory(self.ty),
+            Some(f) => BaseGraph::<V, E, D, DefaultGraphSpecifics>::with_edge_factory(self.ty, f),
+            None => BaseGraph::<V, E, D, DefaultGraphSpecifics>::without_edge_factory(self.ty),
         };
         match self.vertex_factory {
             Some(f) => g.with_vertex_factory(f),

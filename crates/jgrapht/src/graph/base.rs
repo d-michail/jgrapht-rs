@@ -51,6 +51,10 @@ impl Direction for Undirected {
     const DIRECTED: bool = false;
 }
 
+/// Storage marker used by the standard [`BaseGraph`] constructors.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct DefaultGraphSpecifics;
+
 #[derive(Debug, Clone)]
 struct EdgeRec<V> {
     src: V,
@@ -77,15 +81,16 @@ impl<E> Default for Adj<E> {
 /// The default adjacency-map graph. Its capabilities (loops, multi-edges, weights, acyclicity)
 /// are described by a [`GraphType`]; direction is fixed by the `D` tag.
 #[derive(Clone)]
-pub struct BaseGraph<V, E = DefaultEdge, D = Undirected> {
+pub struct BaseGraph<V, E = DefaultEdge, D = Undirected, S = DefaultGraphSpecifics> {
     ty: GraphType,
     vertices: IndexMap<V, Adj<E>>,
     edges: IndexMap<E, EdgeRec<V>>,
+    endpoint_index: Option<IndexMap<(V, V), IndexSet<E>>>,
     next_id: u64,
     factory: Option<fn(u64) -> E>,
     next_vertex: u64,
     vertex_factory: Option<fn(u64) -> V>,
-    _dir: PhantomData<D>,
+    _marker: PhantomData<(D, S)>,
 }
 
 /// Undirected [`BaseGraph`] with [`DefaultEdge`]s.
@@ -93,7 +98,7 @@ pub type UGraph<V, E = DefaultEdge> = BaseGraph<V, E, Undirected>;
 /// Directed [`BaseGraph`] with [`DefaultEdge`]s.
 pub type DiGraph<V, E = DefaultEdge> = BaseGraph<V, E, Directed>;
 
-impl<V, E, D: Direction> fmt::Debug for BaseGraph<V, E, D>
+impl<V, E, D: Direction, S> fmt::Debug for BaseGraph<V, E, D, S>
 where
     V: fmt::Debug,
     E: fmt::Debug,
@@ -114,18 +119,22 @@ where
     }
 }
 
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> BaseGraph<V, E, D> {
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction>
+    BaseGraph<V, E, D, DefaultGraphSpecifics>
+{
     /// Creates a graph that mints edges with `factory(counter)` when `add_edge` is used.
     pub fn with_edge_factory(ty: GraphType, factory: fn(u64) -> E) -> Self {
-        Self::build(ty, Some(factory))
+        Self::build(ty, Some(factory), false)
     }
 
     /// Creates a graph without an edge factory: edges must be added with `add_edge_with`.
     pub fn without_edge_factory(ty: GraphType) -> Self {
-        Self::build(ty, None)
+        Self::build(ty, None, false)
     }
+}
 
-    fn build(ty: GraphType, factory: Option<fn(u64) -> E>) -> Self {
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> BaseGraph<V, E, D, S> {
+    pub(crate) fn build(ty: GraphType, factory: Option<fn(u64) -> E>, fast_lookups: bool) -> Self {
         BaseGraph {
             ty: GraphType {
                 directed: D::DIRECTED,
@@ -133,12 +142,18 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> BaseGraph<V, E, D
             },
             vertices: IndexMap::new(),
             edges: IndexMap::new(),
+            endpoint_index: fast_lookups.then(IndexMap::new),
             next_id: 0,
             factory,
             next_vertex: 0,
             vertex_factory: None,
-            _dir: PhantomData,
+            _marker: PhantomData,
         }
+    }
+
+    /// Whether endpoint pairs are indexed for expected O(1) lookup.
+    pub fn has_fast_lookups(&self) -> bool {
+        self.endpoint_index.is_some()
     }
 
     /// The edge factory, if any.
@@ -233,7 +248,7 @@ impl<V: Clone + Eq + Hash> BaseGraph<V, DefaultEdge, Directed> {
     }
 }
 
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Graph for BaseGraph<V, E, D> {
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> Graph for BaseGraph<V, E, D, S> {
     type Vertex = V;
     type Edge = E;
 
@@ -310,22 +325,36 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Graph for BaseGra
         }
     }
     fn edges_between<'a>(&'a self, u: &'a V, v: &'a V) -> impl Iterator<Item = &'a E> {
-        self.out_edges(u).filter(move |e| {
-            let r = &self.edges[*e];
-            if D::DIRECTED {
-                &r.tgt == v
-            } else {
-                (&r.src == u && &r.tgt == v) || (&r.src == v && &r.tgt == u)
-            }
-        })
+        if let Some(index) = &self.endpoint_index {
+            Box::new(
+                index
+                    .get(&(u.clone(), v.clone()))
+                    .into_iter()
+                    .flat_map(|edges| edges.iter()),
+            ) as Box<dyn Iterator<Item = &'a E> + 'a>
+        } else {
+            Box::new(self.out_edges(u).filter(move |e| {
+                let r = &self.edges[*e];
+                if D::DIRECTED {
+                    &r.tgt == v
+                } else {
+                    (&r.src == u && &r.tgt == v) || (&r.src == v && &r.tgt == u)
+                }
+            })) as Box<dyn Iterator<Item = &'a E> + 'a>
+        }
     }
 }
 
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> DirectedGraph for BaseGraph<V, E, Directed> {}
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, S> DirectedGraph for BaseGraph<V, E, Directed, S> {}
 
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> UndirectedGraph for BaseGraph<V, E, Undirected> {}
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, S> UndirectedGraph
+    for BaseGraph<V, E, Undirected, S>
+{
+}
 
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphMut for BaseGraph<V, E, D> {
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> GraphMut
+    for BaseGraph<V, E, D, S>
+{
     fn add_vertex(&mut self, v: V) -> bool {
         if self.vertices.contains_key(&v) {
             return false;
@@ -379,13 +408,22 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphMut for Base
             self.vertices[v].out.insert(e.clone());
         }
         self.edges.insert(
-            e,
+            e.clone(),
             EdgeRec {
                 src: u.clone(),
                 tgt: v.clone(),
                 weight: 1.0,
             },
         );
+        if let Some(index) = &mut self.endpoint_index {
+            index
+                .entry((u.clone(), v.clone()))
+                .or_default()
+                .insert(e.clone());
+            if !D::DIRECTED && u != v {
+                index.entry((v.clone(), u.clone())).or_default().insert(e);
+            }
+        }
         Ok(true)
     }
 
@@ -398,6 +436,12 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphMut for Base
             self.vertices[&r.tgt].inc.shift_remove(e);
         } else if r.src != r.tgt {
             self.vertices[&r.tgt].out.shift_remove(e);
+        }
+        if let Some(index) = &mut self.endpoint_index {
+            remove_indexed_edge(index, &(r.src.clone(), r.tgt.clone()), e);
+            if !D::DIRECTED && r.src != r.tgt {
+                remove_indexed_edge(index, &(r.tgt, r.src), e);
+            }
         }
         true
     }
@@ -433,7 +477,21 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphMut for Base
     }
 }
 
-impl<V, E, D> fmt::Display for BaseGraph<V, E, D>
+fn remove_indexed_edge<V: Clone + Eq + Hash, E: Eq + Hash>(
+    index: &mut IndexMap<(V, V), IndexSet<E>>,
+    endpoints: &(V, V),
+    edge: &E,
+) {
+    let remove_entry = index.get_mut(endpoints).is_some_and(|edges| {
+        edges.shift_remove(edge);
+        edges.is_empty()
+    });
+    if remove_entry {
+        index.shift_remove(endpoints);
+    }
+}
+
+impl<V, E, D, S> fmt::Display for BaseGraph<V, E, D, S>
 where
     V: fmt::Display + Clone + Eq + Hash,
     E: fmt::Display + Clone + Eq + Hash + 'static,
@@ -446,13 +504,15 @@ where
 }
 
 /// JGraphT's `AbstractGraph.equals` (see [`super::graph_equals`]).
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> PartialEq for BaseGraph<V, E, D> {
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> PartialEq
+    for BaseGraph<V, E, D, S>
+{
     fn eq(&self, other: &Self) -> bool {
         super::graph_equals(self, other)
     }
 }
 
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Hash for BaseGraph<V, E, D> {
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> Hash for BaseGraph<V, E, D, S> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         state.write_u64(super::graph_hash(self));
     }

@@ -3,13 +3,20 @@
 mod base;
 pub mod builder;
 mod ext;
-pub mod sparse;
+pub mod map;
 pub mod props;
+pub mod sparse;
 
-pub use base::{BaseGraph, DefaultEdge, DiGraph, Directed, Direction, UGraph, Undirected};
+pub use base::{
+    BaseGraph, DefaultEdge, DefaultGraphSpecifics, DiGraph, Directed, Direction, UGraph, Undirected,
+};
 pub use ext::{
     DirectedExt, GraphExt, GraphMutExt, remove_vertex_and_preserve_connectivity,
     remove_vertices_and_preserve_connectivity,
+};
+pub use map::{
+    FastutilMapGraph, FastutilMapIntVertexGraph, FastutilMapIntVertexSpecifics,
+    FastutilMapSpecifics,
 };
 
 use crate::{GraphType, Result};
