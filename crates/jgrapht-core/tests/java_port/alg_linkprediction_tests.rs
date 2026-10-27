@@ -98,7 +98,7 @@ fn adamic_adar_prediction_with_list_of_pairs() {
 
 #[test]
 fn adamic_adar_invalid_prediction() {
-    let mut g = UGraph::<i32>::simple();
+    let mut g = DiGraph::<i32>::simple();
     construct_graph(&mut g, &[&[0, 2], &[1, 2]]);
     assert!(is_not_well_defined(
         AdamicAdarIndexLinkPrediction::new(&g).predict(&0, &1)
