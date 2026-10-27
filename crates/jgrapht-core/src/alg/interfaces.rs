@@ -1,6 +1,7 @@
 //! Traits and result types shared by several algorithms (JGraphT's `alg.interfaces`).
 //! More are added as the algorithm families that need them are ported.
 
+use super::color::Coloring;
 use super::cover::VertexCover;
 use crate::Result;
 use crate::graph::Graph;
@@ -122,4 +123,9 @@ pub trait MaximalCliqueEnumerationAlgorithm<V: Eq + Hash + Clone> {
 /// Computes a vertex cover (`VertexCoverAlgorithm`).
 pub trait VertexCoverAlgorithm<V: Clone> {
     fn vertex_cover(&self) -> Result<VertexCover<V>>;
+}
+
+/// Computes a proper vertex coloring (`VertexColoringAlgorithm`).
+pub trait VertexColoringAlgorithm<V: Clone + Eq + Hash> {
+    fn coloring(&self) -> Result<Coloring<V>>;
 }
