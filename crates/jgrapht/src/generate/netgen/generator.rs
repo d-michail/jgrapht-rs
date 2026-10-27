@@ -1,7 +1,7 @@
 use super::config::NetworkGeneratorConfig;
 use super::distributor::Distributor;
 use super::problems::{BipartiteMatchingProblem, MaximumFlowProblem, NetworkInfo};
-use crate::alg::flow::MinimumCostFlowProblem;
+use crate::alg::flow::MinimumCostFlowProblemImpl;
 use crate::graph::props::require_directed;
 use crate::graph::{Graph, GraphMut};
 use crate::util::ElementsSequenceGenerator;
@@ -122,16 +122,22 @@ where
         })
     }
 
-    pub fn generate_minimum_cost_flow_problem<G: GraphMut<Vertex = V, Edge = E>>(
+    pub fn generate_minimum_cost_flow_problem<'g, G: GraphMut<Vertex = V, Edge = E>>(
         &mut self,
-        graph: &mut G,
-    ) -> Result<MinimumCostFlowProblem<V, E>> {
+        graph: &'g mut G,
+    ) -> Result<MinimumCostFlowProblemImpl<'g, G>>
+    where
+        V: 'g,
+        E: 'g,
+    {
         require_directed(graph)?;
         let run = self.generate(graph)?;
-        Ok(MinimumCostFlowProblem::new(
-            run.supply,
-            run.capacity,
-            run.cost,
+        Ok(MinimumCostFlowProblemImpl::with_costs(
+            graph,
+            move |vertex| run.supply.get(vertex).copied().unwrap_or(0),
+            move |edge| run.capacity[edge],
+            |_| 0,
+            move |edge| run.cost[edge] as f64,
         ))
     }
 

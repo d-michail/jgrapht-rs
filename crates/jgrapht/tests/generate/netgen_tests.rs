@@ -447,53 +447,55 @@ mod network_generator_test {
         }
     }
 
-    fn gen_min_cost(
-        config: &NetworkGeneratorConfig,
-        seed: i64,
-    ) -> (G, MinimumCostFlowProblem<i32, DefaultEdge>) {
-        let mut g = new_graph();
-        let mut generator = Gen::new(config.clone(), seed);
-        let problem = generator
-            .generate_minimum_cost_flow_problem(&mut g)
+    fn test_min_cost(config: &NetworkGeneratorConfig, seed: i64) {
+        let mut g1 = new_graph();
+        let mut generator1 = Gen::new(config.clone(), seed);
+        let p1 = generator1
+            .generate_minimum_cost_flow_problem(&mut g1)
             .unwrap();
-        let info = generator.network_info().unwrap();
-        validate_network(&g, info, config);
-        for s in info.sources() {
-            assert!(problem.node_supply(s) > 0);
+        let info1 = generator1.network_info().unwrap();
+        validate_network(p1.graph(), info1, config);
+        for source in info1.sources() {
+            assert!(p1.node_supply(source) > 0);
         }
-        for t in info.sinks() {
-            assert!(problem.node_supply(t) < 0);
+        for sink in info1.sinks() {
+            assert!(p1.node_supply(sink) < 0);
         }
         validate_capacities(
-            &g,
-            |e| problem.arc_capacity_upper_bound(e) as f64,
-            info,
+            p1.graph(),
+            |edge| p1.arc_capacity_upper_bound(edge) as f64,
+            info1,
             config,
         );
-        validate_costs(&g, |e| problem.arc_cost(e) as f64, config);
-        (g, problem)
-    }
+        validate_costs(p1.graph(), |edge| p1.arc_cost(edge), config);
 
-    fn test_min_cost(config: &NetworkGeneratorConfig, seed: i64) {
-        let (g1, p1) = gen_min_cost(config, seed);
-        let (g2, p2) = gen_min_cost(config, seed);
-        assert_graphs_equal(&g1, &g2);
-        for v in g1.vertices() {
+        let mut g2 = new_graph();
+        let mut generator2 = Gen::new(config.clone(), seed);
+        let p2 = generator2
+            .generate_minimum_cost_flow_problem(&mut g2)
+            .unwrap();
+        assert_graphs_equal(p1.graph(), p2.graph());
+        for v in p1.graph().vertices() {
             assert_eq!(p1.node_supply(v), p2.node_supply(v));
         }
         compare(
-            &g1,
-            &g2,
+            p1.graph(),
+            p2.graph(),
             |e| p1.arc_capacity_lower_bound(e),
             |e| p2.arc_capacity_lower_bound(e),
         );
         compare(
-            &g1,
-            &g2,
+            p1.graph(),
+            p2.graph(),
             |e| p1.arc_capacity_upper_bound(e),
             |e| p2.arc_capacity_upper_bound(e),
         );
-        compare(&g1, &g2, |e| p1.arc_cost(e), |e| p2.arc_cost(e));
+        compare(
+            p1.graph(),
+            p2.graph(),
+            |e| p1.arc_cost(e),
+            |e| p2.arc_cost(e),
+        );
     }
 
     fn gen_max_flow(
@@ -767,19 +769,24 @@ fn matches_jgrapht_for_a_fixed_seed() {
     let p = generator
         .generate_minimum_cost_flow_problem(&mut g)
         .unwrap();
-    let mut lines: Vec<String> = g
+    let graph = p.graph();
+    let mut lines: Vec<String> = graph
         .edges()
         .map(|e| {
             format!(
                 "{}->{} cap={} cost={}",
-                g.edge_source(e).unwrap(),
-                g.edge_target(e).unwrap(),
+                graph.edge_source(e).unwrap(),
+                graph.edge_target(e).unwrap(),
                 p.arc_capacity_upper_bound(e),
                 p.arc_cost(e)
             )
         })
         .collect();
-    lines.extend(g.vertices().map(|v| format!("s{v}={}", p.node_supply(v))));
+    lines.extend(
+        graph
+            .vertices()
+            .map(|v| format!("s{v}={}", p.node_supply(v))),
+    );
     lines.sort();
     let expected = include_str!("fixtures/netgen_seed7.txt");
     assert_eq!(lines.join("\n"), expected.trim_end());

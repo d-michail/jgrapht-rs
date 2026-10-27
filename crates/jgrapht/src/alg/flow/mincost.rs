@@ -439,7 +439,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
             let mut opposite = node_map[graph.edge_target(edge).unwrap()];
             let upper_cap = problem.arc_capacity_upper_bound(edge);
             let lower_cap = problem.arc_capacity_lower_bound(edge);
-            let mut cost = graph.edge_weight(edge).unwrap_or(1.0);
+            let mut cost = problem.arc_cost(edge);
             if upper_cap < 0 {
                 return Err(GraphError::InvalidArgument(
                     "Negative edge capacities are not allowed".into(),
@@ -621,7 +621,6 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         P: MinimumCostFlowProblem,
         P::Graph: Graph<Vertex = V, Edge = E>,
     {
-        let graph = problem.graph();
         let mut arc = self.net.nodes[self.n].first_non_saturated;
         while let Some(a) = arc {
             if self.net.arcs[self.net.arcs[a].rev].residual_capacity > 0 {
@@ -637,8 +636,8 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
             let arc = self.arcs[i];
             // the residual capacity of the reverse arc equals the flow on the arc
             let mut flow_on_arc = self.net.arcs[self.net.arcs[arc].rev].residual_capacity as f64;
-            let weight = graph.edge_weight(graph_edge).unwrap_or(1.0);
-            if weight < 0.0 {
+            let cost = problem.arc_cost(graph_edge);
+            if cost < 0.0 {
                 flow_on_arc = (problem.arc_capacity_upper_bound(graph_edge)
                     - problem.arc_capacity_lower_bound(graph_edge))
                     as f64
@@ -646,7 +645,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
             }
             flow_on_arc += problem.arc_capacity_lower_bound(graph_edge) as f64;
             flow_map.insert(graph_edge.clone(), flow_on_arc);
-            total_cost += flow_on_arc * weight;
+            total_cost += flow_on_arc * cost;
         }
         Ok(MinimumCostFlow {
             cost: total_cost,

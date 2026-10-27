@@ -24,7 +24,7 @@ Items marked **[needs 1g]** or **[needs 1i]** wait for the matching or shortest-
 
 | # | Java class | Tests | Rust today |
 |---|---|---|---|
-| B1 | **done** `StoerWagnerMinimumCut` (PriorityQueue version, `O(VE log E)`) | 10 | function `stoer_wagner` in `flow/legacy.rs` |
+| B1 | **done** `StoerWagnerMinimumCut` (PriorityQueue version, `O(VE log E)`) | 10 | faithful class port; the former function helper is deleted |
 | B2 | **done** `TransitiveClosure` | 6 | function in `transitive.rs` |
 | B3 | **done** `TransitiveReduction` (Hsu) | 8 | function in `transitive.rs` |
 
@@ -38,7 +38,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 |---|---|---|---|
 | C1 | **done** `isomorphism/legacy.rs` (backtracking, deleted along with the non-induced variants; the older tests and `generate_tests` use `VF2GraphIsomorphismInspector` and `VF2SubgraphIsomorphismInspector`) | VF2 / AHU / colour-refinement inspectors | |
 | C2 | **done** `flow/legacy.rs`: `max_flow`, `edmonds_karp`, `dinic`, `push_relabel`, `minimum_st_cut`, `gomory_hu_tree` (deleted; Goldberg and k-connectivity now use `PushRelabelMFImpl` and `EdmondsKarpMFImpl`, the old `goldberg_densest_subgraph` is gone) | the class implementations in `flow/` | |
-| C3 | `flow/legacy.rs`: `min_cost_flow` (SPFA successive shortest paths) and its `MinimumCostFlowProblem` struct | `CapacityScalingMinimumCostFlow`. Remaining callers: netgen, which must return `MinimumCostFlowProblemImpl`, and the legacy `spanning_flow` tests | `generate/netgen`, `tests/alg/spanning_flow.rs` |
+| C3 | **done** `flow/legacy.rs` (deleted): `min_cost_flow` (SPFA successive shortest paths) and its owned `MinimumCostFlowProblem` struct; NETGEN now returns `MinimumCostFlowProblemImpl`, and the spanning-flow test uses `CapacityScalingMinimumCostFlow` | `CapacityScalingMinimumCostFlow` | |
 | C4 | **done** `flow/legacy.rs`: `stoer_wagner` (deleted, callers use B1) | B1 | |
 | C5 | `tour/legacy.rs` (nearest neighbour, insertion, double tree, 2-opt, Held–Karp) | the tour classes | |
 | C6 | `tour/legacy.rs`: `christofides_tour` **[needs 1g]** | `ChristofidesThreeHalvesApproxMetricTSP` on the Java matching | |

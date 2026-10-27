@@ -1,8 +1,7 @@
 //! Port of `org.jgrapht.generate.netgen`: a NETGEN-style generator of flow problems (minimum cost
 //! flow, maximum flow and bipartite matching / assignment).
 //!
-//! The Java problem objects hold the graph; here the caller keeps the graph and the problem only
-//! carries the per-vertex / per-arc data.
+//! Generated problem objects borrow the caller-owned graph and own their per-vertex / per-arc data.
 
 mod builder;
 mod config;

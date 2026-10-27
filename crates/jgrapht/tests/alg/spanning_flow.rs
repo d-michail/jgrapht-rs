@@ -216,11 +216,43 @@ fn min_cost_flow_works() {
     // edges in insertion order: 0-1, 0-2, 1-3, 2-3, 1-2
     let order: Vec<DefaultEdge> = g.edges().copied().collect();
     let pos = |e: &DefaultEdge| order.iter().position(|x| x == e).unwrap();
-    let cap = |e: &DefaultEdge| [4.0, 2.0, 3.0, 5.0, 10.0][pos(e)];
+    let cap = |e: &DefaultEdge| [4, 2, 3, 5, 10][pos(e)];
     let cost = |e: &DefaultEdge| [1.0, 2.0, 3.0, 1.0, 1.0][pos(e)];
-    let r = min_cost_flow(&g, &0, &3, None, cap, cost).unwrap();
-    assert_eq!(r.flow_value, 6.0);
+    let problem = MinimumCostFlowProblemImpl::with_costs(
+        &g,
+        |vertex| match *vertex {
+            0 => 6,
+            3 => -6,
+            _ => 0,
+        },
+        cap,
+        |_| 0,
+        cost,
+    );
+    let flow = CapacityScalingMinimumCostFlow::new()
+        .get_minimum_cost_flow(&problem)
+        .unwrap();
+    assert_eq!(
+        g.out_edges_of(&0)
+            .map(|edge| flow.flow(edge).unwrap())
+            .sum::<f64>(),
+        6.0
+    );
+    assert_eq!(flow.cost, 19.0);
     // cheapest: 0-1-2-3 costs 3, 0-1-3 costs 4, 0-2-3 costs 3: fill 0-1 (4) and 0-2 (2)
-    let r2 = min_cost_flow(&g, &0, &3, Some(2.0), cap, cost).unwrap();
-    assert_eq!((r2.flow_value, r2.cost), (2.0, 6.0));
+    let problem = MinimumCostFlowProblemImpl::with_costs(
+        &g,
+        |vertex| match *vertex {
+            0 => 2,
+            3 => -2,
+            _ => 0,
+        },
+        cap,
+        |_| 0,
+        cost,
+    );
+    let flow = CapacityScalingMinimumCostFlow::new()
+        .get_minimum_cost_flow(&problem)
+        .unwrap();
+    assert_eq!(flow.cost, 6.0);
 }
