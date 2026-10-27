@@ -6,6 +6,7 @@
 mod basis;
 mod detector;
 mod eulerian;
+mod howard;
 mod legacy;
 mod simple_cycles;
 
@@ -15,6 +16,7 @@ pub use basis::{
 };
 pub use detector::{CycleDetector, simple_cycle_to_graph_path};
 pub use eulerian::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
+pub use howard::{HowardMinimumMeanCycle, MinimumCycleMeanAlgorithm};
 pub use legacy::*;
 pub use simple_cycles::{
     DirectedSimpleCycles, HawickJamesSimpleCycles, JohnsonSimpleCycles,

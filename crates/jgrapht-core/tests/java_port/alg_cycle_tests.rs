@@ -3081,3 +3081,298 @@ mod hierholzer_eulerian_cycle_test {
         assert_eulerian(&g, &gp);
     }
 }
+
+// HowardMinimumMeanCycleTest
+
+mod howard_minimum_mean_cycle_test {
+    use super::*;
+    use jgrapht::alg::cycle::{HowardMinimumMeanCycle, MinimumCycleMeanAlgorithm};
+    use jgrapht::graph::GraphExt;
+
+    const GRAPH1: &[(i32, i32, i32)] = &[
+        (1, 2, 1),
+        (1, 3, 10),
+        (2, 3, 3),
+        (3, 4, 2),
+        (4, 1, 8),
+        (4, 2, 0),
+    ];
+    const GRAPH2: &[(i32, i32, i32)] = &[(1, 3, 7), (3, 2, 3), (2, 0, 7), (2, 1, 5)];
+    const GRAPH3: &[(i32, i32, i32)] = &[
+        (0, 2, 16),
+        (0, 3, 0),
+        (3, 0, 14),
+        (5, 0, 16),
+        (0, 8, 12),
+        (5, 1, 13),
+        (1, 6, 4),
+        (6, 1, 15),
+        (7, 1, 2),
+        (1, 9, 8),
+        (2, 6, 3),
+        (7, 2, 15),
+        (9, 2, 10),
+        (3, 6, 1),
+        (3, 8, 8),
+        (8, 3, 18),
+        (4, 6, 7),
+        (4, 9, 13),
+        (5, 6, 3),
+        (8, 6, 7),
+        (7, 8, 7),
+        (9, 7, 17),
+    ];
+    const GRAPH4: &[(i32, i32, i32)] = &[
+        (0, 3, 19),
+        (4, 0, 0),
+        (0, 5, 8),
+        (5, 0, 17),
+        (0, 7, 10),
+        (8, 0, 15),
+        (1, 4, 14),
+        (7, 1, 10),
+        (3, 2, 14),
+        (2, 4, 3),
+        (2, 5, 1),
+        (2, 9, 1),
+        (5, 3, 18),
+        (6, 3, 4),
+        (3, 7, 2),
+        (8, 3, 8),
+        (5, 4, 17),
+        (6, 4, 5),
+        (8, 4, 15),
+        (9, 4, 17),
+        (6, 5, 1),
+        (5, 7, 19),
+        (9, 5, 12),
+        (6, 8, 15),
+        (8, 6, 19),
+        (7, 9, 6),
+    ];
+    const GRAPH5: &[(i32, i32, i32)] = &[
+        (6, 0, 11),
+        (8, 0, 5),
+        (4, 1, 3),
+        (2, 3, 6),
+        (7, 2, 9),
+        (3, 4, 19),
+        (3, 9, 6),
+        (4, 9, 8),
+        (6, 5, 5),
+        (5, 9, 16),
+        (6, 7, 16),
+        (6, 8, 12),
+        (8, 9, 12),
+    ];
+    const GRAPH6: &[(i32, i32, i32)] = &[
+        (0, 2, 16),
+        (0, 3, 0),
+        (3, 0, 14),
+        (5, 0, 16),
+        (0, 8, 12),
+        (13, 0, 13),
+        (0, 14, 4),
+        (14, 0, 15),
+        (2, 1, 2),
+        (1, 4, 8),
+        (1, 8, 3),
+        (9, 1, 15),
+        (11, 1, 10),
+        (1, 14, 1),
+        (2, 4, 8),
+        (4, 2, 18),
+        (2, 7, 7),
+        (2, 10, 13),
+        (2, 11, 3),
+        (5, 3, 7),
+        (3, 7, 7),
+        (8, 3, 17),
+        (3, 12, 19),
+        (13, 3, 0),
+        (3, 14, 8),
+        (14, 3, 17),
+        (4, 6, 10),
+        (7, 4, 15),
+        (4, 11, 14),
+        (14, 4, 10),
+        (8, 5, 14),
+        (5, 9, 3),
+        (5, 10, 1),
+        (5, 14, 1),
+        (8, 6, 18),
+        (9, 6, 4),
+        (6, 10, 2),
+        (11, 6, 8),
+        (13, 6, 17),
+        (14, 6, 5),
+        (9, 7, 15),
+        (10, 7, 17),
+        (11, 7, 1),
+        (7, 12, 19),
+        (14, 7, 12),
+        (8, 10, 15),
+        (10, 8, 19),
+        (8, 13, 6),
+        (9, 10, 2),
+        (12, 9, 17),
+        (13, 9, 8),
+        (10, 13, 3),
+        (11, 14, 2),
+        (12, 14, 5),
+        (14, 12, 13),
+        (14, 13, 5),
+    ];
+    const GRAPH7: &[(i32, i32, i32)] = &[
+        (0, 1, 5),
+        (2, 0, 8),
+        (0, 3, 8),
+        (4, 0, 10),
+        (0, 5, 7),
+        (5, 0, 8),
+        (6, 0, 2),
+        (8, 0, 7),
+        (11, 0, 3),
+        (0, 14, 1),
+        (2, 1, 12),
+        (1, 6, 16),
+        (1, 12, 11),
+        (12, 1, 18),
+        (1, 13, 10),
+        (2, 3, 9),
+        (2, 4, 9),
+        (4, 2, 12),
+        (5, 2, 15),
+        (7, 2, 10),
+        (2, 8, 10),
+        (8, 2, 8),
+        (2, 10, 12),
+        (2, 12, 6),
+        (12, 2, 10),
+        (3, 5, 13),
+        (3, 9, 8),
+        (11, 3, 8),
+        (13, 3, 2),
+        (7, 4, 17),
+        (8, 4, 17),
+        (12, 4, 11),
+        (5, 6, 13),
+        (8, 5, 8),
+        (9, 5, 2),
+        (5, 10, 11),
+        (5, 11, 6),
+        (5, 12, 12),
+        (12, 5, 17),
+        (5, 13, 13),
+        (6, 8, 7),
+        (6, 9, 17),
+        (6, 13, 4),
+        (6, 14, 15),
+        (14, 6, 19),
+        (7, 8, 18),
+        (8, 7, 19),
+        (7, 11, 18),
+        (11, 7, 8),
+        (12, 7, 10),
+        (7, 13, 4),
+        (13, 7, 17),
+        (8, 9, 15),
+        (9, 8, 8),
+        (9, 12, 11),
+        (9, 14, 3),
+        (10, 11, 1),
+        (11, 10, 12),
+        (10, 13, 17),
+        (11, 12, 2),
+        (12, 11, 18),
+        (11, 13, 9),
+        (13, 11, 5),
+        (11, 14, 3),
+        (14, 12, 8),
+        (14, 13, 9),
+    ];
+
+    fn test_on_graph(
+        edges: &[(i32, i32, i32)],
+        expected_mean: f64,
+        expected_cycle: Option<&[(i32, i32)]>,
+    ) {
+        let mut graph = DiGraph::<i32>::pseudo().weighted();
+        for (u, v, w) in edges {
+            graph.add_vertex(*u);
+            graph.add_vertex(*v);
+            graph.add_weighted_edge(u, v, *w as f64).unwrap();
+        }
+        let expected_path = expected_cycle.map(|path| {
+            let start = path[0].0;
+            let end = path[path.len() - 1].1;
+            let mut edge_list = Vec::new();
+            let mut vertices = vec![start];
+            let mut weight = 0.0;
+            for (source, target) in path {
+                let mut minimum_weight = f64::INFINITY;
+                let mut minimum_weight_edge = None;
+                for edge in graph.edges_between(source, target) {
+                    let w = graph.edge_weight(edge).unwrap();
+                    if w < minimum_weight {
+                        minimum_weight = w;
+                        minimum_weight_edge = Some(*edge);
+                    }
+                }
+                edge_list.push(minimum_weight_edge.unwrap());
+                vertices.push(*target);
+                weight += minimum_weight;
+            }
+            assert_eq!(end, *vertices.last().unwrap());
+            GraphWalk::new(vertices, edge_list, weight)
+        });
+        let mut mmc = HowardMinimumMeanCycle::new(&graph);
+        let actual_path = mmc.get_cycle();
+        let actual_mean = mmc.get_cycle_mean();
+        assert!((expected_mean - actual_mean).abs() <= 1e-9 || expected_mean == actual_mean);
+        assert_eq!(expected_path, actual_path);
+    }
+
+    #[test]
+    fn graph1() {
+        test_on_graph(GRAPH1, 1.6666666666666667, Some(&[(2, 3), (3, 4), (4, 2)]));
+    }
+
+    #[test]
+    fn graph2() {
+        test_on_graph(GRAPH2, 5.0, Some(&[(1, 3), (3, 2), (2, 1)]));
+    }
+
+    #[test]
+    fn graph3() {
+        test_on_graph(GRAPH3, 7.0, Some(&[(0, 3), (3, 0)]));
+    }
+
+    #[test]
+    fn graph4() {
+        test_on_graph(GRAPH4, 8.25, Some(&[(0, 7), (7, 9), (9, 4), (4, 0)]));
+    }
+
+    #[test]
+    fn graph5() {
+        test_on_graph(GRAPH5, f64::INFINITY, None);
+    }
+
+    #[test]
+    fn graph6() {
+        test_on_graph(
+            GRAPH6,
+            3.6000000000000001,
+            Some(&[(14, 6), (6, 10), (10, 13), (13, 3), (3, 14)]),
+        );
+    }
+
+    #[test]
+    fn graph7() {
+        test_on_graph(
+            GRAPH7,
+            4.4285714285714288,
+            Some(&[(0, 14), (14, 13), (13, 3), (3, 9), (9, 5), (5, 11), (11, 0)]),
+        );
+    }
+}
