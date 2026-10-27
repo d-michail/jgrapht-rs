@@ -4176,3 +4176,421 @@ mod weak_chordality_inspector_test {
         check(&build(named::krackhardt_kite()), true);
     }
 }
+
+// BergeGraphInspectorTest
+
+mod berge_graph_inspector_test {
+    use super::*;
+    use jgrapht::alg::cycle::BergeGraphInspector;
+    use jgrapht::generate::named::{self, build};
+    use jgrapht::view::AsSubgraph;
+    use std::collections::HashSet;
+
+    /// The complement of `g` (an edge for every non-adjacent pair of distinct vertices).
+    fn complement_of<G: Graph>(g: &G) -> UGraph<G::Vertex> {
+        let vs: Vec<G::Vertex> = g.vertices().cloned().collect();
+        let mut c = UGraph::<G::Vertex>::simple();
+        c.add_vertices(vs.iter().cloned());
+        for i in 0..vs.len() {
+            for j in i + 1..vs.len() {
+                if !g.contains_edge_between(&vs[i], &vs[j]) {
+                    c.add_edge(&vs[i], &vs[j]).unwrap();
+                }
+            }
+        }
+        c
+    }
+
+    /// `verifyCertificate`: the certificate spans an odd cycle without chords, in the graph or in
+    /// its complement.
+    fn verify_certificate<G: Graph>(g: &G, dut: &BergeGraphInspector<G::Vertex, G::Edge>) -> bool {
+        let Some(certificate) = dut.get_certificate() else {
+            return false;
+        };
+        let set: Vec<G::Vertex> = certificate.vertex_list().to_vec();
+        let check = |subg: &dyn Fn() -> (usize, usize, bool)| {
+            let (vertices, edges, all_degree_two) = subg();
+            vertices == edges && vertices % 2 == 1 && all_degree_two
+        };
+        if dut.certificate_is_in_complement() {
+            let comp = complement_of(g);
+            let subg = AsSubgraph::induced(&comp, set);
+            check(&|| {
+                (
+                    subg.vertex_count(),
+                    subg.edge_count(),
+                    subg.vertices().all(|t| subg.edges_of(t).count() == 2),
+                )
+            })
+        } else {
+            let subg = AsSubgraph::induced(g, set);
+            check(&|| {
+                (
+                    subg.vertex_count(),
+                    subg.edge_count(),
+                    subg.vertices().all(|t| subg.edges_of(t).count() == 2),
+                )
+            })
+        }
+    }
+
+    fn graph() -> UGraph<i32> {
+        UGraph::<i32>::simple()
+    }
+
+    #[test]
+    fn check_pyramid() {
+        let mut stimulus = graph();
+        let mut dut = BergeGraphInspector::new();
+        stimulus.add_vertex(1);
+        stimulus.add_vertex(2);
+        stimulus.add_vertex(3);
+        stimulus.add_edge(&1, &2).unwrap();
+        stimulus.add_edge(&2, &3).unwrap();
+        stimulus.add_edge(&3, &1).unwrap();
+        stimulus.add_vertex(4);
+        stimulus.add_vertex(5);
+        stimulus.add_vertex(6);
+        stimulus.add_vertex(7);
+        stimulus.add_edge(&4, &7).unwrap();
+        stimulus.add_edge(&5, &7).unwrap();
+        stimulus.add_edge(&6, &7).unwrap();
+        stimulus.add_vertex(8);
+        stimulus.add_vertex(9);
+        stimulus.add_vertex(10);
+        stimulus.add_vertex(11);
+        stimulus.add_vertex(12);
+        stimulus.add_vertex(13);
+        stimulus.add_vertex(14);
+        stimulus.add_vertex(15);
+        stimulus.add_vertex(16);
+        stimulus.add_edge(&8, &11).unwrap();
+        stimulus.add_edge(&11, &4).unwrap();
+        stimulus.add_edge(&9, &12).unwrap();
+        stimulus.add_edge(&12, &5).unwrap();
+        stimulus.add_edge(&10, &13).unwrap();
+        stimulus.add_edge(&13, &6).unwrap();
+        stimulus.add_edge(&1, &14).unwrap();
+        stimulus.add_edge(&14, &8).unwrap();
+        stimulus.add_edge(&2, &15).unwrap();
+        stimulus.add_edge(&15, &9).unwrap();
+        stimulus.add_edge(&3, &16).unwrap();
+        stimulus.add_edge(&16, &10).unwrap();
+        assert!(dut.contains_pyramid(&stimulus).unwrap());
+        dut.is_berge_with_certificate(&stimulus, true).unwrap();
+        assert!(verify_certificate(&stimulus, &dut));
+        stimulus.add_edge(&8, &2).unwrap();
+        dut.is_berge_with_certificate(&stimulus, true).unwrap();
+        assert!(verify_certificate(&stimulus, &dut));
+        stimulus.remove_edge_between(&8, &2);
+        stimulus.add_edge(&9, &3).unwrap();
+        dut.is_berge_with_certificate(&stimulus, true).unwrap();
+        assert!(verify_certificate(&stimulus, &dut));
+        stimulus.remove_edge_between(&9, &3);
+        stimulus.add_edge(&10, &1).unwrap();
+        dut.is_berge_with_certificate(&stimulus, true).unwrap();
+        assert!(verify_certificate(&stimulus, &dut));
+        stimulus.add_edge(&11, &2).unwrap();
+        assert!(!dut.contains_pyramid(&stimulus).unwrap());
+    }
+
+    #[test]
+    fn check_jewel() {
+        let mut stimulus = graph();
+        let mut dut = BergeGraphInspector::new();
+        stimulus.add_vertex(1);
+        stimulus.add_vertex(2);
+        stimulus.add_vertex(3);
+        stimulus.add_vertex(4);
+        stimulus.add_vertex(5);
+        stimulus.add_edge(&1, &2).unwrap();
+        stimulus.add_edge(&2, &3).unwrap();
+        stimulus.add_edge(&3, &4).unwrap();
+        stimulus.add_edge(&4, &5).unwrap();
+        stimulus.add_edge(&5, &1).unwrap();
+        stimulus.add_vertex(6);
+        stimulus.add_vertex(7);
+        stimulus.add_vertex(8);
+        stimulus.add_edge(&1, &6).unwrap();
+        stimulus.add_edge(&6, &7).unwrap();
+        stimulus.add_edge(&7, &8).unwrap();
+        stimulus.add_edge(&8, &4).unwrap();
+        assert!(dut.contains_jewel(&stimulus).unwrap());
+        dut.is_berge_with_certificate(&stimulus, true).unwrap();
+        assert!(verify_certificate(&stimulus, &dut));
+        stimulus.add_edge(&1, &3).unwrap();
+        assert!(!dut.contains_jewel(&stimulus).unwrap());
+    }
+
+    #[test]
+    fn check_is_y_x_complete() {
+        let mut stimulus = graph();
+        let mut dut = BergeGraphInspector::new();
+        stimulus.add_vertex(1);
+        stimulus.add_vertex(2);
+        stimulus.add_vertex(3);
+        stimulus.add_vertex(4);
+        stimulus.add_edge(&1, &4).unwrap();
+        stimulus.add_edge(&1, &2).unwrap();
+        stimulus.add_edge(&1, &3).unwrap();
+        let mut x: HashSet<i32> = HashSet::new();
+        x.insert(2);
+        x.insert(3);
+        x.insert(4);
+        assert!(dut.is_yx_complete(&stimulus, &1, &x));
+        stimulus.remove_edge_between(&1, &4);
+        assert!(!dut.is_yx_complete(&stimulus, &1, &x));
+        stimulus.add_edge(&1, &4).unwrap();
+        x.clear();
+        x.insert(2);
+        x.insert(1);
+        assert!(!dut.is_yx_complete(&stimulus, &3, &x));
+    }
+
+    #[test]
+    fn check_configuration_type_2() {
+        let mut stimulus = graph();
+        let mut dut = BergeGraphInspector::new();
+        stimulus.add_vertex(1);
+        stimulus.add_vertex(2);
+        stimulus.add_vertex(3);
+        stimulus.add_vertex(4);
+        stimulus.add_vertex(5);
+        stimulus.add_vertex(6);
+        stimulus.add_vertex(7);
+        stimulus.add_vertex(8);
+        stimulus.add_edge(&1, &2).unwrap();
+        stimulus.add_edge(&2, &3).unwrap();
+        stimulus.add_edge(&3, &4).unwrap();
+        stimulus.add_edge(&1, &6).unwrap();
+        stimulus.add_edge(&2, &6).unwrap();
+        stimulus.add_edge(&4, &6).unwrap();
+        stimulus.add_edge(&1, &5).unwrap();
+        stimulus.add_edge(&5, &7).unwrap();
+        stimulus.add_edge(&7, &8).unwrap();
+        stimulus.add_edge(&4, &8).unwrap();
+        assert!(dut.has_configuration_type2(&stimulus).unwrap());
+        stimulus.add_edge(&3, &6).unwrap();
+        assert!(dut.has_configuration_type2(&stimulus).unwrap());
+        stimulus.add_edge(&7, &6).unwrap();
+        assert!(!dut.has_configuration_type2(&stimulus).unwrap());
+        stimulus.remove_edge_between(&3, &6);
+        stimulus.remove_edge_between(&4, &8);
+        assert!(!dut.has_configuration_type2(&stimulus).unwrap());
+    }
+
+    #[test]
+    fn check_configuration_type_3() {
+        let mut stimulus = graph();
+        let mut dut = BergeGraphInspector::new();
+        stimulus.add_vertex(1);
+        stimulus.add_vertex(2);
+        stimulus.add_vertex(3);
+        stimulus.add_vertex(4);
+        stimulus.add_vertex(5);
+        stimulus.add_vertex(6);
+        stimulus.add_edge(&1, &2).unwrap();
+        stimulus.add_edge(&3, &4).unwrap();
+        stimulus.add_edge(&1, &4).unwrap();
+        stimulus.add_edge(&2, &3).unwrap();
+        stimulus.add_edge(&3, &5).unwrap();
+        stimulus.add_edge(&4, &6).unwrap();
+        stimulus.add_vertex(7);
+        stimulus.add_edge(&1, &7).unwrap();
+        stimulus.add_edge(&2, &7).unwrap();
+        stimulus.add_edge(&5, &7).unwrap();
+        stimulus.add_vertex(8);
+        stimulus.add_vertex(9);
+        stimulus.add_vertex(10);
+        stimulus.add_edge(&5, &8).unwrap();
+        stimulus.add_edge(&8, &9).unwrap();
+        stimulus.add_edge(&9, &10).unwrap();
+        stimulus.add_edge(&10, &6).unwrap();
+        assert!(dut.has_configuration_type3(&stimulus).unwrap());
+        stimulus.add_edge(&4, &7).unwrap();
+        assert!(!dut.has_configuration_type3(&stimulus).unwrap());
+    }
+
+    #[test]
+    fn check_clean_odd_hole() {
+        let mut stimulus = graph();
+        let mut dut = BergeGraphInspector::new();
+        stimulus.add_vertex(1);
+        stimulus.add_vertex(2);
+        stimulus.add_vertex(3);
+        stimulus.add_vertex(4);
+        stimulus.add_vertex(5);
+        stimulus.add_vertex(6);
+        stimulus.add_vertex(7);
+        stimulus.add_edge(&1, &2).unwrap();
+        stimulus.add_edge(&3, &2).unwrap();
+        stimulus.add_edge(&4, &3).unwrap();
+        stimulus.add_edge(&4, &5).unwrap();
+        stimulus.add_edge(&6, &5).unwrap();
+        stimulus.add_edge(&6, &7).unwrap();
+        stimulus.add_edge(&7, &1).unwrap();
+        assert!(dut.contains_clean_shortest_odd_hole(&stimulus).unwrap());
+        stimulus.add_edge(&3, &7).unwrap();
+        stimulus.add_edge(&4, &7).unwrap();
+        assert!(!dut.contains_clean_shortest_odd_hole(&stimulus).unwrap());
+    }
+
+    #[test]
+    fn check_contains_shortest_odd_hole() {
+        let mut stimulus = graph();
+        let mut dut = BergeGraphInspector::new();
+        stimulus.add_vertex(1);
+        stimulus.add_vertex(2);
+        stimulus.add_vertex(3);
+        stimulus.add_vertex(4);
+        stimulus.add_vertex(5);
+        stimulus.add_vertex(6);
+        stimulus.add_vertex(7);
+        stimulus.add_edge(&1, &2).unwrap();
+        stimulus.add_edge(&3, &2).unwrap();
+        stimulus.add_edge(&4, &3).unwrap();
+        stimulus.add_edge(&4, &5).unwrap();
+        stimulus.add_edge(&6, &5).unwrap();
+        stimulus.add_edge(&6, &7).unwrap();
+        stimulus.add_edge(&7, &1).unwrap();
+        stimulus.add_vertex(8);
+        stimulus.add_edge(&3, &8).unwrap();
+        stimulus.add_edge(&8, &7).unwrap();
+        stimulus.add_edge(&8, &5).unwrap();
+        assert!(dut.contains_clean_shortest_odd_hole(&stimulus).unwrap());
+        stimulus.remove_vertex(&8);
+        assert!(dut.contains_clean_shortest_odd_hole(&stimulus).unwrap());
+    }
+
+    #[test]
+    fn check_routine_3() {
+        let mut stimulus = graph();
+        let mut dut = BergeGraphInspector::new();
+        stimulus.add_vertex(1);
+        stimulus.add_vertex(2);
+        stimulus.add_vertex(3);
+        stimulus.add_vertex(4);
+        stimulus.add_edge(&1, &2).unwrap();
+        stimulus.add_edge(&2, &3).unwrap();
+        stimulus.add_edge(&2, &4).unwrap();
+        stimulus.add_edge(&1, &3).unwrap();
+        stimulus.add_edge(&1, &4).unwrap();
+        let golden: HashSet<Vec<i32>> = [vec![1, 2], vec![1, 2, 3, 4]].into_iter().collect();
+        let actual: HashSet<Vec<i32>> = dut
+            .routine3(&stimulus)
+            .unwrap()
+            .into_iter()
+            .map(|mut set| {
+                set.sort_unstable();
+                set
+            })
+            .collect();
+        assert_eq!(golden, actual);
+    }
+
+    #[test]
+    fn check_petersen_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::petersen());
+        assert!(!dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_dodecahedron_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::dodecahedron());
+        assert!(!dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_bull_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::bull());
+        assert!(dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(!verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_butterfly_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::butterfly());
+        assert!(dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(!verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_claw_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::claw());
+        assert!(dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(!verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_groetzsch_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::grotzsch());
+        assert!(!dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_diamond_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::diamond());
+        assert!(dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(!verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_frucht_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::frucht());
+        assert!(!dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_moser_spindle_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::moser_spindle());
+        assert!(!dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_tietze_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::tietze());
+        assert!(!dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_thomsen_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::thomsen());
+        assert!(dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(!verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_tutte_graph() {
+        let mut dut = BergeGraphInspector::new();
+        let stimulus = build(named::tutte());
+        assert!(!dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(verify_certificate(&stimulus, &dut));
+    }
+
+    #[test]
+    fn check_empty_graph() {
+        let mut stimulus = graph();
+        let mut dut = BergeGraphInspector::new();
+        let number_of_vertices = 15; // Java draws it from 14..17
+        stimulus.add_vertices(0..number_of_vertices);
+        assert!(dut.is_berge_with_certificate(&stimulus, true).unwrap());
+        assert!(!verify_certificate(&stimulus, &dut));
+    }
+}
