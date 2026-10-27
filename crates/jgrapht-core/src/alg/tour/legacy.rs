@@ -1,6 +1,7 @@
 //! Travelling salesman heuristics and an exact solver. Distances between two vertices are the
 //! lightest edge between them; the graph should be complete for the heuristics to apply.
 
+use crate::alg::cycle::EulerianCycleAlgorithm;
 use crate::alg::spanning::kruskal;
 use crate::alg::util::Indexed;
 use crate::graph::Graph;
@@ -306,8 +307,7 @@ pub fn christofides_tour<G: Graph>(g: &G) -> Result<GraphWalk<G::Vertex, G::Edge
     for (a, b) in pairs {
         multi.add_edge(&a, &b)?;
     }
-    let circuit = crate::alg::eulerian::eulerian_cycle(&multi)
-        .ok_or_else(|| GraphError::InvalidArgument("no Eulerian circuit".into()))?;
+    let circuit = crate::alg::cycle::HierholzerEulerianCycle::new().get_eulerian_cycle(&multi)?;
     let mut seen = vec![false; n];
     let mut order = Vec::new();
     for v in circuit.vertices {

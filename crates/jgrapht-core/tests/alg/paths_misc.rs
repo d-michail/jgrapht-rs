@@ -1,5 +1,4 @@
 use jgrapht::alg::connectivity::block_cut_tree;
-use jgrapht::alg::eulerian::*;
 use jgrapht::alg::matching::*;
 use jgrapht::alg::paths::*;
 use jgrapht::alg::tour::*;
@@ -67,25 +66,6 @@ fn disjoint_paths() {
     assert_eq!(vp.len(), 2); // only the direct edge and one path through vertex 3
     assert_eq!(vp.iter().map(|p| p.weight).sum::<f64>(), 3.0 + 10.0);
     assert!(edge_disjoint_shortest_paths(&g, &0, &0, 1).is_err());
-}
-
-#[test]
-fn eulerian_trails() {
-    let mut g = UGraph::<usize>::simple();
-    Linear(5).generate_indexed(&mut g).unwrap();
-    let p = eulerian_path(&g).unwrap();
-    assert!(p.is_valid(&g) && p.length() == 4);
-    assert!(eulerian_cycle(&g).is_none());
-    let d = dg(&[(1, 2, 1.0), (2, 3, 1.0), (3, 1, 1.0), (3, 4, 1.0)]);
-    let p = eulerian_path(&d).unwrap();
-    assert_eq!(
-        (
-            p.start_vertex().copied(),
-            p.end_vertex().copied(),
-            p.length()
-        ),
-        (Some(3), Some(4), 4)
-    );
 }
 
 #[test]

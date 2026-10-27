@@ -13,7 +13,6 @@ pub mod cyclic_exchange;
 pub mod decomposition;
 pub mod densest;
 pub mod drawing;
-pub mod eulerian;
 pub mod flow;
 pub mod holes;
 pub mod interfaces;

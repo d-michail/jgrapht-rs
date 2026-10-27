@@ -267,7 +267,7 @@ pub fn is_biconnected<G: Graph>(g: &G) -> bool {
 }
 
 pub fn is_eulerian<G: Graph>(g: &G) -> bool {
-    crate::alg::eulerian::is_eulerian(g)
+    crate::alg::cycle::HierholzerEulerianCycle::new().is_eulerian(g)
 }
 
 pub fn is_chordal<G: Graph>(g: &G) -> bool {
