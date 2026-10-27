@@ -607,3 +607,733 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
         Ok((pred, sigma))
     }
 }
+
+/// Scores of all vertices, available after construction (`VertexScoringAlgorithm`).
+pub trait VertexScoringAlgorithm<V, S: Copy = f64> {
+    fn scores(&self) -> &HashMap<V, S>;
+
+    fn vertex_score(&self, v: &V) -> Result<S, GraphError>
+    where
+        V: Eq + std::hash::Hash,
+    {
+        self.scores().get(v).copied().ok_or_else(|| {
+            GraphError::InvalidArgument("Cannot return score of unknown vertex".into())
+        })
+    }
+}
+
+/// Shortest-path distances from every vertex, along outgoing or (with `incoming`) incoming edges.
+/// Dijkstra is used unless some weight is negative, then Floyd–Warshall.
+fn all_distances<G: Graph>(g: &G, incoming: bool) -> Vec<Vec<f64>> {
+    fn run<H: Graph>(h: &H) -> Vec<Vec<f64>> {
+        let ix = Indexed::new(h);
+        let n = ix.n();
+        if ix.w.iter().all(|&w| w >= 0.0) {
+            (0..n).map(|v| distances(&ix, v, true)).collect()
+        } else {
+            let fw = crate::alg::shortestpath::floyd_warshall(h).ok();
+            (0..n)
+                .map(|i| {
+                    (0..n)
+                        .map(|j| match &fw {
+                            Some(fw) => fw.weight(ix.vs[i], ix.vs[j]),
+                            None => f64::NAN,
+                        })
+                        .collect()
+                })
+                .collect()
+        }
+    }
+    let d = run(g);
+    if incoming && g.graph_type().directed {
+        // distances along incoming edges are the transposed matrix
+        let n = d.len();
+        (0..n).map(|i| (0..n).map(|j| d[j][i]).collect()).collect()
+    } else {
+        d
+    }
+}
+
+/// Closeness centrality (`ClosenessCentrality`): the inverse of the sum of distances to all other
+/// vertices, scaled by `n - 1` when normalized. Unreachable vertices give a score of 0.
+pub struct ClosenessCentrality<V> {
+    scores: HashMap<V, f64>,
+}
+
+impl<V: Eq + std::hash::Hash + Clone> ClosenessCentrality<V> {
+    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
+        Self::with_options(g, false, true)
+    }
+
+    pub fn with_options<G: Graph<Vertex = V>>(g: &G, incoming: bool, normalize: bool) -> Self {
+        let d = all_distances(g, incoming);
+        let n = d.len();
+        let ix_vertices: Vec<&V> = g.vertices().collect();
+        let scores = (0..n)
+            .map(|i| {
+                let sum = (0..n).filter(|&j| j != i).fold(0.0, |a, j| a + d[i][j]);
+                let score = if normalize {
+                    (n - 1) as f64 / sum
+                } else {
+                    1.0 / sum
+                };
+                (ix_vertices[i].clone(), score)
+            })
+            .collect();
+        ClosenessCentrality { scores }
+    }
+}
+
+impl<V> VertexScoringAlgorithm<V> for ClosenessCentrality<V> {
+    fn scores(&self) -> &HashMap<V, f64> {
+        &self.scores
+    }
+}
+
+/// Harmonic centrality (`HarmonicCentrality`): the sum of inverse distances to all other
+/// vertices, divided by `n - 1` when normalized.
+pub struct HarmonicCentrality<V> {
+    scores: HashMap<V, f64>,
+}
+
+impl<V: Eq + std::hash::Hash + Clone> HarmonicCentrality<V> {
+    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
+        Self::with_options(g, false, true)
+    }
+
+    pub fn with_options<G: Graph<Vertex = V>>(g: &G, incoming: bool, normalize: bool) -> Self {
+        let d = all_distances(g, incoming);
+        let n = d.len();
+        let vs: Vec<&V> = g.vertices().collect();
+        let scores = (0..n)
+            .map(|i| {
+                let sum = (0..n)
+                    .filter(|&j| j != i)
+                    .fold(0.0, |a, j| a + 1.0 / d[i][j]);
+                let score = if normalize && n > 1 {
+                    sum / (n - 1) as f64
+                } else {
+                    sum
+                };
+                (vs[i].clone(), score)
+            })
+            .collect();
+        HarmonicCentrality { scores }
+    }
+}
+
+impl<V> VertexScoringAlgorithm<V> for HarmonicCentrality<V> {
+    fn scores(&self) -> &HashMap<V, f64> {
+        &self.scores
+    }
+}
+
+/// Coreness (k-core numbers) of an undirected simple graph and its degeneracy (`Coreness`).
+pub struct Coreness<V> {
+    scores: HashMap<V, usize>,
+    degeneracy: usize,
+}
+
+impl<V: Eq + std::hash::Hash + Clone> Coreness<V> {
+    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
+        crate::graph::props::require_undirected(g)?;
+        if !crate::graph::props::is_simple(g) {
+            return Err(GraphError::InvalidArgument("Graph must be simple".into()));
+        }
+        let scores = coreness(g);
+        let degeneracy = scores.values().copied().max().unwrap_or(0);
+        Ok(Coreness { scores, degeneracy })
+    }
+
+    pub fn degeneracy(&self) -> usize {
+        self.degeneracy
+    }
+}
+
+impl<V> VertexScoringAlgorithm<V, usize> for Coreness<V> {
+    fn scores(&self) -> &HashMap<V, usize> {
+        &self.scores
+    }
+}
+
+/// Local, average and global clustering coefficients (`ClusteringCoefficient`). In directed
+/// graphs a vertex' neighbourhood is the union of predecessors and successors and the edges
+/// among its members are counted with their direction.
+pub struct ClusteringCoefficient<'g, G: Graph> {
+    graph: &'g G,
+    scores: HashMap<G::Vertex, f64>,
+}
+
+impl<'g, G: Graph> ClusteringCoefficient<'g, G> {
+    pub fn new(graph: &'g G) -> Self {
+        let scores = graph
+            .vertices()
+            .map(|v| (v.clone(), Self::local(graph, v)))
+            .collect();
+        ClusteringCoefficient { graph, scores }
+    }
+
+    fn local(g: &G, v: &G::Vertex) -> f64 {
+        let hood: indexmap::IndexSet<&G::Vertex> = g
+            .edges_of(v)
+            .filter_map(|e| g.opposite_vertex(e, v))
+            .collect();
+        let k = hood.len() as f64;
+        if k <= 1.0 {
+            return 0.0;
+        }
+        let mut triplets = 0.0;
+        for p in &hood {
+            for q in &hood {
+                if g.contains_edge_between(p, q) {
+                    triplets += 1.0;
+                }
+            }
+        }
+        triplets / (k * (k - 1.0))
+    }
+
+    /// The mean of the local coefficients; 0 for the empty graph.
+    pub fn average_clustering_coefficient(&self) -> f64 {
+        if self.graph.vertex_count() == 0 {
+            return 0.0;
+        }
+        self.scores.values().sum::<f64>() / self.graph.vertex_count() as f64
+    }
+
+    /// Three times the number of triangles over the number of connected triplets.
+    pub fn global_clustering_coefficient(&self) -> f64 {
+        let g = self.graph;
+        let mut triplets = 0.0;
+        for v in g.vertices() {
+            if !g.graph_type().directed {
+                let d = g.degree_of(v) as f64;
+                triplets += d * (d - 1.0) / 2.0;
+            } else {
+                let preds: std::collections::HashSet<_> = g
+                    .in_edges_of(v)
+                    .filter_map(|e| g.opposite_vertex(e, v))
+                    .collect();
+                let succs: std::collections::HashSet<_> = g
+                    .out_edges_of(v)
+                    .filter_map(|e| g.opposite_vertex(e, v))
+                    .collect();
+                triplets += preds.len() as f64 * succs.len() as f64;
+            }
+        }
+        3.0 * crate::alg::metrics::number_of_triangles(g) as f64 / triplets
+    }
+}
+
+impl<G: Graph> VertexScoringAlgorithm<G::Vertex> for ClusteringCoefficient<'_, G> {
+    fn scores(&self) -> &HashMap<G::Vertex, f64> {
+        &self.scores
+    }
+}
+
+const MAX_ITERATIONS_DEFAULT: usize = 100;
+const TOLERANCE_DEFAULT: f64 = 0.0001;
+
+fn invalid(msg: &str) -> GraphError {
+    GraphError::InvalidArgument(msg.into())
+}
+
+/// Weighted incoming neighbours of every vertex as indices, in the graph's iteration order.
+fn incoming_lists<G: Graph>(g: &G, vs: &[&G::Vertex]) -> Vec<Vec<(usize, f64)>> {
+    let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+    vs.iter()
+        .map(|v| {
+            g.in_edges_of(v)
+                .map(|e| {
+                    (
+                        idx[g.opposite_vertex(e, v).unwrap()],
+                        g.edge_weight(e).unwrap_or(1.0),
+                    )
+                })
+                .collect()
+        })
+        .collect()
+}
+
+/// Eigenvector centrality by the power method (`EigenvectorCentrality`).
+pub struct EigenvectorCentrality<V> {
+    scores: HashMap<V, f64>,
+}
+
+impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
+    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
+        Self::with_options(g, MAX_ITERATIONS_DEFAULT, TOLERANCE_DEFAULT).expect("default options")
+    }
+
+    pub fn with_options<G: Graph<Vertex = V>>(
+        g: &G,
+        max_iterations: usize,
+        tolerance: f64,
+    ) -> Result<Self, GraphError> {
+        if max_iterations == 0 {
+            return Err(invalid("Maximum iterations must be positive"));
+        }
+        if tolerance <= 0.0 {
+            return Err(invalid("Tolerance not valid, must be positive"));
+        }
+        let vs: Vec<&V> = g.vertices().collect();
+        let n = vs.len();
+        let incoming = incoming_lists(g, &vs);
+        let mut scores = vec![(1.0 / n as f64).sqrt(); n];
+        let mut next = vec![0.0; n];
+        let mut l2_norm = tolerance;
+        let mut remaining = max_iterations;
+        while remaining > 0 && l2_norm >= tolerance {
+            let mut sum_of_squares = 0.0;
+            for v in 0..n {
+                let value = incoming[v]
+                    .iter()
+                    .fold(0.0, |a, &(w, wt)| a + scores[w] * wt);
+                sum_of_squares += value * value;
+                next[v] = value;
+            }
+            let factor = 1.0 / f64::sqrt(sum_of_squares);
+            let mut diffs2 = 0.0;
+            for v in 0..n {
+                next[v] *= factor;
+                let d = scores[v] - next[v];
+                diffs2 += d * d;
+            }
+            std::mem::swap(&mut scores, &mut next);
+            l2_norm = diffs2.sqrt();
+            remaining -= 1;
+        }
+        Ok(EigenvectorCentrality {
+            scores: vs.into_iter().cloned().zip(scores).collect(),
+        })
+    }
+}
+
+impl<V> VertexScoringAlgorithm<V> for EigenvectorCentrality<V> {
+    fn scores(&self) -> &HashMap<V, f64> {
+        &self.scores
+    }
+}
+
+/// Katz centrality (`KatzCentrality`): `x = damping * A^T x + exogenous`.
+pub struct KatzCentrality<V> {
+    scores: HashMap<V, f64>,
+}
+
+impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
+    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
+        Self::with_damping(g, 0.01).expect("default options")
+    }
+
+    pub fn with_damping<G: Graph<Vertex = V>>(
+        g: &G,
+        damping_factor: f64,
+    ) -> Result<Self, GraphError> {
+        Self::with_options(
+            g,
+            damping_factor,
+            |_| 1.0,
+            MAX_ITERATIONS_DEFAULT,
+            TOLERANCE_DEFAULT,
+        )
+    }
+
+    pub fn with_options<G: Graph<Vertex = V>>(
+        g: &G,
+        damping_factor: f64,
+        exogenous_factor: impl Fn(&V) -> f64,
+        max_iterations: usize,
+        tolerance: f64,
+    ) -> Result<Self, GraphError> {
+        if max_iterations == 0 {
+            return Err(invalid("Maximum iterations must be positive"));
+        }
+        if damping_factor < 0.0 {
+            return Err(invalid("Damping factor not valid"));
+        }
+        if tolerance <= 0.0 {
+            return Err(invalid("Tolerance not valid, must be positive"));
+        }
+        let vs: Vec<&V> = g.vertices().collect();
+        let n = vs.len();
+        let incoming = incoming_lists(g, &vs);
+        let exo: Vec<f64> = vs.iter().map(|v| exogenous_factor(v)).collect();
+        let mut scores = exo.clone();
+        let mut next = vec![0.0; n];
+        let mut max_change = tolerance;
+        let mut remaining = max_iterations;
+        while remaining > 0 && max_change >= tolerance {
+            max_change = 0.0;
+            for v in 0..n {
+                let contribution = incoming[v]
+                    .iter()
+                    .fold(0.0, |a, &(w, wt)| a + damping_factor * scores[w] * wt);
+                let new = contribution + exo[v];
+                max_change = f64::max(max_change, (new - scores[v]).abs());
+                next[v] = new;
+            }
+            std::mem::swap(&mut scores, &mut next);
+            remaining -= 1;
+        }
+        Ok(KatzCentrality {
+            scores: vs.into_iter().cloned().zip(scores).collect(),
+        })
+    }
+}
+
+impl<V> VertexScoringAlgorithm<V> for KatzCentrality<V> {
+    fn scores(&self) -> &HashMap<V, f64> {
+        &self.scores
+    }
+}
+
+/// PageRank (`PageRank`), weighted when the graph is.
+pub struct PageRank<V> {
+    scores: HashMap<V, f64>,
+}
+
+impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
+    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
+        Self::with_options(g, 0.85, MAX_ITERATIONS_DEFAULT, TOLERANCE_DEFAULT)
+            .expect("default options")
+    }
+
+    pub fn with_options<G: Graph<Vertex = V>>(
+        g: &G,
+        damping_factor: f64,
+        max_iterations: usize,
+        tolerance: f64,
+    ) -> Result<Self, GraphError> {
+        if max_iterations == 0 {
+            return Err(invalid("Maximum iterations must be positive"));
+        }
+        if !(0.0..=1.0).contains(&damping_factor) {
+            return Err(invalid("Damping factor not valid"));
+        }
+        if tolerance <= 0.0 {
+            return Err(invalid("Tolerance not valid, must be positive"));
+        }
+        let vs: Vec<&V> = g.vertices().collect();
+        let n = vs.len();
+        let weighted = g.graph_type().weighted;
+        let out_degree: Vec<usize> = vs.iter().map(|v| g.out_degree_of(v)).collect();
+        let incoming = incoming_lists(g, &vs);
+        let mut weight_sum = vec![0.0; n];
+        if weighted {
+            for list in &incoming {
+                for &(w, wt) in list {
+                    weight_sum[w] += wt;
+                }
+            }
+        }
+        let mut cur = vec![1.0 / n as f64; n];
+        let mut next = vec![0.0; n];
+        let mut max_change = tolerance;
+        let mut iterations = max_iterations;
+        while iterations > 0 && max_change >= tolerance {
+            let mut r = 0.0;
+            for i in 0..n {
+                r += if out_degree[i] > 0 {
+                    (1.0 - damping_factor) * cur[i]
+                } else {
+                    cur[i]
+                };
+            }
+            r /= n as f64;
+            max_change = 0.0;
+            for i in 0..n {
+                let mut contribution = 0.0;
+                for &(w, wt) in &incoming[i] {
+                    contribution += if weighted {
+                        damping_factor * cur[w] * wt / weight_sum[w]
+                    } else {
+                        damping_factor * cur[w] / out_degree[w] as f64
+                    };
+                }
+                let new = r + contribution;
+                max_change = f64::max(max_change, (new - cur[i]).abs());
+                next[i] = new;
+            }
+            std::mem::swap(&mut cur, &mut next);
+            iterations -= 1;
+        }
+        Ok(PageRank {
+            scores: vs.into_iter().cloned().zip(cur).collect(),
+        })
+    }
+}
+
+impl<V> VertexScoringAlgorithm<V> for PageRank<V> {
+    fn scores(&self) -> &HashMap<V, f64> {
+        &self.scores
+    }
+}
+
+/// Vertex betweenness centrality by Brandes' algorithm (`BetweennessCentrality`). Weighted
+/// graphs (by their `GraphType`) use a pairing heap, others a plain queue. Undirected scores are
+/// halved; with `normalize` they are divided by `(n - 1)(n - 2)`.
+pub struct BetweennessCentrality<V> {
+    scores: HashMap<V, f64>,
+}
+
+impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
+    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
+        Self::with_options(g, false, OverflowStrategy::IgnoreOverflow)
+    }
+
+    pub fn normalized<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
+        Self::with_options(g, true, OverflowStrategy::IgnoreOverflow)
+    }
+
+    pub fn with_options<G: Graph<Vertex = V>>(
+        g: &G,
+        normalize: bool,
+        overflow: OverflowStrategy,
+    ) -> Result<Self, GraphError> {
+        let vs: Vec<&V> = g.vertices().collect();
+        let n = vs.len();
+        let idx: HashMap<&V, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+        let out: Vec<Vec<(usize, f64)>> = vs
+            .iter()
+            .map(|v| {
+                g.out_edges_of(v)
+                    .map(|e| {
+                        (
+                            idx[g.opposite_vertex(e, v).unwrap()],
+                            g.edge_weight(e).unwrap_or(1.0),
+                        )
+                    })
+                    .collect()
+            })
+            .collect();
+        let weighted = g.graph_type().weighted;
+        let mut scores = vec![0.0; n];
+        for s in 0..n {
+            Self::accumulate(s, &out, weighted, overflow, &mut scores)?;
+        }
+        if !g.graph_type().directed {
+            scores.iter_mut().for_each(|x| *x /= 2.0);
+        }
+        if normalize {
+            let factor = (n as i64 - 1) * (n as i64 - 2);
+            if factor != 0 {
+                scores.iter_mut().for_each(|x| *x /= factor as f64);
+            }
+        }
+        Ok(BetweennessCentrality {
+            scores: vs.into_iter().cloned().zip(scores).collect(),
+        })
+    }
+
+    fn accumulate(
+        s: usize,
+        out: &[Vec<(usize, f64)>],
+        weighted: bool,
+        overflow: OverflowStrategy,
+        scores: &mut [f64],
+    ) -> Result<(), GraphError> {
+        let n = out.len();
+        let mut stack: Vec<usize> = Vec::new();
+        let mut predecessors: Vec<Vec<usize>> = vec![Vec::new(); n];
+        let mut sigma = vec![0i64; n];
+        sigma[s] = 1;
+        let mut distance = vec![f64::INFINITY; n];
+        distance[s] = 0.0;
+        let mut fifo = VecDeque::from([s]);
+        let mut heap: PairingHeap<OrderedF64, usize> = PairingHeap::new();
+        let mut handles: HashMap<usize, _> = HashMap::new();
+        if weighted {
+            handles.insert(s, heap.insert(OrderedF64(0.0), s));
+        }
+        loop {
+            let v = if weighted {
+                match heap.pop() {
+                    Some((_, v)) => v,
+                    None => break,
+                }
+            } else {
+                match fifo.pop_front() {
+                    Some(v) => v,
+                    None => break,
+                }
+            };
+            stack.push(v);
+            for &(w, e_weight) in &out[v] {
+                if e_weight < 0.0 {
+                    return Err(GraphError::InvalidArgument(
+                        "Negative edge weight not allowed".into(),
+                    ));
+                }
+                let d = distance[v] + e_weight;
+                if distance[w] == f64::INFINITY {
+                    if weighted {
+                        handles.insert(w, heap.insert(OrderedF64(d), w));
+                    } else {
+                        fifo.push_back(w);
+                    }
+                    distance[w] = d;
+                    sigma[w] = sigma[v];
+                    predecessors[w].push(v);
+                } else if distance[w] == d {
+                    let sum = sigma[w].wrapping_add(sigma[v]);
+                    if overflow == OverflowStrategy::ThrowExceptionOnOverflow && sum < 0 {
+                        return Err(GraphError::Overflow("long overflow".into()));
+                    }
+                    sigma[w] = sum;
+                    predecessors[w].push(v);
+                } else if distance[w] > d {
+                    if weighted {
+                        heap.decrease_key(handles[&w], OrderedF64(d)).ok();
+                    }
+                    distance[w] = d;
+                    sigma[w] = sigma[v];
+                    predecessors[w].clear();
+                    predecessors[w].push(v);
+                }
+            }
+        }
+        let mut dependency = vec![0.0; n];
+        while let Some(w) = stack.pop() {
+            for &v in &predecessors[w] {
+                dependency[v] += sigma[v] as f64 / sigma[w] as f64 * (1.0 + dependency[w]);
+            }
+            if w != s {
+                scores[w] += dependency[w];
+            }
+        }
+        Ok(())
+    }
+}
+
+impl<V> VertexScoringAlgorithm<V> for BetweennessCentrality<V> {
+    fn scores(&self) -> &HashMap<V, f64> {
+        &self.scores
+    }
+}
+
+/// Betweenness centrality in exact arithmetic (`ApBetweennessCentrality`), for graphs whose
+/// number of shortest paths overflows a machine word. Scores are rationals, which is what
+/// Java's arbitrary precision floats give whenever the result is representable.
+pub struct ApBetweennessCentrality<V> {
+    scores: HashMap<V, num_rational::BigRational>,
+}
+
+impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
+    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
+        Self::with_normalize(g, false)
+    }
+
+    pub fn with_normalize<G: Graph<Vertex = V>>(
+        g: &G,
+        normalize: bool,
+    ) -> Result<Self, GraphError> {
+        use num_bigint::BigInt;
+        use num_rational::BigRational;
+        use num_traits::{One, Zero};
+
+        let vs: Vec<&V> = g.vertices().collect();
+        let n = vs.len();
+        let idx: HashMap<&V, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+        let out: Vec<Vec<(usize, f64)>> = vs
+            .iter()
+            .map(|v| {
+                g.out_edges_of(v)
+                    .map(|e| {
+                        (
+                            idx[g.opposite_vertex(e, v).unwrap()],
+                            g.edge_weight(e).unwrap_or(1.0),
+                        )
+                    })
+                    .collect()
+            })
+            .collect();
+        let weighted = g.graph_type().weighted;
+        let mut scores: Vec<BigRational> = vec![BigRational::zero(); n];
+        for s in 0..n {
+            let mut stack: Vec<usize> = Vec::new();
+            let mut predecessors: Vec<Vec<usize>> = vec![Vec::new(); n];
+            let mut sigma: Vec<BigInt> = vec![BigInt::zero(); n];
+            sigma[s] = BigInt::one();
+            let mut distance = vec![f64::INFINITY; n];
+            distance[s] = 0.0;
+            let mut fifo = VecDeque::from([s]);
+            let mut heap: PairingHeap<OrderedF64, usize> = PairingHeap::new();
+            let mut handles = HashMap::new();
+            if weighted {
+                handles.insert(s, heap.insert(OrderedF64(0.0), s));
+            }
+            loop {
+                let next = if weighted {
+                    heap.pop().map(|(_, v)| v)
+                } else {
+                    fifo.pop_front()
+                };
+                let Some(v) = next else { break };
+                stack.push(v);
+                for &(w, e_weight) in &out[v] {
+                    if e_weight < 0.0 {
+                        return Err(invalid("Negative edge weight not allowed"));
+                    }
+                    let d = distance[v] + e_weight;
+                    if distance[w] == f64::INFINITY {
+                        if weighted {
+                            handles.insert(w, heap.insert(OrderedF64(d), w));
+                        } else {
+                            fifo.push_back(w);
+                        }
+                        distance[w] = d;
+                        sigma[w] = sigma[v].clone();
+                        predecessors[w].push(v);
+                    } else if distance[w] == d {
+                        let add = sigma[v].clone();
+                        sigma[w] += add;
+                        predecessors[w].push(v);
+                    } else if distance[w] > d {
+                        if weighted {
+                            heap.decrease_key(handles[&w], OrderedF64(d)).ok();
+                        }
+                        distance[w] = d;
+                        sigma[w] = sigma[v].clone();
+                        predecessors[w].clear();
+                        predecessors[w].push(v);
+                    }
+                }
+            }
+            let mut dependency: Vec<BigRational> = vec![BigRational::zero(); n];
+            while let Some(w) = stack.pop() {
+                for &v in &predecessors[w] {
+                    let ratio = BigRational::new(sigma[v].clone(), sigma[w].clone());
+                    let add = ratio * (dependency[w].clone() + BigRational::one());
+                    dependency[v] += add;
+                }
+                if w != s {
+                    let d = dependency[w].clone();
+                    scores[w] += d;
+                }
+            }
+        }
+        if !g.graph_type().directed {
+            let two = BigRational::from_integer(BigInt::from(2));
+            scores.iter_mut().for_each(|x| *x = x.clone() / two.clone());
+        }
+        if normalize && n > 2 {
+            let nf = BigRational::from_integer(BigInt::from((n as i64 - 1) * (n as i64 - 2)));
+            scores.iter_mut().for_each(|x| *x = x.clone() / nf.clone());
+        }
+        Ok(ApBetweennessCentrality {
+            scores: vs.into_iter().cloned().zip(scores).collect(),
+        })
+    }
+}
+
+impl<V: Eq + std::hash::Hash> ApBetweennessCentrality<V> {
+    pub fn exact_scores(&self) -> &HashMap<V, num_rational::BigRational> {
+        &self.scores
+    }
+
+    pub fn vertex_score(&self, v: &V) -> Result<&num_rational::BigRational, GraphError> {
+        self.scores
+            .get(v)
+            .ok_or_else(|| invalid("Cannot return score of unknown vertex"))
+    }
+}
