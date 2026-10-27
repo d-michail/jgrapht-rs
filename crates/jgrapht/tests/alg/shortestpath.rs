@@ -16,6 +16,8 @@ mod bounded_pruned_yen;
 mod disjoint_paths;
 #[path = "shortestpath/eppstein.rs"]
 mod eppstein;
+#[path = "shortestpath/foundational_classes.rs"]
+mod foundational_classes;
 #[path = "shortestpath/path_results.rs"]
 mod path_results;
 #[path = "shortestpath/ported_classes.rs"]

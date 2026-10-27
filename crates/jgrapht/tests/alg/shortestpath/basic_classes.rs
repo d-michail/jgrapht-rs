@@ -12,26 +12,6 @@ fn weighted_directed(edges: &[(u32, u32, f64)]) -> DiGraph<u32> {
 }
 
 #[test]
-fn dijkstra_closest_first_order_and_radius() {
-    let graph = weighted_directed(&[
-        (3, 1, 3.0),
-        (3, 2, 5.0),
-        (1, 2, 3.0),
-        (1, 4, 10.0),
-        (2, 4, 5.0),
-        (4, 5, 3.0),
-    ]);
-    let mut iterator = DijkstraClosestFirstIterator::new(&graph, &3).unwrap();
-    assert_eq!(iterator.by_ref().collect::<Vec<_>>(), [3, 1, 2, 4, 5]);
-    assert_eq!(iterator.paths().weight(&4), 10.0);
-
-    let bounded = DijkstraClosestFirstIterator::with_radius(&graph, &3, 10.0)
-        .unwrap()
-        .collect::<Vec<_>>();
-    assert_eq!(bounded, [3, 1, 2, 4]);
-}
-
-#[test]
 fn java_class_names_share_the_shortest_path_contract() {
     let graph = weighted_directed(&[(1, 2, 2.0), (1, 3, 1.0), (3, 2, 1.0), (2, 4, 1.0)]);
     assert_eq!(
@@ -65,50 +45,6 @@ fn johnson_class_handles_negative_edges() {
     let paths = JohnsonShortestPaths::new(&graph).unwrap();
     assert_eq!(paths.path_weight(&1, &2).unwrap(), 2.0);
     assert_eq!(paths.path(&1, &2).unwrap().unwrap().vertices, [1, 3, 2]);
-}
-
-#[test]
-fn alt_is_admissible_on_directed_graph() {
-    let graph = weighted_directed(&[(1, 2, 2.0), (2, 3, 2.0), (1, 3, 7.0), (3, 4, 1.0)]);
-    let heuristic = ALTAdmissibleHeuristic::new(&graph, [1, 4]).unwrap();
-    let dijkstra = Dijkstra::new(&graph);
-    for source in graph.vertices() {
-        for target in graph.vertices() {
-            let estimate = heuristic.cost_estimate(source, target);
-            let distance = dijkstra.path_weight(source, target).unwrap();
-            assert!(estimate >= 0.0);
-            assert!(estimate <= distance || distance.is_infinite());
-        }
-    }
-    assert!(heuristic.is_consistent());
-
-    let bidirectional = BidirectionalAStarShortestPath::new(&graph, |source, target| {
-        heuristic.cost_estimate(source, target)
-    });
-    for source in graph.vertices() {
-        for target in graph.vertices() {
-            assert_eq!(
-                bidirectional.path_weight(source, target).unwrap(),
-                dijkstra.path_weight(source, target).unwrap()
-            );
-        }
-    }
-}
-
-#[test]
-fn tree_center_has_one_or_two_vertices() {
-    let mut tree = UGraph::<u32>::simple();
-    for vertex in 1..=6 {
-        tree.add_vertex(vertex);
-    }
-    for (source, target) in [(1, 2), (2, 3), (3, 4), (4, 5), (3, 6)] {
-        tree.add_edge(&source, &target).unwrap();
-    }
-    assert_eq!(TreeMeasurer::new(&tree).graph_center().unwrap(), [3]);
-
-    tree.add_vertex(7);
-    tree.add_edge(&5, &7).unwrap();
-    assert_eq!(TreeMeasurer::new(&tree).graph_center().unwrap(), [4, 3]);
 }
 
 #[test]
