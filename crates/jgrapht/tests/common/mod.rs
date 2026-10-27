@@ -96,4 +96,6 @@ fn _unused<G: Graph>(g: &G) -> usize {
     g.vertex_count() + g.edge_count() + g.vertices().count()
 }
 
+pub mod fixtures;
+
 pub use jgrapht::graph::GraphExt as _;

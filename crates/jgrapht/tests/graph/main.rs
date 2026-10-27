@@ -23,6 +23,7 @@
 mod common;
 
 mod directed_acyclic_graph_test;
+mod fixtures_test;
 mod graph_basic;
 mod graph_basic_extra;
 mod graph_builder;
