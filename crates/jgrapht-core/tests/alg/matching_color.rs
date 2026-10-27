@@ -126,8 +126,8 @@ fn colorings() {
     assert_eq!(saturation_degree_coloring(&ring).count, 2);
     let mut k5 = UGraph::<usize>::simple();
     Complete(5).generate_indexed(&mut k5).unwrap();
-    assert_eq!(chordal_coloring(&k5).unwrap().count, 5);
-    assert!(chordal_coloring(&ring).is_none());
+    assert_eq!(ChordalGraphColoring::new(&k5).coloring().unwrap().count, 5);
+    assert!(ChordalGraphColoring::new(&ring).coloring().is_none());
 }
 
 #[test]

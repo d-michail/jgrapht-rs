@@ -1,6 +1,6 @@
 //! Structural predicates (JGraphT's `GraphTests`).
 
-use super::{DirectedExt, DirectedGraph, Graph, GraphExt};
+use super::{DirectedExt, DirectedGraph, Graph, GraphExt, UndirectedGraph};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -270,8 +270,8 @@ pub fn is_eulerian<G: Graph>(g: &G) -> bool {
     crate::alg::cycle::HierholzerEulerianCycle::new().is_eulerian(g)
 }
 
-pub fn is_chordal<G: Graph>(g: &G) -> bool {
-    crate::alg::chordal::is_chordal(g)
+pub fn is_chordal<G: UndirectedGraph>(g: &G) -> bool {
+    crate::alg::cycle::ChordalityInspector::new(g).is_chordal()
 }
 
 /// No induced cycle of length five or more in the graph or its complement.

@@ -45,7 +45,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 | C7 | `cycle/legacy.rs` (`has_cycle`, `simple_cycles`, `cycle_basis`, `cycle_to_walk`) | `CycleDetector`, the simple-cycle classes, cycle-basis classes | |
 | C8 | **done** `hamiltonian.rs` (deleted; its one test now uses `BacktrackingHamiltonianPath`, Java has no general exact Hamiltonian cycle search) | `tour` Hamiltonian-path/cycle classes | |
 | C9 | **done** `eulerian.rs` (deleted; `props::is_eulerian` and Christofides use `HierholzerEulerianCycle`; the Eulerian-trail helper had no Java counterpart) | `HierholzerEulerianCycle` | |
-| C10 | `chordal.rs` | `ChordalityInspector` | |
+| C10 | **done** `chordal.rs` (deleted; `ChordalGraphColoring` and `ChordalGraphMaxCliqueFinder` now follow Java and use `ChordalityInspector`, new `ChordalGraphIndependentSetFinder`, `props::is_chordal` delegates to the inspector; the chromatic-number and maximal-cliques helpers had no Java counterpart) | `ChordalityInspector` | |
 | C11 | `planarity.rs` (left-right) | `BoyerMyrvoldPlanarityInspector`; `props::is_planar` delegates | many callers |
 | C12 | `matching.rs` **[needs 1g]** | Dense/Sparse Edmonds, Kuhn–Munkres, greedy, path-growing, Blossom V | |
 | C13 | `paths.rs` (`all_simple_paths`, `find_negative_cycle`, edge/vertex-disjoint shortest paths) | Java classes (`AllDirectedPaths`, `BellmanFord`-based, `SuurballeKDisjointShortestPaths`, ...) | |

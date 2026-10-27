@@ -4,7 +4,7 @@
 
 use crate::common::*;
 use jgrapht::alg::centers::GonHeuristic;
-use jgrapht::alg::chordal::chordal_maximum_independent_set;
+use jgrapht::alg::independent_set::ChordalGraphIndependentSetFinder;
 use jgrapht::alg::interfaces::{CentersLocationAlgorithm, Partitioning, PartitioningAlgorithm};
 use jgrapht::alg::partition::BipartitePartitioning;
 use jgrapht::alg::steiner::kmb_steiner_tree;
@@ -172,19 +172,19 @@ mod chordal_graph_independent_set_finder_test {
     #[test]
     fn test_get_maximum_independent_set_1() {
         let graph = UGraph::<i32>::simple();
-        assert_eq!(chordal_maximum_independent_set(&graph).unwrap().len(), 0);
+        assert_eq!(ChordalGraphIndependentSetFinder::new(&graph).independent_set().unwrap().len(), 0);
     }
 
     #[test]
     fn test_get_maximum_independent_set_2() {
         let graph = undirected(&[&[1, 2], &[1, 3], &[1, 4], &[2, 3], &[2, 4], &[3, 4]]);
-        assert_eq!(chordal_maximum_independent_set(&graph).unwrap().len(), 1);
+        assert_eq!(ChordalGraphIndependentSetFinder::new(&graph).independent_set().unwrap().len(), 1);
     }
 
     #[test]
     fn test_get_maximum_independent_set_3() {
         let graph = undirected(&[&[1, 2], &[1, 3], &[2, 4], &[3, 4]]);
-        assert!(chordal_maximum_independent_set(&graph).is_none());
+        assert!(ChordalGraphIndependentSetFinder::new(&graph).independent_set().is_none());
     }
 
     #[test]
@@ -208,7 +208,11 @@ mod chordal_graph_independent_set_finder_test {
                 &[4, 5],
             ],
         );
-        let set = chordal_maximum_independent_set(&graph).unwrap();
+        let set: Vec<i32> = ChordalGraphIndependentSetFinder::new(&graph)
+            .independent_set()
+            .unwrap()
+            .into_iter()
+            .collect();
         assert_eq!(set.len(), 2);
         for (i, a) in set.iter().enumerate() {
             for b in &set[..i] {

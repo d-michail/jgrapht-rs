@@ -1,8 +1,10 @@
 //! Vertex colouring heuristics.
 
 use super::util::Indexed;
-use crate::graph::Graph;
+use super::cycle::{ChordalityInspector, IterationOrder};
+use crate::graph::{Graph, GraphExt, UndirectedGraph};
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
 #[derive(Debug, Clone)]
 pub struct Coloring<V> {
@@ -111,15 +113,6 @@ pub fn saturation_degree_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
     }
 }
 
-/// Optimal colouring of a chordal graph, `None` if the graph is not chordal.
-pub fn chordal_coloring<G: Graph>(g: &G) -> Option<Coloring<G::Vertex>> {
-    let peo = super::chordal::perfect_elimination_order(g)?;
-    let ix = Indexed::new(g);
-    let nb = neighbor_lists(&ix);
-    let order: Vec<usize> = peo.iter().rev().map(|v| ix.idx[v]).collect();
-    Some(greedy_in_order(&ix, &nb, &order))
-}
-
 /// Whether `colors` assigns a colour to every vertex with no monochromatic edge.
 pub fn is_proper_coloring<G: Graph>(g: &G, colors: &HashMap<G::Vertex, usize>) -> bool {
     g.vertices().all(|v| colors.contains_key(v))
@@ -172,11 +165,9 @@ pub fn color_refinement<G: Graph>(g: &G) -> HashMap<G::Vertex, usize> {
 // JGraphT's colouring classes
 
 use super::interfaces::VertexColoringAlgorithm;
-use crate::graph::GraphExt;
 use crate::util::java::{RandomSource, java_shuffle};
 use crate::{GraphError, Result};
 use std::collections::BTreeSet;
-use std::hash::Hash;
 
 const SELF_LOOPS_NOT_ALLOWED: &str = "Self-loops not allowed";
 
@@ -629,20 +620,97 @@ impl<V: Clone + Eq + Hash> VertexColoringAlgorithm<V> for BrownBacktrackColoring
     }
 }
 
-/// Optimal colouring of a chordal graph (`ChordalGraphColoring`); the colour count is the number of
-/// distinct colours used.
-pub struct ChordalGraphColoring<'g, G: Graph> {
+/// Optimal colouring of a chordal graph (`ChordalGraphColoring`): the vertices are coloured in the
+/// order of a perfect elimination order found by a [`ChordalityInspector`], each with the lowest
+/// colour not used by its predecessors. The colour count is the number of distinct colours.
+pub struct ChordalGraphColoring<'g, G: UndirectedGraph> {
     graph: &'g G,
+    chordality_inspector: ChordalityInspector<'g, G>,
+    coloring: Option<Coloring<G::Vertex>>,
 }
 
-impl<'g, G: Graph> ChordalGraphColoring<'g, G> {
+impl<'g, G: UndirectedGraph> ChordalGraphColoring<'g, G> {
     pub fn new(graph: &'g G) -> Self {
-        ChordalGraphColoring { graph }
+        Self::with_order(graph, IterationOrder::Mcs)
     }
-    /// `None` when the graph is not chordal.
-    pub fn coloring(&self) -> Option<Coloring<G::Vertex>> {
-        chordal_coloring(self.graph)
+
+    pub fn with_order(graph: &'g G, iteration_order: IterationOrder) -> Self {
+        ChordalGraphColoring {
+            graph,
+            chordality_inspector: ChordalityInspector::with_order(graph, iteration_order),
+            coloring: None,
+        }
     }
+
+    fn lazy_compute_coloring(&mut self) {
+        if self.coloring.is_none() && self.chordality_inspector.is_chordal() {
+            let perfect_elimination_order: Vec<G::Vertex> = self
+                .chordality_inspector
+                .get_perfect_elimination_order()
+                .expect("chordal graph")
+                .to_vec();
+            let mut vertex_coloring: HashMap<G::Vertex, usize> =
+                HashMap::with_capacity(perfect_elimination_order.len());
+            let vertex_in_order = vertex_in_order(&perfect_elimination_order);
+            for vertex in &perfect_elimination_order {
+                let predecessors = predecessors(self.graph, &vertex_in_order, vertex);
+                let predecessor_colors: HashSet<usize> = predecessors
+                    .iter()
+                    .map(|v| vertex_coloring[v])
+                    .collect();
+                // find the minimum unused color in the set of predecessors
+                let mut min_unused_color = 0;
+                while predecessor_colors.contains(&min_unused_color) {
+                    min_unused_color += 1;
+                }
+                vertex_coloring.insert(vertex.clone(), min_unused_color);
+            }
+            let max_color = vertex_coloring.values().collect::<HashSet<_>>().len();
+            self.coloring = Some(Coloring {
+                colors: vertex_coloring,
+                count: max_color,
+            });
+        }
+    }
+
+    /// The colouring, or `None` if the graph is not chordal.
+    pub fn coloring(&mut self) -> Option<Coloring<G::Vertex>> {
+        self.lazy_compute_coloring();
+        self.coloring.clone()
+    }
+
+    /// The perfect elimination order, or `None` if the graph is not chordal.
+    pub fn perfect_elimination_order(&mut self) -> Option<Vec<G::Vertex>> {
+        self.chordality_inspector
+            .get_perfect_elimination_order()
+            .map(<[_]>::to_vec)
+    }
+}
+
+/// Position of every vertex in `vertex_order`.
+pub(crate) fn vertex_in_order<V: Clone + Eq + Hash>(vertex_order: &[V]) -> HashMap<V, usize> {
+    vertex_order
+        .iter()
+        .enumerate()
+        .map(|(i, v)| (v.clone(), i))
+        .collect()
+}
+
+/// The neighbours of `vertex` that come before it in the order.
+pub(crate) fn predecessors<G: Graph>(
+    graph: &G,
+    vertex_in_order: &HashMap<G::Vertex, usize>,
+    vertex: &G::Vertex,
+) -> HashSet<G::Vertex> {
+    let mut predecessors = HashSet::new();
+    let vertex_position = vertex_in_order[vertex];
+    for edge in graph.edges_of(vertex) {
+        let opposite_vertex = graph.opposite_vertex(edge, vertex).expect("incident edge");
+        if vertex_in_order[opposite_vertex] < vertex_position {
+            predecessors.insert(opposite_vertex.clone());
+        }
+    }
+    predecessors
 }
 
 /// Colour refinement on successor lists using the partition-refinement algorithm of

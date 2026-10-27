@@ -2,7 +2,6 @@
 
 pub mod capacitated;
 pub mod centers;
-pub mod chordal;
 pub mod clique;
 pub mod clustering;
 pub mod color;
@@ -15,6 +14,7 @@ pub mod densest;
 pub mod drawing;
 pub mod flow;
 pub mod holes;
+pub mod independent_set;
 pub mod interfaces;
 pub mod isomorphism;
 pub mod lca;

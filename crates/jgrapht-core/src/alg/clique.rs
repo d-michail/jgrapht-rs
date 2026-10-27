@@ -1,7 +1,9 @@
 //! Cliques and independent sets.
 
+use super::color::ChordalGraphColoring;
+use super::cycle::IterationOrder;
 use super::util::Indexed;
-use crate::graph::Graph;
+use crate::graph::{Graph, UndirectedGraph};
 use std::collections::HashSet;
 
 fn adjacency<G: Graph>(ix: &Indexed<'_, G>) -> Vec<HashSet<usize>> {
@@ -433,26 +435,62 @@ impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
     }
 }
 
-/// Maximum clique of a chordal graph (`ChordalGraphMaxCliqueFinder`).
-pub struct ChordalGraphMaxCliqueFinder<'g, G: Graph> {
+/// Maximum clique of a chordal graph (`ChordalGraphMaxCliqueFinder`): the vertex of the highest
+/// colour in the optimal colouring of [`ChordalGraphColoring`], together with its predecessors in
+/// the perfect elimination order.
+pub struct ChordalGraphMaxCliqueFinder<'g, G: UndirectedGraph> {
     graph: &'g G,
+    iteration_order: IterationOrder,
+    maximum_clique: Option<HashSet<G::Vertex>>,
+    is_chordal: bool,
 }
 
-impl<'g, G: Graph> ChordalGraphMaxCliqueFinder<'g, G> {
+impl<'g, G: UndirectedGraph> ChordalGraphMaxCliqueFinder<'g, G> {
     pub fn new(graph: &'g G) -> Self {
-        ChordalGraphMaxCliqueFinder { graph }
+        Self::with_order(graph, IterationOrder::Mcs)
+    }
+
+    pub fn with_order(graph: &'g G, iteration_order: IterationOrder) -> Self {
+        ChordalGraphMaxCliqueFinder {
+            graph,
+            iteration_order,
+            maximum_clique: None,
+            is_chordal: true,
+        }
+    }
+
+    fn lazy_compute_maximum_clique(&mut self) {
+        if self.maximum_clique.is_none() && self.is_chordal {
+            let mut cgc = ChordalGraphColoring::with_order(self.graph, self.iteration_order);
+            let coloring = cgc.coloring();
+            let perfect_elimination_order = cgc.perfect_elimination_order();
+            let (Some(coloring), Some(perfect_elimination_order)) =
+                (coloring, perfect_elimination_order)
+            else {
+                self.is_chordal = false; // graph isn't chordal
+                return;
+            };
+
+            // finds the vertex with the maximum cardinality predecessor list
+            let vertex_in_order = super::color::vertex_in_order(&perfect_elimination_order);
+            let max_vertex = perfect_elimination_order
+                .iter()
+                .reduce(|best, v| if coloring.colors[v] > coloring.colors[best] { v } else { best });
+            self.maximum_clique = Some(match max_vertex {
+                None => HashSet::new(),
+                Some(v) => {
+                    let mut clique = super::color::predecessors(self.graph, &vertex_in_order, v);
+                    clique.insert(v.clone());
+                    clique
+                }
+            });
+        }
     }
 
     /// A maximum clique, or `None` if the graph is not chordal.
-    pub fn clique(&self) -> Option<HashSet<G::Vertex>> {
-        let cliques = super::chordal::chordal_maximal_cliques(self.graph)?;
-        Some(
-            cliques
-                .into_iter()
-                .max_by_key(Vec::len)
-                .map(|c| c.into_iter().collect())
-                .unwrap_or_default(),
-        )
+    pub fn clique(&mut self) -> Option<HashSet<G::Vertex>> {
+        self.lazy_compute_maximum_clique();
+        self.maximum_clique.clone()
     }
 }
 

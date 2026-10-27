@@ -1,5 +1,8 @@
 use jgrapht::alg::transitive::{TransitiveClosure, TransitiveReduction};
-use jgrapht::alg::{chordal::*, connectivity::*, cycle::*, lca::Lca};
+use jgrapht::alg::clique::ChordalGraphMaxCliqueFinder;
+use jgrapht::alg::color::ChordalGraphColoring;
+use jgrapht::alg::independent_set::ChordalGraphIndependentSetFinder;
+use jgrapht::alg::{connectivity::*, cycle::*, lca::Lca};
 use jgrapht::generate::*;
 use jgrapht::*;
 
@@ -97,12 +100,24 @@ fn eulerian() {
 #[test]
 fn chordal() {
     let tri_fan = ug(&[(1, 2), (2, 3), (3, 1), (3, 4), (4, 2)]);
-    assert!(is_chordal(&tri_fan));
-    assert_eq!(chordal_chromatic_number(&tri_fan), Some(3));
-    assert_eq!(chordal_maximal_cliques(&tri_fan).unwrap().len(), 2);
+    assert!(jgrapht::graph::props::is_chordal(&tri_fan));
+    assert_eq!(
+        ChordalGraphColoring::new(&tri_fan).coloring().unwrap().count,
+        3
+    );
+    assert_eq!(
+        ChordalGraphMaxCliqueFinder::new(&tri_fan).clique().unwrap().len(),
+        3
+    );
     let c4 = ug(&[(1, 2), (2, 3), (3, 4), (4, 1)]);
-    assert!(!is_chordal(&c4));
-    assert_eq!(chordal_maximum_independent_set(&tri_fan).unwrap().len(), 2);
+    assert!(!jgrapht::graph::props::is_chordal(&c4));
+    assert_eq!(
+        ChordalGraphIndependentSetFinder::new(&tri_fan)
+            .independent_set()
+            .unwrap()
+            .len(),
+        2
+    );
 }
 
 #[test]
