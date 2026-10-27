@@ -72,3 +72,21 @@ impl<V, E> PathDecomposition<V, E> {
         self.paths.len()
     }
 }
+
+/// Lowest common ancestor queries (`LowestCommonAncestorAlgorithm`).
+pub trait LowestCommonAncestorAlgorithm<V: Eq + Hash + Clone> {
+    /// The lowest common ancestor of `a` and `b`; `Ok(None)` when they have none (for example
+    /// they lie in different trees). An error if a vertex is not in the graph.
+    fn lca(&self, a: &V, b: &V) -> Result<Option<V>>;
+
+    fn batch_lca(&self, queries: &[(V, V)]) -> Result<Vec<Option<V>>> {
+        queries.iter().map(|(a, b)| self.lca(a, b)).collect()
+    }
+
+    /// All lowest common ancestors (only meaningful for DAGs; trees have at most one).
+    fn lca_set(&self, _a: &V, _b: &V) -> Result<HashSet<V>> {
+        Err(crate::GraphError::Unsupported(
+            "lca_set is not supported by this algorithm".into(),
+        ))
+    }
+}

@@ -55,3 +55,4 @@ Note: `rheaps` 0.16.2 matches JHeaps' tie-breaking for insert/pop, decrease-key 
 | `alg/densesubgraph/*` (Goldberg, NodeWeights, NodeWeightsPerEdge, test base) | `alg_small_tests::goldberg_maximum_density_subgraph_tests` | done (the min-cut algorithm argument is a function over the flow network) |
 | `alg/decomposition/HeavyPathDecompositionTest`, `DulmageMendelsohnDecompositionTest` | `alg_decomposition_tests` | done (null-argument tests n/a) |
 | `alg/similarity/ZhangShashaTreeEditDistanceTest` | `alg_small_tests::zhang_shasha_tree_edit_distance_test` | done |
+| `alg/lca/*` (LCATreeTestBase x4 finders, NaiveLCAFinderTest) | `alg_lca_tests` | done (Tarjan reports a shared tree when queried, like Java) |
