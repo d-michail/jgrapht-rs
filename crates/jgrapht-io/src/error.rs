@@ -1,6 +1,8 @@
 use jgrapht::GraphError;
 use thiserror::Error;
 
+/// Errors raised while importing or exporting graphs.
+#[non_exhaustive]
 #[derive(Debug, Error)]
 pub enum IoError {
     #[error(transparent)]
@@ -13,4 +15,5 @@ pub enum IoError {
     Export(String),
 }
 
+/// Result type used by fallible `jgrapht-io` operations.
 pub type Result<T, E = IoError> = std::result::Result<T, E>;

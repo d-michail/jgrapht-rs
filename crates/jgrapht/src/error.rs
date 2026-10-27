@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 /// Errors raised by fallible graph operations (JGraphT throws unchecked exceptions instead).
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum GraphError {
     #[error("vertex not found in graph")]
@@ -36,4 +37,5 @@ pub enum GraphError {
     IndexNotWellDefined(String),
 }
 
+/// Result type used by fallible `jgrapht` operations.
 pub type Result<T, E = GraphError> = std::result::Result<T, E>;
