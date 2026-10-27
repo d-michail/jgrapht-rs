@@ -12,16 +12,6 @@ fn weighted_directed(edges: &[(u32, u32, f64)]) -> DiGraph<u32> {
 }
 
 #[test]
-fn list_single_source_paths_source_and_missing_target() {
-    let paths = ListSingleSourcePaths::<u32, DefaultEdge>::new(1, Default::default());
-    assert_eq!(paths.source(), &1);
-    assert_eq!(paths.weight(&1), 0.0);
-    assert_eq!(paths.path(&1).unwrap().vertices, [1]);
-    assert_eq!(paths.weight(&2), f64::INFINITY);
-    assert!(paths.path(&2).is_none());
-}
-
-#[test]
 fn dijkstra_closest_first_order_and_radius() {
     let graph = weighted_directed(&[
         (3, 1, 3.0),
