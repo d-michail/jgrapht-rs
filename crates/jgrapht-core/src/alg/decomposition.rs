@@ -342,7 +342,9 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
 // Dulmage–Mendelsohn decomposition
 
 use super::connectivity::strongly_connected_components_kosaraju;
-use super::matching::{Matching, hopcroft_karp_with_partitions};
+use super::matching::{
+    HopcroftKarpMaximumCardinalityBipartiteMatching, Matching, MatchingAlgorithm,
+};
 use crate::graph::{GraphMut, GraphMutExt};
 use crate::view::EdgeReversed;
 
@@ -380,19 +382,23 @@ where
 
     /// Decomposes along a maximum matching; `fine` splits the core into its strongly connected parts.
     pub fn decomposition(&self, fine: bool) -> Result<DmDecomposition<G::Vertex>> {
-        let matching =
-            hopcroft_karp_with_partitions(self.graph, &self.partition1, &self.partition2)?;
+        let matching = HopcroftKarpMaximumCardinalityBipartiteMatching::new(
+            self.graph,
+            self.partition1.iter().cloned(),
+            self.partition2.iter().cloned(),
+        )?
+        .get_matching()?;
         self.decompose(&matching, fine)
     }
 
     pub fn decompose(
         &self,
-        matching: &Matching<G::Edge>,
+        matching: &Matching<G::Vertex, G::Edge>,
         fine: bool,
     ) -> Result<DmDecomposition<G::Vertex>> {
         let g = self.graph;
         let (mut unmatched1, mut unmatched2) = (self.partition1.clone(), self.partition2.clone());
-        for e in &matching.edges {
+        for e in matching.edges() {
             let (source, target) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
             if self.partition1.contains(source) {
                 unmatched1.remove(source);
@@ -462,9 +468,9 @@ where
     }
 
     /// Edges oriented from partition 1 to partition 2, plus matching edges back.
-    fn as_directed_graph(&self, matching: &Matching<G::Edge>) -> Result<crate::DiGraph<G::Vertex>> {
+    fn as_directed_graph(&self, matching: &Matching<G::Vertex, G::Edge>) -> Result<crate::DiGraph<G::Vertex>> {
         let g = self.graph;
-        let matched: HashSet<&G::Edge> = matching.edges.iter().collect();
+        let matched: HashSet<&G::Edge> = matching.edges().iter().collect();
         let mut dg = crate::DiGraph::<G::Vertex>::with_graph_type(crate::GraphType {
             self_loops: true,
             ..crate::GraphType::simple()
@@ -491,11 +497,11 @@ where
     /// matching edges of their endpoints.
     fn as_directed_edge_graph(
         &self,
-        matching: &Matching<G::Edge>,
+        matching: &Matching<G::Vertex, G::Edge>,
         subset: &HashSet<G::Vertex>,
     ) -> Result<crate::DiGraph<G::Edge>> {
         let g = self.graph;
-        let matched: HashSet<&G::Edge> = matching.edges.iter().collect();
+        let matched: HashSet<&G::Edge> = matching.edges().iter().collect();
         let mut h = crate::DiGraph::<G::Edge>::with_graph_type(crate::GraphType {
             self_loops: true,
             ..crate::GraphType::simple()

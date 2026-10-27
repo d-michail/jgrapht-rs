@@ -1,18 +1,18 @@
 //! Matchings: bipartite (Hopcroft–Karp, Hungarian), general (Edmonds' blossom), greedy.
 
-use super::partition::two_color;
-use super::util::Indexed;
+use crate::alg::partition::two_color;
+use crate::alg::util::Indexed;
 use crate::graph::Graph;
 use crate::{GraphError, Result};
 use std::collections::{HashSet, VecDeque};
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Matching<E> {
+pub struct LegacyMatching<E> {
     pub edges: Vec<E>,
     pub weight: f64,
 }
 
-impl<E> Matching<E> {
+impl<E> LegacyMatching<E> {
     pub fn len(&self) -> usize {
         self.edges.len()
     }
@@ -36,7 +36,7 @@ fn edge_between<G: Graph>(ix: &Indexed<'_, G>, a: usize, b: usize) -> usize {
         .expect("matched vertices are adjacent")
 }
 
-fn matching_of<G: Graph>(ix: &Indexed<'_, G>, mate: &[Option<usize>]) -> Matching<G::Edge> {
+fn matching_of<G: Graph>(ix: &Indexed<'_, G>, mate: &[Option<usize>]) -> LegacyMatching<G::Edge> {
     let mut edges = Vec::new();
     let mut weight = 0.0;
     for a in 0..ix.n() {
@@ -48,7 +48,7 @@ fn matching_of<G: Graph>(ix: &Indexed<'_, G>, mate: &[Option<usize>]) -> Matchin
             }
         }
     }
-    Matching { edges, weight }
+    LegacyMatching { edges, weight }
 }
 
 fn simple_adj<G: Graph>(ix: &Indexed<'_, G>) -> Vec<Vec<usize>> {
@@ -128,7 +128,7 @@ pub(crate) fn hopcroft_karp_mates(adj: &[Vec<usize>], left: &[usize]) -> Vec<Opt
 }
 
 /// Maximum cardinality matching of a bipartite graph (Hopcroft–Karp).
-pub fn hopcroft_karp<G: Graph>(g: &G) -> Result<Matching<G::Edge>> {
+pub fn hopcroft_karp<G: Graph>(g: &G) -> Result<LegacyMatching<G::Edge>> {
     let ix = Indexed::new(g);
     let side = two_color(&ix)
         .ok_or_else(|| GraphError::InvalidArgument("graph is not bipartite".into()))?;
@@ -143,7 +143,7 @@ pub fn hopcroft_karp_with_partitions<G: Graph>(
     g: &G,
     partition1: &HashSet<G::Vertex>,
     partition2: &HashSet<G::Vertex>,
-) -> Result<Matching<G::Edge>> {
+) -> Result<LegacyMatching<G::Edge>> {
     if partition1.len() + partition2.len() != g.vertex_count()
         || g.vertices()
             .any(|v| !partition1.contains(v) && !partition2.contains(v))
@@ -172,7 +172,7 @@ pub fn hopcroft_karp_with_partitions<G: Graph>(
 
 /// Maximum weight matching of a bipartite graph (Hungarian algorithm, `O(n^3)`).
 /// Edges of non-positive weight are never used.
-pub fn maximum_weight_bipartite_matching<G: Graph>(g: &G) -> Result<Matching<G::Edge>> {
+pub fn maximum_weight_bipartite_matching<G: Graph>(g: &G) -> Result<LegacyMatching<G::Edge>> {
     let ix = Indexed::new(g);
     let side = two_color(&ix)
         .ok_or_else(|| GraphError::InvalidArgument("graph is not bipartite".into()))?;
@@ -180,7 +180,7 @@ pub fn maximum_weight_bipartite_matching<G: Graph>(g: &G) -> Result<Matching<G::
     let right: Vec<usize> = (0..ix.n()).filter(|&v| side[v]).collect();
     let n = left.len().max(right.len());
     if n == 0 {
-        return Ok(Matching {
+        return Ok(LegacyMatching {
             edges: vec![],
             weight: 0.0,
         });
@@ -261,7 +261,7 @@ pub fn maximum_weight_bipartite_matching<G: Graph>(g: &G) -> Result<Matching<G::
 }
 
 /// Maximum cardinality matching of a general graph (Edmonds' blossom algorithm, `O(V^3)`).
-pub fn edmonds_blossom<G: Graph>(g: &G) -> Matching<G::Edge> {
+pub fn edmonds_blossom<G: Graph>(g: &G) -> LegacyMatching<G::Edge> {
     let ix = Indexed::new(g);
     let adj = simple_adj(&ix);
     let n = ix.n();
@@ -355,7 +355,7 @@ pub fn edmonds_blossom<G: Graph>(g: &G) -> Matching<G::Edge> {
 }
 
 /// Greedy matching by decreasing weight: a 1/2-approximation of the maximum weight matching.
-pub fn greedy_matching<G: Graph>(g: &G) -> Matching<G::Edge> {
+pub fn greedy_matching<G: Graph>(g: &G) -> LegacyMatching<G::Edge> {
     let ix = Indexed::new(g);
     let mut order: Vec<usize> = (0..ix.es.len()).collect();
     order.sort_by(|&a, &b| ix.w[b].total_cmp(&ix.w[a]));
@@ -382,7 +382,7 @@ pub fn is_matching<G: Graph>(g: &G, edges: &[G::Edge]) -> bool {
 }
 
 /// Path-growing 1/2-approximation of maximum weight matching (Drake & Hougardy), linear time.
-pub fn path_growing_matching<G: Graph>(g: &G) -> Matching<G::Edge> {
+pub fn path_growing_matching<G: Graph>(g: &G) -> LegacyMatching<G::Edge> {
     let ix = Indexed::new(g);
     let n = ix.n();
     let mut removed = vec![false; n];
@@ -433,7 +433,7 @@ pub fn path_growing_matching<G: Graph>(g: &G) -> Matching<G::Edge> {
 
 /// Exact maximum weight matching by dynamic programming over vertex subsets, `O(2^n n)`.
 /// Limited to 24 vertices; meant for small instances and as a test oracle.
-pub fn maximum_weight_matching_exact<G: Graph>(g: &G) -> Result<Matching<G::Edge>> {
+pub fn maximum_weight_matching_exact<G: Graph>(g: &G) -> Result<LegacyMatching<G::Edge>> {
     let ix = Indexed::new(g);
     let n = ix.n();
     if n > 24 {
