@@ -212,3 +212,43 @@ fn arborescence<G: DirectedGraph>(
     })?;
     Ok(tree_of(&ix, &chosen))
 }
+
+/// An algorithm computing a spanning tree or forest (`SpanningTreeAlgorithm`).
+pub trait SpanningTreeAlgorithm<G: Graph> {
+    fn spanning_tree(&self) -> SpanningTree<G::Edge>;
+}
+
+macro_rules! mst_algorithm {
+    ($(#[$doc:meta])* $name:ident, $f:ident) => {
+        $(#[$doc])*
+        pub struct $name<'g, G: Graph> {
+            graph: &'g G,
+        }
+        impl<'g, G: Graph> $name<'g, G> {
+            pub fn new(graph: &'g G) -> Self {
+                $name { graph }
+            }
+        }
+        impl<G: Graph> SpanningTreeAlgorithm<G> for $name<'_, G> {
+            fn spanning_tree(&self) -> SpanningTree<G::Edge> {
+                $f(self.graph)
+            }
+        }
+    };
+}
+
+mst_algorithm!(
+    /// `KruskalMinimumSpanningTree`.
+    KruskalMinimumSpanningTree,
+    kruskal
+);
+mst_algorithm!(
+    /// `PrimMinimumSpanningTree`.
+    PrimMinimumSpanningTree,
+    prim
+);
+mst_algorithm!(
+    /// `BoruvkaMinimumSpanningTree`.
+    BoruvkaMinimumSpanningTree,
+    boruvka
+);

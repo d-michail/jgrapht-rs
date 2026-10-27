@@ -1,5 +1,6 @@
 //! Graph algorithms.
 
+pub mod capacitated;
 pub mod centers;
 pub mod chordal;
 pub mod clique;
@@ -8,6 +9,7 @@ pub mod color;
 pub mod connectivity;
 pub mod cover;
 pub mod cycle;
+pub mod cyclic_exchange;
 pub mod decomposition;
 pub mod densest;
 pub mod drawing;
