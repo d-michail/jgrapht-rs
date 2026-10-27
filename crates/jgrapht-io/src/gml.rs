@@ -13,6 +13,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Graph Modelling Language (GML) import and export.
+//!
+//! GML is a hierarchical text format for graphs and their attributes. Nested
+//! attribute structures which do not have a native [`AttributeType`] are
+//! retained as textual values.
+
+#![deny(missing_docs)]
 
 use crate::exporter::format_f64;
 use crate::{
@@ -212,6 +218,13 @@ fn attributes(pairs: &[(String, Value)], forbidden: &[&str]) -> AttributeMap {
 type VertexAttributeConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
 type EdgeAttributeConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()>>;
 
+/// Imports a graph from Graph Modelling Language (GML).
+///
+/// The destination graph must support the features present in the input, such
+/// as loops and parallel edges. Numeric `weight` attributes are applied when
+/// the destination is weighted. Other node and edge attributes are reported to
+/// the configured consumers; nested structures are represented as strings.
+/// Node identifiers are also reported as an `ID` vertex attribute.
 pub struct GmlImporter<V, E = DefaultEdge> {
     vertex_factory: Option<Box<dyn FnMut(i64) -> V>>,
     vertex_attribute_consumer: Option<VertexAttributeConsumer<V>>,
@@ -220,6 +233,7 @@ pub struct GmlImporter<V, E = DefaultEdge> {
 }
 
 impl<V, E> GmlImporter<V, E> {
+    /// Creates an importer which uses the destination graph's suppliers.
     pub fn new() -> Self {
         Self {
             vertex_factory: None,
@@ -229,10 +243,18 @@ impl<V, E> GmlImporter<V, E> {
         }
     }
 
+    /// Sets a factory which creates vertices from numeric GML node identifiers.
+    ///
+    /// The importer also invokes the factory for vertices referenced by edges
+    /// but not explicitly declared by a `node` block.
     pub fn set_vertex_factory(&mut self, factory: impl FnMut(i64) -> V + 'static) {
         self.vertex_factory = Some(Box::new(factory));
     }
 
+    /// Sets the consumer notified for every vertex attribute.
+    ///
+    /// The consumer also receives each numeric node identifier under the
+    /// attribute name `ID`.
     pub fn set_vertex_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&V, &str, &Attribute) -> Result<()> + 'static,
@@ -240,6 +262,7 @@ impl<V, E> GmlImporter<V, E> {
         self.vertex_attribute_consumer = Some(Box::new(consumer));
     }
 
+    /// Sets the consumer notified for every edge attribute.
     pub fn set_edge_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&E, &str, &Attribute) -> Result<()> + 'static,
@@ -402,18 +425,36 @@ where
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// Options which modify GML export behavior.
 pub enum GmlParameter {
+    /// Export edge labels from the edge attribute named `label`.
     ExportEdgeLabels,
+    /// Export weights of weighted-graph edges under the key `weight`.
     ExportEdgeWeights,
+    /// Export all custom edge attributes supplied by the edge provider.
+    ///
+    /// The keys `id`, `source`, and `target` are reserved. Special label and
+    /// weight handling takes precedence when enabled.
     ExportCustomEdgeAttributes,
+    /// Export vertex labels from the vertex attribute named `label`.
     ExportVertexLabels,
+    /// Export all custom vertex attributes supplied by the vertex provider.
+    ///
+    /// The key `id` is reserved, and special label handling takes precedence
+    /// when enabled.
     ExportCustomVertexAttributes,
+    /// Export a `graphics` attribute block for each vertex.
     ExportCustomVertexGraphicsAttributes,
+    /// Escape string values using Java string-literal rules.
     EscapeStringsAsJava,
 }
 
 type GraphicsAttributeProvider<V> = Box<dyn Fn(&V) -> AttributeMap>;
 
+/// Exports a graph in Graph Modelling Language (GML).
+///
+/// Vertices receive sequential integer identifiers. Labels, weights, custom
+/// attributes, and vertex graphics blocks are opt-in through [`GmlParameter`].
 pub struct GmlExporter<V, E> {
     base: BaseExporter<V, E>,
     parameters: HashSet<GmlParameter>,
@@ -424,6 +465,7 @@ impl<V, E> GmlExporter<V, E>
 where
     V: Clone + Eq + Hash + 'static,
 {
+    /// Creates an exporter with sequential integer vertex identifiers.
     pub fn new() -> Self {
         let mut ids = IntegerIdProvider::new();
         Self {
@@ -433,10 +475,14 @@ where
         }
     }
 
+    /// Enables or disables edge-weight export.
+    ///
+    /// This is a convenience wrapper for [`GmlParameter::ExportEdgeWeights`].
     pub fn set_export_edge_weights(&mut self, enabled: bool) {
         self.set_parameter(GmlParameter::ExportEdgeWeights, enabled);
     }
 
+    /// Enables or disables an export option.
     pub fn set_parameter(&mut self, parameter: GmlParameter, enabled: bool) {
         if enabled {
             self.parameters.insert(parameter);
@@ -445,14 +491,17 @@ where
         }
     }
 
+    /// Returns whether an export option is enabled.
     pub fn is_parameter(&self, parameter: GmlParameter) -> bool {
         self.parameters.contains(&parameter)
     }
 
+    /// Sets the provider used to generate optional edge identifiers.
     pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
         self.base.set_edge_id_provider(provider);
     }
 
+    /// Sets the provider of vertex attributes.
     pub fn set_vertex_attribute_provider(
         &mut self,
         provider: impl Fn(&V) -> AttributeMap + 'static,
@@ -460,10 +509,12 @@ where
         self.base.set_vertex_attribute_provider(provider);
     }
 
+    /// Sets the provider of edge attributes.
     pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
         self.base.set_edge_attribute_provider(provider);
     }
 
+    /// Sets the provider for attributes written inside each vertex's `graphics` block.
     pub fn set_vertex_graphics_attribute_provider(
         &mut self,
         provider: impl Fn(&V) -> AttributeMap + 'static,

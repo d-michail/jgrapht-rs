@@ -13,6 +13,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Sparse adjacency and Laplacian matrix exporters.
+//!
+//! Each nonzero matrix entry is written on its own line as
+//! `row_id column_id value`, suitable for ingestion by matrix-processing
+//! software.
+
+#![deny(missing_docs)]
 
 use crate::exporter::format_f64;
 use crate::{BaseExporter, GraphExporter, IntegerIdProvider, IoError, Result};
@@ -23,13 +29,26 @@ use std::io::Write;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+/// A sparse matrix representation supported by [`MatrixExporter`].
 pub enum MatrixFormat {
+    /// The adjacency matrix.
+    ///
+    /// Each value is the number of edges between the corresponding vertices.
+    /// Undirected matrices are symmetric, and a loop contributes two to its
+    /// diagonal entry.
     #[default]
     SparseAdjacency,
+    /// The combinatorial Laplacian matrix of an undirected graph.
     SparseLaplacian,
+    /// The normalized Laplacian matrix of an undirected graph.
     SparseNormalizedLaplacian,
 }
 
+/// Exports a graph as a sparse plain-text matrix.
+///
+/// Vertices receive sequential integer identifiers by default. Adjacency
+/// matrices support directed and undirected graphs; both Laplacian formats
+/// require an undirected graph.
 pub struct MatrixExporter<V, E> {
     base: BaseExporter<V, E>,
     format: MatrixFormat,
@@ -39,11 +58,13 @@ impl<V, E> MatrixExporter<V, E>
 where
     V: Clone + Eq + Hash + 'static,
 {
+    /// Creates an exporter for `format` with sequential integer vertex identifiers.
     pub fn new(format: MatrixFormat) -> Self {
         let mut ids = IntegerIdProvider::new();
         Self::with_vertex_id_provider(format, move |vertex| ids.id(vertex))
     }
 
+    /// Creates an exporter for `format` using the supplied vertex identifier provider.
     pub fn with_vertex_id_provider(
         format: MatrixFormat,
         provider: impl FnMut(&V) -> String + 'static,
@@ -54,10 +75,12 @@ where
         }
     }
 
+    /// Sets the output matrix representation.
     pub fn set_format(&mut self, format: MatrixFormat) {
         self.format = format;
     }
 
+    /// Returns the output matrix representation.
     pub fn format(&self) -> MatrixFormat {
         self.format
     }

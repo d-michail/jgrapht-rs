@@ -13,6 +13,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! GraphML import and export using a streaming XML reader.
+//!
+//! GraphML is an XML-based graph exchange format. See the
+//! [GraphML Primer](http://graphml.graphdrawing.org/primer/graphml-primer.html)
+//! for a description of the format.
+
+#![deny(missing_docs)]
 
 use crate::exporter::format_f64;
 use crate::{
@@ -335,6 +341,17 @@ type GraphAttributeConsumer = Box<dyn FnMut(&str, &Attribute) -> Result<()>>;
 type VertexAttributeConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
 type EdgeAttributeConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()>>;
 
+/// Imports a graph from a GraphML data source.
+///
+/// The destination graph must support the features present in the input, such
+/// as self-loops or parallel edges. The `edgedefault` XML attribute is not used
+/// to change the destination graph's directionality; that is determined by the
+/// graph implementation supplied to [`GraphImporter::import_graph`].
+///
+/// Graph, vertex, and edge attributes are exposed through the configured
+/// consumers. Vertex identifiers are additionally reported as an `ID` vertex
+/// attribute. When the destination is weighted, an edge attribute named
+/// `weight` is used by default as its weight.
 pub struct GraphMlImporter<V, E = DefaultEdge> {
     vertex_factory: Option<VertexFactory<V>>,
     edge_factory: Option<EdgeFactory<E>>,
@@ -346,6 +363,7 @@ pub struct GraphMlImporter<V, E = DefaultEdge> {
 }
 
 impl<V, E> GraphMlImporter<V, E> {
+    /// Creates an importer with the default edge-weight attribute name.
     pub fn new() -> Self {
         Self {
             vertex_factory: None,
@@ -357,42 +375,70 @@ impl<V, E> GraphMlImporter<V, E> {
             edge_attribute_consumer: None,
         }
     }
+    /// Sets a factory which creates vertices from their GraphML identifiers.
+    ///
+    /// Without a custom factory, vertices are obtained from the destination
+    /// graph's vertex supplier.
     pub fn set_vertex_factory(&mut self, mut factory: impl FnMut(&str) -> V + 'static) {
         self.vertex_factory = Some(Box::new(move |id, _| factory(id)));
     }
+    /// Sets a factory which creates vertices from their identifiers and attributes.
+    ///
+    /// The factory is called once for every new vertex encountered in the
+    /// input. Without a custom factory, vertices are obtained from the
+    /// destination graph's vertex supplier.
     pub fn set_vertex_with_attributes_factory(
         &mut self,
         factory: impl FnMut(&str, &AttributeMap) -> V + 'static,
     ) {
         self.vertex_factory = Some(Box::new(factory));
     }
+    /// Sets the GraphML attribute name from which edge weights are read.
     pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) {
         self.edge_weight_attribute = name.into();
     }
+    /// Sets a factory which creates edges from their GraphML attributes.
+    ///
+    /// Without a custom factory, edges are obtained from the destination
+    /// graph's edge supplier.
     pub fn set_edge_with_attributes_factory(
         &mut self,
         factory: impl FnMut(&AttributeMap) -> E + 'static,
     ) {
         self.edge_factory = Some(Box::new(factory));
     }
+    /// Sets the schema-validation option.
+    ///
+    /// The streaming Rust parser currently records this compatibility option
+    /// but does not perform XML Schema validation.
     pub fn set_schema_validation(&mut self, enabled: bool) {
         self.schema_validation = enabled;
     }
+    /// Returns the configured schema-validation option.
     pub const fn schema_validation(&self) -> bool {
         self.schema_validation
     }
+    /// Sets the consumer notified for every graph attribute.
     pub fn set_graph_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&str, &Attribute) -> Result<()> + 'static,
     ) {
         self.graph_attribute_consumer = Some(Box::new(consumer));
     }
+    /// Sets the consumer notified for every vertex attribute.
+    ///
+    /// The consumer also receives the GraphML vertex identifier under the
+    /// attribute name `ID`.
     pub fn set_vertex_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&V, &str, &Attribute) -> Result<()> + 'static,
     ) {
         self.vertex_attribute_consumer = Some(Box::new(consumer));
     }
+    /// Sets the consumer notified for every edge attribute.
+    ///
+    /// When present, the GraphML edge identifier is also reported under the
+    /// attribute name `ID`.
     pub fn set_edge_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&E, &str, &Attribute) -> Result<()> + 'static,
@@ -508,6 +554,12 @@ fn escape_xml(value: &str) -> String {
         .replace('"', "&quot;")
 }
 
+/// Exports a graph in GraphML format.
+///
+/// Vertices receive integer identifiers by default. Use
+/// [`GraphMlExporter::with_vertex_id_provider`] when stable or domain-specific
+/// identifiers are required. Attributes must be registered before they can be
+/// emitted by an attribute provider.
 pub struct GraphMlExporter<V, E> {
     base: BaseExporter<V, E>,
     export_edge_weights: bool,
@@ -522,10 +574,15 @@ pub struct GraphMlExporter<V, E> {
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// The kind of graph component to which a registered GraphML attribute applies.
 pub enum AttributeCategory {
+    /// A graph attribute.
     Graph,
+    /// A node (vertex) attribute.
     Node,
+    /// An edge attribute.
     Edge,
+    /// An attribute valid for graphs, nodes, and edges.
     All,
 }
 impl AttributeCategory {
@@ -550,6 +607,7 @@ impl<V, E> GraphMlExporter<V, E>
 where
     V: Clone + Eq + Hash + 'static,
 {
+    /// Creates an exporter which assigns consecutive integer vertex identifiers.
     pub fn new() -> Self {
         let mut ids = IntegerIdProvider::new();
         Self {
@@ -564,47 +622,74 @@ where
             next_attribute: 0,
         }
     }
+    /// Creates an exporter using `provider` to generate vertex identifiers.
     pub fn with_vertex_id_provider(provider: impl FnMut(&V) -> String + 'static) -> Self {
         let mut result = Self::new();
         result.base.set_vertex_id_provider(provider);
         result
     }
+    /// Sets the provider used to generate optional edge identifiers.
     pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
         self.base.set_edge_id_provider(provider);
     }
+    /// Sets the provider of graph attributes.
     pub fn set_graph_attribute_provider(&mut self, provider: impl Fn() -> AttributeMap + 'static) {
         self.base.set_graph_attribute_provider(provider);
     }
+    /// Sets the provider of vertex attributes.
     pub fn set_vertex_attribute_provider(
         &mut self,
         provider: impl Fn(&V) -> AttributeMap + 'static,
     ) {
         self.base.set_vertex_attribute_provider(provider);
     }
+    /// Sets the provider of edge attributes.
     pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
         self.base.set_edge_attribute_provider(provider);
     }
+    /// Sets whether edge weights are exported.
     pub fn set_export_edge_weights(&mut self, enabled: bool) {
         self.export_edge_weights = enabled;
     }
+    /// Sets whether vertex labels are exported.
+    ///
+    /// Labels are read from the vertex attribute provider using the configured
+    /// vertex-label attribute name. If no such attribute is supplied, the
+    /// vertex identifier is used.
     pub fn set_export_vertex_labels(&mut self, enabled: bool) {
         self.export_vertex_labels = enabled;
     }
+    /// Sets whether edge labels are exported.
+    ///
+    /// Labels are read from the edge attribute provider using the configured
+    /// edge-label attribute name.
     pub fn set_export_edge_labels(&mut self, enabled: bool) {
         self.export_edge_labels = enabled;
     }
+    /// Sets the attribute name used for vertex labels.
+    ///
+    /// Returns an error if the name is already registered as a regular
+    /// GraphML attribute.
     pub fn set_vertex_label_attribute_name(&mut self, name: impl Into<String>) -> Result<()> {
         let name = name.into();
         self.ensure_not_registered(&name)?;
         self.vertex_label_attribute = name;
         Ok(())
     }
+    /// Sets the attribute name used for edge labels.
+    ///
+    /// Returns an error if the name is already registered as a regular
+    /// GraphML attribute.
     pub fn set_edge_label_attribute_name(&mut self, name: impl Into<String>) -> Result<()> {
         let name = name.into();
         self.ensure_not_registered(&name)?;
         self.edge_label_attribute = name;
         Ok(())
     }
+    /// Sets the attribute name used for edge weights.
+    ///
+    /// Returns an error if the name is already registered as a regular
+    /// GraphML attribute.
     pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) -> Result<()> {
         let name = name.into();
         self.ensure_not_registered(&name)?;
@@ -625,6 +710,11 @@ where
             || name == self.edge_label_attribute
             || name == self.edge_weight_attribute
     }
+    /// Registers an attribute for export.
+    ///
+    /// `category` controls where the attribute is valid, `kind` is written as
+    /// its GraphML `attr.type`, and `default` suppresses values equal to that
+    /// default. Registering a reserved label or weight name returns an error.
     pub fn register_attribute(
         &mut self,
         name: impl Into<String>,
@@ -651,6 +741,10 @@ where
         );
         Ok(())
     }
+    /// Unregisters an exported attribute.
+    ///
+    /// Removing a name which was not registered is a no-op. Reserved label and
+    /// weight names cannot be unregistered.
     pub fn unregister_attribute(&mut self, name: &str) -> Result<()> {
         if self.reserved(name) {
             return Err(IoError::Export(format!(
@@ -892,25 +986,38 @@ fn write_component<W: Write>(
     Ok(())
 }
 
+/// An event-driven GraphML edge: `(source_id, target_id, weight)`.
 pub type GraphMlEdge = (String, String, Option<f64>);
 
+/// Imports GraphML as a stream of vertices, edges, and attributes.
+///
+/// Vertex values are the identifiers read from the file. Edges contain the
+/// source identifier, target identifier, and optional weight. Attribute events
+/// retain their declared GraphML types.
 pub struct GraphMlEventDrivenImporter {
     edge_weight_attribute: String,
     schema_validation: bool,
 }
 impl GraphMlEventDrivenImporter {
+    /// Creates an event-driven importer with the default edge-weight attribute name.
     pub fn new() -> Self {
         Self {
             edge_weight_attribute: "weight".into(),
             schema_validation: true,
         }
     }
+    /// Sets the GraphML attribute name from which edge weights are read.
     pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) {
         self.edge_weight_attribute = name.into();
     }
+    /// Sets the schema-validation option.
+    ///
+    /// The streaming Rust parser currently records this compatibility option
+    /// but does not perform XML Schema validation.
     pub fn set_schema_validation(&mut self, enabled: bool) {
         self.schema_validation = enabled;
     }
+    /// Returns the configured schema-validation option.
     pub const fn schema_validation(&self) -> bool {
         self.schema_validation
     }
@@ -966,23 +1073,36 @@ impl EventDrivenImporter for GraphMlEventDrivenImporter {
     }
 }
 
+/// Compatibility name for the simple GraphML graph importer.
 pub type SimpleGraphMlImporter<V, E = DefaultEdge> = GraphMlImporter<V, E>;
+/// Compatibility name for the simple event-driven GraphML importer.
 pub type SimpleGraphMlEventDrivenImporter = GraphMlEventDrivenImporter;
 
+/// Imports a GraphML document as an event stream containing only an edge list.
+///
+/// Vertices are numbered from zero in the order in which their identifiers are
+/// first encountered by an edge. Isolated vertices and all attribute events
+/// are omitted; an edge's configured weight attribute is retained.
 pub struct SimpleGraphMlEdgeListImporter {
     edge_weight_attribute: String,
     schema_validation: bool,
 }
 impl SimpleGraphMlEdgeListImporter {
+    /// Creates an edge-list importer with the default edge-weight attribute name.
     pub fn new() -> Self {
         Self {
             edge_weight_attribute: "weight".into(),
             schema_validation: true,
         }
     }
+    /// Sets the GraphML attribute name from which edge weights are read.
     pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) {
         self.edge_weight_attribute = name.into();
     }
+    /// Sets the schema-validation option.
+    ///
+    /// The streaming Rust parser currently records this compatibility option
+    /// but does not perform XML Schema validation.
     pub fn set_schema_validation(&mut self, enabled: bool) {
         self.schema_validation = enabled;
     }

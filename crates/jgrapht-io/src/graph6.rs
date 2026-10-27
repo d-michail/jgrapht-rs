@@ -13,6 +13,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! graph6, sparse6, and digraph6 compact graph encodings.
+//!
+//! These printable-ASCII formats store one graph per line. `graph6` is suited
+//! to small or dense simple undirected graphs, `sparse6` is more compact for
+//! sparse undirected graphs and supports loops and parallel edges, and
+//! `digraph6` stores directed graphs. See the
+//! [official format description](https://users.cecs.anu.edu.au/~bdm/data/formats.txt).
+
+#![deny(missing_docs)]
 
 use crate::{EventDrivenImporter, GraphExporter, GraphImporter, ImportEvent, IoError, Result};
 use jgrapht::{Graph, GraphMut};
@@ -20,10 +28,14 @@ use std::io::{Read, Write};
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+/// A compact graph encoding supported by this module.
 pub enum Graph6Format {
+    /// The fixed-length encoding for simple undirected graphs.
     #[default]
     Graph6,
+    /// The variable-length encoding for undirected multigraphs.
     Sparse6,
+    /// The directed-graph encoding, including directed loops.
     Digraph6,
 }
 
@@ -141,9 +153,15 @@ impl BitWriter {
     }
 }
 
+/// Imports the first graph6, sparse6, or digraph6 record as an event stream.
+///
+/// The encoding is detected from its standard prefix. Vertex identifiers are
+/// consecutive integers starting at zero, because these formats do not retain
+/// application-level vertex identifiers.
 pub struct Graph6EventDrivenImporter;
 
 impl Graph6EventDrivenImporter {
+    /// Creates a compact-graph event importer.
     pub fn new() -> Self {
         Self
     }
@@ -245,17 +263,29 @@ impl EventDrivenImporter for Graph6EventDrivenImporter {
     }
 }
 
+/// Imports graph6, sparse6, or digraph6 data into a mutable graph.
+///
+/// Only the first input line is read. The destination graph must support the
+/// representation's features: graph6 is simple and undirected, sparse6 may
+/// contain loops and parallel edges, and digraph6 contains directed edges.
+/// Vertices are obtained from the graph's supplier unless a custom factory is
+/// configured.
 pub struct Graph6Importer<V> {
     vertex_factory: Option<Box<dyn FnMut(usize) -> V>>,
 }
 
 impl<V> Graph6Importer<V> {
+    /// Creates an importer which uses the destination graph's vertex supplier.
     pub fn new() -> Self {
         Self {
             vertex_factory: None,
         }
     }
 
+    /// Sets a factory which creates vertices from zero-based encoded identifiers.
+    ///
+    /// The factory is called once for each vertex in increasing identifier
+    /// order.
     pub fn set_vertex_factory(&mut self, factory: impl FnMut(usize) -> V + 'static) {
         self.vertex_factory = Some(Box::new(factory));
     }
@@ -312,19 +342,28 @@ where
     }
 }
 
+/// Exports graphs using a compact printable-ASCII graph encoding.
+///
+/// `graph6` requires a simple undirected graph, `sparse6` requires an
+/// undirected graph but preserves loops and parallel edges, and `digraph6`
+/// requires a directed graph. Application-level vertex identifiers and edge
+/// weights are not stored.
 pub struct Graph6Exporter {
     format: Graph6Format,
 }
 
 impl Graph6Exporter {
+    /// Creates an exporter for `format`.
     pub fn new(format: Graph6Format) -> Self {
         Self { format }
     }
 
+    /// Returns the output encoding.
     pub const fn format(&self) -> Graph6Format {
         self.format
     }
 
+    /// Sets the output encoding.
     pub fn set_format(&mut self, format: Graph6Format) {
         self.format = format;
     }

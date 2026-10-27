@@ -13,6 +13,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Delimiter-separated edge lists, adjacency lists, and matrices.
+//!
+//! The supported dialects correspond to the CSV graph formats used by
+//! [Gephi](https://gephi.org/users/supported-graph-formats/csv-format). Fields
+//! are quoted according to [RFC 4180](https://www.rfc-editor.org/rfc/rfc4180),
+//! and the delimiter can be changed from a comma to another character such as
+//! a semicolon or pipe.
+
+#![deny(missing_docs)]
 
 use crate::exporter::format_f64;
 use crate::{
@@ -26,27 +34,50 @@ use std::io::{Read, Write};
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+/// A supported delimiter-separated graph representation.
 pub enum CsvFormat {
+    /// One edge per record: `source,target` or `source,target,weight`.
     EdgeList,
+    /// One source and all of its targets per record.
+    ///
+    /// An unweighted record has the form `source,target1,target2`; when
+    /// [`CsvParameter::EdgeWeights`] is enabled, each target is immediately
+    /// followed by its weight.
     #[default]
     AdjacencyList,
+    /// An adjacency matrix with one source vertex per record.
     Matrix,
 }
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// Options which modify CSV import and export behavior.
 pub enum CsvParameter {
+    /// Import or export edge weights.
     EdgeWeights,
+    /// Include vertex identifiers in the matrix header and first column.
+    ///
+    /// This option is only meaningful for [`CsvFormat::Matrix`].
     MatrixNodeId,
+    /// Represent a missing matrix edge with integer zero instead of an empty field.
+    ///
+    /// In a weighted matrix, `0` means no edge while a floating-point `0.0`
+    /// represents an edge whose weight is zero. This option is only meaningful
+    /// for [`CsvFormat::Matrix`].
     MatrixZeroWhenNoEdge,
 }
 
+/// An imported CSV edge: `(source_id, target_id, weight)`.
 pub type CsvEdge = (String, String, Option<f64>);
 
 fn valid_delimiter(delimiter: char) -> bool {
     !matches!(delimiter, '\r' | '\n' | '"')
 }
 
+/// Escapes one delimiter-separated field.
+///
+/// Fields containing the delimiter, a quote, or a line break are surrounded
+/// by quotes, and embedded quotes are doubled.
 pub fn escape_field(field: &str, delimiter: char) -> String {
     if field.contains(delimiter) || field.contains('"') || field.contains(['\r', '\n']) {
         format!("\"{}\"", field.replace('"', "\"\""))
@@ -120,6 +151,11 @@ fn parse_records(input: &str, delimiter: char) -> Result<Vec<Vec<String>>> {
 }
 
 #[derive(Debug, Clone)]
+/// Imports delimiter-separated graph data as a stream of vertices and edges.
+///
+/// Vertex events carry the identifiers found in the input. Edge events carry
+/// source and target identifiers plus an optional weight. Each identifier is
+/// emitted as a vertex exactly once, before any edge which refers to it.
 pub struct CsvEventDrivenImporter {
     format: CsvFormat,
     delimiter: char,
@@ -137,6 +173,7 @@ impl Default for CsvEventDrivenImporter {
 }
 
 impl CsvEventDrivenImporter {
+    /// Creates an importer for `format` using a comma delimiter.
     pub fn new(format: CsvFormat) -> Self {
         Self {
             format,
@@ -144,18 +181,24 @@ impl CsvEventDrivenImporter {
         }
     }
 
+    /// Returns the input format.
     pub const fn format(&self) -> CsvFormat {
         self.format
     }
 
+    /// Sets the input format.
     pub fn set_format(&mut self, format: CsvFormat) {
         self.format = format;
     }
 
+    /// Returns the field delimiter.
     pub const fn delimiter(&self) -> char {
         self.delimiter
     }
 
+    /// Sets the field delimiter.
+    ///
+    /// Carriage return, line feed, and double quote cannot be delimiters.
     pub fn set_delimiter(&mut self, delimiter: char) -> Result<()> {
         if !valid_delimiter(delimiter) {
             return Err(IoError::Import("invalid CSV delimiter".into()));
@@ -164,6 +207,7 @@ impl CsvEventDrivenImporter {
         Ok(())
     }
 
+    /// Enables or disables an import option.
     pub fn set_parameter(&mut self, parameter: CsvParameter, enabled: bool) {
         if enabled {
             self.parameters.insert(parameter);
@@ -172,6 +216,7 @@ impl CsvEventDrivenImporter {
         }
     }
 
+    /// Returns whether an import option is enabled.
     pub fn is_parameter(&self, parameter: CsvParameter) -> bool {
         self.parameters.contains(&parameter)
     }
@@ -360,6 +405,13 @@ impl EventDrivenImporter for CsvEventDrivenImporter {
 
 type VertexFactory<V> = Box<dyn FnMut(&str) -> V>;
 
+/// Imports delimiter-separated graph data into a mutable graph.
+///
+/// The destination graph must support the features present in the input, such
+/// as self-loops and parallel edges. Vertices and edges are created through the
+/// destination graph's suppliers unless a custom vertex factory is configured.
+/// Edge weights are applied only when [`CsvParameter::EdgeWeights`] is enabled
+/// and the destination graph is weighted.
 pub struct CsvImporter<V> {
     parser: CsvEventDrivenImporter,
     vertex_factory: Option<VertexFactory<V>>,
@@ -372,6 +424,7 @@ impl<V> Default for CsvImporter<V> {
 }
 
 impl<V> CsvImporter<V> {
+    /// Creates an importer for `format` using a comma delimiter.
     pub fn new(format: CsvFormat) -> Self {
         Self {
             parser: CsvEventDrivenImporter::new(format),
@@ -379,36 +432,52 @@ impl<V> CsvImporter<V> {
         }
     }
 
+    /// Creates an importer for `format` using `delimiter`.
+    ///
+    /// Carriage return, line feed, and double quote cannot be delimiters.
     pub fn with_delimiter(format: CsvFormat, delimiter: char) -> Result<Self> {
         let mut importer = Self::new(format);
         importer.parser.set_delimiter(delimiter)?;
         Ok(importer)
     }
 
+    /// Enables or disables an import option.
     pub fn set_parameter(&mut self, parameter: CsvParameter, enabled: bool) {
         self.parser.set_parameter(parameter, enabled);
     }
 
+    /// Returns the input format.
     pub const fn format(&self) -> CsvFormat {
         self.parser.format()
     }
 
+    /// Sets the input format.
     pub fn set_format(&mut self, format: CsvFormat) {
         self.parser.set_format(format);
     }
 
+    /// Returns the field delimiter.
     pub const fn delimiter(&self) -> char {
         self.parser.delimiter()
     }
 
+    /// Sets the field delimiter.
+    ///
+    /// Carriage return, line feed, and double quote cannot be delimiters.
     pub fn set_delimiter(&mut self, delimiter: char) -> Result<()> {
         self.parser.set_delimiter(delimiter)
     }
 
+    /// Returns whether an import option is enabled.
     pub fn is_parameter(&self, parameter: CsvParameter) -> bool {
         self.parser.is_parameter(parameter)
     }
 
+    /// Sets a factory which creates vertices from identifiers in the input.
+    ///
+    /// The factory is called once for each distinct identifier. Without a
+    /// custom factory, vertices are obtained from the destination graph's
+    /// vertex supplier.
     pub fn set_vertex_factory(&mut self, factory: impl FnMut(&str) -> V + 'static) {
         self.vertex_factory = Some(Box::new(factory));
     }
@@ -461,6 +530,11 @@ where
     }
 }
 
+/// Exports a graph as delimiter-separated edge-list, adjacency-list, or matrix data.
+///
+/// Vertices receive sequential integer identifiers by default. Use
+/// [`CsvExporter::with_vertex_id_provider`] to supply stable or domain-specific
+/// identifiers.
 pub struct CsvExporter<V, E> {
     base: BaseExporter<V, E>,
     format: CsvFormat,
@@ -472,12 +546,16 @@ impl<V, E> CsvExporter<V, E>
 where
     V: Clone + Eq + Hash + 'static,
 {
+    /// Creates an exporter for `format` with integer vertex identifiers and a comma delimiter.
     pub fn new(format: CsvFormat) -> Self {
         let mut ids = IntegerIdProvider::new();
         Self::with_vertex_id_provider(move |vertex| ids.id(vertex), format, ',')
             .expect("comma is a valid delimiter")
     }
 
+    /// Creates an exporter with the supplied vertex identifier provider.
+    ///
+    /// Carriage return, line feed, and double quote cannot be delimiters.
     pub fn with_vertex_id_provider(
         provider: impl FnMut(&V) -> String + 'static,
         format: CsvFormat,
@@ -494,6 +572,7 @@ where
         })
     }
 
+    /// Enables or disables an export option.
     pub fn set_parameter(&mut self, parameter: CsvParameter, enabled: bool) {
         if enabled {
             self.parameters.insert(parameter);
@@ -502,18 +581,24 @@ where
         }
     }
 
+    /// Returns the output format.
     pub const fn format(&self) -> CsvFormat {
         self.format
     }
 
+    /// Sets the output format.
     pub fn set_format(&mut self, format: CsvFormat) {
         self.format = format;
     }
 
+    /// Returns the field delimiter.
     pub const fn delimiter(&self) -> char {
         self.delimiter
     }
 
+    /// Sets the field delimiter.
+    ///
+    /// Carriage return, line feed, and double quote cannot be delimiters.
     pub fn set_delimiter(&mut self, delimiter: char) -> Result<()> {
         if !valid_delimiter(delimiter) {
             return Err(IoError::Export("invalid CSV delimiter".into()));
@@ -522,6 +607,7 @@ where
         Ok(())
     }
 
+    /// Returns whether an export option is enabled.
     pub fn is_parameter(&self, parameter: CsvParameter) -> bool {
         self.parameters.contains(&parameter)
     }
@@ -647,6 +733,10 @@ where
 }
 
 /// Exports the CSV dialect accepted by Microsoft Visio's graph importer.
+///
+/// Each vertex becomes a Visio `Shape` record and each graph edge becomes a
+/// `Link` record. Vertex identifiers are used as both shape identifiers and
+/// display text.
 pub struct VisioExporter<V, E> {
     base: BaseExporter<V, E>,
 }
@@ -655,11 +745,13 @@ impl<V, E> VisioExporter<V, E>
 where
     V: Clone + Eq + Hash + 'static,
 {
+    /// Creates an exporter which assigns sequential integer vertex identifiers.
     pub fn new() -> Self {
         let mut ids = IntegerIdProvider::new();
         Self::with_vertex_id_provider(move |vertex| ids.id(vertex))
     }
 
+    /// Creates an exporter using `provider` to name Visio shapes.
     pub fn with_vertex_id_provider(provider: impl FnMut(&V) -> String + 'static) -> Self {
         Self {
             base: BaseExporter::new(provider),

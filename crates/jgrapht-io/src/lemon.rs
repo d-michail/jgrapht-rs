@@ -13,6 +13,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Lemon graph format (LGF) exporter.
+//!
+//! LGF is the custom graph format used by the
+//! [LEMON graph library](https://lemon.cs.elte.hu).
+
+#![deny(missing_docs)]
 
 use crate::exporter::format_f64;
 use crate::{BaseExporter, GraphExporter, IntegerIdProvider, IoError, Result};
@@ -22,11 +27,19 @@ use std::io::Write;
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Options which modify LEMON export behavior.
 pub enum LemonParameter {
+    /// Emit graph edge weights in the arc table.
     ExportEdgeWeights,
+    /// Quote identifiers and escape them using Java string-literal rules.
     EscapeStringsAsJava,
 }
 
+/// Exports a graph in LEMON graph format (LGF).
+///
+/// Vertices receive sequential integer labels by default. The output contains
+/// a node table followed by an arc table and can optionally include edge
+/// weights or Java-style escaped identifiers.
 pub struct LemonExporter<V, E> {
     base: BaseExporter<V, E>,
     export_weights: bool,
@@ -37,11 +50,13 @@ impl<V, E> LemonExporter<V, E>
 where
     V: Clone + Eq + Hash + 'static,
 {
+    /// Creates an exporter which assigns sequential integer vertex identifiers.
     pub fn new() -> Self {
         let mut ids = IntegerIdProvider::new();
         Self::with_vertex_id_provider(move |vertex| ids.id(vertex))
     }
 
+    /// Creates an exporter using `provider` to generate vertex identifiers.
     pub fn with_vertex_id_provider(provider: impl FnMut(&V) -> String + 'static) -> Self {
         Self {
             base: BaseExporter::new(provider),
@@ -50,6 +65,7 @@ where
         }
     }
 
+    /// Enables or disables an export option.
     pub fn set_parameter(&mut self, parameter: LemonParameter, enabled: bool) {
         match parameter {
             LemonParameter::ExportEdgeWeights => self.export_weights = enabled,
@@ -57,6 +73,7 @@ where
         }
     }
 
+    /// Returns whether an export option is enabled.
     pub fn is_parameter(&self, parameter: LemonParameter) -> bool {
         match parameter {
             LemonParameter::ExportEdgeWeights => self.export_weights,
