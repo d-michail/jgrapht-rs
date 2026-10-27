@@ -422,10 +422,10 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
         edge_count: usize,
         incoming: bool,
         bias: f32,
-    ) -> Option<G::Vertex> {
+    ) -> Result<Option<G::Vertex>> {
         match nodes.len() {
-            0 => return None,
-            1 => return nodes.iter().next().cloned(),
+            0 => return Ok(None),
+            1 => return Ok(nodes.iter().next().cloned()),
             _ => {}
         }
         let denominator = edge_count as f32 + nodes.len() as f32 * bias;
@@ -435,9 +435,9 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
         let mut ret = None;
         for v in nodes {
             let degree = if incoming {
-                target.in_degree_of(v).unwrap()
+                target.in_degree_of(v)?
             } else {
-                target.out_degree_of(v).unwrap()
+                target.out_degree_of(v)?
             };
             acc += degree as f32 + bias;
             ret = Some(v.clone());
@@ -445,7 +445,7 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
                 break;
             }
         }
-        ret
+        Ok(ret)
     }
 }
 impl<R: RandomSource> GraphGenerator for DirectedScaleFreeGraphGenerator<R> {
@@ -497,15 +497,15 @@ impl<R: RandomSource> GraphGenerator for DirectedScaleFreeGraphGenerator<R> {
                     break;
                 }
                 new_v = true;
-                w = self.pick(target, &new_nodes, new_edge_count, true, self.delta_in);
+                w = self.pick(target, &new_nodes, new_edge_count, true, self.delta_in)?;
             } else if tributaries <= self.alpha_plus_beta {
-                v = self.pick(target, &new_nodes, new_edge_count, false, self.delta_out);
-                w = self.pick(target, &new_nodes, new_edge_count, true, self.delta_in);
+                v = self.pick(target, &new_nodes, new_edge_count, false, self.delta_out)?;
+                w = self.pick(target, &new_nodes, new_edge_count, true, self.delta_in)?;
             } else {
                 if at_node_target {
                     break;
                 }
-                v = self.pick(target, &new_nodes, new_edge_count, false, self.delta_out);
+                v = self.pick(target, &new_nodes, new_edge_count, false, self.delta_out)?;
                 new_w = true;
             }
             if (new_v && w.is_none()) || (new_w && v.is_none()) {
