@@ -240,6 +240,28 @@ pub fn is_bipartite<G: Graph>(g: &G) -> bool {
     crate::alg::partition::is_bipartite(g)
 }
 
+/// Whether `first` and `second` are the two sides of a bipartition of `g`.
+pub fn is_bipartite_partition<G: Graph>(
+    g: &G,
+    first: &std::collections::HashSet<G::Vertex>,
+    second: &std::collections::HashSet<G::Vertex>,
+) -> bool {
+    use crate::alg::interfaces::{Partitioning, PartitioningAlgorithm};
+    let p = Partitioning::new(vec![
+        g.vertices()
+            .filter(|v| first.contains(*v))
+            .cloned()
+            .chain(first.iter().filter(|v| !g.contains_vertex(v)).cloned())
+            .collect(),
+        g.vertices()
+            .filter(|v| second.contains(*v))
+            .cloned()
+            .chain(second.iter().filter(|v| !g.contains_vertex(v)).cloned())
+            .collect(),
+    ]);
+    crate::alg::partition::BipartitePartitioning::new(g).is_valid_partitioning(&p)
+}
+
 pub fn is_biconnected<G: Graph>(g: &G) -> bool {
     crate::alg::connectivity::is_biconnected(g)
 }

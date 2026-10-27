@@ -11,6 +11,11 @@ use std::cmp::Ordering;
 pub struct OrderedF64(pub f64);
 
 impl Eq for OrderedF64 {}
+impl std::hash::Hash for OrderedF64 {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.to_bits().hash(state);
+    }
+}
 impl PartialOrd for OrderedF64 {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))

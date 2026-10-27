@@ -47,3 +47,9 @@ Note: `rheaps` 0.16.2 matches JHeaps' tie-breaking for insert/pop, decrease-key 
 | Java test | Rust module | State |
 |---|---|---|
 | `alg/util/*` (AliasMethodSampler, FixedSizeIntegerQueue, NeighborCache, Pair (+UnorderedPair), UnionFind, VertexDegreeComparator) | `alg_util_tests` | done (`NeighborCache` results are snapshots, not live views; `UnorderedPair` has one element type) |
+| `alg/transform/LineGraphConverterTest` | `alg_small_tests::line_graph_converter_test` | done |
+| `alg/independentset/ChordalGraphIndependentSetFinderTest` | `alg_small_tests::chordal_graph_independent_set_finder_test` | done |
+| `alg/steiner/KouMarkowskyBermanAlgorithmTest` | `alg_small_tests::kou_markowsky_berman_algorithm_test` | done |
+| `alg/partition/BipartitePartitioningTest` | `alg_small_tests::bipartite_partitioning_test` | done |
+| `alg/centers/GonAlgorithmTest` | `alg_small_tests::gon_algorithm_test` | done (`GonHeuristic` is a faithful port; `kroA200.tsp` in `fixtures/`) |
+| `alg/densesubgraph/*` (Goldberg, NodeWeights, NodeWeightsPerEdge, test base) | `alg_small_tests::goldberg_maximum_density_subgraph_tests` | done (the min-cut algorithm argument is a function over the flow network) |

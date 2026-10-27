@@ -1,7 +1,6 @@
 //! Graph transformations that build a new graph into a caller-provided target.
 //! (Reversal and undirected views live in [`crate::view`].)
 
-use super::util::Indexed;
 use crate::Result;
 use crate::graph::{Graph, GraphMut, GraphMutExt};
 
@@ -28,30 +27,60 @@ where
 }
 
 /// Line graph: one vertex per edge of `g`; two are adjacent if the edges share an endpoint
-/// (undirected) or one ends where the other starts (directed).
+/// (undirected) or one ends where the other starts (directed). Follows JGraphT's
+/// `LineGraphConverter`: a self-loop of a directed graph becomes a loop of the line graph, so the
+/// target must allow loops in that case.
 pub fn line_graph_into<G, T>(g: &G, target: &mut T) -> Result<()>
 where
     G: Graph,
     T: GraphMut<Vertex = G::Edge>,
 {
-    let ix = Indexed::new(g);
-    for e in &ix.es {
-        target.add_vertex((*e).clone());
-    }
-    for v in 0..ix.n() {
-        if ix.directed {
-            for &(_, a) in &ix.inn[v] {
-                for &(_, b) in &ix.out[v] {
-                    if a != b {
-                        target.add_edge(ix.es[a], ix.es[b])?;
-                    }
+    line_graph_impl(g, target, None::<fn(&G::Edge, &G::Edge) -> f64>)
+}
+
+/// [`line_graph_into`] with the weight of each line-graph edge given by `weight(e1, e2)`.
+pub fn line_graph_weighted_into<G, T>(
+    g: &G,
+    target: &mut T,
+    weight: impl Fn(&G::Edge, &G::Edge) -> f64,
+) -> Result<()>
+where
+    G: Graph,
+    T: GraphMut<Vertex = G::Edge>,
+{
+    line_graph_impl(g, target, Some(weight))
+}
+
+fn line_graph_impl<G, T, F>(g: &G, target: &mut T, weight: Option<F>) -> Result<()>
+where
+    G: Graph,
+    T: GraphMut<Vertex = G::Edge>,
+    F: Fn(&G::Edge, &G::Edge) -> f64,
+{
+    target.add_vertices(g.edges().cloned());
+    let link = |target: &mut T, e1: &G::Edge, e2: &G::Edge| -> Result<()> {
+        if let Some(edge) = target.add_edge(e1, e2)? {
+            if let Some(f) = &weight {
+                target.set_edge_weight(&edge, f(e1, e2))?;
+            }
+        }
+        Ok(())
+    };
+    if g.graph_type().directed {
+        for v in g.vertices() {
+            for e1 in g.in_edges_of(v) {
+                for e2 in g.out_edges_of(v) {
+                    link(target, e1, e2)?;
                 }
             }
-        } else {
-            let inc = &ix.out[v];
-            for (i, &(_, a)) in inc.iter().enumerate() {
-                for &(_, b) in &inc[i + 1..] {
-                    target.add_edge(ix.es[a], ix.es[b])?;
+        }
+    } else {
+        for v in g.vertices() {
+            for e1 in g.edges_of(v) {
+                for e2 in g.edges_of(v) {
+                    if e1 != e2 {
+                        link(target, e1, e2)?;
+                    }
                 }
             }
         }
