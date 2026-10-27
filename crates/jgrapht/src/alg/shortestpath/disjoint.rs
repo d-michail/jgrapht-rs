@@ -336,6 +336,20 @@ fn get_paths<G: DirectedGraph>(
     Ok(result)
 }
 
+/// An implementation of Suurballe algorithm for finding K edge-*disjoint* shortest paths. The
+/// algorithm determines the k disjoint shortest simple paths in increasing order of weight. Only
+/// directed simple graphs are allowed.
+///
+/// The algorithm is running k sequential Dijkstra iterations to find the shortest path at each step.
+/// Hence, yielding a complexity of k*O(Dijkstra).
+///
+/// For further reference see [Wikipedia page](https://en.wikipedia.org/wiki/Suurballe%27s_algorithm)
+///
+/// - Suurballe, J. W.; Tarjan, R. E. (1984), A quick method for finding shortest pairs of disjoint
+/// paths.
+///
+/// # Rust notes
+///
 /// Suurballe's repeated reweight-and-reverse algorithm for edge-disjoint paths.
 pub struct SuurballeKDisjointShortestPaths<'g, G> {
     graph: &'g G,
@@ -356,6 +370,21 @@ impl<'g, G: DirectedGraph> SuurballeKDisjointShortestPaths<'g, G> {
     }
 }
 
+/// An implementation of Bhandari algorithm for finding $K$ edge-*disjoint* shortest paths.
+/// The algorithm determines the $k$ edge-disjoint shortest simple paths in increasing order of
+/// weight. Weights can be negative (but no negative cycle is allowed). Only directed simple graphs
+/// are allowed.
+///
+/// The algorithm is running $k$ sequential Bellman-Ford iterations to find the shortest path at each
+/// step. Hence, yielding a complexity of $k$*O(Bellman-Ford).
+///
+/// - Bhandari, Ramesh 1999. Survivable networks: algorithms for diverse routing. 477. Springer. p.
+/// 46. ISBN 0-7923-8381-8.
+/// - Iqbal, F. and Kuipers, F. A. 2015.
+/// [Disjoint Paths in Networks](https://www.nas.ewi.tudelft.nl/people/Fernando/papers/Wiley.pdf). Wiley Encyclopedia of Electrical and Electronics Engineering. 1–11.
+///
+/// # Rust notes
+///
 /// Bhandari's repeated Bellman-Ford/reversed-edge algorithm for edge-disjoint paths.
 pub struct BhandariKDisjointShortestPaths<'g, G> {
     graph: &'g G,

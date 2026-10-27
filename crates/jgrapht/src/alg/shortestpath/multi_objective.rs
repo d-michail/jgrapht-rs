@@ -121,6 +121,16 @@ fn build_paths<G: Graph>(
     }
 }
 
+/// Martin's algorithm for the multi-objective shortest paths problem.
+///
+/// Martin's label setting algorithm is a multiple objective extension of Dijkstra's algorithm, where
+/// the minimum operator is replaced by a dominance test. It computes a maximal complete set of
+/// efficient paths when all the cost values are non-negative.
+///
+/// Note that the multi-objective shortest path problem is a well-known NP-hard problem.
+///
+/// # Rust notes
+///
 /// Martin's label-setting multi-objective shortest-path algorithm.
 pub struct MartinShortestPath<'g, G: Graph, F> {
     graph: &'g G,
@@ -192,6 +202,32 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>> MartinShortestPath<'g, G, F> {
     }
 }
 
+/// A label-correcting algorithm for the multi-objective shortest paths problem.
+///
+/// The algorithm is a multiple objective extension of the Bellman-Ford relaxation process. It
+/// maintains a set of non-dominated labels for each vertex and iteratively propagates labels through
+/// outgoing edges. A newly generated label is discarded if it is dominated by an existing label at
+/// the same vertex. Existing labels dominated by the new label are removed.
+///
+/// Optionally, an approximation tolerance $\varepsilon$ may be provided. In that case labels which
+/// are sufficiently close according to the tolerance are also discarded in order to reduce the
+/// number of stored labels, and the algorithm computes an approximation of the Pareto set. With a
+/// tolerance equal to zero the complete Pareto set is computed.
+///
+/// All objective values must be non-negative.
+///
+/// The label-correcting strategy is described in: A. J. V. Skriver and K. A. Andersen. (2000). A
+/// label correcting approach for solving bicriterion shortest-path problems. Computers &
+/// Operations Research. 27. 507-524. 10.1016/S0305-0548(99)00037-4.
+///
+/// The approximation of the Pareto set is described in: A. Warburton. (1987). Approximation of
+/// Pareto Optima in Multiple-Objective, Shortest-Path Problems. Operations Research. 35. 70-79.
+/// 10.1287/opre.35.1.70.
+///
+/// Note that the multi-objective shortest path problem is a well-known NP-hard problem.
+///
+/// # Rust notes
+///
 /// Label-correcting multi-objective shortest paths, with optional epsilon approximation.
 pub struct LabelCorrectingMultiObjectiveShortestPath<'g, G: Graph, F> {
     graph: &'g G,

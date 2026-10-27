@@ -210,6 +210,33 @@ impl<'h, 'g, G: Graph> TransitNodeRoutingPrecomputation<'h, 'g, G> {
     }
 }
 
+/// Implementation of the shortest paths algorithm based on `TransitNodeRoutingPrecomputation`.
+///
+/// The algorithm is originally described the article: Arz, Julian & Luxen, Dennis & Sanders,
+/// Peter. (2013). Transit Node Routing Reconsidered. 7933. 10.1007/978-3-642-38527-8_7.
+///
+/// The shortest paths between vertices $u$ and $v$ is computed in the following way. First, a
+/// locality filter is used to determine if the vertices are local to each other. If so, a fallback
+/// shortest path algorithm is used to compute the path. Otherwise, there is a shortest path between
+/// the vertices which contains a transit vertex. Therefore the forward access vertices of $u$ and
+/// backward access vertices of $v$ are inspected to find a pair of such access vertices $(a_u, a_v)$
+/// so that the value of $d(u,a_u) + d(a_u, a_v) + d(a_u, v)$ is minimum over all such pairs. Here
+/// $d(s,t)$ is the distance from vertex $s$ to vertex $t$.
+///
+/// The algorithm is designed to operate on sparse graphs with low average outdegree. Comparing to
+/// `ContractionHierarchyBidirectionalDijkstra` it uses significantly more time on the
+/// precomputation stage. Because of that it makes sense to use this algorithm on large instances
+/// (i.e. with more than 10.000 vertices), where it shows substantially better performance results
+/// than `ContractionHierarchyBidirectionalDijkstra`. Typically this algorithm is used as the
+/// backend for large scale shortest path search engines, e.g.
+/// [OpenStreetMap](https://www.openstreetmap.org).
+///
+/// The precomputation in this algorithm is performed in a lazy fashion. It can be performed by
+/// directly calling the `#performPrecomputation()` method. Otherwise, this method is called
+/// during the first call to either the `#getPath()` or `#getPathWeight()` methods.
+///
+/// # Rust notes
+///
 /// Shortest-path queries using precomputed transit-node routing data.
 pub struct TransitNodeRoutingShortestPath<'r, 'h, 'g, G: Graph> {
     routing: &'r TransitNodeRouting<'h, 'g, G>,

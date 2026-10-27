@@ -78,6 +78,16 @@ pub fn floyd_warshall<G: Graph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edg
     Ok(AllPairsPaths { by_source })
 }
 
+/// The Floyd-Warshall algorithm.
+///
+/// The [Floyd-Warshall algorithm](http://en.wikipedia.org/wiki/Floyd-Warshall_algorithm)
+/// finds all shortest paths (all $n^2$ of them) in $O(n^3)$ time. Note that during construction
+/// time, no computations are performed! All computations are performed the first time one of the
+/// member methods of this class is invoked. The results are stored, so all subsequent calls to the
+/// same method are computationally efficient.
+///
+/// # Rust notes
+///
 /// Floyd--Warshall all-pairs shortest paths.
 ///
 /// The matrix is built eagerly in Rust; subsequent weight queries are `O(1)`

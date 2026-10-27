@@ -56,6 +56,23 @@ pub fn johnson<G: Graph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
     Ok(AllPairsPaths { by_source })
 }
 
+/// Johnson's all pairs shortest paths algorithm.
+///
+/// Finds the shortest paths between all pairs of vertices in a sparse graph. Edge weights can be
+/// negative, but no negative-weight cycles may exist. It first executes the Bellman-Ford algorithm
+/// to compute a transformation of the input graph that removes all negative weights, allowing
+/// Dijkstra's algorithm to be used on the transformed graph.
+///
+/// Running time is $O(n m + n^2 \log n)$.
+///
+/// Since Johnson's algorithm creates additional vertices, this implementation requires the user to
+/// provide a graph which is initialized with a vertex supplier.
+///
+/// In case the algorithm detects a negative weight cycle it will throw an exception of type
+/// `NegativeCycleDetectedException` which will contain the detected negative weight cycle.
+///
+/// # Rust notes
+///
 /// Johnson all-pairs shortest paths.
 pub struct JohnsonShortestPaths<'g, G: Graph> {
     graph: &'g G,

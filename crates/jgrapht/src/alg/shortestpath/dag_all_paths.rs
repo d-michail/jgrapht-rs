@@ -17,6 +17,17 @@ use crate::{GraphError, Result};
 use dashu_int::UBig;
 use std::collections::{HashMap, VecDeque};
 
+/// Counts the number of simple directed paths in a Directed Acyclic Graph (DAG) between a given
+/// source and target using dynamic programming in topological order.
+///
+/// For large graphs the number of paths can be extremely large; values are returned as
+/// `java.math.BigInteger`.
+///
+/// Usage constraints: the provided graph must be directed and acyclic. An
+/// `IllegalArgumentException` is thrown otherwise.
+///
+/// # Rust notes
+///
 /// Counts directed paths in a DAG using dynamic programming in topological order.
 pub struct DagAllPathsCounter;
 

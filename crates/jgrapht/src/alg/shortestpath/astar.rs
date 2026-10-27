@@ -21,6 +21,30 @@ use rheaps::DecreaseKeyHeap;
 use rheaps::tree::PairingHeap;
 use std::marker::PhantomData;
 
+/// A* shortest path.
+///
+/// An implementation of [A* shortest path algorithm](http://en.wikipedia.org/wiki/A*_search_algorithm). This class works for directed and undirected graphs, as well as multi-graphs and
+/// mixed-graphs. The graph can also change between invocations of the
+/// `getPath(Object, Object)` method; no new instance of this class has to be created. The
+/// heuristic is implemented using a PairingHeap data structure by default to maintain the set of
+/// open nodes. However, there still exist several approaches in literature to improve the
+/// performance of this heuristic which one could consider to implement. Custom heap implementation
+/// can be specified during the construction time. Another issue to take into consideration is the
+/// following: given two candidate nodes, $i$, $j$ to expand, where $f(i)=f(j)$, $g(i)$ > $g(j)$,
+/// $h(i)$ < $g(j)$, $f(i)=g(i)+h(i)$, $g(i)$ is the actual distance from the source node to $i$,
+/// $h(i)$ is the estimated distance from $i$ to the target node. Usually a depth-first search is
+/// desired, so ideally we would expand node $i$ first. Using the PairingHeap, this is not
+/// necessarily the case though. This could be improved in a later version.
+///
+/// Note: This implementation works with both consistent and inconsistent admissible heuristics. For
+/// details on consistency, refer to the description of the method
+/// `AStarAdmissibleHeuristic#isConsistent(Graph)`. However, this class is *not* optimized
+/// for inconsistent heuristics. Several opportunities to improve both worst case and average runtime
+/// complexities for A* with inconsistent heuristics described in literature can be used to improve
+/// this implementation!
+///
+/// # Rust notes
+///
 /// A* search. `heuristic(v, target)` must never overestimate the remaining distance
 /// (admissible); vertices are re-opened if it is not consistent.
 pub struct AStar<'g, G, F, H = PairingHeap<OrderedF64, usize>> {

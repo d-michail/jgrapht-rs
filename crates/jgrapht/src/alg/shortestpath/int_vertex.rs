@@ -36,6 +36,25 @@ macro_rules! impl_int_vertex {
 }
 impl_int_vertex!(u8, u16, u32, u64, usize, i8, i16, i32, i64, isize);
 
+/// Dijkstra Shortest Path implementation specialized for graphs with integer vertices.
+///
+/// This class avoids using hash tables when the vertices are numbered from $0$ to $n-1$ where $n$ is
+/// the number of vertices of the graph. If vertices are not in this range, then they are mapped in
+/// this range using an open addressing hash table (linear probing).
+///
+/// This implementation should be faster than our more generic one which is
+/// `DijkstraShortestPath` since it avoids the extensive use of hash tables.
+///
+/// By default a 4-ary heap is used. The user is free to use a custom heap implementation during
+/// construction time. Regarding the choice of heap, it is generally known that it depends on the
+/// particular workload. For more details and experiments which can help someone make the choice,
+/// read the following paper: Larkin, Daniel H., Siddhartha Sen, and Robert E. Tarjan. "A
+/// back-to-basics empirical study of priority queues." 2014 Proceedings of the Sixteenth Workshop on
+/// Algorithm Engineering and Experiments (ALENEX). Society for Industrial and Applied Mathematics,
+/// 2014.
+///
+/// # Rust notes
+///
 /// Array-backed Dijkstra specialized for integer vertices.
 pub struct IntVertexDijkstraShortestPath<'g, G: Graph>
 where

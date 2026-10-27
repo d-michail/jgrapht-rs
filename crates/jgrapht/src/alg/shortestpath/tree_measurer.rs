@@ -16,6 +16,10 @@ use crate::graph::{Graph, GraphExt};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 
+/// Algorithm class which computes a number of distance related metrics for trees.
+///
+/// # Rust notes
+///
 /// Linear-time center computation for an undirected tree.
 pub struct TreeMeasurer<'g, G> {
     graph: &'g G,

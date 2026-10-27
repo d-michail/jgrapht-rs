@@ -59,6 +59,19 @@ where
 /// meeting point. Requires non-negative weights.
 pub struct BidirectionalDijkstra<'g, G>(pub &'g G);
 
+/// A bidirectional version of Dijkstra's algorithm.
+///
+/// See the Wikipedia article for details and references about
+/// [bidirectional search](https://en.wikipedia.org/wiki/Bidirectional_search). This
+/// technique does not change the worst-case behavior of the algorithm but reduces, in some cases,
+/// the number of visited vertices in practice. This implementation alternatively constructs forward
+/// and reverse paths from the source and target vertices respectively.
+///
+/// This iterator can use a custom heap implementation, which can specified during the construction
+/// time. Pairing heap is used by default
+///
+/// # Rust notes
+///
 /// Java-style bidirectional Dijkstra class, including its optional search
 /// radius.
 pub struct BidirectionalDijkstraShortestPath<'g, G> {
@@ -100,6 +113,25 @@ impl<G: Graph> ShortestPathAlgorithm<G> for BidirectionalDijkstraShortestPath<'_
     }
 }
 
+/// A bidirectional version of A* algorithm.
+///
+/// See the Wikipedia article for details and references about
+/// [bidirectional search](https://en.wikipedia.org/wiki/Bidirectional_search). This
+/// technique does not change the worst-case behavior of the algorithm but reduces, in some cases,
+/// the number of visited vertices in practice.
+///
+/// The algorithm was first introduced in Ira Sheldon Pohl. 1969. Bi-Directional and Heuristic Search
+/// in Path Problems. Ph.D. Dissertation. Stanford University, Stanford, CA, USA. AAI7001588.
+///
+/// The implementation uses two termination criteria depending on if the provided heuristic is
+/// consistent or not. Both criteria are based on the shortest path distance $\mu$ seen thus far in
+/// the search. Initially, in both cases the algorithm sets $\mu=\infty$. Whenever the search updates
+/// the information about the vertex $v$, it sets $\mu = min\{\mu; g_f(v) + g_b(v)\}$, where $g_f(v)$
+/// is the current best-known path cost from $source$ to $sink$ and $g_b(v)$ is the current
+/// best-known path cost from $sink$ to $source$.
+///
+/// # Rust notes
+///
 /// Bidirectional A* point-to-point search.
 ///
 /// Both frontiers re-open closed vertices when the heuristic is inconsistent.

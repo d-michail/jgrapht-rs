@@ -60,6 +60,8 @@ mod multi_objective;
 mod path_results;
 #[path = "shortestpath/ported_classes.rs"]
 mod ported_classes;
+#[path = "shortestpath/yen.rs"]
+mod yen;
 
 fn weighted_di(edges: &[(u32, u32, f64)]) -> DiGraph<u32> {
     let mut g = DiGraph::<u32>::simple().weighted();

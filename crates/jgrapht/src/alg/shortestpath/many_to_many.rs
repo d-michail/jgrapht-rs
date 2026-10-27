@@ -22,6 +22,27 @@ use crate::{GraphError, Result};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
+/// Naive algorithm for many-to-many shortest paths problem using.
+///
+/// Time complexity of the algorithm is $O(|S||T|C)$, where $S$ is the set of source vertices, $T$ is
+/// the set of target vertices and $C$ is the complexity of the
+/// `ShortestPathAlgorithm#getPath(Object, Object)` method of the provided implementation.
+///
+/// For every pair of `source` and `target` vertices computes a shortest path between
+/// them using provided implementation of `ShortestPathAlgorithm`. By default this
+/// implementation uses `BidirectionalDijkstraShortestPath`. If desired, a different
+/// implementation can be provided via the `function` constructor parameter.
+///
+/// The computation complexity of the algorithm consists of two main components - the $|S||T|$
+/// multiplier and the $C$ multiplier. This yields two bottlenecks for the algorithm. First of them
+/// is the situation when the total number calls to
+/// `ShortestPathAlgorithm#getPath(Object, Object)` is large. The second situation is when the
+/// complexity of the individual call to `ShortestPathAlgorithm#getPath(Object, Object)` takes
+/// a lot of time. Therefore the ideal use cases for this algorithm are small graphs or large graphs
+/// with low total number of source and target vertices.
+///
+/// # Rust notes
+///
 /// Naive many-to-many implementation, running a point-to-point algorithm for every pair.
 pub struct DefaultManyToManyShortestPaths<'g, G: Graph + 'g> {
     graph: &'g G,
@@ -108,6 +129,26 @@ impl<G: Graph> ShortestPathAlgorithm<G> for DefaultManyToManyShortestPaths<'_, G
     }
 }
 
+/// Naive algorithm for many-to-many shortest paths problem using
+/// `DijkstraClosestFirstIterator`.
+///
+/// Complexity of the algorithm is $O(min(|S|,|T|)*(V\log V + E))$, where $S$ is the set of source
+/// vertices, $T$ is the set of target vertices, $V$ is the set of graph vertices and $E$ is the set
+/// of graph edges of the graph.
+///
+/// For each source vertex a single source shortest paths search is performed, which is stopped as
+/// soon as all target vertices are reached. Shortest paths trees are constructed using
+/// `DijkstraClosestFirstIterator`. In case $|T| > |S|$ the searches are performed on the
+/// reversed graph using $|T|$ as source vertices and $|S|$ as target vertices. This allows to reduce
+/// the total number of searches from $|S|$ to $min(|S|,|T|)$.
+///
+/// The main bottleneck of this algorithm is the memory usage to store individual shortest paths
+/// trees for every source vertex, as they may take a lot of space. Considering this, the typical use
+/// case of this algorithm are small graphs or large graphs with small total number of source and
+/// target vertices.
+///
+/// # Rust notes
+///
 /// Many-to-many Dijkstra using `min(|S|, |T|)` truncated shortest-path searches.
 pub struct DijkstraManyToManyShortestPaths<'g, G: Graph> {
     graph: &'g G,

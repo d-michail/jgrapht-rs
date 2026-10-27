@@ -17,6 +17,15 @@ use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 
+/// Path validator for shortest path algorithms. Shortest path algorithms typically maintain a set of
+/// partial paths which are iteratively extended until some stopping criterion is met, e.g. the
+/// target vertex is reached. A path validator can be used to enforce additional criteria as to the
+/// validity of a given path. A partial path can only be extended by another edge if the path
+/// validator deems this extension feasible. As per example, a path validator can be used to enforce
+/// that a path connecting a source to a terminal vertex visits at least $n$ vertices.
+///
+/// # Rust notes
+///
 /// Decides whether an edge may be appended to a partial path.
 ///
 /// This is the Rust counterpart of JGraphT's `PathValidator`. The validator is deliberately not
@@ -44,6 +53,20 @@ impl<G: Graph> PathValidator<G> for AllowAllPaths {
     }
 }
 
+/// A Dijkstra-like algorithm to find all paths between two sets of nodes in a directed graph, with
+/// options to search only simple paths and to limit the path length.
+///
+/// The algorithm runs in two phases. Preprocessing decorates each edge with the minimum number of
+/// edges still needed to reach a target. Enumeration then walks the decorated edges from the source
+/// set, using the decoration to abandon any partial path that cannot complete within the budget. By
+/// default a forward BFS from the source set is also run as part of preprocessing, so that edges
+/// whose source endpoint is not reachable from any requested source within the budget are dropped
+/// from the decoration up front. This can substantially reduce preprocessing cost on graphs where a
+/// non-trivial fraction of the target-reachable subgraph is not reachable from the sources. See
+/// `setForwardPruning(boolean)` for how to disable it.
+///
+/// # Rust notes
+///
 /// Enumerates directed paths between one or more sources and targets.
 ///
 /// As in Java's `AllDirectedPaths`, preprocessing decorates every usable edge with its minimum

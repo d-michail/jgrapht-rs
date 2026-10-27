@@ -28,6 +28,30 @@ struct Candidate<V, E> {
     ordinal: usize,
 }
 
+/// Iterator over the shortest loopless paths between two vertices in a graph sorted by weight.
+///
+/// For this iterator to work correctly the graph must not be modified during iteration. Currently
+/// there are no means to ensure that, nor to fail-fast. The results of such modifications are
+/// undefined.
+///
+/// The main idea of this algorithm is to divide each path between the `source` and the
+/// `sink` into the root part - the part that coincides within some of the paths computed so
+/// far, and the spur part, the part that deviates from all other paths computed so far. Therefore,
+/// for each path the algorithm maintains a vertex, at which the path deviates from its "parent" path
+/// (the candidate path using which it was computed).
+///
+/// First the algorithm finds the shortest path between the `source` and the `sink`,
+/// which is put into the candidates heap. The `source` is assigned to be its deviation vertex.
+/// Then on each iteration the algorithm takes a candidate from the heap with minimum weight, puts it
+/// into the result list and builds all possible deviations from it wrt. other paths, that are in the
+/// result list. By generating spur paths starting only from the vertices that are after the
+/// deviation vertex of current path (including the deviation vertex) it is possible to avoid
+/// building duplicated candidates.
+///
+/// Additionally, the algorithm supports path validation by means of `PathValidator`.
+///
+/// # Rust notes
+///
 /// Lazy iterator over loopless paths in non-decreasing weight order.
 pub struct YenShortestPathIterator<'g, G: Graph, P = AllowAllPaths> {
     graph: &'g G,
@@ -194,7 +218,18 @@ impl<G: Graph, P: PathValidator<G>> Iterator for YenShortestPathIterator<'_, G, 
     }
 }
 
-/// Java-compatible eager facade around [`YenShortestPathIterator`].
+/// Implementation of Yen's algorithm for finding $k$ shortest loopless paths.
+///
+/// The time complexity of the algorithm is $O(kn(m + n log n))$, where $n$ is the number of vertices
+/// in the graph, $m$ is the number of edges in the graph and $k$ is the number of paths needed.
+///
+/// The algorithm is originally described in: Q. V. Martins, Ernesto and M. B. Pascoal, Marta.
+/// (2003). A new implementation of Yen’s ranking loopless paths algorithm. Quarterly Journal of the
+/// Belgian, French and Italian Operations Research Societies. 1. 121-133. 10.1007/s10288-002-0010-2.
+///
+/// The implementation iterates over the existing loopless path between the `source` and the
+/// `sink` and forms the resulting list. It is possible to provide a `PathValidator` to
+/// filter the resulting path list
 pub struct YenKShortestPath<'g, G: Graph, P = AllowAllPaths> {
     graph: &'g G,
     validator: P,
@@ -280,6 +315,83 @@ struct BoundedCandidate<V, E> {
     ordinal: u64,
 }
 
+/// Experimental bounded-pruned variant of Yen's $k$ shortest loopless paths algorithm.
+///
+/// This class returns the same ordered sequence of path weights as `YenKShortestPath` (and is
+/// regression-tested against it) but tries to perform fewer spur shortest-path computations and
+/// fewer candidate materializations by deferring spur work behind *lower-bound certificates*.
+///
+/// **Key idea**
+///
+/// Standard Yen, when accepting a path $P$, eagerly enumerates every spur index of $P$, runs a
+/// shortest-path query under the appropriate banning, materializes the full candidate path, and
+/// pushes it into the candidate heap. For large $k$ on dense graphs this generates many candidates
+/// that will never be output.
+///
+/// The bounded-pruned variant defers each spur enumeration as a `SpurTask` carrying:
+///
+///   - the parent accepted path,
+///   - the spur index in that parent,
+///   - the banned vertex set (the parent's prefix),
+///   - the root cost so far,
+///   - and a *lower bound* on any candidate it could ever produce:
+///       `lowerBound = rootCost + reverseDistanceToSink[spurNode]`.
+///
+/// Reverse distances are computed once on the original graph. Because removing vertices/edges can
+/// only increase shortest-path distance, those reverse distances remain valid lower bounds even
+/// under arbitrary bans. So:
+///
+/// If the cheapest materialized candidate already satisfies
+/// `candidate.cost ≤ task.lowerBound` for every still-deferred task, it is safe to output
+/// the candidate as the next path — no deferred task could possibly produce something better.
+///
+/// **Algorithm sketch**
+///
+/// ```text
+///   firstPath = shortestPath(source, sink)
+///   accepted.add(firstPath)
+///   addSpurTasks(firstPath)
+///   while accepted.size < k:
+///       while taskHeap not empty AND
+///             (candidateHeap empty OR taskHeap.minLB < candidateHeap.minCost):
+///           materialize(taskHeap.pop())  // run the actual spur query, push candidate
+///       if candidateHeap empty: break
+///       next = candidateHeap.pop()
+///       accepted.add(next)
+///       addSpurTasks(next)
+/// ```
+///
+/// **Exactness**
+///
+/// The returned path-weight sequence equals that of `YenKShortestPath`. Tie-breaking among
+/// paths of equal weight is deterministic: a stable ordinal is attached to every candidate / task
+/// push so that two equal weights are broken by insertion order, which mirrors how the standard
+/// implementation eagerly inserts candidates as it accepts each path. The benchmark harness
+/// verifies the path-weight sequences match exactly across many graph families.
+///
+/// **What this class does NOT yet claim**
+///
+///   - No proven better worst-case complexity: Yen's $O(k\,n\,(m + n \log n))$ remains the
+///       upper bound. The bounded-pruned layer is an output-sensitive optimisation only.
+///
+/// **References**
+///
+///   - Yen, J. Y. (1971). Finding the k shortest loopless paths in a network.
+///       *Management Science*, 17(11), 712–716. The original loopless k-shortest-paths
+///       algorithm whose spur step is reused here.
+///   - Martins, E. Q. V., & Pascoal, M. M. B. (2003). A new implementation of Yen's
+///       ranking loopless paths algorithm. *4OR — Quarterly Journal of the Belgian, French
+///       and Italian Operations Research Societies*, 1(2), 121–133. Practical
+///       implementation notes that informed JGraphT's existing `YenKShortestPath`.
+///   - Aljazzar, H., & Leue, S. (2011). K*: A heuristic search algorithm for finding the
+///       k shortest paths. *Artificial Intelligence*, 175(18), 2129–2154. The closest
+///       prior published precedent for using admissible lower bounds (an A*-style heuristic on
+///       the reverse graph) to defer expansion of provably non-improving k-paths candidates.
+///       This class applies the same lower-bound-then-defer idea at the Yen spur-task level
+///       rather than at K*'s edge-expansion level.
+///
+/// # Rust notes
+///
 /// Bounded/pruned Yen algorithm with deferred lower-bound spur tasks.
 ///
 /// Each spur task is ordered by `root_cost + distance_to_sink(spur)`. A task

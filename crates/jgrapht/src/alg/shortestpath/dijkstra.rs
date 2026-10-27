@@ -22,6 +22,11 @@ use rheaps::DecreaseKeyHeap;
 use rheaps::tree::PairingHeap;
 use std::marker::PhantomData;
 
+/// An implementation of [Dijkstra's shortest path algorithm](http://mathworld.wolfram.com/DijkstrasAlgorithm.html) using a pairing heap by default. A custom heap implementation can by
+/// specified during the construction time.
+///
+/// # Rust notes
+///
 /// Dijkstra's algorithm. Fails with `InvalidArgument` on negative edge weights.
 /// `H` selects the priority queue (pairing heap by default).
 pub struct Dijkstra<'g, G, H = PairingHeap<OrderedF64, usize>> {

@@ -57,6 +57,40 @@ struct ImplicitPath {
     weight: f64,
 }
 
+/// Iterator over the shortest paths (not required to be simple) between two vertices in a graph
+/// sorted by weight.
+///
+/// This implementation can only be used for directed simple graphs. Also for this iterator to work
+/// correctly the graph must not be modified during iteration. Currently there are no means to ensure
+/// that, nor to fail-fast. The results of such modifications are undefined.
+///
+/// First the shortest paths tree in the edge reversed graph starting at `sink` is built. Thus
+/// we get distances $d(v)$ from every vertex $v$ to `sink`. We then define a sidetrack edge to
+/// be an edge, which is not in the shortest paths tree. The key observation is that every path
+/// between the `source` and the `sink` can be solely determined by a sub-sequence of its
+/// edges which are sidetracks.
+///
+/// Let $d(v)$ be the distance from $v$ to `sink` and $w()$ be the weight function for edges in
+/// `graph`. If $e$ connects a pair of vertices $(u, w)$, the $\delta(e)$ is defined as
+/// $w(e)+d(w)-d(u)$. Intuitively, $\delta(e)$ measures how much distance is lost by being
+/// “sidetracked” along $e$ instead of taking a shortest path to `sink`.
+///
+/// The idea of the algorithm is to build a heap of sidetracks. This heap can be then traversed with
+/// breadth-first search in order to retrieve the implicit representations of the paths between
+/// `source` and `sink`.
+///
+/// This implementation has several improvements in comparison to the original description in the
+/// article:
+///
+/// - An outgoing edge of vertex $v$ is inserted in the paths graph iff it is reachable from the
+/// `source`.
+/// - The cross edges in the paths graph are added only for those vertices which are reachable from
+/// the root vertex.
+/// - Weights of the edges in the paths graph are mot maintained explicitly, because they are
+/// computed during its traversal.
+///
+/// # Rust notes
+///
 /// Lazy iterator over the shortest walks from a source to a sink.
 ///
 /// Construction takes `O(m + n log n)` time for the reverse shortest-path tree and sidetrack
@@ -468,6 +502,21 @@ impl<G: Graph> Iterator for EppsteinShortestPathIterator<'_, G> {
     }
 }
 
+/// Implementation of the Eppstein's algorithm for finding $k$ shortest path between two vertices in
+/// a graph.
+///
+/// The algorithm is originally described in: David Eppstein. 1999. Finding the k Shortest Paths.
+/// SIAM J. Comput. 28, 2 (February 1999), 652-673. DOI=<http://dx.doi.org/10.1137/S0097539795290477>.
+///
+/// The main advantage ot this algorithm is that it achieves the complexity of $O(m + n\log n + k\log
+/// k)$ while guaranteeing that the paths are produced in sorted order by weight, where $m$ is the
+/// number of edges in the graph, $n$ is the number of vertices in the graph and $k$ is the number of
+/// paths needed.
+///
+/// This implementation can only be used for directed simple graphs.
+///
+/// # Rust notes
+///
 /// Return the first `k` shortest walks using [`EppsteinShortestPathIterator`].
 pub struct EppsteinKShortestPath<'g, G: Graph> {
     graph: &'g G,
@@ -480,7 +529,7 @@ impl<'g, G: Graph> EppsteinKShortestPath<'g, G> {
     }
 
     /// Compute at most `k` shortest walks in non-decreasing weight order.
-    pub fn paths(
+    pub fn get_paths(
         &self,
         source: &G::Vertex,
         sink: &G::Vertex,
@@ -494,6 +543,16 @@ impl<'g, G: Graph> EppsteinKShortestPath<'g, G> {
         Ok(EppsteinShortestPathIterator::new(self.graph, source, sink)?
             .take(k)
             .collect())
+    }
+
+    /// Compatibility alias for [`Self::get_paths`].
+    pub fn paths(
+        &self,
+        source: &G::Vertex,
+        sink: &G::Vertex,
+        k: usize,
+    ) -> Result<Vec<GraphWalk<G::Vertex, G::Edge>>> {
+        self.get_paths(source, sink, k)
     }
 }
 

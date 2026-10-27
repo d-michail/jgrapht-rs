@@ -18,6 +18,36 @@ use crate::{GraphError, Result};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
+/// An admissible heuristic for the A* algorithm using a set of landmarks and the triangle
+/// inequality. Assumes that the graph contains non-negative edge weights.
+///
+/// The heuristic requires a set of input nodes from the graph, which are used as landmarks. During a
+/// pre-processing phase, which requires two shortest path computations per landmark using Dijkstra's
+/// algorithm, all distances to and from these landmark nodes are computed and stored. Afterwards,
+/// the heuristic estimates the distance from a vertex to another vertex using the already computed
+/// distances to and from the landmarks and the fact that shortest path distances obey the
+/// triangle-inequality. The heuristic's space requirement is $O(n)$ per landmark where n is the
+/// number of vertices of the graph. In case of undirected graphs only one Dijkstra's algorithm
+/// execution is performed per landmark.
+///
+/// The method generally abbreviated as ALT (from A*, Landmarks and Triangle inequality) is described
+/// in detail in the following [paper](https://www.microsoft.com/en-us/research/publication/computing-the-shortest-path-a-search-meets-graph-theory) which also contains a discussion on landmark selection strategies.
+///
+/// - Andrew Goldberg and Chris Harrelson. Computing the shortest path: A* Search Meets Graph
+/// Theory. In Proceedings of the sixteenth annual ACM-SIAM symposium on Discrete algorithms (SODA'
+/// 05), 156--165, 2005.
+///
+/// Note that using this heuristic does not require the edge weights to satisfy the
+/// triangle-inequality. The method depends on the triangle inequality with respect to the shortest
+/// path distances in the graph, not an embedding in Euclidean space or some other metric, which need
+/// not be present.
+///
+/// In general more landmarks will speed up A* but will need more space. Given an A* query with
+/// vertices source and target, a good landmark appears "before" source or "after" target where
+/// before and after are relative to the "direction" from source to target.
+///
+/// # Rust notes
+///
 /// A* heuristic based on landmarks and the triangle inequality.
 ///
 /// Construction performs one Dijkstra search per landmark in undirected

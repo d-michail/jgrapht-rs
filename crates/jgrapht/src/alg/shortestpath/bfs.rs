@@ -17,6 +17,15 @@ use crate::graph::{Graph, GraphExt};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, VecDeque};
 
+/// The BFS Shortest Path algorithm.
+///
+/// An implementation of [BFS shortest path algorithm](https://en.wikipedia.org/wiki/Breadth-first_search) to compute shortest paths from a single source vertex to all other vertices in
+/// an unweighted graph.
+///
+/// The running time is $O(|V|+|E|)$.
+///
+/// # Rust notes
+///
 /// Fewest-edges paths (edge weights are ignored; a path's weight is its edge count).
 pub struct BfsShortestPath<'g, G>(pub &'g G);
 

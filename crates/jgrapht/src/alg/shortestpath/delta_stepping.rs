@@ -18,6 +18,43 @@ use crate::graph::Graph;
 use crate::{GraphError, Result};
 use std::collections::HashMap;
 
+/// Implementation of a single-source shortest path algorithm: the delta-stepping algorithm.
+/// The algorithm computes single source shortest paths in a graphs with non-negative edge weights.
+/// When using multiple threads, this implementation typically outperforms
+/// `DijkstraShortestPath` and `BellmanFordShortestPath`.
+///
+/// The delta-stepping algorithm is described in the paper: U. Meyer, P. Sanders, $\Delta$-stepping:
+/// a parallelizable shortest path algorithm, Journal of Algorithms, Volume 49, Issue 1, 2003, Pages
+/// 114-152, ISSN 0196-6774.
+///
+/// The $\Delta$-stepping algorithm takes as input a weighted graph $G(V,E)$, a source node $s$ and a
+/// parameter $\Delta > 0$. Let $tent\[v\]$ be the best known shortest distance from $s$ to vertex
+/// $v\in V$. At the start of the algorithm, $tent\[s\]=0$, $tent\[v\]=\infty$ for $v\in V\setminus
+/// \{s\}$. The algorithm partitions vertices in a series of buckets $B=(B_0, B_1, B_2, \dots)$,
+/// where a vertex $v\in V$ is placed in bucket $B_{\lfloor\frac{tent\[v\]}{\Delta}\rfloor}$. During
+/// the execution of the algorithm, vertices in bucket $B_i$, for $i=0,1,2,\dots$, are removed
+/// one-by-one. For each removed vertex $v$, and for all its outgoing edges $(v,w)$, the algorithm
+/// checks whether $tent\[v\]+c(v,w) < tent\[w\]$. If so, $w$ is removed from its current bucket,
+/// $tent\[w\]$ is updated ($tent\[w\]=tent\[v\]+c(v,w)$), and $w$ is placed into bucket
+/// $B_{\lfloor\frac{tent\[w\]}{\Delta}\rfloor}$. Parallelism is achieved by processing all vertices
+/// belonging to the same bucket concurrently. The algorithm terminates when all buckets are empty.
+/// At this stage the array $tent$ contains the minimal cost from $s$ to every vertex $v \in V$. For
+/// a more detailed description of the algorithm, refer to the aforementioned paper.
+///
+/// For a given graph $G(V,E)$ and parameter $\Delta$, let a $\Delta$-path be a path of total weight
+/// at most $\Delta$ with no repeated edges. The time complexity of the algorithm is $O(\frac{(|V| +
+/// |E| + n_{\Delta} + m_{\Delta})}{p} + \frac{L}{\Delta}\cdot d\cdot l_{\Delta}\cdot \log n)$, where
+///
+/// - $n_{\Delta}$ - number of vertex pairs $(u,v)$, where $u$ and $v$ are connected by some
+/// $\Delta$-path.
+/// - $m_{\Delta}$ - number of vertex triples $(u,v^{\prime},v)$, where $u$ and $v^{\prime}$ are
+/// connected by some $\Delta$-path and edge $(v^{\prime},v)$ has weight at most $\Delta$.
+/// - $L$ - maximum weight of a shortest path from selected source to any sink.
+/// - $d$ - maximum vertex degree.
+/// - $l_{\Delta}$ - maximum number of edges in a $\Delta$-path $+1$.
+///
+/// # Rust notes
+///
 /// Δ-stepping (Meyer & Sanders), single-threaded. Vertices are kept in buckets of width `delta`;
 /// "light" edges (`w <= delta`) are relaxed repeatedly inside the current bucket, "heavy" edges
 /// once per bucket. Requires non-negative weights.
