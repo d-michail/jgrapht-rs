@@ -304,11 +304,9 @@ impl<G: OutgoingGraph + IncidenceGraph> EulerianCycleAlgorithm<G> for Hierholzer
     /// Compute an Eulerian cycle of a graph.
     fn get_eulerian_cycle(&mut self, g: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         if !self.try_is_eulerian(g)? {
-            return Err(GraphError::InvalidArgument("Graph is not Eulerian".into()));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Eulerian));
         } else if g.vertex_count() == 0 {
-            return Err(GraphError::InvalidArgument(
-                "Null graph not permitted".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
         } else if g.edge_count() == 0 {
             return Ok(GraphWalk::empty());
         }

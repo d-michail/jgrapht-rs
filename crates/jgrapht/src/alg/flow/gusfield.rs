@@ -362,7 +362,7 @@ impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> GusfieldGomoryHuCutTree<'g, G>
             }
         }
         let (edge, weight) =
-            cheapest.ok_or_else(|| GraphError::InvalidArgument("graph is empty?!".into()))?;
+            cheapest.ok_or(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty))?;
         let (u, v) = tree.edge_endpoints(edge).unwrap();
         self.last_invoked_source = Some(u.clone());
         self.last_invoked_target = Some(v.clone());

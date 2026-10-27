@@ -153,9 +153,7 @@ impl<'g, G: IncidenceGraph> Problem<'g, G> {
         demands: HashMap<G::Vertex, f64>,
     ) -> Result<Self> {
         if graph.graph_type().directed {
-            return Err(GraphError::InvalidArgument(
-                "Graph must be undirected".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
         }
         if !ConnectivityInspector::new().is_connected(graph) {
             return Err(GraphError::InvalidArgument(

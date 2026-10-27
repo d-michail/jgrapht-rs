@@ -532,7 +532,7 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
     fn between(&mut self, start: i32, end_inclusive: i32) -> Result<i32> {
         let bound = end_inclusive.wrapping_sub(start).wrapping_add(1);
         if bound <= 0 {
-            return invalid("bound must be positive");
+            return Err(GraphError::InvalidParameter { name: "bound", requirement: crate::ParameterRequirement::Positive });
         }
         Ok(self.rng.next_int_bound(bound as usize) as i32 + start)
     }

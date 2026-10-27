@@ -135,9 +135,7 @@ where
             for (edge, neighbor) in self.graph.outgoing_of(&vertex) {
                 let weight = self.graph.edge_weight(edge).unwrap_or(1.0);
                 if weight.is_nan() || weight < 0.0 {
-                    return Err(GraphError::InvalidArgument(
-                        "negative or NaN edge weight".into(),
-                    ));
+                    return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
                 }
                 let neighbor_index = index_of(*neighbor);
                 let candidate = current_distance + weight;

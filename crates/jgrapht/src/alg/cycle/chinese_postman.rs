@@ -75,9 +75,7 @@ impl ChinesePostman {
         graph: &G,
     ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         if graph.graph_type().mixed {
-            return Err(GraphError::InvalidArgument(
-                "Graph must be directed or undirected".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::NotMixed));
         }
         if graph.vertex_count() == 0 || graph.edge_count() == 0 {
             return HierholzerEulerianCycle::new().get_eulerian_cycle(graph);

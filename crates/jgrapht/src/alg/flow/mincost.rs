@@ -549,9 +549,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
                     "Lower edge capacity must not exceed upper edge capacity".into(),
                 ));
             } else if lower_cap >= CAP_INF {
-                return Err(GraphError::InvalidArgument(
-                    "The problem is unbounded due to the infinite lower capacity".into(),
-                ));
+                return Err(GraphError::Unbounded);
             } else if upper_cap >= CAP_INF && cost < 0.0 {
                 return Err(GraphError::InvalidArgument(
                     "The algorithm doesn't support infinite capacity arcs with negative cost"
@@ -562,9 +560,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
                     "Specified flow network contains an edge of infinite cost".into(),
                 ));
             } else if node == opposite {
-                return Err(GraphError::InvalidArgument(
-                    "Self-loops aren't allowed".into(),
-                ));
+                return Err(GraphError::InvalidGraph(crate::GraphProperty::NoSelfLoops));
             }
             self.net.nodes[node].excess -= lower_cap;
             self.net.nodes[opposite].excess += lower_cap;
@@ -724,9 +720,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         let mut arc = self.net.nodes[self.n].first_non_saturated;
         while let Some(a) = arc {
             if self.net.arcs[self.net.arcs[a].rev].residual_capacity > 0 {
-                return Err(GraphError::InvalidArgument(
-                    "Specified flow network problem has no feasible solution".into(),
-                ));
+                return Err(GraphError::Infeasible);
             }
             arc = self.net.arcs[a].next;
         }

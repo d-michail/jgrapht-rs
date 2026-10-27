@@ -460,9 +460,7 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
         start_vertices: Option<Vec<G::Vertex>>,
     ) -> Result<Self, GraphError> {
         if crate::graph::props::has_multiple_edges(graph) {
-            return Err(GraphError::InvalidArgument(
-                "Graphs with multiple edges not supported".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::NoParallelEdges));
         }
         Ok(EdgeBetweennessCentrality {
             graph,
@@ -600,9 +598,7 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
                 }
                 let e_weight = g.edge_weight(e).unwrap_or(1.0);
                 if e_weight < 0.0 {
-                    return Err(GraphError::InvalidArgument(
-                        "Negative edge weights are not allowed".into(),
-                    ));
+                    return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
                 }
                 let new_distance = v_distance + e_weight;
                 let current: Option<f64> = handles.get(w).map(|h| {
@@ -855,7 +851,7 @@ impl<V: Eq + std::hash::Hash + Clone> Coreness<V> {
     pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
         crate::graph::props::require_undirected(g)?;
         if !crate::graph::props::is_simple(g) {
-            return Err(GraphError::InvalidArgument("Graph must be simple".into()));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Simple));
         }
         let scores = coreness(g);
         let degeneracy = scores.values().copied().max().unwrap_or(0);
@@ -1048,10 +1044,10 @@ impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
         tolerance: f64,
     ) -> Result<Self, GraphError> {
         if max_iterations == 0 {
-            return Err(invalid("Maximum iterations must be positive"));
+            return Err(GraphError::InvalidParameter { name: "maximum_iterations", requirement: crate::ParameterRequirement::Positive });
         }
         if tolerance <= 0.0 {
-            return Err(invalid("Tolerance not valid, must be positive"));
+            return Err(GraphError::InvalidParameter { name: "tolerance", requirement: crate::ParameterRequirement::Positive });
         }
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
@@ -1150,13 +1146,13 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
         tolerance: f64,
     ) -> Result<Self, GraphError> {
         if max_iterations == 0 {
-            return Err(invalid("Maximum iterations must be positive"));
+            return Err(GraphError::InvalidParameter { name: "maximum_iterations", requirement: crate::ParameterRequirement::Positive });
         }
         if damping_factor < 0.0 {
             return Err(invalid("Damping factor not valid"));
         }
         if tolerance <= 0.0 {
-            return Err(invalid("Tolerance not valid, must be positive"));
+            return Err(GraphError::InvalidParameter { name: "tolerance", requirement: crate::ParameterRequirement::Positive });
         }
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
@@ -1234,13 +1230,13 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
         tolerance: f64,
     ) -> Result<Self, GraphError> {
         if max_iterations == 0 {
-            return Err(invalid("Maximum iterations must be positive"));
+            return Err(GraphError::InvalidParameter { name: "maximum_iterations", requirement: crate::ParameterRequirement::Positive });
         }
         if !(0.0..=1.0).contains(&damping_factor) {
             return Err(invalid("Damping factor not valid"));
         }
         if tolerance <= 0.0 {
-            return Err(invalid("Tolerance not valid, must be positive"));
+            return Err(GraphError::InvalidParameter { name: "tolerance", requirement: crate::ParameterRequirement::Positive });
         }
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
@@ -1420,9 +1416,7 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
             stack.push(v);
             for &(w, e_weight) in &out[v] {
                 if e_weight < 0.0 {
-                    return Err(GraphError::InvalidArgument(
-                        "Negative edge weight not allowed".into(),
-                    ));
+                    return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
                 }
                 let d = distance[v] + e_weight;
                 if distance[w] == f64::INFINITY {
@@ -1520,7 +1514,7 @@ pub const APFLOAT_INFINITE_PRECISION: usize = usize::MAX;
 
 fn ap_precision(precision: usize) -> Result<usize, GraphError> {
     match precision {
-        0 => Err(invalid("Precision must be positive")),
+        0 => Err(GraphError::InvalidParameter { name: "precision", requirement: crate::ParameterRequirement::Positive }),
         APFLOAT_INFINITE_PRECISION => Ok(0),
         finite => Ok(finite),
     }
@@ -1657,7 +1651,7 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
                 stack.push(v);
                 for &(w, e_weight) in &out[v] {
                     if e_weight < 0.0 {
-                        return Err(invalid("Negative edge weight not allowed"));
+                        return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
                     }
                     let d = distance[v] + e_weight;
                     if distance[w] == f64::INFINITY {

@@ -29,7 +29,6 @@ use std::collections::{HashMap, HashSet};
 pub const BLOSSOM_V_EPSILON: f64 = DEFAULT_EPSILON;
 /// Internal finite infinity used by the Java implementation.
 pub const BLOSSOM_V_INFINITY: f64 = 1e100;
-const NO_PERFECT_MATCHING: &str = "There is no perfect matching in the specified graph";
 
 /// A feasible dual solution for the weighted perfect-matching linear program.
 #[derive(Debug, Clone)]
@@ -189,7 +188,7 @@ impl<'g, G: Graph> KolmogorovWeightedPerfectMatching<'g, G> {
     ) -> Result<Self> {
         props::require_undirected(graph)?;
         if graph.vertex_count() % 2 == 1 {
-            return Err(GraphError::InvalidArgument(NO_PERFECT_MATCHING.into()));
+            return Err(GraphError::Infeasible);
         }
         Ok(Self {
             graph,
@@ -511,7 +510,7 @@ impl<'g, G: Graph> KolmogorovWeightedPerfectMatching<'g, G> {
         for node in 0..state.node_num {
             let matched = state.arena.nodes[node]
                 .matched
-                .ok_or_else(|| GraphError::InvalidArgument(NO_PERFECT_MATCHING.into()))?;
+                .ok_or(GraphError::Infeasible)?;
             let graph_edge = state.graph_edges[state.arena.edges[matched].pos].clone();
             if edges.insert(graph_edge.clone()) {
                 weight += graph.edge_weight(&graph_edge).unwrap_or(1.0);

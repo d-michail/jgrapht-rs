@@ -55,7 +55,7 @@ fn index_graph<G: OutgoingGraph>(g: &G) -> (Vec<G::Vertex>, Vec<Vec<usize>>) {
 }
 
 fn no_graph<T>() -> Result<T> {
-    Err(GraphError::InvalidArgument("Null graph.".into()))
+    Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty))
 }
 
 /// Implements the shared plumbing of an algorithm struct with `graph: Option<&G>` and a
@@ -341,9 +341,7 @@ impl<'g, G: DirectedGraph + OutgoingGraph> JohnsonSimpleCycles<'g, G> {
     /// Fails when the graph has parallel edges.
     pub fn new(graph: &'g G) -> Result<Self> {
         if has_multiple_edges(graph) {
-            return Err(GraphError::InvalidArgument(
-                "Graph should not have multiple (parallel) edges".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::NoParallelEdges));
         }
         Ok(JohnsonSimpleCycles { graph })
     }

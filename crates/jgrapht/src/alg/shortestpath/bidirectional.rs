@@ -104,9 +104,7 @@ impl<'g, G: IncidenceGraph> BidirectionalDijkstraShortestPath<'g, G> {
 
     pub fn with_radius(graph: &'g G, radius: f64) -> Result<Self> {
         if radius.is_nan() || radius < 0.0 {
-            return Err(GraphError::InvalidArgument(
-                "radius must be non-negative".into(),
-            ));
+            return Err(GraphError::InvalidParameter { name: "radius", requirement: crate::ParameterRequirement::NonNegative });
         }
         Ok(Self { graph, radius })
     }
@@ -309,9 +307,7 @@ where
             }
             let edge_weight = graph.edge_weight(edge).unwrap_or(1.0);
             if edge_weight.is_nan() || edge_weight < 0.0 {
-                return Err(GraphError::InvalidArgument(
-                    "negative or NaN edge weight".into(),
-                ));
+                return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
             }
             let candidate = vertex_score + edge_weight;
             let estimate = if scan_forward {
@@ -471,9 +467,7 @@ impl<G: IncidenceGraph> BidirectionalDijkstra<'_, G> {
             for (e, u) in edges {
                 let weight = g.edge_weight(e).unwrap_or(1.0);
                 if weight.is_nan() || weight < 0.0 {
-                    return Err(GraphError::InvalidArgument(
-                        "negative or NaN edge weight".into(),
-                    ));
+                    return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
                 }
                 sides[current].update_distance(u, Some((e, v)), distance + weight);
                 // check path with u's distance from the other frontier

@@ -103,9 +103,7 @@ impl ResidualNetwork {
                     reduced = 0.0;
                 }
                 if reduced.is_nan() || reduced < 0.0 {
-                    return Err(GraphError::InvalidArgument(
-                        "Suurballe requires non-negative edge weights".into(),
-                    ));
+                    return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
                 }
                 let candidate = d + reduced;
                 if candidate < dist[arc.head] {
@@ -168,20 +166,16 @@ fn validate<G: DirectedGraph + OutgoingGraph>(
     k: usize,
 ) -> Result<()> {
     if k == 0 {
-        return Err(GraphError::InvalidArgument(
-            "number of paths must be positive".into(),
-        ));
+        return Err(GraphError::InvalidParameter { name: "number_of_paths", requirement: crate::ParameterRequirement::Positive });
     }
     if source == sink {
-        return Err(GraphError::InvalidArgument(
-            "source and target must differ".into(),
-        ));
+        return Err(GraphError::SourceEqualsSink);
     }
     if !graph.contains_vertex(source) || !graph.contains_vertex(sink) {
         return Err(GraphError::VertexNotFound);
     }
     if !props::is_simple(graph) {
-        return Err(GraphError::InvalidArgument("graph must be simple".into()));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::Simple));
     }
     Ok(())
 }
@@ -201,9 +195,7 @@ fn get_paths<G: DirectedGraph + OutgoingGraph>(
     for (edge, &(tail, head)) in indexed.ends.iter().enumerate() {
         let cost = indexed.w[edge];
         if matches!(kind, SearchKind::Suurballe) && (cost.is_nan() || cost < 0.0) {
-            return Err(GraphError::InvalidArgument(
-                "Suurballe requires non-negative edge weights".into(),
-            ));
+            return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
         }
         residual.add_arc(tail, head, cost, Some(edge));
     }

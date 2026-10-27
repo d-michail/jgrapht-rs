@@ -524,14 +524,10 @@ impl<'a, 'g, G: IncidenceGraph> Iterator for VF2MappingIterator<'a, 'g, G> {
 pub(super) fn check_types<G: IncidenceGraph>(g1: &G, g2: &G) -> Result<()> {
     let (t1, t2) = (g1.graph_type(), g2.graph_type());
     if t1.multiple_edges || t2.multiple_edges {
-        return Err(GraphError::InvalidArgument(
-            "graphs with multiple (parallel) edges are not supported".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::NoParallelEdges));
     }
     if t1.mixed || t2.mixed {
-        return Err(GraphError::InvalidArgument(
-            "mixed graphs not supported".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::NotMixed));
     }
     if t1.directed != t2.directed {
         return Err(GraphError::InvalidArgument(

@@ -22,7 +22,6 @@ use std::collections::HashMap;
 
 const INFINITY: f64 = 1e100;
 const NO_PERFECT_MATCHING_THRESHOLD: f64 = 1e10;
-const NO_PERFECT_MATCHING: &str = "There is no perfect matching in the specified graph";
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum FractionalAction {
@@ -634,7 +633,7 @@ impl<'g, G: Graph> BlossomVInitializer<'g, G> {
                     let min_edge = heap.peek_entry().map(|(_, _, edge)| *edge);
                     if min_edge.is_none_or(|edge| state.arena.edges[edge].slack >= critical_eps) {
                         if critical_eps > NO_PERFECT_MATCHING_THRESHOLD {
-                            return Err(GraphError::InvalidArgument(NO_PERFECT_MATCHING.into()));
+                            return Err(GraphError::Infeasible);
                         }
                         branch_eps = critical_eps;
                         break;
@@ -667,7 +666,7 @@ impl<'g, G: Graph> BlossomVInitializer<'g, G> {
 
             self.update_fractional_duals(state, &mut heap, tree_root, branch_eps);
             let edge = critical_edge
-                .ok_or_else(|| GraphError::InvalidArgument(NO_PERFECT_MATCHING.into()))?;
+                .ok_or(GraphError::Infeasible)?;
             let from = state.arena.edges[edge].head[1 - critical_direction]
                 .expect("critical edge tree endpoint");
             let to = state.arena.edges[edge].head[critical_direction]
@@ -685,7 +684,7 @@ impl<'g, G: Graph> BlossomVInitializer<'g, G> {
                     }
                 }
                 FractionalAction::None => {
-                    return Err(GraphError::InvalidArgument(NO_PERFECT_MATCHING.into()));
+                    return Err(GraphError::Infeasible);
                 }
             }
 

@@ -155,7 +155,7 @@ pub struct Structure {
 
 pub(crate) fn require_directed_or_undirected(ty: &GraphType) -> Result<()> {
     if ty.mixed {
-        return invalid("Graph must be directed or undirected");
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::NotMixed));
     }
     Ok(())
 }

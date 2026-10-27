@@ -19,30 +19,27 @@ use super::{DirectedExt, DirectedGraph, Graph, GraphExt, UndirectedGraph};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 
-pub const GRAPH_MUST_BE_WEIGHTED: &str = "Graph must be weighted";
-pub const GRAPH_MUST_BE_DIRECTED: &str = "Graph must be directed";
-pub const GRAPH_MUST_BE_UNDIRECTED: &str = "Graph must be undirected";
 
 /// `Ok(g)` if the graph is weighted, otherwise an error carrying JGraphT's message.
 pub fn require_weighted<G: Graph>(g: &G) -> Result<&G> {
     if g.graph_type().weighted {
         Ok(g)
     } else {
-        Err(GraphError::InvalidArgument(GRAPH_MUST_BE_WEIGHTED.into()))
+        Err(GraphError::InvalidGraph(crate::GraphProperty::Weighted))
     }
 }
 pub fn require_directed<G: Graph>(g: &G) -> Result<&G> {
     if g.graph_type().directed {
         Ok(g)
     } else {
-        Err(GraphError::InvalidArgument(GRAPH_MUST_BE_DIRECTED.into()))
+        Err(GraphError::InvalidGraph(crate::GraphProperty::Directed))
     }
 }
 pub fn require_undirected<G: Graph>(g: &G) -> Result<&G> {
     if !g.graph_type().directed {
         Ok(g)
     } else {
-        Err(GraphError::InvalidArgument(GRAPH_MUST_BE_UNDIRECTED.into()))
+        Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected))
     }
 }
 

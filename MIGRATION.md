@@ -59,3 +59,31 @@ the capability named in their `where Self: ..` clause.
   order now matches the base graph.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
+
+## Step 8: typed errors
+
+`GraphError` gained variants that replace message matching. Match the variant, never the text.
+
+| Variant | Meaning | Replaces `InvalidArgument` for |
+|---|---|---|
+| `InvalidParameter { name, requirement }` | a numeric or collection parameter violates `ParameterRequirement` (`Positive`, `NonNegative`, `AtLeast(n)`, `AtMost(n)`, `NonEmpty`, `Finite`, `Probability`) | non-positive tolerance, radius, count, precision, ... |
+| `InvalidWeight(WeightProblem)` | `Negative`, `NaN`, `NegativeOrNaN`, `NotFinite` | negative or NaN edge weights |
+| `InvalidGraph(GraphProperty)` | the graph lacks a required property: `Directed`, `Undirected`, `NotMixed`, `Simple`, `SimpleDirected`, `NoParallelEdges`, `NoSelfLoops`, `AllowsSelfLoops`, `AllowsParallelEdges`, `NonEmpty`, `Empty`, `Complete`, `CompleteBipartite`, `Bipartite`, `Connected`, `Weighted`, `Acyclic`, `Eulerian`, `Planar`, `NonPlanar`, `Tree` | "Graph must be ..." checks, `props::require_*` |
+| `SourceEqualsSink` | flow or cut with identical source and sink | |
+| `Infeasible`, `Unbounded` | no feasible solution / no finite optimum where that is not a normal `Option` outcome | flow problems, perfect matching |
+
+```rust
+// before
+Err(GraphError::InvalidArgument(_)) => /* negative weight? bad tolerance? not simple? */
+// after
+Err(GraphError::InvalidWeight(WeightProblem::NegativeOrNaN)) => ..
+Err(GraphError::InvalidGraph(GraphProperty::Simple)) => ..
+Err(GraphError::InvalidParameter { name: "tolerance", .. }) => ..
+```
+
+Also: `props::GRAPH_MUST_BE_*` message constants are removed; view mutators that were
+`Unsupported(String)` now return `Unmodifiable` (`AsSubgraph::set_edge_weight`,
+`MaskSubgraph`), `NotWeighted` (`AsUnweighted::set_edge_weight`) or `NoVertexFactory`
+(`AsSubgraph::new_vertex`). The new enums are `#[non_exhaustive]`, exported from the crate root.
+The remaining `InvalidArgument(String)` and `Unsupported(String)` sites are converted with the
+algorithm family they belong to.

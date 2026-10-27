@@ -1098,9 +1098,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
     /// The graph on `0..n` mirroring `g`, and the vertex list of `g`.
     fn convert<G: Graph<Vertex = V, Edge = E>>(g: &G) -> Result<(H, Vec<V>)> {
         if g.graph_type().directed || g.graph_type().mixed {
-            return Err(GraphError::InvalidArgument(
-                "Only undirected graphs are supported".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
         }
         let vs: Vec<V> = g.vertices().cloned().collect();
         let index: HashMap<&V, usize> = vs.iter().enumerate().map(|(i, v)| (v, i)).collect();

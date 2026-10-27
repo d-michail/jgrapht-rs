@@ -26,12 +26,10 @@ use std::collections::BinaryHeap;
 /// length at most `(2k-1) * w`. Returns the kept edges.
 pub fn greedy_spanner<G: Graph>(g: &G, k: usize) -> Result<Vec<G::Edge>> {
     if g.graph_type().directed {
-        return Err(GraphError::InvalidArgument(
-            "spanners need an undirected graph".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
     }
     if k == 0 {
-        return Err(GraphError::InvalidArgument("k must be positive".into()));
+        return Err(GraphError::InvalidParameter { name: "k", requirement: crate::ParameterRequirement::Positive });
     }
     let ix = Indexed::new(g);
     let stretch = (2 * k - 1) as f64;
@@ -117,9 +115,7 @@ impl<'g, G: Graph> GreedyMultiplicativeSpanner<'g, G> {
     /// Constructs instance to compute a $(2k-1)$-spanner of an undirected graph.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         if graph.graph_type().directed {
-            return Err(GraphError::InvalidArgument(
-                "graph is not undirected".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
         }
         if k == 0 {
             return Err(GraphError::InvalidArgument(
@@ -140,9 +136,7 @@ impl<'g, G: Graph> GreedyMultiplicativeSpanner<'g, G> {
         order.sort_by(|&a, &b| ix.w[a].total_cmp(&ix.w[b]));
         if let Some(&first) = order.first() {
             if ix.w[first] < 0.0 {
-                return Err(GraphError::InvalidArgument(
-                    "Illegal edge weight: negative".into(),
-                ));
+                return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
             }
         }
         let stretch = (2 * self.k - 1) as f64;

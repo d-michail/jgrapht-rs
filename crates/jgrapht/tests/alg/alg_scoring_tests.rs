@@ -1694,7 +1694,10 @@ mod ap_betweenness_centrality {
 
         assert!(matches!(
             ApBetweennessCentrality::with_precision(&g, false, 0),
-            Err(GraphError::InvalidArgument(_))
+            Err(GraphError::InvalidParameter {
+                name: "precision",
+                requirement: jgrapht::ParameterRequirement::Positive
+            })
         ));
         assert!(matches!(
             ApBetweennessCentrality::new(&g),

@@ -30,9 +30,7 @@ pub struct SteinerTree<E> {
 
 fn check<G: Graph>(g: &G, terminals: &[G::Vertex]) -> Result<()> {
     if g.graph_type().directed {
-        return Err(GraphError::InvalidArgument(
-            "Steiner trees need an undirected graph".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
     }
     if terminals.is_empty() || terminals.iter().any(|t| !g.contains_vertex(t)) {
         return Err(GraphError::InvalidArgument(

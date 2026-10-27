@@ -232,10 +232,10 @@ where
         change_cost: impl Fn(&G::Vertex, &G::Vertex) -> f64 + 'a,
     ) -> Result<Self> {
         if !props::is_tree(tree1) {
-            return Err(GraphError::InvalidArgument("graph1 must be a tree!".into()));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Tree));
         }
         if !props::is_tree(tree2) {
-            return Err(GraphError::InvalidArgument("graph2 must be a tree!".into()));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Tree));
         }
         let (m, n) = (tree1.vertex_count(), tree2.vertex_count());
         Ok(ZhangShashaTreeEditDistance {

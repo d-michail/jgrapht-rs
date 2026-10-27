@@ -309,7 +309,7 @@ impl<'g, G: IncidenceGraph> BoyerMyrvoldPlanarityInspector<'g, G> {
     /// The embedding; an error if the graph is not planar.
     pub fn embedding(&mut self) -> Result<&Embedding<G::Vertex, G::Edge>> {
         if !self.is_planar() {
-            return Err(GraphError::InvalidArgument("Graph is not planar".into()));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Planar));
         }
         self.lazy_compute_embedding();
         Ok(self.embedding.as_ref().unwrap())
@@ -318,7 +318,7 @@ impl<'g, G: IncidenceGraph> BoyerMyrvoldPlanarityInspector<'g, G> {
     /// A subgraph that is a subdivision of K5 or K3,3; an error if the graph is planar.
     pub fn kuratowski_subdivision(&mut self) -> Result<AsSubgraph<&'g G>> {
         if self.is_planar() {
-            return Err(GraphError::InvalidArgument("Graph is planar".into()));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::NonPlanar));
         }
         self.lazy_extract_kuratowski();
         let (vs, es) = self.kuratowski.clone().unwrap();

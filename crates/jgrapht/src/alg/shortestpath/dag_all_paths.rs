@@ -74,9 +74,7 @@ impl DagAllPathsCounter {
             }
         }
         if vertices.len() != graph.vertex_count() {
-            return Err(GraphError::InvalidArgument(
-                "graph must be acyclic (DAG)".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Acyclic));
         }
         let positions: HashMap<_, _> = vertices
             .iter()

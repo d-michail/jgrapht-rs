@@ -302,16 +302,12 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for MaximumWeightB
         let graph = self.graph;
         // test input instance
         if !props::is_simple(graph) {
-            return Err(GraphError::InvalidArgument(
-                "Only simple graphs supported".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Simple));
         }
         let p1: HashSet<G::Vertex> = self.partition1.iter().cloned().collect();
         let p2: HashSet<G::Vertex> = self.partition2.iter().cloned().collect();
         if !props::is_bipartite_partition(graph, &p1, &p2) {
-            return Err(GraphError::InvalidArgument(
-                "Graph partition is not bipartite".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Bipartite));
         }
 
         // initialize result

@@ -269,7 +269,7 @@ mod precomputation {
         graph.add_vertices([1, 2]);
         graph.add_weighted_edge(&1, &2, -1.0).unwrap();
         let result = ContractionHierarchyPrecomputation::new(&graph).compute_contraction_hierarchy();
-        assert!(matches!(result, Err(GraphError::InvalidArgument(_))));
+        assert!(matches!(result, Err(GraphError::InvalidWeight(_))));
     }
 
     #[test]

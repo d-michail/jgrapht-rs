@@ -236,9 +236,7 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
         for e in graph.edges() {
             let w = graph.edge_weight(e).unwrap_or(1.0);
             if w < 0.0 {
-                return Err(GraphError::InvalidArgument(
-                    "Negative edge weights not allowed".into(),
-                ));
+                return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
             }
             let (s, t) = graph.edge_endpoints(e).expect("edge endpoints");
             let (s_new, t_new) = (vertex_map[s], vertex_map[t]);
@@ -247,7 +245,7 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
             match this.working.get_edge(s_new, t_new) {
                 None => {
                     if s_new == t_new {
-                        return Err(GraphError::InvalidArgument("loops not allowed".into()));
+                        return Err(GraphError::InvalidGraph(crate::GraphProperty::NoSelfLoops));
                     }
                     let e_new = this.working.add_edge(s_new, t_new);
                     this.working.weight[e_new] = w;

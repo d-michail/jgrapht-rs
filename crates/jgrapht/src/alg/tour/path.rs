@@ -132,9 +132,7 @@ pub trait HamiltonianPathAlgorithm<G: Graph> {
 
 fn require_directed_or_undirected<G: Graph>(graph: &G) -> Result<()> {
     if graph.graph_type().mixed {
-        return Err(GraphError::InvalidArgument(
-            "Graph must be directed or undirected".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::NotMixed));
     }
     Ok(())
 }
@@ -262,7 +260,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
     /// for a search that was stopped early.
     fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         if !graph.graph_type().directed {
-            return Err(GraphError::InvalidArgument("Graph must be directed".into()));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Directed));
         }
         require_not_empty(graph)?;
         let n = graph.vertex_count();

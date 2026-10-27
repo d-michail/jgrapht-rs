@@ -144,7 +144,7 @@ pub fn clarkson_vertex_cover<G: Graph>(
 pub fn bipartite_vertex_cover<G: IncidenceGraph>(g: &G) -> Result<VertexCover<G::Vertex>> {
     let ix = Indexed::new(g);
     let side = two_color(&ix)
-        .ok_or_else(|| GraphError::InvalidArgument("graph is not bipartite".into()))?;
+        .ok_or(GraphError::InvalidGraph(crate::GraphProperty::Bipartite))?;
     let adj: Vec<Vec<usize>> = (0..ix.n())
         .map(|v| {
             ix.out[v]

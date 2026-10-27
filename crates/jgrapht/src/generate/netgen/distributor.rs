@@ -115,7 +115,7 @@ impl<K: std::fmt::Debug> Distributor<'_, K> {
             }
             let bound = upper.wrapping_sub(lower).wrapping_add(1);
             if bound <= 0 {
-                return invalid("bound must be positive");
+                return Err(GraphError::InvalidParameter { name: "bound", requirement: crate::ParameterRequirement::Positive });
             }
             let allocated = rng.next_int_bound(bound as usize) as i32 + lower;
             result.push(allocated);

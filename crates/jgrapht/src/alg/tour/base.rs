@@ -102,9 +102,7 @@ pub(crate) fn singleton_tour<G: Graph>(graph: &G) -> GraphWalk<G::Vertex, G::Edg
 
 pub(crate) fn require_not_empty<G: Graph>(graph: &G) -> Result<()> {
     if graph.vertex_count() == 0 {
-        return Err(GraphError::InvalidArgument(
-            "Graph contains no vertices".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
     }
     Ok(())
 }
@@ -114,7 +112,7 @@ pub(crate) fn check_graph<G: OutgoingGraph>(graph: &G) -> Result<()> {
     require_undirected(graph)?;
     require_not_empty(graph)?;
     if !is_complete(graph) {
-        return Err(GraphError::InvalidArgument("Graph is not complete".into()));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::Complete));
     }
     Ok(())
 }

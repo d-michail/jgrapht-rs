@@ -538,7 +538,7 @@ fn fail_require_is_weighted_on_unweighted_graph() {
     let graph = DiGraph::<String>::with_loops();
     assert_eq!(
         require_weighted(&graph).err(),
-        Some(GraphError::InvalidArgument("Graph must be weighted".into()))
+        Some(GraphError::InvalidGraph(jgrapht::GraphProperty::Weighted))
     );
 }
 

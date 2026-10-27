@@ -160,8 +160,6 @@ impl<G: UndirectedGraph> UndirectedGraph for AsUnweighted<G> {}
 impl<G: GraphMut> GraphMut for AsUnweighted<G> {
     forward_graph_mut!(self => self.0; add_vertex, remove_vertex, add_edge_with, remove_edge, new_edge, new_vertex);
     fn set_edge_weight(&mut self, _: &G::Edge, _: f64) -> Result<()> {
-        Err(GraphError::Unsupported(
-            "Edge weight is not supported".into(),
-        ))
+        Err(GraphError::NotWeighted)
     }
 }

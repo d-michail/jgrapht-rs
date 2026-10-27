@@ -18,7 +18,6 @@ use crate::graph::{DirectedGraph, Graph, GraphMut, UndirectedGraph};
 use crate::{GraphError, GraphType, Result};
 use indexmap::IndexSet;
 
-const UNMODIFIABLE: &str = "this graph is unmodifiable";
 
 /// Subgraph that *hides* the vertices and edges selected by two predicates (JGraphT's
 /// `MaskSubgraph`: `true` means masked). An edge is hidden if it is masked or either endpoint is.
@@ -109,7 +108,7 @@ impl<G: UndirectedGraph, FV: Fn(&G::Vertex) -> bool, FE: Fn(&G::Edge) -> bool> U
 }
 
 fn unmodifiable<T>() -> Result<T> {
-    Err(GraphError::Unsupported(UNMODIFIABLE.into()))
+    Err(GraphError::Unmodifiable)
 }
 
 impl<G: GraphMut, FV: Fn(&G::Vertex) -> bool, FE: Fn(&G::Edge) -> bool> GraphMut
@@ -314,16 +313,12 @@ impl<G: IncidenceGraph> GraphMut for AsSubgraph<G> {
         self.edges.shift_remove(e)
     }
     fn set_edge_weight(&mut self, _: &G::Edge, _: f64) -> Result<()> {
-        Err(GraphError::Unsupported(
-            "the base graph is read-only through this view".into(),
-        ))
+        Err(GraphError::Unmodifiable)
     }
     fn new_edge(&mut self) -> Result<G::Edge> {
         Err(GraphError::NoEdgeFactory)
     }
     fn new_vertex(&mut self) -> Result<G::Vertex> {
-        Err(GraphError::Unsupported(
-            "Cannot create new vertices from subgraph".into(),
-        ))
+        Err(GraphError::NoVertexFactory)
     }
 }

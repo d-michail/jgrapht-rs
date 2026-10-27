@@ -153,12 +153,10 @@ impl<V: Eq + Hash + Clone, R: RandomSource> GonHeuristic<V, R> {
 fn check_graph<G: OutgoingGraph>(graph: &G) -> Result<()> {
     props::require_undirected(graph)?;
     if graph.vertex_count() == 0 {
-        return Err(GraphError::InvalidArgument(
-            "Graph contains no vertices".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
     }
     if !props::is_complete(graph) {
-        return Err(GraphError::InvalidArgument("Graph is not complete".into()));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::Complete));
     }
     Ok(())
 }

@@ -46,9 +46,7 @@ impl TransitiveClosure {
         props::require_directed(graph)?;
         let t = graph.graph_type();
         if t.self_loops || t.multiple_edges {
-            return Err(GraphError::InvalidArgument(
-                "Graph must be a simple directed graph".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::SimpleDirected));
         }
         let vertex_set: Vec<G::Vertex> = graph.vertices().cloned().collect();
         let mut new_edge_targets: IndexSet<G::Vertex> = IndexSet::new();

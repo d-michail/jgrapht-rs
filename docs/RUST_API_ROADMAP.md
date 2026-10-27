@@ -13,7 +13,9 @@ stable. It expands `ISSUES.md` I-6 and I-8 into concrete work packages.
 | 4. Sparse directed type-state | done (`NoIncoming`/`LazyIncoming`/`FullIncoming`) |
 | 5. Sparse undirected graphs and views | done |
 | 6. Final `Graph` surface | done: fallible incidence methods removed, callers moved to capability bounds (many still wider than needed, see R4); notes in `MIGRATION.md` |
-| 7 onwards | open |
+| 7. Normalize `GraphExt`/`DirectedExt`, remove panic helpers | done within step 6: every `try_*` variant and panic wrapper is gone, the remaining helpers are infallible with `where Self: <capability>` clauses |
+| 8. First typed `GraphError` variants | done: `InvalidParameter`, `InvalidWeight`, `InvalidGraph`, `SourceEqualsSink`, `Infeasible`, `Unbounded`; about 100 `InvalidArgument(String)` sites converted, the rest are converted as their family is migrated (R8 final pass) |
+| 9 onwards | open |
 
 ## Goal
 

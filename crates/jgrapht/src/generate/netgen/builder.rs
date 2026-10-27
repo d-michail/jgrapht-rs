@@ -80,13 +80,13 @@ impl NetworkGeneratorConfigBuilder {
         }
         let (n, a, s, t) = (self.node_num, self.arc_num, self.source_num, self.sink_num);
         if n <= 0 {
-            return invalid("Number of nodes must be positive");
+            return Err(GraphError::InvalidParameter { name: "number_of_nodes", requirement: crate::ParameterRequirement::Positive });
         } else if a <= 0 {
-            return invalid("Number of arcs must be positive");
+            return Err(GraphError::InvalidParameter { name: "number_of_arcs", requirement: crate::ParameterRequirement::Positive });
         } else if s <= 0 {
-            return invalid("Number of sources must be positive");
+            return Err(GraphError::InvalidParameter { name: "number_of_sources", requirement: crate::ParameterRequirement::Positive });
         } else if t <= 0 {
-            return invalid("Number of sinks must be positive");
+            return Err(GraphError::InvalidParameter { name: "number_of_sinks", requirement: crate::ParameterRequirement::Positive });
         } else if s as i64 + t as i64 > n as i64 {
             return invalid("Number of sources and sinks must not exceed the number of nodes");
         } else if self.tsource_num > s {
@@ -104,7 +104,7 @@ impl NetworkGeneratorConfigBuilder {
         } else if self.min_cap > self.max_cap {
             return invalid("Minimum capacity must not exceed the maximum capacity");
         } else if self.min_cap <= 0 {
-            return invalid("Minimum capacity must be positive");
+            return Err(GraphError::InvalidParameter { name: "minimum_capacity", requirement: crate::ParameterRequirement::Positive });
         } else if self.min_cost > self.max_cost {
             return invalid("Minimum cost must not exceed the maximum cost");
         }

@@ -184,7 +184,6 @@ use crate::util::java::{RandomSource, java_shuffle};
 use crate::{GraphError, Result};
 use std::collections::BTreeSet;
 
-const SELF_LOOPS_NOT_ALLOWED: &str = "Self-loops not allowed";
 
 /// Colours the vertices in `order` with the smallest colour not used by an already coloured
 /// neighbour (`GreedyColoring.getColoring`).
@@ -196,7 +195,7 @@ fn color_in_order<G: IncidenceGraph>(g: &G, order: &[G::Vertex]) -> Result<Color
         for e in g.edges_of(v) {
             let u = g.opposite_vertex(e, v).unwrap();
             if v == u {
-                return Err(GraphError::InvalidArgument(SELF_LOOPS_NOT_ALLOWED.into()));
+                return Err(GraphError::InvalidGraph(crate::GraphProperty::NoSelfLoops));
             }
             if let Some(&c) = colors.get(u) {
                 used.insert(c);
@@ -346,7 +345,7 @@ impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for SmallestDegreeLas
                 for e in g.edges_of(vs[v]) {
                     let u = g.opposite_vertex(e, vs[v]).unwrap();
                     if vs[v] == u {
-                        return Err(GraphError::InvalidArgument(SELF_LOOPS_NOT_ALLOWED.into()));
+                        return Err(GraphError::InvalidGraph(crate::GraphProperty::NoSelfLoops));
                     }
                     let ui = index[u];
                     if let Some(&d) = degree.get(&ui) {

@@ -52,9 +52,7 @@ impl<'g, G: Graph> ParallelDeltaSteppingShortestPath<'g, G> {
     /// Explicit delta (`0.0` selects the automatic one); fails if `delta` is negative or NaN.
     pub fn with_delta(g: &'g G, delta: f64, parallelism: usize) -> Result<Self> {
         if delta.is_nan() || delta < 0.0 {
-            return Err(GraphError::InvalidArgument(
-                "Delta must be non-negative".into(),
-            ));
+            return Err(GraphError::InvalidParameter { name: "delta", requirement: crate::ParameterRequirement::NonNegative });
         }
         Ok(Self {
             g,
@@ -159,9 +157,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for ParallelDeltaSteppingShortestPath<'_
         let ix = Indexed::new(self.g);
         let s = *ix.idx.get(source).ok_or(GraphError::VertexNotFound)?;
         if ix.w.iter().any(|w| w.is_nan() || *w < 0.0) {
-            return Err(GraphError::InvalidArgument(
-                "Negative edge weight not allowed".into(),
-            ));
+            return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
         }
         let max_w = ix.w.iter().copied().fold(0.0, f64::max);
         let delta = if self.delta == 0.0 {

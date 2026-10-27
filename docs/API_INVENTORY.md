@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1468 | 342 | 117 | 356 | 13 | 19 | 421 | 200 |
+| `jgrapht` | 1470 | 344 | 117 | 356 | 13 | 19 | 421 | 200 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -1170,6 +1170,8 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/util/union_find.rs` | `UnionFind::reset` | infallible | `()` |
 | `jgrapht/src/alg/util/union_find.rs` | `UnionFind::sets` | state query | `Vec<Vec<T>>` |
 | `jgrapht/src/alg/util/union_find.rs` | `UnionFind::union` | Result | `Result<()>` |
+| `jgrapht/src/error.rs` | `GraphError::must_be_non_negative` | infallible | `Self` |
+| `jgrapht/src/error.rs` | `GraphError::must_be_positive` | infallible | `Self` |
 | `jgrapht/src/event.rs` | `GraphListener::edge_added` | infallible | `()` |
 | `jgrapht/src/event.rs` | `GraphListener::edge_removed` | infallible | `()` |
 | `jgrapht/src/event.rs` | `GraphListener::edge_weight_changed` | infallible | `()` |

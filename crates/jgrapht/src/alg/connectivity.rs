@@ -1186,7 +1186,7 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
             let m = self
                 .min_degree_vertex
                 .clone()
-                .ok_or_else(|| GraphError::InvalidArgument("graph has no vertices".into()))?;
+                .ok_or(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty))?;
             let a = self.connectivity_from_non_neighbors(&m);
             let b = self.connectivity_from_neighbors(&m);
             self.vertex_connectivity = Some(a.min(b));

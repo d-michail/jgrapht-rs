@@ -190,7 +190,7 @@ impl<'g, G: IncidenceGraph> BronKerboschBase<'g, G> {
         if props::is_simple(self.graph) {
             Ok(())
         } else {
-            Err(GraphError::InvalidArgument("Graph must be simple".into()))
+            Err(GraphError::InvalidGraph(crate::GraphProperty::Simple))
         }
     }
 

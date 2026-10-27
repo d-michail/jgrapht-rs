@@ -89,9 +89,7 @@ pub trait CycleBasisAlgorithm<E> {
 
 fn require_directed_or_undirected<G: Graph>(graph: &G) -> Result<()> {
     if graph.graph_type().mixed {
-        return Err(GraphError::InvalidArgument(
-            "Graph must be directed or undirected".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::NotMixed));
     }
     Ok(())
 }
@@ -261,9 +259,7 @@ impl<'g, G: IncidenceGraph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, 
     fn get_cycle_basis(&mut self) -> Result<CycleBasis<G::Edge>> {
         let graph = self.graph;
         if has_multiple_edges(graph) {
-            return Err(GraphError::InvalidArgument(
-                "Graphs with multiple edges not supported".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::NoParallelEdges));
         }
         let weight_of = |e: &G::Edge| graph.edge_weight(e).unwrap_or(1.0);
         let mut used: HashMap<G::Vertex, IndexMap<G::Vertex, G::Edge>> = HashMap::new();

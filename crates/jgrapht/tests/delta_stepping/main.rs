@@ -72,7 +72,7 @@ fn test_negative_weight_edge() {
     g.add_weighted_edge(&S, &T, -10.0).unwrap();
     assert!(matches!(
         delta_stepping(&g).single_source(&S),
-        Err(GraphError::InvalidArgument(_))
+        Err(GraphError::InvalidWeight(_))
     ));
 }
 

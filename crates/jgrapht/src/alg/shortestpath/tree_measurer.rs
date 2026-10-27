@@ -38,9 +38,7 @@ impl<'g, G: OutgoingGraph> TreeMeasurer<'g, G> {
     /// Note: The input graph must be undirected.
     pub fn graph_center(&self) -> Result<Vec<G::Vertex>> {
         if self.graph.graph_type().directed {
-            return Err(GraphError::InvalidArgument(
-                "tree measurer requires an undirected graph".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
         }
         let Some(root) = self.graph.vertices().next() else {
             return Ok(Vec::new());

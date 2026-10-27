@@ -118,9 +118,7 @@ impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinShortestPathIterator<'g, G> {
     pub fn new(graph: &'g G, source: &G::Vertex, sink: &G::Vertex) -> Result<Self> {
         let graph_type = graph.graph_type();
         if !graph_type.directed || !graph_type.is_simple() {
-            return Err(GraphError::InvalidArgument(
-                "graph must be simple and directed".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::SimpleDirected));
         }
         if !graph.contains_vertex(source) || !graph.contains_vertex(sink) {
             return Err(GraphError::VertexNotFound);
@@ -599,9 +597,7 @@ fn reverse_shortest_path_tree<G: IncomingGraph>(
         for (edge, source) in graph.incoming_of(vertex) {
             let weight = graph.edge_weight(edge).unwrap_or(1.0);
             if weight.is_nan() || weight < 0.0 {
-                return Err(GraphError::InvalidArgument(
-                    "negative or NaN edge weight".into(),
-                ));
+                return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
             }
             let source_index = index[source];
             let updated = current_distance + weight;

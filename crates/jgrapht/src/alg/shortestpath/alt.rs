@@ -82,9 +82,7 @@ impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
             let weight = graph.edge_weight(edge).unwrap_or(1.0);
             weight.is_nan() || weight < 0.0
         }) {
-            return Err(GraphError::InvalidArgument(
-                "graph edge weights cannot be negative or NaN".into(),
-            ));
+            return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
         }
 
         let directed = graph.graph_type().directed;

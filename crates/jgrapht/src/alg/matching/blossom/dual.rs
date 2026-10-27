@@ -23,7 +23,6 @@ use std::time::Instant;
 
 const INFINITY: f64 = 1e100;
 const NO_PERFECT_MATCHING_THRESHOLD: f64 = 1e10;
-const NO_PERFECT_MATCHING: &str = "There is no perfect matching in the specified graph";
 const PROCESSED_TREE: usize = usize::MAX;
 
 /// This class is used by `KolmogorovWeightedPerfectMatching` to perform dual updates, thus
@@ -126,7 +125,7 @@ impl BlossomVDualUpdater {
         }
         eps = eps.min(eps_augment);
         if eps > NO_PERFECT_MATCHING_THRESHOLD {
-            return Err(GraphError::InvalidArgument(NO_PERFECT_MATCHING.into()));
+            return Err(GraphError::Infeasible);
         }
         let mut delta = 0.0;
         if eps > state.arena.trees[tree].eps {
@@ -346,7 +345,7 @@ impl BlossomVDualUpdater {
 
     fn require_finite_progress(eps: f64) -> Result<()> {
         if eps > NO_PERFECT_MATCHING_THRESHOLD {
-            Err(GraphError::InvalidArgument(NO_PERFECT_MATCHING.into()))
+            Err(GraphError::Infeasible)
         } else {
             Ok(())
         }

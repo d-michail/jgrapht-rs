@@ -707,9 +707,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
             for (edge, target) in outgoing {
                 let weight = graph.edge_weight(&edge).unwrap_or(1.0);
                 if weight.is_nan() || weight < 0.0 {
-                    return Err(GraphError::InvalidArgument(
-                        "bounded-pruned Yen requires non-negative edge weights".into(),
-                    ));
+                    return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
                 }
                 let candidate = value + weight;
                 if candidate < distance.get(&target).copied().unwrap_or(f64::INFINITY) {
@@ -763,9 +761,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
             for (edge, predecessor) in self.graph.incoming_of(vertex) {
                 let weight = self.graph.edge_weight(edge).unwrap_or(1.0);
                 if weight.is_nan() || weight < 0.0 {
-                    return Err(GraphError::InvalidArgument(
-                        "bounded-pruned Yen requires non-negative edge weights".into(),
-                    ));
+                    return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
                 }
                 let candidate = value + weight;
                 if candidate < distance.get(predecessor).copied().unwrap_or(f64::INFINITY) {

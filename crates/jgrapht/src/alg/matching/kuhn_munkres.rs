@@ -70,9 +70,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         if self.partition1.len() != self.partition2.len() {
-            return invalid(
-                "Graph supplied isn't complete bipartite with equally sized partitions!",
-            );
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::CompleteBipartite));
         }
         let p1: HashSet<G::Vertex> = self.partition1.iter().cloned().collect();
         let p2: HashSet<G::Vertex> = self.partition2.iter().cloned().collect();
@@ -81,12 +79,10 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
         }
         let partition = self.partition1.len();
         if graph.edge_count() != partition * partition {
-            return invalid(
-                "Graph supplied isn't complete bipartite with equally sized partitions!",
-            );
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::CompleteBipartite));
         }
         if !props::is_simple(graph) {
-            return invalid("Only simple graphs supported");
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Simple));
         }
 
         let first_partition: Vec<&G::Vertex> = self.partition1.iter().collect();

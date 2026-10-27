@@ -55,9 +55,7 @@ impl<'g, G: OutgoingGraph + IncidenceGraph> DinicMFImpl<'g, G> {
 
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         if epsilon <= 0.0 {
-            return Err(GraphError::InvalidArgument(
-                "Epsilon must be positive!".into(),
-            ));
+            return Err(GraphError::InvalidParameter { name: "epsilon", requirement: crate::ParameterRequirement::Positive });
         }
         let net = FlowNet::new(network, epsilon)?;
         net.check_capacities(epsilon, "Capacity must be non-negative!")?;

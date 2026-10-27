@@ -211,9 +211,7 @@ mod as_unweighted_graph_test {
         let mut u = AsUnweighted(&mut g);
         assert_eq!(
             u.set_edge_weight(&e23, 81.0),
-            Err(GraphError::Unsupported(
-                "Edge weight is not supported".into()
-            ))
+            Err(GraphError::NotWeighted)
         );
     }
 

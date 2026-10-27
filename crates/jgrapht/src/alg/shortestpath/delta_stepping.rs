@@ -81,9 +81,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for DeltaStepping<'_, G> {
         let ix = Indexed::new(self.g);
         let s = *ix.idx.get(source).ok_or(GraphError::VertexNotFound)?;
         if ix.w.iter().any(|w| w.is_nan() || *w < 0.0) {
-            return Err(GraphError::InvalidArgument(
-                "negative or NaN edge weight".into(),
-            ));
+            return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
         }
         let max_w = ix.w.iter().copied().fold(0.0, f64::max);
         let max_deg = ix.out.iter().map(Vec::len).max().unwrap_or(1).max(1);
@@ -93,7 +91,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for DeltaStepping<'_, G> {
             1.0
         });
         if delta.is_nan() || delta <= 0.0 {
-            return Err(GraphError::InvalidArgument("delta must be positive".into()));
+            return Err(GraphError::InvalidParameter { name: "delta", requirement: crate::ParameterRequirement::Positive });
         }
         let n = ix.n();
         let mut dist = vec![f64::INFINITY; n];

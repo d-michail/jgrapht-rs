@@ -79,9 +79,7 @@ impl<V> CircularLayoutAlgorithm2D<V> {
     /// Create a new layout algorithm
     pub fn new(radius: f64) -> Result<Self> {
         if tolerance().compare(radius, 0.0) <= 0 {
-            return Err(GraphError::InvalidArgument(
-                "Radius must be positive".into(),
-            ));
+            return Err(GraphError::InvalidParameter { name: "radius", requirement: crate::ParameterRequirement::Positive });
         }
         Ok(CircularLayoutAlgorithm2D {
             radius,
@@ -192,7 +190,7 @@ impl RescaleLayoutAlgorithm2D {
     /// Create a new layout algorithm
     pub fn new(scale: f64) -> Result<Self> {
         if scale <= 0.0 {
-            return Err(GraphError::InvalidArgument("Scale must be positive".into()));
+            return Err(GraphError::InvalidParameter { name: "scale", requirement: crate::ParameterRequirement::Positive });
         }
         Ok(RescaleLayoutAlgorithm2D { scale })
     }
@@ -351,7 +349,7 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
             let mut alg = BipartitePartitioning::new(graph);
             let p = alg
                 .partitioning()
-                .ok_or_else(|| GraphError::InvalidArgument("Graph is not bipartite.".into()))?;
+                .ok_or(GraphError::InvalidGraph(crate::GraphProperty::Bipartite))?;
             left.extend(p.partition(0).iter().cloned());
             right.extend(p.partition(1).iter().cloned());
         }
