@@ -23,6 +23,24 @@ use std::collections::HashMap;
 const DUMMY: usize = 0;
 const INF: usize = usize::MAX;
 
+/// Implementation of the well-known Hopcroft Karp algorithm to compute a matching of maximum
+/// cardinality in a bipartite graph. The algorithm runs in $O(|E| \cdot \sqrt{|V|})$ time. This
+/// implementation accepts undirected graphs which may contain self-loops and multiple edges. To
+/// compute a maximum cardinality matching in general (non-bipartite) graphs, use
+/// `SparseEdmondsMaximumCardinalityMatching` instead.
+///
+/// The Hopcroft Karp matching algorithm computes augmenting paths of increasing length, until no
+/// augmenting path exists in the graph. At each iteration, the algorithm runs a Breadth First Search
+/// from the exposed (free) vertices, until an augmenting path is found. Next, a Depth First Search
+/// is performed to find all (vertex disjoint) augmenting paths of the same length. The matching is
+/// augmented along all discovered augmenting paths simultaneously.
+///
+/// The original algorithm is described in: Hopcroft, John E.; Karp, Richard M. (1973), "An n5/2
+/// algorithm for maximum matchings in bipartite graphs", SIAM Journal on Computing 2 (4): 225–231,
+/// doi:10.1137/0202019 A coarse overview of the algorithm is given in: [http://en.wikipedia.org/wiki/Hopcroft-Karp_algorithm](http://en.wikipedia.org/wiki/Hopcroft-Karp_algorithm)
+///
+/// # Rust notes
+///
 /// `HopcroftKarpMaximumCardinalityBipartiteMatching`: a maximum cardinality matching of a
 /// bipartite graph in `O(E sqrt(V))`.
 pub struct HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G: Graph> {

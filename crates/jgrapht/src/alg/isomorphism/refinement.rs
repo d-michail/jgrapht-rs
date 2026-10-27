@@ -28,6 +28,15 @@ use thiserror::Error;
 #[error("Color refinement cannot decide whether the two graphs are isomorphic or not.")]
 pub struct IsomorphismUndecidable;
 
+/// Implementation of the color refinement algorithm isomorphism test using its feature of detecting
+/// [isomorphism between two graphs](http://mathworld.wolfram.com/GraphIsomorphism.html)
+/// as described in C. Berkholz, P. Bonsma, and M. Grohe. Tight lower and upper bounds for the
+/// complexity of canonical colour refinement. Theory of Computing
+/// Systems,doi:10.1007/s00224-016-9686-0, 2016 (color refinement) The complexity of this algorithm
+/// is O(|V| + |E| log |V|).
+///
+/// # Rust notes
+///
 /// `ColorRefinementIsomorphismInspector`: refines the colours of the disjoint union of both
 /// graphs. It decides isomorphism when the colouring is discrete or both graphs are forests, and
 /// otherwise reports the question as undecidable (unless the colour classes already differ).

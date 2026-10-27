@@ -28,6 +28,18 @@ fn is_positive_zero(x: f64) -> bool {
     x.total_cmp(&0.0) == Ordering::Equal
 }
 
+/// Kuhn-Munkres algorithm (named in honor of Harold Kuhn and James Munkres) solving *assignment
+/// problem* also known as [hungarian algorithm](http://en.wikipedia.org/wiki/Hungarian_algorithm) (in the honor of hungarian mathematicians Dénes K?nig and Jen? Egerváry). It's
+/// running time $O(V^3)$.
+///
+/// *Assignment problem* could be set as follows:
+///
+/// Given [complete bipartite graph](http://en.wikipedia.org/wiki/Complete_bipartite_graph)
+/// $G = (S, T; E)$, such that $|S| = |T|$, and each edge has *non-negative* cost *c(i,
+/// j)*, find *perfect* matching of *minimal cost*.
+///
+/// # Rust notes
+///
 /// `KuhnMunkresMinimalWeightBipartitePerfectMatching`: a perfect matching of minimum weight in a
 /// complete bipartite graph with equally sized partitions, by the Hungarian method in `O(n^3)`.
 pub struct KuhnMunkresMinimalWeightBipartitePerfectMatching<'g, G: Graph> {

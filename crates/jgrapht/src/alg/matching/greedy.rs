@@ -24,6 +24,20 @@ fn ordering(c: i32) -> Ordering {
     c.cmp(&0)
 }
 
+/// The greedy algorithm for computing a maximum cardinality matching. The algorithm can run in two
+/// modes: sorted or unsorted. When unsorted, the matching is obtained by iterating through the edges
+/// and adding an edge if it doesn't conflict with the edges already in the matching. When sorted,
+/// the edges are first sorted by the sum of degrees of their endpoints. After that, the algorithm
+/// proceeds in the same manner. Running this algorithm in sorted mode can sometimes produce better
+/// results, albeit at the cost of some additional computational overhead.
+///
+/// Independent of the mode, the resulting matching is maximal, and is therefore guaranteed to
+/// contain at least half of the edges that a maximum cardinality matching has ($\frac{1}{2}$
+/// approximation). Runtime complexity: $O(m)$ when the edges are not sorted, $O(m + m \log n)$
+/// otherwise, where $n$ is the number of vertices, and $m$ the number of edges.
+///
+/// # Rust notes
+///
 /// `GreedyMaximumCardinalityMatching`: a maximal matching, found greedily. With `sort`, the edges
 /// are taken in increasing order of the total degree of their endpoints.
 pub struct GreedyMaximumCardinalityMatching<'g, G: Graph> {
@@ -87,6 +101,36 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumCardinalit
     }
 }
 
+/// The greedy algorithm for computing a maximum weight matching in an arbitrary graph. The algorithm
+/// runs in $O(m + m \log n)$ where $n$ is the number of vertices and $m$ is the number of edges of
+/// the graph. This implementation accepts directed and undirected graphs which may contain
+/// self-loops and multiple (parallel) edges. There is no assumption on the edge weights, i.e. they
+/// can also be negative or zero.
+///
+/// This algorithm can be run in two modes: with and without edge cost normalization. Without
+/// normalization, the algorithm first orders the edge set in non-increasing order of weights and
+/// then greedily constructs a maximal cardinality matching out of the edges with positive weight. A
+/// maximal cardinality matching (not to be confused with maximum cardinality) is a matching that
+/// cannot be increased in cardinality without removing an edge first. The resulting matching is
+/// guaranteed to be a $\frac{1}{2}$-Approximation.
+/// With normalization, the edges are sorted in non-increasing order of their normalized costs
+/// $\frac{c(u,v)}{d(u)+d(v)}$ instead, after which the algorithm proceeds in the same manner. Here,
+/// $c(u,v)$ is the cost of edge $(u,v)$, and $d(u)$ resp $d(v)$ are the degrees of vertices $u$ resp
+/// $v$. Running this algorithm in normalized mode often (but not always!) produces a better result
+/// than running the algorithm without normalization. *Note however that the normalized version
+/// does NOT produce a $\frac{1}{2}$-approximation*. See [this proof for details.](https://mathoverflow.net/questions/269526/is-greedy-matching-algorithm-with-normalized-edge-weights-a-2-approximation/269760#269760) The runtime complexity remains the same, independent of whether
+/// normalization is used.
+///
+/// For more information about approximation algorithms for the maximum weight matching problem in
+/// arbitrary graphs see:
+///
+/// - R. Preis, Linear Time $\frac{1}{2}$-Approximation Algorithm for Maximum Weighted Matching in
+/// General Graphs. Symposium on Theoretical Aspects of Computer Science, 259-269, 1999.
+/// - D.E. Drake, S. Hougardy, A Simple Approximation Algorithm for the Weighted Matching Problem,
+/// Information Processing Letters 85, 211-213, 2003.
+///
+/// # Rust notes
+///
 /// `GreedyWeightedMatching`: edges of positive weight, heaviest first (optionally the weight is
 /// divided by the total degree of the endpoints), added whenever both endpoints are free.
 pub struct GreedyWeightedMatching<'g, G: Graph> {

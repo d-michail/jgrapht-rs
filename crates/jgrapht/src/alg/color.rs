@@ -222,6 +222,13 @@ fn degrees<G: Graph>(g: &G) -> (Vec<&G::Vertex>, Vec<usize>, usize) {
     (vs, degree, max)
 }
 
+/// The greedy coloring algorithm.
+///
+/// The algorithm iterates over all vertices and assigns the smallest possible color that is not used
+/// by any neighbors. Subclasses may provide a different vertex ordering.
+///
+/// # Rust notes
+///
 /// Greedy colouring in vertex iteration order (`GreedyColoring`).
 pub struct GreedyColoring<'g, G: Graph> {
     graph: &'g G,
@@ -240,6 +247,16 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for GreedyColoring<'_, G> {
     }
 }
 
+/// The largest degree first greedy coloring algorithm.
+///
+/// This is the greedy coloring algorithm which orders the vertices by non-increasing degree. See the
+/// following paper for details.
+///
+/// - D. J. A. Welsh and M. B. Powell. An upper bound for the chromatic number of a graph and its
+/// application to timetabling problems. The Computer Journal, 10(1):85--86, 1967.
+///
+/// # Rust notes
+///
 /// Greedy colouring, largest degree first (`LargestDegreeFirstColoring`). Vertices of equal
 /// degree stay in graph order.
 pub struct LargestDegreeFirstColoring<'g, G: Graph> {
@@ -277,6 +294,18 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for LargestDegreeFirstColoring
     }
 }
 
+/// The smallest degree last greedy coloring algorithm.
+///
+/// This is the greedy coloring algorithm with the smallest-last ordering of the vertices. The basic
+/// idea is as follows: Assuming that vertices $v_{k+1}, \dotso, v_n$ have been already selected,
+/// choose $v_k$ so that the degree of $v_k$ in the subgraph induced by $V - $(v_{k+1}, \dotso, v_n)$
+/// is minimal. See the following paper for details.
+///
+/// - D. Matula, G. Marble, and J. Isaacson. Graph coloring algorithms in Graph Theory and
+/// Computing. Academic Press, 104--122, 1972.
+///
+/// # Rust notes
+///
 /// Greedy colouring along a smallest-degree-last ordering (`SmallestDegreeLastColoring`).
 pub struct SmallestDegreeLastColoring<'g, G: Graph> {
     graph: &'g G,
@@ -332,6 +361,10 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for SmallestDegreeLastColoring
     }
 }
 
+/// The greedy coloring algorithm with a random vertex ordering.
+///
+/// # Rust notes
+///
 /// Greedy colouring in a random order (`RandomGreedyColoring`), shuffled as `Collections.shuffle`.
 pub struct RandomGreedyColoring<'g, G: Graph, R> {
     graph: &'g G,
@@ -357,6 +390,30 @@ impl<G: Graph, R: RandomSource> VertexColoringAlgorithm<G::Vertex>
     }
 }
 
+/// The Dsatur greedy coloring algorithm.
+///
+/// This is the greedy coloring algorithm using saturation degree ordering. The saturation degree of
+/// a vertex is defined as the number of different colors to which it is adjacent. The algorithm
+/// selects always the vertex with the largest saturation degree. If multiple vertices have the same
+/// maximum saturation degree, a vertex of maximum degree in the uncolored subgraph is selected.
+///
+/// Note that the DSatur is not optimal in general, but is optimal for bipartite graphs. Compared to
+/// other simpler greedy ordering heuristics, it is usually considered slower but more efficient
+/// w.r.t. the number of used colors. See the following papers for details:
+///
+/// - D. Brelaz. New methods to color the vertices of a graph. Communications of ACM,
+/// 22(4):251–256, 1979.
+/// - The smallest hard-to-color graph for algorithm DSATUR. Discrete Mathematics, 236:151--165,
+/// 2001.
+///
+/// This implementation requires $O(n^2)$ running time and space. The following paper discusses
+/// possible improvements in the running time.
+///
+/// - J. S. Turner. Almost all $k$-colorable graphs are easy to color. Journal of Algorithms.
+/// 9(1):63--82, 1988.
+///
+/// # Rust notes
+///
 /// DSatur colouring: next the vertex with the most distinct neighbour colours, then the highest
 /// remaining degree (`SaturationDegreeColoring`, including its own binary heap and tie-breaking).
 pub struct SaturationDegreeColoring<'g, G: Graph> {
@@ -507,6 +564,10 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for SaturationDegreeColoring<'
     }
 }
 
+/// Brown graph coloring algorithm.
+///
+/// # Rust notes
+///
 /// Exact colouring by Brown's backtracking (`BrownBacktrackColoring`); exponential time.
 pub struct BrownBacktrackColoring<V: Clone + Eq + Hash> {
     vertex_list: Vec<V>,
@@ -635,6 +696,22 @@ impl<V: Clone + Eq + Hash> VertexColoringAlgorithm<V> for BrownBacktrackColoring
 }
 
 /// Optimal colouring of a chordal graph (`ChordalGraphColoring`): the vertices are coloured in the
+/// Calculates a [minimum vertex coloring](http://mathworld.wolfram.com/MinimumVertexColoring.html) for a [chordal graph](https://en.wikipedia.org/wiki/Chordal_graph). A
+/// chordal graph is a simple graph in which all
+/// [cycles](http://mathworld.wolfram.com/GraphCycle.html) of four or more vertices have
+/// a [chord](http://mathworld.wolfram.com/CycleChord.html). A chord is an edge that is
+/// not part of the cycle but connects two vertices of the cycle.
+///
+/// To compute the vertex coloring, this implementation relies on the `ChordalityInspector` to
+/// compute a [perfect elimination order](https://en.wikipedia.org/wiki/Chordal_graph#Perfect_elimination_and_efficient_recognition).
+///
+/// The vertex coloring for a chordal graph is computed in $\mathcal{O}(|V| + |E|)$ time.
+///
+/// All the methods in this class are invoked in a lazy fashion, meaning that computations are only
+/// started once the method gets invoked.
+///
+/// # Rust notes
+///
 /// order of a perfect elimination order found by a [`ChordalityInspector`], each with the lowest
 /// colour not used by its predecessors. The colour count is the number of distinct colours.
 pub struct ChordalGraphColoring<'g, G: UndirectedGraph> {
@@ -892,6 +969,16 @@ fn split_refinement_color(
         rep.coloring[v] = new_color;
     }
 }
+/// Color refinement algorithm that finds the coarsest stable coloring of a graph based on a given
+/// `alpha` coloring as described in the following
+/// [paper](https://doi.org/10.1007/s00224-016-9686-0): C. Berkholz, P. Bonsma, and M.
+/// Grohe. Tight lower and upper bounds for the complexity of canonical colour refinement. Theory of
+/// Computing Systems, 60(4), p581--614, 2017.
+///
+/// The complexity of this algorithm is $O((|V| + |E|)log |V|)$.
+///
+/// # Rust notes
+///
 
 /// Colour refinement (`ColorRefinementAlgorithm`): the coarsest equitable partition refining
 /// `alpha`, where a vertex's signature is the multiset of its *successors'* colours (for directed

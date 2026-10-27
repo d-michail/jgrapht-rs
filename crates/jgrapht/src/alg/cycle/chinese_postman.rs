@@ -29,6 +29,33 @@ enum AugmentedEdge<V, E> {
     Shortcut(GraphWalk<V, E>),
 }
 
+/// This class solves the Chinese Postman Problem (CPP), also known as the Route Inspection Problem.
+/// The CPP asks to find a *closed walk* of minimum length that visits every edge of the graph
+/// at least once. In weighted graphs, the *length* of the closed walk is defined as the sum of
+/// its edge weights; in unweighted graphs, a closed walk with the least number of edges is returned
+/// (the same result can be obtained for weighted graphs with uniform edge weights).
+///
+/// The algorithm works with directed and undirected graphs which may contain loops and/or multiple
+/// edges. The runtime complexity is O(N^3) where N is the number of vertices in the graph. Mixed
+/// graphs are currently not supported, as solving the CPP for mixed graphs is NP-hard. The graph on
+/// which this algorithm is invoked must be strongly connected; invoking this algorithm on a graph
+/// which is not strongly connected may result in undefined behavior. In case of weighted graphs, all
+/// edge weights must be positive.
+///
+/// If the input graph is Eulerian (see `GraphTests#isEulerian(Graph)` for details) use
+/// `HierholzerEulerianCycle` instead.
+///
+/// The implementation is based on the following paper:
+/// Edmonds, J., Johnson, E.L. Matching, Euler tours and the Chinese postman, Mathematical
+/// Programming (1973) 5: 88. doi:10.1007/BF01580113
+///
+/// More concise descriptions of the algorithms can be found here:
+///
+/// - [CPP for Undirected graphs](http://www.suffolkmaths.co.uk/pages/Maths%20Projects/Projects/Topology%20and%20Graph%20Theory/Chinese%20Postman%20Problem.pdf)
+/// - [CPP for Directed graphs](https://www-m9.ma.tum.de/graph-algorithms/directed-chinese-postman/index_en.html)
+///
+/// # Rust notes
+///
 /// Edmonds and Johnson's solution to the directed and undirected Chinese Postman Problem.
 ///
 /// The input graph must be strongly connected. Weighted inputs must have non-negative weights.

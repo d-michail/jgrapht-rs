@@ -29,6 +29,31 @@ struct Closest<V> {
     distance: f64,
 }
 
+/// The nearest insertion heuristic algorithm for the TSP problem.
+///
+/// The travelling salesman problem (TSP) asks the following question: "Given a list of cities and
+/// the distances between each pair of cities, what is the shortest possible route that visits each
+/// city exactly once and returns to the origin city?".
+///
+/// Insertion heuristics are quite straightforward, and there are many variants to choose from. The
+/// basics of insertion heuristics is to start with a tour of a subset of all cities, and then
+/// inserting the rest by some heuristic. The initial sub-tour is often a triangle or the convex
+/// hull. One can also start with a single edge as sub-tour. This implementation uses the shortest
+/// edge by default as the initial sub-tour.
+///
+/// The implementation of this class is based on:
+/// Nilsson, Christian. "Heuristics for the traveling salesman problem." Linkoping University 38
+/// (2003)
+///
+/// This implementation can also be used in order to augment an existing partial tour. See
+/// constructor `NearestInsertionHeuristicTSP(GraphPath)`.
+///
+/// The runtime complexity of this class is $O(V^2)$.
+///
+/// This algorithm requires that the graph is complete.
+///
+/// # Rust notes
+///
 /// `NearestInsertionHeuristicTSP`: grows a sub-tour by inserting the unvisited vertex nearest to
 /// it next to the tour vertex it is nearest to.
 pub struct NearestInsertionHeuristicTSP<G: Graph> {
@@ -202,6 +227,36 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for NearestInsertionHeuristicTSP<G> 
     }
 }
 
+/// The farthest insertion heuristic algorithm for the TSP problem.
+///
+/// The travelling salesman problem (TSP) asks the following question: "Given a list of cities and
+/// the distances between each pair of cities, what is the shortest possible route that visits each
+/// city exactly once and returns to the origin city?".
+///
+/// Insertion heuristics are quite straightforward, and there are many variants to choose from. The
+/// basics of insertion heuristics is to start with a partial tour of a subset of all cities, and
+/// then iteratively an unvisited vertex (a vertex whichis not in the tour) is chosen given a
+/// criterion and inserted in the best position of the partial tour. Per each iteration, the farthest
+/// insertion heuristic selects the farthest unvisited vertex from the partial tour. This algorithm
+/// provides a guarantee to compute tours no more than 0(log N) times optimum (assuming the triangle
+/// inequality). However, regarding practical results, some references refer to this heuristic as one
+/// of the best among the category of insertion heuristics. This implementation uses the longest edge
+/// by default as the initial sub-tour if one is not provided.
+///
+/// The description of this algorithm can be consulted on:
+/// Johnson, D. S., & McGeoch, L. A. (2007). Experimental Analysis of Heuristics for the STSP. In
+/// G. Gutin & A. P. Punnen (Eds.), The Traveling Salesman Problem and Its Variations (pp.
+/// 369–443). Springer US. <https://doi.org/10.1007/0-306-48213-4_9>
+///
+/// This implementation can also be used in order to augment an existing partial tour. See
+/// constructor `FarthestInsertionHeuristicTSP(GraphPath)`.
+///
+/// The runtime complexity of this class is $O(V^2)$.
+///
+/// This algorithm requires that the graph is complete.
+///
+/// # Rust notes
+///
 /// `FarthestInsertionHeuristicTSP`: inserts the vertex farthest from the sub-tour at the position
 /// that lengthens the tour least. Starts from the longest edge unless given a sub-tour.
 pub struct FarthestInsertionHeuristicTSP<G: Graph> {

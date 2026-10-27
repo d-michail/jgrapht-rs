@@ -325,6 +325,22 @@ pub fn block_cut_tree<G: Graph>(g: &G) -> BlockCutTree<G::Vertex> {
 // ConnectivityInspector
 // ---------------------------------------------------------------------------------------------
 
+/// Allows obtaining various connectivity aspects of a graph. The *inspected graph* is specified
+/// at construction time and cannot be modified. Currently, the inspector supports connected
+/// components for an undirected graph and weakly connected components for a directed graph. To find
+/// strongly connected components, use `KosarajuStrongConnectivityInspector` instead.
+///
+/// The inspector methods work in a lazy fashion: no computation is performed unless immediately
+/// necessary. Computation are done once and results and cached within this class for future need.
+///
+/// The inspector is also a `org.jgrapht.event.GraphListener`. If added as a listener to the
+/// inspected graph, the inspector will amend internal cached results instead of recomputing them. It
+/// is efficient when a few modifications are applied to a large graph. If many modifications are
+/// expected it will not be efficient due to added overhead on graph update operations. If inspector
+/// is added as listener to a graph other than the one it inspects, results are undefined.
+///
+/// # Rust notes
+///
 /// Connected sets of an undirected graph, or the weakly connected sets of a directed one
 /// (`ConnectivityInspector`).
 ///
@@ -496,6 +512,12 @@ fn bfs_undirected<G: Graph>(g: &G, start: &G::Vertex) -> Vec<G::Vertex> {
 // Strong connectivity: Gabow and Kosaraju
 // ---------------------------------------------------------------------------------------------
 
+/// Computes the strongly connected components of a directed graph. The implemented algorithm follows
+/// Cheriyan-Mehlhorn/Gabow's algorithm presented in Path-based depth-first search for strong and
+/// biconnected components by Gabow (2000). The running time is order of $O(|V|+|E|)$.
+///
+/// # Rust notes
+///
 /// Path-based strong component algorithm of Gabow (`GabowStrongConnectivityInspector`).
 pub struct GabowStrongConnectivityInspector<'g, G: DirectedGraph> {
     graph: &'g G,
@@ -563,6 +585,16 @@ impl<G: DirectedGraph> StrongConnectivityAlgorithm for GabowStrongConnectivityIn
     }
 }
 
+/// Computes strongly connected components of a directed graph. The algorithm is implemented after
+/// "Cormen et al: Introduction to algorithms", Chapter 22.5. It has a running time of $O(V + E)$.
+///
+/// Unlike `ConnectivityInspector`, this class does not implement incremental inspection. The
+/// full algorithm is executed at the first call of
+/// `KosarajuStrongConnectivityInspector#stronglyConnectedSets()` or
+/// `KosarajuStrongConnectivityInspector#isStronglyConnected()`.
+///
+/// # Rust notes
+///
 /// Kosaraju–Sharir strong component algorithm (`KosarajuStrongConnectivityInspector`).
 pub struct KosarajuStrongConnectivityInspector<'g, G: DirectedGraph> {
     graph: &'g G,
@@ -643,6 +675,28 @@ impl<G: DirectedGraph> StrongConnectivityAlgorithm for KosarajuStrongConnectivit
 // BiconnectivityInspector and BlockCutpointGraph
 // ---------------------------------------------------------------------------------------------
 
+/// Allows obtaining various connectivity aspects of a graph. The *inspected graph* is specified
+/// at construction time and cannot be modified. No restrictions are imposed on the input graph.
+/// Multigraphs and pseudographs are also supported. The inspector traverses connected components
+/// (undirected graphs) or weakly connected components (directed graphs). To find strongly connected
+/// components, use `KosarajuStrongConnectivityInspector` instead. This class offers an
+/// alternative implementation of some of the functionality encountered in
+/// `ConnectivityInspector`. It is likely to perform somewhat slower than
+/// `ConnectivityInspector`, but offers more functionality in return.
+///
+/// The algorithm implemented in this class is Hopcroft and Tarjan's biconnected components
+/// algorithm, described in: Hopcroft, J. Tarjan, R. Algorithm 447: efficient algorithms for graph
+/// manipulation, 1973. Communications of the ACM. 16 (6): 372–378. This implementation runs in
+/// linear time $O(|V|+|E|)$ and is based on a recursive depth-first search. More information about
+/// this subject be be found in this wikipedia
+/// [article](https://en.wikipedia.org/wiki/Biconnected_component).
+///
+/// The inspector methods work in a lazy fashion: no computations are performed unless immediately
+/// necessary. Computation are done once and results are cached within this class for future need.
+/// The core of this class is built around a recursive Depth-first search.
+///
+/// # Rust notes
+///
 /// Blocks, cutpoints, bridges and connected components of a graph (`BiconnectivityInspector`).
 /// Edge directions are ignored. Results are computed when the inspector is constructed.
 pub struct BiconnectivityInspector<'g, G: Graph> {
@@ -866,6 +920,23 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
 }
 
 /// The block-cutpoint graph (`BlockCutpointGraph`): a forest with one node per block and one node
+/// A Block-Cutpoint graph (also known as a block-cut tree). If $G$ is a graph, the block-cutpoint
+/// graph of $G$, denoted $BC(G)$ is the simple bipartite graph with bipartition $(A, B)$ where $A$
+/// is the set of [cut-vertices](http://mathworld.wolfram.com/ArticulationVertex.html)
+/// (also known as articulation points) of $G$, and $B$ is the set of
+/// [blocks](http://mathworld.wolfram.com/Block.html) of $G$. $BC(G)$ contains an edge
+/// $(a,b)$ for $a \in A$ and $b \in B$ if and only if block $b$ contains the cut-vertex $a$. A
+/// vertex in $G$ is a cut-vertex if removal of the vertex from $G$ (and all edges incident to this
+/// vertex) increases the number of connected components in the graph. A block of $G$ is a maximal
+/// connected subgraph $H \subseteq G$ so that $H$ does not have a cut-vertex. Note that if $H$ is a
+/// block, then either $H$ is 2-connected, or $|V(H)| \leq 2$. Each pair of blocks of $G$ share at
+/// most one vertex, and that vertex is a cut-point in $G$. $BC(G)$ is a tree in which each leaf node
+/// corresponds to a block of $G$.
+///
+/// Note: the block-cutpoint graph is not changed when the underlying graph is changed.
+///
+/// # Rust notes
+///
 /// per cutpoint, where a cutpoint is adjacent to every block containing it.
 ///
 /// Nodes are numbered: `0..blocks.len()` are the blocks, the rest the cutpoints.
@@ -945,6 +1016,38 @@ impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
 // ---------------------------------------------------------------------------------------------
 
 /// Edge and vertex connectivity through maximum flows (`KConnectivityFlowAlgorithm`).
+/// This class implements the computation, for a graph, of both
+/// [edge connectivity and](https://en.wikipedia.org/wiki/K-edge-connected_graph)
+/// [vertex connectivity](https://en.wikipedia.org/wiki/K-vertex-connected_graph).
+///
+/// A graph with n vertices is k-edge connected when k is smaller than n and if the size of the
+/// smallest subset of edges which disconnects the graph is equal to k. It's the same definition for
+/// vertex connectivity, by replacing edges with vertices.
+///
+/// This implementation uses a maximum flow algorithm and computes the number of different paths
+/// between two vertices with this algorithm. By default, this implementation uses the Edmonds-Karp
+/// max-flow algorithm. The algorithms implemented are based on
+/// [this document](https://www.cse.msu.edu/~cse835/Papers/Graph_connectivity_revised.pdf).
+///
+/// The worst-case complexity depends on the number of calls to this max-flow algorithm. All
+/// algorithms make O(n) calls to this flow algorithm. However, this number tries to be as low as
+/// possible. For further details on the exact number of calls, see the
+/// [document](https://www.cse.msu.edu/~cse835/Papers/Graph_connectivity_revised.pdf) on
+/// which this implementation is based.
+///
+/// This algorithm works with both directed and undirected networks (Only SimpleGraph and
+/// SimpleDirectedGraph are tested). The algorithm doesn't have internal synchronization, thus any
+/// concurrent network modification has undefined behavior.
+///
+/// The inspector methods work in a lazy fashion: no computations are performed unless immediately
+/// necessary. Computations are done once and results are cached within this class for future needs.
+///
+/// Further improvements of flow-based algorithms can be found in this paper: D. W. Matula,
+/// “Determining edge connectivity in O(mn),” Proceedings of the 28th Symp. on Foundations of
+/// Computer Science, (1987), pp. 249‐251.
+///
+/// # Rust notes
+///
 ///
 /// The maximum-flow routine is a parameter taking the (unit-capacity) graph and two vertices and
 /// returning the flow value; the default is Edmonds–Karp.

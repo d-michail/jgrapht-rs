@@ -21,6 +21,28 @@ use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, UGraph};
 use indexmap::IndexSet;
 use std::collections::VecDeque;
 
+/// Implementation of the algorithm by Padberg and Rao to compute Odd Minimum Cut-Sets. Let $G=(V,E)$
+/// be an undirected, simple weighted graph, where all edge weights are positive. Let $T \subset V$
+/// with $|T|$ even, be a set of vertices that are labelled *odd*. A cut-set $(U:V-U)$ is called
+/// odd if $|T \cap U|$ is an odd number. Let $c(U:V-U)$ be the weight of the cut, that is, the sum
+/// of weights of the edges which have exactly one endpoint in $U$ and one endpoint in $V-U$. The
+/// problem of finding an odd minimum cut-set in $G$ is stated as follows: Find $W \subseteq V$ such
+/// that $c(W:V-W)=min(c(U:V-U)|U \subseteq V, |T \cap U|$ is odd).
+///
+/// The algorithm has been published in: Padberg, M. Rao, M. Odd Minimum Cut-Sets and b-Matchings.
+/// Mathematics of Operations Research, 7(1), p67-80, 1982. A more concise description is published
+/// in: Letchford, A. Reinelt, G. Theis, D. Odd minimum cut-sets and b-matchings revisited. SIAM
+/// Journal of Discrete Mathematics, 22(4), p1480-1487, 2008.
+///
+/// The runtime complexity of this algorithm is dominated by the runtime complexity of the algorithm
+/// used to compute A Gomory-Hu tree on graph $G$. Consequently, the runtime complexity of this class
+/// is $O(V^4)$.
+///
+/// This class does not support changes to the underlying graph. The behavior of this class is
+/// undefined when the graph is modified after instantiating this class.
+///
+/// # Rust notes
+///
 /// `PadbergRaoOddMinimumCutset`: a minimum weight cut that separates the given "odd" vertices into
 /// two odd-sized sets, read off a Gomory–Hu tree. Edge weights must be non-negative.
 pub struct PadbergRaoOddMinimumCutset<'g, G: Graph> {

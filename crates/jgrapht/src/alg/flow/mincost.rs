@@ -21,6 +21,17 @@ use crate::util::heap::{JavaPairingHandle, JavaPairingHeap};
 use rheaps::{AddressableHeap, DecreaseKeyHeap};
 use std::collections::{HashMap, HashSet};
 
+/// This class represents a [minimum cost flow problem](https://en.wikipedia.org/wiki/Minimum-cost_flow_problem). It serves as input for the minimum cost flow algorithms.
+///
+/// The minimum cost flow problem is defined as follows: \[ \begin{align} \mbox{minimize}~&
+/// \sum_{e\in \delta^+(s)}c_e\cdot f_e &\\ \mbox{s.t. }&\sum_{e\in \delta^-(i)} f_e -
+/// \sum_{e\in \delta^+(i)} f_e = b_e & \forall i\in V\\ &l_e\leq f_e \leq u_e & \forall
+/// e\in E \end{align} \] Here $\delta^+(i)$ and $\delta^-(i)$ denote the outgoing and incoming edges
+/// of vertex $i$ respectively. The parameters $c_{e}$ define a cost for each unit of flow on the arc
+/// $e$, $l_{e}$ define minimum arc flow and $u_{e}$ define maximum arc flow.
+///
+/// # Rust notes
+///
 /// `MinimumCostFlowProblem`: a directed network with node supplies and arc capacity bounds and
 /// costs.
 pub trait MinimumCostFlowProblem {
@@ -123,6 +134,14 @@ impl<E: Eq + std::hash::Hash> MinimumCostFlow<E> {
     }
 }
 
+/// Allows to calculate minimum cost flow on the specified
+/// [minimum cost flow problem](https://en.wikipedia.org/wiki/Minimum-cost_flow_problem).
+///
+/// For more information see: *K. Ahuja, Ravindra & L. Magnanti, Thomas & Orlin, James.
+/// (1993). Network Flows.*
+///
+/// # Rust notes
+///
 /// `MinimumCostFlowAlgorithm`.
 pub trait MinimumCostFlowAlgorithm<V, E> {
     fn minimum_cost_flow<P>(&mut self, problem: &P) -> Result<MinimumCostFlow<E>>
@@ -294,6 +313,73 @@ impl Network {
     }
 }
 
+/// This class computes a solution to a
+/// [minimum cost flow problem](https://en.wikipedia.org/wiki/Minimum-cost_flow_problem)
+/// using the successive shortest path algorithm with capacity scaling. More precisely, this class
+/// computes a *b-flow* of minimum cost, i.e. for each node $v$ in the network the sum of all
+/// outgoing flows minus the sum of all incoming flows should be equal to the node supply $b_v$
+///
+/// The minimum cost flow problem is defined as follows: \[ \begin{align} \mbox{minimize}~&
+/// \sum_{e\in \delta^+(s)}c_e\cdot f_e &\\ \mbox{s.t. }&\sum_{e\in \delta^-(i)} f_e -
+/// \sum_{e\in \delta^+(i)} f_e = b_e & \forall i\in V\\ &l_e\leq f_e \leq u_e & \forall
+/// e\in E \end{align} \] Here $\delta^+(i)$ and $\delta^-(i)$ denote the outgoing and incoming edges
+/// of vertex $i$ respectively. The parameters $c_{e}$ define a cost for each unit of flow on the arc
+/// $e$, $l_{e}$ define minimum arc flow and $u_{e}$ define maximum arc flow. If $u_{e}$ is equal to
+/// `CapacityScalingMinimumCostFlow#CAP_INF`, then arbitrary large flow can be sent across the
+/// arc $e$. Parameters $b_{e}$ define the nodes demands: positive demand means that a node is a
+/// supply node, 0 demand means that it is a transhipment node, negative demand means that it is a
+/// demand node. Parameters $b_{e}$, $l_{e}$ and $u_{e}$ can be specified via
+/// `MinimumCostFlowProblem`, graph edge weights are considered to be parameters $c_{e}$, which
+/// can be negative.
+///
+/// This algorithm supports two modes: with and without scaling. An integral scaling factor can be
+/// specified during construction time. If the specified scaling factor is less than 2, then the
+/// algorithm solves the specified problem using regular successive shortest path. The default
+/// scaling factor is `CapacityScalingMinimumCostFlow#DEFAULT_SCALING_FACTOR`.
+///
+/// Essentially, the capacity scaling technique is breaking down the solution of the problem into
+/// $O(\log U)$ phases $\left[\Delta_i, \Delta_{i +1}\right],\ \Delta_i = 2^{i}, i = 0, 1, \dots,
+/// \log_a(U) - 1$. At each phase the algorithm carries at least $\delta_i$ units of flow. This
+/// technique ensures weakly polynomial time bound on the running time complexity of the algorithm.
+/// Smaller scaling factors guarantee smaller constant in the asymptotic time bound. The best choice
+/// of scaling factor is between $2$ and $16$, which depends on the characteristics of the flow
+/// network. Choosing $100$ as a scaling factor is almost equivalent to using the algorithm without
+/// scaling. In the case the algorithm is used without scaling, it has pseudo-polynomial time
+/// complexity $\mathcal{O}(nU(m + n)\log n)$.
+///
+/// Currently the algorithm doesn't support undirected flow networks. The algorithm also imposes two
+/// constraints on the directed flow networks, namely, is doesn't support infinite capacity arcs with
+/// negative cost and self-loops. Note, that in the case the network contains an infinite capacity
+/// arc with negative cost, the cost of a flow on the network can be bounded from below by some
+/// constant, i.e. a feasible finite weight solution can exist.
+///
+/// An arc with capacity greater that or equal to `CapacityScalingMinimumCostFlow#CAP_INF` is
+/// considered to be an infinite capacity arc. The algorithm also uses
+/// `CapacityScalingMinimumCostFlow#COST_INF` during the computation, therefore, the magnitude
+/// of the cost of any arc can't exceed this values.
+///
+/// In the capacity scaling mode, the algorithm performs $\mathcal{O}(log_a U)$ $\Delta$-scaling
+/// phases, where $U$ is the largest magnitude of any supply/demand or finite arc capacity, and $a$
+/// is a scaling factor, which is considered to be constant. During each $\Delta$-scaling phase the
+/// algorithm first ensures that all arc with capacity with capacity greater than or equal to
+/// $\Delta$ satisfy optimality condition, i.e. its reduced cost must be non-negative (saturated arcs
+/// don't belong to the residual network). After saturating all arcs in the $\Delta$-residual network
+/// with negative reduced cost the sum of the excesses is bounded by $2\Delta(m + n)$. Since the
+/// algorithm ensures that each augmentation carries at least $\Delta$ units of flow, at most
+/// $\mathcal{O}(m)$ flow augmentations are performed during each scaling phase. Therefore, the
+/// overall running time of the algorithm with capacity scaling is $\mathcal{O}(m\log_a U(m + n)\log
+/// n)$, which is a weakly polynomial time bound.
+///
+/// If the algorithm is used without scaling, each flow augmentation carries at least
+/// $\mathcal{O}(1)$ flow units, therefore the overall time complexity if $\mathcal{O}(nU(m + n)\log
+/// n)$, which is a pseudo-polynomial time bound.
+///
+/// For more information about the capacity scaling algorithm see: *K. Ahuja, Ravindra & L.
+/// Magnanti, Thomas & Orlin, James. (1993). Network Flows.* This implementation is based on
+/// the algorithm description presented in this book.
+///
+/// # Rust notes
+///
 /// `CapacityScalingMinimumCostFlow`: the capacity scaling successive shortest path algorithm of
 /// Ahuja, Magnanti and Orlin, `O(m log U (m + n log n))`. Only directed networks, no self-loops
 /// and no negative-cost arcs of infinite capacity.

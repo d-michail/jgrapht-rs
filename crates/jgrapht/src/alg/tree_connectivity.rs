@@ -50,6 +50,27 @@ struct Arc {
     tree_node: SequenceNode,
 }
 
+/// Data structure for storing dynamic trees and querying node connectivity
+///
+/// This data structure supports the following operations:
+///
+/// - Adding an element in $\mathcal{O}(\log 1)$
+/// - Checking if an element in present in $\mathcal{O}(1)$
+/// - Connecting two elements in $\mathcal{O}(\log n)$
+/// - Checking if two elements are connected in $\mathcal{O}(\log n)$
+/// - Removing connection between two nodes in $\mathcal{O}(\log n)$
+/// - Removing an element in $\mathcal{O}(deg(element)\cdot\log n + 1)$
+///
+/// This data structure doesn't allow to store graphs with cycles. Also, the edges are considered to
+/// be undirected. The memory complexity is linear in the number of inserted elements. The
+/// implementation is based on the [Euler tour technique](https://en.wikipedia.org/wiki/Euler_tour_technique).
+///
+/// For the description of the Euler tour data structure, we refer to the *Monika Rauch Henzinger,
+/// Valerie King: Randomized dynamic graph algorithms with polylogarithmic time per operation. STOC
+/// 1995: 519-527*
+///
+/// # Rust notes
+///
 /// A forest whose trees can be linked and cut in worst-case logarithmic time.
 #[derive(Debug, Clone)]
 pub struct TreeDynamicConnectivity<T: Eq + Hash + Clone> {

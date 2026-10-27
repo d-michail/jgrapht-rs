@@ -18,6 +18,11 @@ use crate::graph::{DirectedGraph, Graph};
 use indexmap::IndexSet;
 use std::collections::HashSet;
 
+/// A common interface for classes implementing algorithms for enumeration of the simple cycles of a
+/// directed graph.
+///
+/// # Rust notes
+///
 /// `DirectedSimpleCycles`: enumerates the simple cycles of a directed graph.
 pub trait DirectedSimpleCycles<V> {
     /// Calls `consumer` with every simple cycle (its vertices in order, without repeating the
@@ -100,6 +105,14 @@ macro_rules! cycles_algorithm {
 }
 
 /// `TiernanSimpleCycles`: the oldest and simplest enumeration, exponential in the worst case.
+/// Find all simple cycles of a directed graph using the Tiernan's algorithm.
+///
+/// See:
+/// J.C.Tiernan An Efficient Search Algorithm Find the Elementary Circuits of a Graph.,
+/// Communications of the ACM, vol.13, 12, (1970), pp. 722 - 726.
+///
+/// # Rust notes
+///
 pub struct TiernanSimpleCycles<'g, G: DirectedGraph> {
     graph: Option<&'g G>,
 }
@@ -165,6 +178,14 @@ impl<'g, G: DirectedGraph> TiernanSimpleCycles<'g, G> {
 }
 
 /// `TarjanSimpleCycles`: Tarjan's 1973 backtracking enumeration with marking.
+/// Find all simple cycles of a directed graph using the Tarjan's algorithm.
+///
+/// See:
+/// R. Tarjan, Enumeration of the elementary circuits of a directed graph, SIAM J. Comput., 2 (1973),
+/// pp. 211-216.
+///
+/// # Rust notes
+///
 pub struct TarjanSimpleCycles<'g, G: DirectedGraph> {
     graph: Option<&'g G>,
 }
@@ -303,6 +324,14 @@ fn strongly_connected_components(
 }
 
 /// `JohnsonSimpleCycles`: Johnson's 1975 algorithm, `O((n + e)(c + 1))` for `c` cycles.
+/// Find all simple cycles of a directed graph using the Johnson's algorithm.
+///
+/// See:
+/// D.B.Johnson, Finding all the elementary circuits of a directed graph, SIAM J. Comput., 4 (1975),
+/// pp. 77-84.
+///
+/// # Rust notes
+///
 pub struct JohnsonSimpleCycles<'g, G: DirectedGraph> {
     graph: &'g G,
 }
@@ -420,6 +449,15 @@ impl<'g, G: DirectedGraph> DirectedSimpleCycles<G::Vertex> for JohnsonSimpleCycl
 }
 
 /// `SzwarcfiterLauerSimpleCycles`: Szwarcfiter and Lauer's 1974 algorithm, `O(n + e)` per cycle.
+/// Find all simple cycles of a directed graph using the Schwarcfiter and Lauer's algorithm.
+///
+/// See:
+/// J.L.Szwarcfiter and P.E.Lauer, Finding the elementary cycles of a directed graph in $O(n + m)$
+/// per cycle, Technical Report Series, #60, May 1974, Univ. of Newcastle upon Tyne, Newcastle upon
+/// Tyne, England.
+///
+/// # Rust notes
+///
 pub struct SzwarcfiterLauerSimpleCycles<'g, G: DirectedGraph> {
     graph: Option<&'g G>,
 }
@@ -533,6 +571,14 @@ impl<'g, G: DirectedGraph> SzwarcfiterLauerSimpleCycles<'g, G> {
 }
 
 /// `HawickJamesSimpleCycles`: Hawick and James's 2008 algorithm; also counts cycles and can limit
+/// Find all simple cycles of a directed graph using the algorithm described by Hawick and James.
+///
+/// See:
+/// K. A. Hawick, H. A. James. Enumerating Circuits and Loops in Graphs with Self-Arcs and
+/// Multiple-Arcs. Computational Science Technical Note CSTN-013, 2008
+///
+/// # Rust notes
+///
 /// the cycle length.
 pub struct HawickJamesSimpleCycles<'g, G: DirectedGraph> {
     graph: Option<&'g G>,

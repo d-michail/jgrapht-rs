@@ -82,6 +82,27 @@ pub struct Spanner<E: Eq + std::hash::Hash> {
     pub weight: f64,
 }
 
+/// Greedy algorithm for $(2k-1)$-multiplicative spanner construction (for any integer
+/// `k >= 1`).
+///
+/// The spanner is guaranteed to contain $O(n^{1+1/k})$ edges and the shortest path distance between
+/// any two vertices in the spanner is at most $2k-1$ times the corresponding shortest path distance
+/// in the original graph. Here n denotes the number of vertices of the graph.
+///
+/// The algorithm is described in: Althoefer, Das, Dobkin, Joseph, Soares.
+/// [On Sparse Spanners of Weighted Graphs](https://doi.org/10.1007/BF02189308). Discrete
+/// Computational Geometry 9(1):81-100, 1993.
+///
+/// If the graph is unweighted the algorithm runs in $O(m n^{1+1/k})$ time. Setting $k$ to infinity
+/// will result in a slow version of Kruskal's algorithm where cycle detection is performed by a BFS
+/// computation. In such a case use the implementation of Kruskal with union-find. Here n and m are
+/// the number of vertices and edges of the graph respectively.
+///
+/// If the graph is weighted the algorithm runs in $O(m (n^{1+1/k} + n \log n))$ time by using
+/// Dijkstra's algorithm. Edge weights must be non-negative.
+///
+/// # Rust notes
+///
 /// Greedy `(2k-1)`-spanner (`GreedyMultiplicativeSpanner`): edges are scanned by increasing
 /// weight and kept if the spanner so far has no path within `(2k-1)` times the edge weight.
 /// Unweighted graphs use hop counts.

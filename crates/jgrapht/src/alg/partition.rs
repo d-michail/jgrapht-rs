@@ -64,6 +64,12 @@ pub fn is_bipartite<G: Graph>(g: &G) -> bool {
     two_color(&Indexed::new(g)).is_some()
 }
 
+/// Algorithm for computing bipartite partitions thus checking whether a graph is bipartite or not.
+///
+/// The algorithm runs in linear time in the number of vertices and edges.
+///
+/// # Rust notes
+///
 /// Bipartite partitioning (`BipartitePartitioning`): breadth-first 2-colouring ignoring edge
 /// directions. The result is cached.
 pub struct BipartitePartitioning<'g, G: Graph> {

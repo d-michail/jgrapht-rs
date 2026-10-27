@@ -25,6 +25,27 @@ use std::collections::HashMap;
 
 type Tour<G> = Result<Option<GraphWalk<<G as Graph>::Vertex, <G as Graph>::Edge>>>;
 
+/// The 2-opt heuristic algorithm for the TSP problem.
+///
+/// The travelling salesman problem (TSP) asks the following question: "Given a list of cities and
+/// the distances between each pair of cities, what is the shortest possible route that visits each
+/// city exactly once and returns to the origin city?".
+///
+/// This is an implementation of the 2-opt improvement heuristic algorithm. The algorithm generates
+/// *passes* initial tours and then iteratively improves the tours until a local minimum is
+/// reached. In each iteration it applies the best possible 2-opt move which means to find the best
+/// pair of edges $(i,i+1)$ and $(j,j+1)$ such that replacing them with $(i,j)$ and $(i+1,j+1)$
+/// minimizes the tour length. The default initial tours use RandomTour, however an alternative
+/// algorithm can be provided to create the initial tour. Initial tours generated using
+/// NearestNeighborHeuristicTSP give good results and performance.
+///
+/// See [wikipedia](https://en.wikipedia.org/wiki/2-opt) for more details.
+///
+/// This implementation can also be used in order to try to improve an existing tour. See method
+/// `improveTour(GraphPath)`.
+///
+/// # Rust notes
+///
 /// `TwoOptHeuristicTSP`: repeatedly applies the best improving 2-opt move to a tour produced by an
 /// initializer (a random tour by default), `passes` times, and keeps the best result.
 pub struct TwoOptHeuristicTSP<'a, G: Graph> {

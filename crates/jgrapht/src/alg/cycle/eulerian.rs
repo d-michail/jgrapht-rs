@@ -17,6 +17,12 @@ use crate::error::{GraphError, Result};
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use std::collections::HashMap;
+/// Computes an Eulerian cycle of an Eulerian graph. An
+/// [Eulerian graph](http://mathworld.wolfram.com/EulerianGraph.html) is a graph
+/// containing an [Eulerian cycle](http://mathworld.wolfram.com/EulerianCycle.html).
+///
+/// # Rust notes
+///
 
 /// `EulerianCycleAlgorithm`.
 pub trait EulerianCycleAlgorithm<G: Graph> {
@@ -43,6 +49,19 @@ struct EdgeNode {
     source_node: usize,
     target_node: usize,
 }
+/// An implementation of Hierholzer's algorithm for finding an Eulerian cycle in Eulerian graphs. The
+/// algorithm works with directed and undirected graphs which may contain loops and/or multiple
+/// (parallel) edges. The running time is linear, i.e. $O(|E|)$ where $|E|$ is the cardinality of the
+/// edge set of the graph.
+///
+/// See the [Wikipedia article](https://en.wikipedia.org/wiki/Eulerian_path) for details
+/// and references about Eulerian cycles and a short description of Hierholzer's algorithm for the
+/// construction of an Eulerian cycle. The original presentation of the algorithm dates back to 1873
+/// and the following paper: Carl Hierholzer: Über die Möglichkeit, einen Linienzug ohne
+/// Wiederholung und ohne Unterbrechung zu umfahren. Mathematische Annalen 6(1), 30–32, 1873.
+///
+/// # Rust notes
+///
 
 /// `HierholzerEulerianCycle`: Hierholzer's linear-time construction of an Eulerian cycle, with the
 /// partial cycles spliced into the final one through doubly linked lists.

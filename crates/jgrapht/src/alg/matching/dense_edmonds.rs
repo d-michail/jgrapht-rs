@@ -116,6 +116,54 @@ impl SimpleMatching {
     }
 }
 
+/// This implementation of Edmonds' blossom algorithm computes maximum cardinality matchings in
+/// undirected graphs. A matching in a graph $G(V,E)$ is a subset of edges $M$ such that no two edges
+/// in $M$ have a vertex in common. A matching has at most $\frac{1}{2|V|}$ edges. A node $v$ in $G$
+/// is matched by matching $M$ if $M$ contains an edge incident to $v$. A matching is perfect if all
+/// nodes are matched. By definition, a perfect matching consists of exactly $\frac{1}{2|V|}$ edges.
+/// This algorithm will return a perfect matching if one exists. If no perfect matching exists, then
+/// the largest (non-perfect) matching is returned instead. This algorithm does NOT compute a maximum
+/// weight matching. In the special case that the input graph is bipartite, consider using
+/// `HopcroftKarpMaximumCardinalityBipartiteMatching` instead.
+///
+/// To compute a maximum cardinality matching, at most $n$ augmenting path computations are
+/// performed. Each augmenting path computation takes $O(m \alpha(m,n))$ time, where $\alpha(m,n)$ is
+/// an inverse of the Ackerman function, $n$ is the number of vertices, and $m$ the number of edges.
+/// This results in a total runtime complexity of O(nm alpha(m,n)). In practice, the number of
+/// augmenting path computations performed is far smaller than $n$, since an efficient heuristic is
+/// used to compute a near-optimal initial solution. This implementation is highly efficient: a
+/// maximum matching in a graph of 2000 vertices and 1.5 million edges is calculated in a few
+/// milliseconds on a desktop computer.
+/// The runtime complexity of this implementation could be improved to $O(nm)$ when the UnionFind
+/// data structure used in this implementation is replaced by the linear-time set union data
+/// structure proposed in: Gabow, H.N., Tarjan, R.E. A linear-time algorithm for a special case of
+/// disjoint set union. Proc. Fifteenth Annual ACM Symposium on Theory of Computing, 1982, pp.
+/// 246-251.
+///
+/// Edmonds' original algorithm first appeared in Edmonds, J. Paths, trees, and flowers. Canadian
+/// Journal of Mathematics 17, 1965, pp. 449-467, and had a runtime complexity of $O(n^4)$. This
+/// implementation however follows more closely the description provided in Tarjan, R.E. Data
+/// Structures and Network Algorithms. Society for Industrial and Applied Mathematics, 1983, chapter
+/// 9. In addition, the following sources were used for the implementation:
+///
+/// - [Java implementation by John Mayfield](https://github.com/johnmay/beam/blob/master/core/src/main/java/uk/ac/ebi/beam/MaximumMatching.java)
+/// - [Java implementation by Keith Schwarz](http://www.keithschwarz.com/interesting/code/?dir=edmonds-matching)
+/// - [C++ implementation Boost library](http://www.boost.org/doc/libs/1_38_0/libs/graph/doc/maximum_matching.html)
+/// - Cook, W.J., Cunningham, W.H., Pulleyblank, W.R., Schrijver, A. Combinatorial Optimization.
+/// Wiley 1997, chapter 5
+/// - [Gabow, H.N. Data Structures for Weighted Matching and Extensions to b-matching and f-factors, 2016](https://arxiv.org/pdf/1611.07541.pdf)
+///
+/// For future reference - A more efficient algorithm than the one implemented in this class exists:
+/// Micali, S., Vazirani, V. An $O(\sqrt{n}m)$ algorithm for finding maximum matching in general
+/// graphs. Proc. 21st Ann. Symp. on Foundations of Computer Science, IEEE, 1980, pp. 17–27. This is
+/// the most efficient algorithm known for computing maximum cardinality matchings in general graphs.
+/// More details on this algorithm can be found in:
+///
+/// - [Presentation from Vazirani 'Dispelling an Old Myth about an Ancient Algorithm'](http://research.microsoft.com/apps/video/dl.aspx?id=171055)
+/// - [Vazirani, V. A Simplification of the MV Matching Algorithm and its Proof, 2013](https://arxiv.org/abs/1210.4594)
+///
+/// # Rust notes
+///
 /// `DenseEdmondsMaximumCardinalityMatching`: Edmonds' blossom algorithm for a maximum cardinality
 /// matching in a general graph, in `O(V^3)` time (Gabow's variant with a union-find structure for
 /// the blossoms), best for dense graphs.

@@ -53,6 +53,24 @@ struct PathSetKey<V> {
 
 type PathIndex<V> = IndexMap<PathSetKey<V>, LabeledPath<V>>;
 
+/// Implementation of an algorithm for the local augmentation problem for the cyclic exchange
+/// neighborhood, i.e. it finds subset-disjoint negative cycles in a graph, based on Ravindra K.
+/// Ahuja, James B. Orlin, Dushyant Sharma, A composite very large-scale neighborhood structure for
+/// the capacitated minimum spanning tree problem, Operations Research Letters, Volume 31, Issue 3,
+/// 2003, Pages 185-194, ISSN 0167-6377, [https://doi.org/10.1016/S0167-6377(02)00236-5](https://doi.org/10.1016/S0167-6377(02)00236-5).
+/// [(http://www.sciencedirect.com/science/article/pii/S0167637702002365)](http://www.sciencedirect.com/science/article/pii/S0167637702002365)
+///
+/// A subset-disjoint cycle is a cycle such that no two vertices in the cycle are in the same subset
+/// of a given partition of the whole vertex set.
+///
+/// This algorithm returns the first or the best found negative subset-disjoint cycle. In the case of
+/// the first found cycle, the cycle has minimum number of vertices. It may enumerate all paths up to
+/// the length given by the parameter `lengthBound`, i.e the algorithm runs in exponential
+/// time.
+///
+/// This algorithm is used to detect valid cyclic exchanges in a cyclic exchange neighborhood for the
+/// Capacitated Minomum Spanning Tree problem
+/// `org.jgrapht.alg.spanning.AhujaOrlinSharmaCapacitatedMinimumSpanningTree`
 pub struct AhujaOrlinSharmaCyclicExchangeLocalAugmentation<'g, G: DirectedGraph> {
     graph: &'g G,
     length_bound: usize,

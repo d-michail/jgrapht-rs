@@ -227,6 +227,11 @@ fn arborescence<G: DirectedGraph>(
     Ok(tree_of(&ix, &chosen))
 }
 
+/// An algorithm which computes a [spanning tree](https://en.wikipedia.org/wiki/Spanning_tree) of a given connected graph. In the case of disconnected graphs it would rather derive a
+/// spanning *forest*.
+///
+/// # Rust notes
+///
 /// An algorithm computing a spanning tree or forest (`SpanningTreeAlgorithm`).
 pub trait SpanningTreeAlgorithm<G: Graph> {
     fn spanning_tree(&self) -> SpanningTree<G::Edge>;

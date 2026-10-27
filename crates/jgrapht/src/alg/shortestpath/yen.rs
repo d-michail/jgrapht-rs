@@ -293,7 +293,7 @@ pub struct BoundedPrunedYenStats {
     pub candidate_heap_pushes: usize,
     pub candidate_heap_pops: usize,
     pub unreachable_spurs: usize,
-    /// Reserved for spur engines which expose their settled-vertex count.
+    /// Vertices expanded by spur engines which expose their settled-vertex count.
     pub expanded_vertices: usize,
     pub skipped_impossible_spur_tasks: usize,
     candidate_ordinal: u64,

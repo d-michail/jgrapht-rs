@@ -46,6 +46,36 @@ fn index_vertices<G: Graph>(network: &G) -> Result<(Vec<G::Vertex>, HashMap<G::V
     Ok((vertex_list, index_map))
 }
 
+/// This class computes an Equivalent Flow Tree (EFT) using the algorithm proposed by Dan Gusfield.
+/// EFTs can be used to efficiently calculate the maximum flow for all pairs of vertices. The
+/// algorithm is described in: *Gusfield, D, Very simple methods for all pairs network flow
+/// analysis. SIAM Journal on Computing, 19(1), p142-155, 1990*
+/// In an undirected graph, there exist $frac{n(n-1)}{2}$ different vertex pairs. This class computes
+/// the maximum flow between each of these pairs efficiently by performing exactly $(n-1)$ minimum
+/// $s-t$ cut computations. If your application requires fewer than $(n-1)$ flow calculations,
+/// consider computing the maximum flows manually through `MaximumFlowAlgorithm`.
+///
+/// The runtime complexity of this class is $O((V-1)Q)$, where $Q$ is the runtime complexity of the
+/// algorithm used to compute $s-t$ cuts in the graph. By default, this class uses the
+/// `PushRelabelMFImpl` implementation to calculate minimum $s-t$ cuts. This class has a
+/// runtime complexity of $O(V^3)$, resulting in a $O(V^4)$ runtime complexity for the overal
+/// algorithm.
+///
+/// Note: this class performs calculations in a lazy manner. The EFT is not calculated until the
+/// first invocation of `GusfieldEquivalentFlowTree#getMaximumFlowValue(Object, Object)` or
+/// `GusfieldEquivalentFlowTree#getEquivalentFlowTree()`. Moreover, this class *only*
+/// calculates the value of the maximum flow between a source-destination pair; it does not calculate
+/// the corresponding flow per edge. If you need to know the exact flow through an edge, use one of
+/// the alternative `MaximumFlowAlgorithm` implementations.
+///
+/// Warning: EFTs do not allow you to calculate minimum cuts for all pairs of vertex! For that,
+/// Gomory-Hu cut trees are required! Use the `GusfieldGomoryHuCutTree` implementation instead.
+///
+/// This class does not support changes to the underlying graph. The behavior of this class is
+/// undefined when the graph is modified after instantiating this class.
+///
+/// # Rust notes
+///
 /// `GusfieldEquivalentFlowTree`: all-pairs maximum flow values from `n - 1` minimum cut
 /// computations, kept in an equivalent flow tree.
 pub struct GusfieldEquivalentFlowTree<'g, G: Graph> {
@@ -171,6 +201,38 @@ impl<'g, G: Graph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
     }
 }
 
+/// This class computes a Gomory-Hu tree (GHT) using the algorithm proposed by Dan Gusfield. For a
+/// definition of GHTs, refer to: *Gomory, R., Hu, T. Multi-terminal network flows. Journal of the
+/// Socieity for Industrial and Applied mathematics, 9(4), p551-570, 1961.* GHTs can be used to
+/// efficiently query the maximum flows and minimum cuts for all pairs of vertices. The algorithm is
+/// described in: *Gusfield, D, Very simple methods for all pairs network flow analysis. SIAM
+/// Journal on Computing, 19(1), p142-155, 1990*
+/// In an undirected graph, there exist $\frac{n(n-1)}{2}$ different vertex pairs. This class
+/// computes the maximum flow/minimum cut between each of these pairs efficiently by performing
+/// exactly $(n-1)$ minimum $s-t$ cut computations. If your application needs fewer than $n-1$
+/// flow/cut computations, consider computing the maximum flows/minimum cuts manually through
+/// `MaximumFlowAlgorithm`/`MinimumSTCutAlgorithm`.
+///
+/// The runtime complexity of this class is $O((V-1)Q)$, where $Q$ is the runtime complexity of the
+/// algorithm used to compute $s-t$ cuts in the graph. By default, this class uses the
+/// `PushRelabelMFImpl` implementation to calculate minimum s-t cuts. This class has a runtime
+/// complexity of $O(V^3)$, resulting in a $O(V^4)$ runtime complexity for the overall algorithm.
+///
+/// Note: this class performs calculations in a lazy manner. The GHT is not calculated until the
+/// first invocation of `GusfieldGomoryHuCutTree#getMaximumFlowValue(Object, Object)` or
+/// `GusfieldGomoryHuCutTree#getGomoryHuTree()`. Moreover, this class *only* calculates
+/// the value of the maximum flow between a source-destination pair; it does not calculate the
+/// corresponding flow per edge. If you need to know the exact flow through an edge, use one of the
+/// alternative `MaximumFlowAlgorithm` implementations.
+///
+/// In contrast to an Equivalent Flow Tree (`GusfieldEquivalentFlowTree`), Gomory-Hu trees also
+/// provide all minimum cuts for all pairs of vertices!
+///
+/// This class does not support changes to the underlying graph. The behavior of this class is
+/// undefined when the graph is modified after instantiating this class.
+///
+/// # Rust notes
+///
 /// `GusfieldGomoryHuCutTree`: a Gomory–Hu cut tree from `n - 1` minimum cut computations. Answers
 /// maximum flow values and minimum cuts between any two vertices.
 pub struct GusfieldGomoryHuCutTree<'g, G: Graph> {

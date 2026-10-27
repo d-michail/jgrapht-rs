@@ -356,6 +356,48 @@ impl<'a, G: Graph> Algorithm<'a, G> {
 }
 
 /// `SparseEdmondsMaximumCardinalityMatching`: Edmonds' blossom algorithm for a maximum
+/// Edmonds' blossom algorithm for maximum cardinality matching in general undirected graphs.
+///
+/// A matching in a graph $G(V,E)$ is a subset of edges $M$ such that no two edges in $M$ have a
+/// vertex in common. A matching has at most $\frac{1}{2}|V|$ edges. A node $v$ in $G$ is matched by
+/// matching $M$ if $M$ contains an edge incident to $v$. A matching is perfect if all nodes are
+/// matched. By definition, a perfect matching consists of exactly $\frac{1}{2}|V|$ edges. This
+/// algorithm will return a perfect matching if one exists. If no perfect matching exists, then the
+/// largest (non-perfect) matching is returned instead. In the special case that the input graph is
+/// bipartite, consider using `HopcroftKarpMaximumCardinalityBipartiteMatching` instead.
+///
+/// To compute a maximum cardinality matching, at most $n$ augmenting path computations are
+/// performed. Each augmenting path computation takes $O(m \alpha(m,n))$ time, where $\alpha(m,n)$ is
+/// the inverse of the Ackerman function, $n$ is the number of vertices, and $m$ the number of edges.
+/// This results in a total runtime complexity of O(n m alpha(m,n)). In practice, the number of
+/// augmenting path computations performed is far smaller than $n$, since an efficient heuristic is
+/// used to compute a near-optimal initial solution. The heuristic by default is the
+/// `GreedyMaximumCardinalityMatching` but can be changed using the appropriate constructor.
+///
+/// The runtime complexity of this implementation could be improved to $O(n m)$ when the UnionFind
+/// data structure used in this implementation is replaced by the linear-time set union data
+/// structure proposed in: Gabow, H.N., Tarjan, R.E. A linear-time algorithm for a special case of
+/// disjoint set union. Proc. Fifteenth Annual ACM Symposium on Theory of Computing, 1982, pp.
+/// 246-251.
+///
+/// Edmonds' original algorithm first appeared in Edmonds, J. Paths, trees, and flowers. Canadian
+/// Journal of Mathematics 17, 1965, pp. 449-467, and had a runtime complexity of $O(n^4)$.
+///
+/// This is the algorithm and implementation described in the
+/// [LEDA book](https://people.mpi-inf.mpg.de/~mehlhorn/LEDAbook.html). See the LEDA
+/// Platform of Combinatorial and Geometric Computing, Cambridge University Press, 1999.
+///
+/// For future reference - A more efficient algorithm exists: S. Micali and V. Vazirani. An
+/// $O(\sqrt{n}m)$ algorithm for finding maximum matching in general graphs. Proc. 21st Ann. Symp. on
+/// Foundations of Computer Science, IEEE, 1980, pp. 17–27. This is the most efficient algorithm
+/// known for computing maximum cardinality matchings in general graphs. More details on this
+/// algorithm can be found in:
+///
+/// - [Presentation from Vazirani 'Dispelling an Old Myth about an Ancient Algorithm'](http://research.microsoft.com/apps/video/dl.aspx?id=171055)
+/// - [Vazirani, V. A Simplification of the MV Matching Algorithm and its Proof, 2013](https://arxiv.org/abs/1210.4594)
+///
+/// # Rust notes
+///
 /// cardinality matching in a general graph, in `O(V E log V)` (Gabow, with an odd set cover that
 /// certifies optimality), best for sparse graphs.
 pub struct SparseEdmondsMaximumCardinalityMatching<'g, G: Graph> {

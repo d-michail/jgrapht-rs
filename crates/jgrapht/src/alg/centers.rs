@@ -71,6 +71,48 @@ pub fn greedy_k_center<G: Graph>(g: &G, k: usize, weighted: bool) -> Result<(Vec
     Ok((ix.vertices_of(&centers), radius))
 }
 
+/// The Gon heuristic algorithm for the vertex $k$-center problem.
+///
+/// The vertex $k$-center problem is an NP-hard combinatorial optimization
+/// problem that receives a complete edge-weighted undirected graph $G = (V, E,
+/// w)$, and a positive integer $k$. The goal is to find a subset $C$ of $V$ such
+/// that $|C| = k$ and the maximum distance from any vertex in $V$ to the nearest
+/// vertex in $C$ is minimized. $C$ is called the set of centers. The vertex
+/// $k$-center problem has applications in clustering and facility location.
+///
+/// The Gon heuristic is a classic heuristic approximation algorithm for the
+/// vertex $k$-center problem. It works in a straightforward way. First, a vertex
+/// from the input graph is chosen randomly and added to the set of centers $C$.
+/// Then, iteratively, the farthest vertex from $V$ to $C$ is chosen and added to
+/// $C$. This process is repeated until $|C| = k$.
+///
+/// This algorithm provides a guarantee to compute solutions for the vertex
+/// $k$-center problem no more than 2-times optimum. According to the literature,
+/// this is the best approximation factor (under $P \neq NP$). The implementation
+/// chooses the first vertex randomly. Alternatively, an existing set of centers
+/// $C$ with fewer than $k$ centers can be provided to be augmented. In this
+/// implementation, ties are broken by choosing the vertex with the lowest index.
+///
+/// The description of this algorithm can be consulted on:
+///
+/// T. F. Gonzalez Clustering to minimize the maximum intercluster distance.
+/// Theor. Comput. Sci. 1985, 38, 293-306.
+///
+/// J. Garcia-Diaz, R. Menchaca-Mendez, R. Menchaca-Mendez, S. Pomares Hernández,
+/// J. C. Pérez-Sansalvador and N. Lakouari, "Approximation Algorithms for the
+/// Vertex K-Center Problem: Survey and Experimental Evaluation," in IEEE Access,
+/// vol. 7, pp. 109228-109245, 2019, doi: 10.1109/ACCESS.2019.2933875.
+///
+/// This implementation can also be used to augment an existing partial set of
+/// centers. See constructor `GonHeuristic(Set)`.
+///
+/// The runtime complexity of the Gon algorithm is $O(k\cdot |V|)$.
+///
+/// This algorithm requires that the graph is complete, undirected, and
+/// edge-weighted.
+///
+/// # Rust notes
+///
 /// Gonzalez' farthest-first heuristic on a *complete* undirected graph whose edge weights are the
 /// distances (`GonHeuristic`): a 2-approximation of the k-center problem.
 ///

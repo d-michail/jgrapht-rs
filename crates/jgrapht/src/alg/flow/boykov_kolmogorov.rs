@@ -42,6 +42,37 @@ struct AdoptionParent {
     distance: i64,
 }
 
+/// This is an implementation of the
+/// [Boykov-Kolmogorov maximum flow algorithm](https://en.wikipedia.org/wiki/Graph_cuts_in_computer_vision#Implementation_(exact)). This algorithm is a special-purpose approach to
+/// solving computer vision related maximum flow problems. The algorithm was initially described in:
+/// *Y. Boykov and V. Kolmogorov, "An experimental comparison of min-cut/max-flow algorithms for
+/// energy minimization in vision," in IEEE Transactions on Pattern Analysis and Machine
+/// Intelligence, vol. 26, no. 9, pp. 1124-1137, Sept. 2004, doi: 10.1109/TPAMI.2004.60.*. An
+/// extended description is given in: *Vladimir Kolmogorov. 2004. Graph based algorithms for scene
+/// reconstruction from two or more views. Ph.D. Dissertation. Cornell University, USA. Advisor(s)
+/// Ramin Zabih. Order Number: AAI3114475.*.
+///
+/// This implementation uses 2 heuristics described in Vladimir Kolmogorov's original PhD thesis:
+///
+/// - Timestamp heuristic.
+/// - Distance heuristic;
+///
+/// The worse-case running time of this algorithm on a network $G = (V, E)$ with a capacity function
+/// $c: E \rightArrow R^{+}$ is $\mathcal{O}(E\times f)$, where $f$ is the maximum flow value. The
+/// reason for this is that the algorithm doesn't necessarily augments shortest $s-t$ paths in a
+/// residual network. That's why the argument about the running time complexity is the same as with
+/// the Ford-Fulkerson algorithm.
+///
+/// This algorithm doesn't have the best performance on all types of networks. It's recommended to
+/// check if this algorithm gives substantial performance improvement before using it in a particular
+/// application. A good general-purpose alternative which works fast in all scenarios is the
+/// `PushRelabelMFImpl`.
+///
+/// This algorithm works with both directed and undirected networks. The algorithm doesn't have
+/// internal synchronization, thus any concurrent network modification has undefined behaviour.
+///
+/// # Rust notes
+///
 /// `BoykovKolmogorovMFImpl`: two search trees (from the source and from the sink) that are grown,
 /// augmented along and repaired, `O(V² E |C|)` in theory and fast on vision-style graphs.
 pub struct BoykovKolmogorovMFImpl<'g, G: Graph> {

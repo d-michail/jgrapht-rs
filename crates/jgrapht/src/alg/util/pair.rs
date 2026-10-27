@@ -14,6 +14,10 @@
 
 use std::hash::{Hash, Hasher};
 
+/// Generic pair.
+///
+/// # Rust notes
+///
 /// Ordered pair (`Pair`). Java's `null` elements are `Option`s.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
 pub struct Pair<A, B> {
@@ -49,6 +53,10 @@ impl<T: PartialEq> Pair<T, T> {
     }
 }
 
+/// Generic triple (3-tuple).
+///
+/// # Rust notes
+///
 /// Ordered triple (`Triple`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
 pub struct Triple<A, B, C> {
@@ -67,6 +75,13 @@ impl<A, B, C> Triple<A, B, C> {
     }
 }
 
+/// Generic unordered pair.
+///
+/// Although the instances of this class are immutable, it is impossible to ensure that the
+/// references passed to the constructor will not be modified by the caller.
+///
+/// # Rust notes
+///
 /// Pair that is equal to its swap and hashes independently of the order (`UnorderedPair`).
 ///
 /// Java lets the two elements have different static types; here they share one type (use an enum

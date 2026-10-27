@@ -23,6 +23,43 @@ use crate::graph::{Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
 use crate::view::AsSubgraph;
 use crate::walk::GraphWalk;
 use crate::Result;
+/// A $3/2$-approximation algorithm for the metric TSP problem.
+///
+/// The [travelling salesman problem](https://en.wikipedia.org/wiki/Travelling_salesman_problem) (TSP) asks the following question: "Given a list of cities and the distances between
+/// each pair of cities, what is the shortest possible route that visits each city exactly once and
+/// returns to the origin city?". In the metric TSP, the intercity distances satisfy the triangle
+/// inequality.
+///
+/// This is an implementation of the [Christofides algorithm](https://en.wikipedia.org/wiki/Christofides_algorithm). The algorithms is a $3/2$-approximation assuming that the input graph
+/// satisfies triangle inequality and all edge weights are nonnegative. The implementation requires
+/// the input graph to be *undirected* and *complete*. The worst case running time
+/// complexity is $\mathcal{O}(V^3E)$.
+///
+/// The algorithm performs following steps to compute the resulting tour:
+///
+/// - Compute a minimum spanning tree in the input graph.
+/// - Find vertices with odd degree in the MST.
+/// - Compute minimum weight perfect matching in the induced subgraph on odd degree vertices.
+/// - Add edges from the minimum weight perfect matching to the MST (forming a pseudograph).
+/// - Compute an Eulerian cycle in the obtained pseudograph and form a closed tour in this
+/// cycle.
+///
+/// The following two observations yield the $3/2$ approximation bound:
+///
+/// - The cost of every minimum spanning tree is less than or equal to the cost of every
+/// Hamiltonian cycle since after one edge removal every Hamiltonian cycle becomes a spanning
+/// tree
+/// - Twice the cost of a perfect matching in a graph is less than or equal to the cost of every
+/// Hamiltonian cycle. This follows from the fact that after forming a closed tour using the edges of
+/// a perfect matching the cost of the edges not from the matching is greater than or equal to the
+/// cost of the matching edges.
+///
+/// For more details, see *Christofides, N.: Worst-case analysis of a new heuristic for the
+/// travelling salesman problem. Graduate School of Industrial Administration, Carnegie Mellon
+/// University (1976).*
+///
+/// # Rust notes
+///
 use std::collections::HashSet;
 
 /// Christofides' 3/2-approximation algorithm for metric travelling-salesman instances.

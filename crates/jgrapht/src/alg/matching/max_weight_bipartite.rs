@@ -42,6 +42,18 @@ fn zero() -> DBig {
     DBig::ZERO.with_precision(0).value()
 }
 
+/// Maximum weight matching in bipartite graphs.
+///
+/// Running time is $O(n(m+n \log n))$ where n is the number of vertices and m the number of edges of
+/// the input graph. Uses exact arithmetic and produces a certificate of optimality in the form of a
+/// tight vertex potential function.
+///
+/// This is the algorithm and implementation described in the
+/// [LEDA book](https://people.mpi-inf.mpg.de/~mehlhorn/LEDAbook.html). See the LEDA
+/// Platform of Combinatorial and Geometric Computing, Cambridge University Press, 1999.
+///
+/// # Rust notes
+///
 /// `MaximumWeightBipartiteMatching`: a maximum weight matching in a bipartite graph, by
 /// successive shortest augmenting paths with vertex potentials (Mehlhorn and Näher, LEDA book,
 /// section 7.8). Running time `O(n (n log n + m))` with a Fibonacci heap; all arithmetic is exact

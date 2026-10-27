@@ -20,6 +20,13 @@ use crate::util::ToleranceDoubleComparator;
 use crate::walk::GraphWalk;
 use std::collections::{HashMap, VecDeque};
 
+/// The algorithm for finding minimum cycle mean in a graph.
+///
+/// Consider a cycle $C$ in a graph. The mean of cycle $C$ is defined as $\lambda
+/// (C)=\frac{w(C)}{|C|}$, where $w(C)$ is the total weight of $C$ and $|C|$ is the length of $C$.
+///
+/// # Rust notes
+///
 /// `MinimumCycleMeanAlgorithm`: the cycle with the smallest mean edge weight.
 pub trait MinimumCycleMeanAlgorithm<G: Graph> {
     /// The smallest cycle mean, `+infinity` if the graph has no cycle.
@@ -28,6 +35,23 @@ pub trait MinimumCycleMeanAlgorithm<G: Graph> {
     fn get_cycle(&mut self) -> Option<GraphWalk<G::Vertex, G::Edge>>;
 }
 
+/// Implementation of Howard's algorithm for finding minimum cycle mean in a graph.
+///
+/// The algorithm is described in the article: Ali Dasdan, Sandy S. Irani, and Rajesh K. Gupta. 1999.
+/// Efficient algorithms for optimum cycle mean and optimum cost to time ratio problems. In
+/// Proceedings of the 36th annual ACM/IEEE Design Automation Conference (DAC ’99). Association for
+/// Computing Machinery, New York, NY, USA, 37–42. DOI:<https://doi.org/10.1145/309847.309862>
+///
+/// Firstly, the graph is divided into strongly connected components. The minimum cycle mean is then
+/// computed as the globally minimum cycle mean over all components. In the process the necessary
+/// information is recorded to be able to reconstruct the cycle with minimum mean.
+///
+/// The computations are divided into iterations. In each iteration the algorithm tries to update
+/// current minimum cycle mean value. There is a possibility to limit the total number of iteration
+/// via a constructor parameter.
+///
+/// # Rust notes
+///
 /// `HowardMinimumMeanCycle`: Howard's policy iteration for the minimum mean cycle of a directed
 /// graph.
 pub struct HowardMinimumMeanCycle<'g, G: DirectedGraph, S = GabowStrongConnectivityInspector<'g, G>>

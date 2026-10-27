@@ -18,6 +18,24 @@ use crate::error::{GraphError, Result};
 use crate::graph::Graph;
 use std::collections::VecDeque;
 
+/// Implementation of [Dinic algorithm](https://en.wikipedia.org/wiki/Dinic%27s_algorithm) with scaling for [maximum flow problem](https://en.wikipedia.org/wiki/Maximum_flow_problem).
+///
+/// The running time of the algorithm is $O(n^2m)$.
+///
+/// Dinic algorithm firstly was mentioned in *DINIC, E. A. 1970. Algorithm for Solution
+/// of a Problem of Maximum Flow in Networks With Power Estimation. Soviet Math. Dokl. 11,
+/// 1277-1280.
+///
+/// Scheme of the algorithm:
+///
+/// 1). Create a level graph. If we can't reach the sink return flow value.
+///
+/// 2). Find a blocking flow $f'$ in the level graph.
+///
+/// 3). Add $f'$ to the flow $f$. Move to the step $1$.
+///
+/// # Rust notes
+///
 /// `DinicMFImpl`: blocking flows on level graphs, `O(V² E)`.
 pub struct DinicMFImpl<'g, G: Graph> {
     net: FlowNet<'g, G>,

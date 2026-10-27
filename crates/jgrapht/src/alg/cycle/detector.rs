@@ -21,6 +21,11 @@ use crate::walk::GraphWalk;
 use indexmap::IndexSet;
 use std::collections::HashMap;
 
+/// Performs cycle detection on a graph. The *inspected graph* is specified at construction time
+/// and cannot be modified. Currently, the detector supports only directed graphs.
+///
+/// # Rust notes
+///
 /// `CycleDetector`: finds cycles of a directed graph, either anywhere or through one vertex.
 pub struct CycleDetector<'g, G: DirectedGraph> {
     graph: &'g G,

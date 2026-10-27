@@ -19,12 +19,32 @@ use crate::traverse::DepthFirstIterator;
 use crate::walk::GraphWalk;
 use std::collections::HashSet;
 
+/// An algorithm solving the [Hamiltonian cycle problem](https://en.wikipedia.org/wiki/Hamiltonian_path).
+///
+/// A Hamiltonian cycle, also called a Hamiltonian circuit, Hamilton cycle, or Hamilton circuit, is a
+/// graph cycle (i.e., closed loop) through a graph that visits each node exactly once (Skiena 1990,
+/// p. 196).
+///
+/// # Rust notes
+///
 /// `HamiltonianCycleAlgorithm`: computes a tour (a Hamiltonian cycle) of a graph.
 pub trait HamiltonianCycleAlgorithm<G: Graph> {
     /// The tour, or `None` when the algorithm proves that there is none (Held–Karp only).
     fn get_tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>>;
 }
 
+/// An algorithm improving the result of solving the
+/// [Hamiltonian cycle problem](https://en.wikipedia.org/wiki/Hamiltonian_path).
+///
+/// A Hamiltonian cycle, also called a Hamiltonian circuit, Hamilton cycle, or Hamilton circuit, is a
+/// graph cycle (i.e., closed loop) through a graph that visits each node exactly once (Skiena 1990,
+/// p. 196).
+///
+/// An improvement algorithm could be one that optimises the cycle for lower cost, or that updates
+/// the cycle to match changes in the graph.
+///
+/// # Rust notes
+///
 /// `HamiltonianCycleImprovementAlgorithm`: improves an existing tour.
 pub trait HamiltonianCycleImprovementAlgorithm<G: Graph> {
     fn improve_tour(

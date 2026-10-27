@@ -132,6 +132,35 @@ use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use std::hash::Hash;
 
+/// Algorithm for computing the heavy path decomposition of a rooted tree/forest.
+///
+/// Heavy path decomposition is a technique for decomposing a rooted tree/forest into a set of
+/// disjoint paths.
+///
+/// The techniques was first introduced in *Sleator, D. D.; Tarjan, R. E. (1983). "A Data Structure
+/// for Dynamic Trees". Proceedings of the thirteenth annual ACM symposium on Theory of computing -
+/// STOC '81 doi:10.1145/800076.802464 *
+///
+/// In a heavy path decomposition, the edges set is partitioned into two sets, a set of heavy edges
+/// and a set of light ones according to the relative number of nodes in the vertex's subtree.
+///
+/// We define the size of a vertex v in the forest, denoted by size(v), to be the number of
+/// descendants of v, including v itself. We define a tree edge (v,parent(v)) to be heavy if
+/// $2*size(v)$ > $size(parent(v))$ and light, otherwise.
+///
+/// The set of heavy edges form the edges of the decomposition.
+///
+/// A benefit of this decomposition is that on any root-to-leaf path of a tree with n nodes, there
+/// can be at most $log_2(n)$ light edges.
+///
+/// This implementation runs in $O(|V|)$ time and requires $O(|V|)$ extra memory, where $|V|$ is the
+/// number of vertices in the tree/forest.
+///
+/// Note: If an edge is not reachable from any of the roots provided, then that edge is neither light
+/// nor heavy.
+///
+/// # Rust notes
+///
 /// Heavy-light decomposition of a tree or forest into paths (`HeavyPathDecomposition`).
 ///
 /// An edge to a child is *heavy* when the child's subtree holds more than half of the parent's
@@ -373,6 +402,38 @@ pub struct DmDecomposition<V> {
 
 /// Dulmage–Mendelsohn decomposition of a bipartite graph (`DulmageMendelsohnDecomposition`).
 pub struct DulmageMendelsohnDecomposition<'g, G: Graph> {
+/// This class computes a Dulmage-Mendelsohn Decomposition of a bipartite graph. A Dulmage–Mendelsohn
+/// decomposition is a partition of the vertices of a bipartite graph into subsets, with the property
+/// that two adjacent vertices belong to the same subset if and only if they are paired with each
+/// other in a perfect matching of the graph. This particular implementation is capable of computing
+/// both a coarse and a fine Dulmage-Mendelsohn Decomposition.
+///
+/// The Dulmage-Mendelsohn Decomposition is based on a maximum-matching of the graph $G$. This
+/// implementation uses the Hopcroft-Karp maximum matching algorithm by default.
+///
+/// A coarse Dulmage-Mendelsohn Decomposition is a partitioning into three subsets. Where $D$ is the
+/// set of vertices in G that are not matched in the maximum matching of $G$, these subsets are:
+///
+/// - The vertices in $D \cap U$ and their neighbors
+/// - The vertices in $D \cap V$ and their neighbors
+/// - The remaining vertices
+///
+/// A fine Dulmage-Mendelsohn Decomposition further partitions the remaining vertices into
+/// strongly-connected sets. This implementation uses Kosaraju's algorithm for the
+/// strong-connectivity analysis.
+///
+/// The Dulmage-Mendelsohn Decomposition was introduced in:
+/// Dulmage, A.L., Mendelsohn, N.S. Coverings of bipartitegraphs, Canadian J. Math., 10, 517-534,
+/// 1958.
+///
+/// The implementation of this class is based on:
+/// Bunus P., Fritzson P., Methods for Structural Analysis and Debugging of Modelica Models, 2nd
+/// International Modelica Conference 2002
+///
+/// The runtime complexity of this class is $O(V + E)$.
+///
+/// # Rust notes
+///
     graph: &'g G,
     partition1: HashSet<G::Vertex>,
     partition2: HashSet<G::Vertex>,

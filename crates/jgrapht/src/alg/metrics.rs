@@ -27,6 +27,12 @@ fn same(a: f64, b: f64) -> bool {
     a == b || (a - b).abs() <= TOLERANCE * a.abs().max(b.abs()).max(1.0)
 }
 
+/// Algorithm class which computes a number of distance related metrics. A summary of various
+/// distance metrics can be found
+/// [here](https://en.wikipedia.org/wiki/Distance_(graph_theory)).
+///
+/// # Rust notes
+///
 /// Computes eccentricities once (via Floyd–Warshall) and derives diameter, radius and the
 /// center/periphery vertex sets.
 pub struct GraphMeasurer<V> {

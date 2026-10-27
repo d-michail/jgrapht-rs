@@ -1031,6 +1031,34 @@ impl Core {
     }
 }
 
+/// Tests whether a graph is [perfect](http://mathworld.wolfram.com/PerfectGraph.html). A
+/// perfect graph, also known as a Berge graph, is a graph $G$ such that for every induced subgraph
+/// of $G$, the clique number $\chi(G)$ equals the chromatic number $\omega(G)$, i.e.,
+/// $\omega(G)=\chi(G)$. Another characterization of perfect graphs is given by the Strong Perfect
+/// Graph Theorem [M. Chudnovsky, N. Robertson, P. Seymour, R. Thomas. The strong perfect graph
+/// theorem Annals of Mathematics, vol 164(1): pp. 51–230, 2006]: A graph $G$ is perfect if neither
+/// $G$ nor its complement $\overline{G}$ have an odd hole. A hole in $G$ is an induced subgraph of
+/// $G$ that is a cycle of length at least four, and it is odd or even if it has odd (or even,
+/// respectively) length.
+///
+/// Some special [classes](http://graphclasses.org/classes/gc_56.html) of graphs are are
+/// known to be perfect, e.g. Bipartite graphs and Chordal graphs. Testing whether a graph is resp.
+/// Bipartite or Chordal can be done efficiently using `GraphTests#isBipartite` or
+/// `org.jgrapht.alg.cycle.ChordalityInspector`.
+///
+/// The implementation of this class is based on the paper: M. Chudnovsky, G. Cornuejols, X. Liu, P.
+/// Seymour, and K. Vuskovic. Recognizing Berge Graphs. Combinatorica 25(2): 143--186, 2003.
+///
+/// Special Thanks to Maria Chudnovsky for her kind help.
+///
+/// The runtime complexity of this implementation is $O(|V|^9|)$. This implementation is far more
+/// efficient than simplistically testing whether graph $G$ or its complement $\overline{G}$ have an
+/// odd cycle, because testing whether one graph can be found as an induced subgraph of another is
+/// [known](https://en.wikipedia.org/wiki/Induced_subgraph_isomorphism_problem) to be
+/// NP-hard.
+///
+/// # Rust notes
+///
 /// `BergeGraphInspector`: tests whether a graph is a Berge graph (it has neither an odd hole nor
 /// an odd antihole) with the Chudnovsky–Cornuéjols–Liu–Seymour–Vušković recognition algorithm,
 /// as implemented by JGraphT: pyramids, jewels and three configurations are searched in the graph

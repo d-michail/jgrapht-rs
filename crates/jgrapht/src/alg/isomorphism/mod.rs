@@ -34,6 +34,10 @@ pub use vf2::{
     VF2SubgraphIsomorphismInspector, VertexComparator,
 };
 
+/// General interface for graph and subgraph isomorphism.
+///
+/// # Rust notes
+///
 /// `IsomorphismInspector`: enumerates mappings from the first graph to the second.
 pub trait IsomorphismInspector<'g, G: crate::graph::Graph + 'g> {
     /// All mappings found (lazily for VF2, at most one for the other inspectors).

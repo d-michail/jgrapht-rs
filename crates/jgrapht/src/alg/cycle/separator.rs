@@ -17,6 +17,40 @@ use crate::graph::{GraphExt, UndirectedGraph};
 use indexmap::IndexMap;
 use std::collections::HashMap;
 
+/// Allows obtaining a mapping of all
+/// [minimal vertex separators](https://en.wikipedia.org/wiki/Chordal_graph#Minimal_separators) of a graph to their multiplicities
+///
+/// In the context of this implementation following definitions are used:
+///
+/// - A set of vertices $S$ of a graph $G=(V, E)$ is called a *u-v separator*, if vertices $u$
+/// and $v$ in the induced graph on vertices $V(G) - S$ are in different connected components.
+/// - A set $S$ is called a *minimal u-v separator* if it is a u-v separator and no proper
+/// subset of $S$ is a u-v separator.
+/// - A set $S$ is called a *minimal vertex separator* if it is minimal u-v separator for some
+/// vertices $u$ and $v$ of the graph $G$.
+/// - A set of vertices $S$ is called a *minimal separator* if no proper subset of $S$ is a
+/// separator of the graph $G$.
+///
+/// Let $\sigma = (v_1, v_2, \dots, v_n)$ be some perfect elimination order (peo) of the graph $G =
+/// (V, E)$. The induced graph on vertices $(v_1, v_2, \dots, v_i)$ with respect to peo $\sigma$ is
+/// denoted as $G_i$. The predecessors set of vertex $v$ with respect to peo $\sigma$ is denoted as
+/// $N(v, \sigma)$. A set $B$ is called a *base set* with respect to $\sigma$, is there exist
+/// some vertex $v$ with $t = \sigma(v)$ such that $N(v, \sigma) = B$ and B is not a maximal clique
+/// in $G_{t-1}$. The vertices which satisfy conditions described above are called *dependent
+/// vertices* with respect to $\sigma$. The cardinality of the set of dependent vertices is called
+/// a multiplicity of the base set $B$. The multiplicity of a minimal vertex separator indicates the
+/// number of different pairs of vertices separated by it.The definitions of a base set and a minimal
+/// vertex separator in the context of chordal graphs are equivalent.
+///
+/// For more information on the topic see: Kumar, P. Sreenivasa & Madhavan, C. E. Veni. (1998).
+/// [Minimal vertex separators of chordal graphs](https://www.sciencedirect.com/science/article/pii/S0166218X98001231?via%3Dihub). Discrete Applied Mathematics. 89. 155-168.
+/// 10.1016/S0166-218X(98)00123-1.
+///
+/// The running time of the algorithm is $\mathcal{O}(\omega(G)(|V| + |E|))$, where $\omega(G)$ is
+/// the size of a maximum clique of the graph $G$.
+///
+/// # Rust notes
+///
 /// `ChordalGraphMinimalVertexSeparatorFinder`: the minimal vertex separators of a chordal graph
 /// with their multiplicities, read off a perfect elimination order.
 ///

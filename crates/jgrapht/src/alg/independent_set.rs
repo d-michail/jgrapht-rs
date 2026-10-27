@@ -18,6 +18,23 @@ use super::cycle::{ChordalityInspector, IterationOrder};
 use crate::graph::{GraphExt, UndirectedGraph};
 use std::collections::HashSet;
 
+/// Calculates a [maximum cardinality independent set](http://mathworld.wolfram.com/MaximumIndependentVertexSet.html) in a
+/// [chordal graph](https://en.wikipedia.org/wiki/Chordal_graph). A chordal graph is a
+/// simple graph in which all [cycles](http://mathworld.wolfram.com/GraphCycle.html) of
+/// four or more vertices have a [chord](http://mathworld.wolfram.com/CycleChord.html). A
+/// chord is an edge that is not part of the cycle but connects two vertices of the cycle.
+///
+/// To compute the independent set, this implementation relies on the `ChordalityInspector` to
+/// compute a [perfect elimination order](https://en.wikipedia.org/wiki/Chordal_graph#Perfect_elimination_and_efficient_recognition).
+///
+/// The maximum cardinality independent set for a chordal graph is computed in $\mathcal{O}(|V| +
+/// |E|)$ time.
+///
+/// All the methods in this class are invoked in a lazy fashion, meaning that computations are only
+/// started once the method gets invoked.
+///
+/// # Rust notes
+///
 /// Maximum independent set of a chordal graph (`ChordalGraphIndependentSetFinder`): the vertices
 /// of a perfect elimination order are scanned from the end, taking each one that has no neighbour
 /// in the set so far.

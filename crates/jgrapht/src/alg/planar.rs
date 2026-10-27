@@ -234,6 +234,27 @@ enum Finish {
     Node(NodeId),
 }
 
+/// An implementation of the Boyer-Myrvold planarity testing algorithm. This class determines whether
+/// an input graph is planar or not. If the graph is planar, the algorithm provides a
+/// [combinatorial embedding](https://en.wikipedia.org/wiki/Graph_embedding#Combinatorial_embedding) of the graph, which is represented as a clockwise ordering of the edges of the
+/// graph. Otherwise, the algorithm provides a
+/// [Kuratowski subgraph](https://en.wikipedia.org/wiki/Kuratowski%27s_theorem#Kuratowski_subgraphs) as a certificate. Both embedding of the graph and Kuratowski subdivision are
+/// computed lazily, meaning that the call to the `BoyerMyrvoldPlanarityInspector#isPlanar()`
+/// does spend time only on the planarity testing. All of the operations of this algorithm (testing,
+/// embedding and Kuratowski subgraph extraction) run in linear time.
+///
+/// A [planar graph](https://en.wikipedia.org/wiki/Planar_graph) is a graph, which can be
+/// drawn in two-dimensional space without any of its edges crossing. According to the
+/// [Kuratowski theorem](https://en.wikipedia.org/wiki/Kuratowski%27s_theorem), a graph is
+/// planar if and only if it doesn't contain a subdivision of the $K_{3,3}$ or $K_{5}$ graphs.
+///
+/// The Boyer-Myrvold planarity testing algorithm was originally described in: *Boyer, John amp;
+/// Myrvold, Wendy. (2004). On the Cutting Edge: Simplified O(n) Planarity by Edge Addition. J. Graph
+/// Algorithms Appl.. 8. 241-273. 10.7155/jgaa.00091. *. We refer to this paper for the complete
+/// description of the Boyer-Myrvold algorithm
+///
+/// # Rust notes
+///
 /// Planarity test, planar embedding and Kuratowski subdivision of a graph.
 pub struct BoyerMyrvoldPlanarityInspector<'g, G: Graph> {
     graph: &'g G,

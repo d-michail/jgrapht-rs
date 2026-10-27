@@ -76,6 +76,16 @@ impl<V: Eq + Hash + Clone> Neighbors<V> {
     }
 }
 
+/// Maintains a cache of each vertex's neighbors. While lists of neighbors can be obtained from
+/// `Graphs`, they are re-calculated at each invocation by walking a vertex's incident edges,
+/// which becomes inordinately expensive when performed often.
+///
+/// The cache also keeps track of successors and predecessors for each vertex. This means that the
+/// result of the union of calling predecessorsOf(v) and successorsOf(v) is equal to the result of
+/// calling neighborsOf(v) for a given vertex v.
+///
+/// # Rust notes
+///
 /// Caches successor / predecessor / neighbour sets of a graph (`NeighborCache`).
 ///
 /// Sets are computed on first request. Keep the cache up to date by passing graph changes to

@@ -48,6 +48,10 @@ impl<V: Eq + Hash> Partitioning<V> {
     }
 }
 
+/// Algorithm to compute a vertex partitioning of a graph.
+///
+/// # Rust notes
+///
 /// An algorithm computing a partitioning of the vertices.
 pub trait PartitioningAlgorithm<G: Graph>
 where
@@ -58,6 +62,14 @@ where
     fn is_valid_partitioning(&self, partitioning: &Partitioning<G::Vertex>) -> bool;
 }
 
+/// An algorithm for solving the [vertex $k$-center problem](https://encyclopedia.pub/entry/52164).
+///
+/// Center location problems are a class of optimization problems in graph theory and operations
+/// research that aims selecting optimal locations for facilities (centers) to minimize the distance
+/// or cost for serving a set of demand points or clients (vertices) in a graph.
+///
+/// # Rust notes
+///
 /// Algorithms choosing `k` center vertices of a complete graph (`CentersLocationAlgorithm`).
 pub trait CentersLocationAlgorithm<V: Eq + Hash + Clone> {
     fn centers<G: Graph<Vertex = V>>(&mut self, graph: &G, k: usize) -> Result<IndexSet<V>>;
@@ -89,6 +101,10 @@ impl<V, E> PathDecomposition<V, E> {
     }
 }
 
+/// Algorithm to compute a [lowest common ancestor](https://en.wikipedia.org/wiki/Lowest_common_ancestor) in a tree, forest or DAG.
+///
+/// # Rust notes
+///
 /// Lowest common ancestor queries (`LowestCommonAncestorAlgorithm`).
 pub trait LowestCommonAncestorAlgorithm<V: Eq + Hash + Clone> {
     /// The lowest common ancestor of `a` and `b`; `Ok(None)` when they have none (for example
@@ -107,6 +123,19 @@ pub trait LowestCommonAncestorAlgorithm<V: Eq + Hash + Clone> {
     }
 }
 
+/// A link prediction algorithm.
+///
+/// A link prediction algorithm provides a score $s_{uv}$ for any pair of vertices $u,v \in V$ in the
+/// graph such that $e=(u,v) \notin E$. The nature, the magnitude and possible interpretation of such
+/// a score depends solely on the actual algorithm, meaning that it might be a similarity score, a
+/// distance metric, a probability, or even something completely unrelated.
+///
+/// Depending on the particular algorithm, a possible interpretation of the scores might be that they
+/// measure similarity between vertices $u$ and $v$. Thus, given such scores one could sort the edges
+/// in decreasing order and pick the top-k as links (edges) which are likely to exist.
+///
+/// # Rust notes
+///
 /// Scores for pairs of vertices that might become linked (`LinkPredictionAlgorithm`).
 pub trait LinkPredictionAlgorithm<V: Clone> {
     /// The score of the pair; [`GraphError::IndexNotWellDefined`](crate::GraphError) when the index is
@@ -121,6 +150,10 @@ pub trait LinkPredictionAlgorithm<V: Clone> {
     }
 }
 
+/// A maximal clique enumeration algorithm.
+///
+/// # Rust notes
+///
 /// Enumerates the maximal cliques of a graph (`MaximalCliqueEnumerationAlgorithm`).
 pub trait MaximalCliqueEnumerationAlgorithm<V: Eq + Hash + Clone> {
     /// All maximal cliques (computed on first use); an error for graphs that are not simple.
@@ -134,11 +167,27 @@ pub trait MaximalCliqueEnumerationAlgorithm<V: Eq + Hash + Clone> {
     }
 }
 
+/// Computes a (weighted) [vertex cover](http://mathworld.wolfram.com/VertexCover.html) in
+/// an undirected graph. A vertex cover of a graph is a set of vertices such that each edge of the
+/// graph is incident to at least one vertex in the set. A minimum vertex cover is a vertex cover
+/// having the smallest possible number of vertices for a given graph. The size of a minimum vertex
+/// cover of a graph $G$ is known as the vertex cover number. A vertex cover of minimum weight is a
+/// vertex cover where the sum of weights assigned to the individual vertices in the cover has been
+/// minimized. The minimum vertex cover problem is a special case of the minimum weighted vertex
+/// cover problem where all vertices have equal weight. Consequently, any algorithm designed for the
+/// weighted version of the problem can also solve instances of the unweighted version.
+///
+/// # Rust notes
+///
 /// Computes a vertex cover (`VertexCoverAlgorithm`).
 pub trait VertexCoverAlgorithm<V: Clone> {
     fn vertex_cover(&self) -> Result<VertexCover<V>>;
 }
 
+/// An algorithm which computes a graph vertex coloring.
+///
+/// # Rust notes
+///
 /// Computes a proper vertex coloring (`VertexColoringAlgorithm`).
 pub trait VertexColoringAlgorithm<V: Clone + Eq + Hash> {
     fn coloring(&self) -> Result<Coloring<V>>;
@@ -165,11 +214,19 @@ impl<V: Eq + Hash> Clustering<V> {
     }
 }
 
+/// An algorithm which computes a graph vertex clustering.
+///
+/// # Rust notes
+///
 /// An algorithm that clusters the vertices of a graph (`ClusteringAlgorithm`).
 pub trait ClusteringAlgorithm<V: Eq + Hash + Clone> {
     fn clustering(&self) -> Result<Clustering<V>>;
 }
 
+/// A strong connectivity inspector algorithm.
+///
+/// # Rust notes
+///
 /// Algorithms computing the strongly connected components of a directed graph
 /// (`StrongConnectivityAlgorithm`). Results are computed when the algorithm is constructed.
 pub trait StrongConnectivityAlgorithm {

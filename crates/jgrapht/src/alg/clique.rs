@@ -206,6 +206,18 @@ fn expired(deadline: Option<Instant>) -> bool {
 }
 
 /// The classic Bron–Kerbosch algorithm (`BronKerboschCliqueFinder`).
+/// Bron-Kerbosch maximal clique enumeration algorithm.
+///
+/// Implementation of the Bron-Kerbosch clique enumeration algorithm as described in:
+///
+/// - R. Samudrala and J. Moult. A graph-theoretic algorithm for comparative modeling of protein
+/// structure. Journal of Molecular Biology, 279(1):287--302, 1998.
+///
+/// The algorithm first computes all maximal cliques and then returns the result to the user. A
+/// timeout can be set using the constructor parameters.
+///
+/// # Rust notes
+///
 pub struct BronKerboschCliqueFinder<'g, G: Graph> {
     base: BronKerboschBase<'g, G>,
 }
@@ -294,6 +306,22 @@ impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex> for BronKerboschCliq
 }
 
 /// Bron–Kerbosch with pivoting (`PivotBronKerboschCliqueFinder`).
+/// Bron-Kerbosch maximal clique enumeration algorithm with pivot.
+///
+/// The pivoting follows the rule from the paper
+///
+/// - E. Tomita, A. Tanaka, and H. Takahashi. The worst-case time complexity for generating all
+/// maximal cliques and computational experiments. Theor. Comput. Sci. 363(1):28–42, 2006.
+///
+/// where the authors show that using that rule guarantees that the Bron-Kerbosch algorithm has
+/// worst-case running time $O(3^{n/3})$ where $n$ is the number of vertices of the graph, excluding
+/// time to write the output, which is worst-case optimal.
+///
+/// The algorithm first computes all maximal cliques and then returns the result to the user. A
+/// timeout can be set using the constructor parameters.
+///
+/// # Rust notes
+///
 pub struct PivotBronKerboschCliqueFinder<'g, G: Graph> {
     base: BronKerboschBase<'g, G>,
 }
@@ -397,6 +425,26 @@ impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
 
 /// Bron–Kerbosch over a degeneracy ordering with pivoting
 /// (`DegeneracyBronKerboschCliqueFinder`).
+/// Bron-Kerbosch maximal clique enumeration algorithm with pivot and degeneracy ordering.
+///
+/// The algorithm is a variant of the Bron-Kerbosch algorithm which apart from the pivoting uses a
+/// degeneracy ordering of the vertices. The algorithm is described in
+///
+/// - David Eppstein, Maarten Löffler and Darren Strash. Listing All Maximal Cliques in Sparse
+/// Graphs in Near-Optimal Time. Algorithms and Computation: 21st International Symposium (ISSAC),
+/// 403--414, 2010.
+///
+/// and has running time $O(d n 3^{d/3})$ where $n$ is the number of vertices of the graph and $d$ is
+/// the degeneracy of the graph. The algorithm looks for a maximal clique parameterized by
+/// degeneracy, a frequently-used measure of the sparseness of a graph that is closely related to
+/// other common sparsity measures such as arboricity and thickness, and that has previously been
+/// used for other fixed-parameter problems.
+///
+/// The algorithm first computes all maximal cliques and then returns the result to the user. A
+/// timeout can be set using the constructor parameters.
+///
+/// # Rust notes
+///
 pub struct DegeneracyBronKerboschCliqueFinder<'g, G: Graph> {
     inner: PivotBronKerboschCliqueFinder<'g, G>,
 }
@@ -451,6 +499,22 @@ impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
 
 /// Maximum clique of a chordal graph (`ChordalGraphMaxCliqueFinder`): the vertex of the highest
 /// colour in the optimal colouring of [`ChordalGraphColoring`], together with its predecessors in
+/// Calculates a [maximum cardinality clique](http://mathworld.wolfram.com/MaximumClique.html) in a [chordal graph](https://en.wikipedia.org/wiki/Chordal_graph). A
+/// chordal graph is a simple graph in which all
+/// [cycles](http://mathworld.wolfram.com/GraphCycle.html) of four or more vertices have
+/// a [chord](http://mathworld.wolfram.com/CycleChord.html). A chord is an edge that is
+/// not part of the cycle but connects two vertices of the cycle.
+///
+/// To compute the clique, this implementation relies on the `ChordalityInspector` to compute a
+/// [perfect elimination order](https://en.wikipedia.org/wiki/Chordal_graph#Perfect_elimination_and_efficient_recognition).
+///
+/// The maximum clique for a chordal graph is computed in $\mathcal{O}(|V| + |E|)$ time.
+///
+/// All the methods in this class are invoked in a lazy fashion, meaning that computations are only
+/// started once the method gets invoked.
+///
+/// # Rust notes
+///
 /// the perfect elimination order.
 pub struct ChordalGraphMaxCliqueFinder<'g, G: UndirectedGraph> {
     graph: &'g G,
@@ -514,6 +578,17 @@ pub struct CliqueMinimalSeparatorDecomposition<'g, G: Graph> {
     graph: &'g G,
     chordal_graph: Option<crate::UGraph<G::Vertex>>,
     fill_edges: Vec<(G::Vertex, G::Vertex)>,
+/// Clique Minimal Separator Decomposition using MCS-M+ and Atoms algorithm as described in Berry et
+/// al. An Introduction to Clique Minimal Separator Decomposition (2010), DOI:10.3390/a3020197,
+/// [http://www.mdpi.com/1999-4893/3/2/197](http://www.mdpi.com/1999-4893/3/2/197)
+///
+/// The Clique Minimal Separator (CMS) Decomposition is a procedure that splits a graph into a set of
+/// subgraphs separated by minimal clique separators, adding the separating clique to each component
+/// produced by the separation. At the end we have a set of atoms. The CMS decomposition is unique
+/// and yields the set of the atoms independent of the order of the decomposition.
+///
+/// # Rust notes
+///
     meo: Vec<G::Vertex>,
     generators: Vec<G::Vertex>,
     separators: Option<Vec<HashableSet<G::Vertex>>>,

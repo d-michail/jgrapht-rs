@@ -134,6 +134,30 @@ fn mapping_from_indices<'g, G: Graph>(
     IsomorphicGraphMapping::from_maps(f, b, g1, g2)
 }
 
+/// This is an implementation of the AHU algorithm for detecting an (unweighted) isomorphism between
+/// two rooted trees. Please see
+/// [mathworld.wolfram.com](http://mathworld.wolfram.com/GraphIsomorphism.html) for a
+/// complete definition of the isomorphism problem for general graphs.
+///
+/// The original algorithm was first presented in "Alfred V. Aho and John E. Hopcroft. 1974. The
+/// Design and Analysis of Computer Algorithms (1st ed.). Addison-Wesley Longman Publishing Co.,
+/// Inc., Boston, MA, USA."
+///
+/// This implementation runs in linear time (in the number of vertices of the input trees) while
+/// using a linear amount of memory.
+///
+/// Note: If the input graph is directed, it effectively considers only the subtree reachable from
+/// the specified root.
+///
+/// For an implementation that supports unrooted trees see
+/// `AHUUnrootedTreeIsomorphismInspector`.
+/// For an implementation that supports rooted forests see `AHUForestIsomorphismInspector`.
+///
+/// Note: This inspector only returns a single mapping (chosen arbitrarily) rather than all possible
+/// mappings.
+///
+/// # Rust notes
+///
 /// `AHURootedTreeIsomorphismInspector`.
 pub struct AHURootedTreeIsomorphismInspector<'g, G: Graph> {
     tree1: &'g G,
@@ -203,6 +227,27 @@ impl<'g, G: Graph> IsomorphismInspector<'g, G> for AHURootedTreeIsomorphismInspe
     }
 }
 
+/// This is an implementation of the AHU algorithm for detecting an (unweighted) isomorphism between
+/// two unrooted trees. Please see
+/// [mathworld.wolfram.com](http://mathworld.wolfram.com/GraphIsomorphism.html) for a
+/// complete definition of the isomorphism problem for general graphs.
+///
+/// The original algorithm was first presented in "Alfred V. Aho and John E. Hopcroft. 1974. The
+/// Design and Analysis of Computer Algorithms (1st ed.). Addison-Wesley Longman Publishing Co.,
+/// Inc., Boston, MA, USA."
+///
+/// This implementation runs in linear time (in the number of vertices of the input trees) while
+/// using a linear amount of memory.
+///
+/// For an implementation that supports rooted trees see `AHURootedTreeIsomorphismInspector`.
+///
+/// For an implementation that supports rooted forests see `AHUForestIsomorphismInspector`.
+///
+/// Note: This inspector only returns a single mapping (chosen arbitrarily) rather than all possible
+/// mappings.
+///
+/// # Rust notes
+///
 /// `AHUUnrootedTreeIsomorphismInspector`: roots both trees at their centers.
 pub struct AHUUnrootedTreeIsomorphismInspector<'g, G: Graph> {
     tree1: &'g G,
@@ -307,6 +352,29 @@ impl<'g, G: Graph> IsomorphismInspector<'g, G> for AHUUnrootedTreeIsomorphismIns
     }
 }
 
+/// This is an implementation of the AHU algorithm for detecting an (unweighted) isomorphism between
+/// two rooted forests. Please see
+/// [mathworld.wolfram.com](http://mathworld.wolfram.com/GraphIsomorphism.html) for a
+/// complete definition of the isomorphism problem for general graphs.
+///
+/// The original algorithm was first presented in "Alfred V. Aho and John E. Hopcroft. 1974. The
+/// Design and Analysis of Computer Algorithms (1st ed., page 84). Addison-Wesley Longman Publishing
+/// Co., Inc., Boston, MA, USA."
+///
+/// This implementation runs in linear time (in the number of vertices of the input forests) while
+/// using a linear amount of memory.
+///
+/// For an implementation that supports rooted trees see `AHURootedTreeIsomorphismInspector`
+/// and for one for unrooted trees see `AHUUnrootedTreeIsomorphismInspector`.
+///
+/// Note: This implementation requires the input graphs to have valid vertex suppliers (see
+/// `Graph#getVertexSupplier()`).
+///
+/// Note: This inspector only returns a single mapping (chosen arbitrarily) rather than all possible
+/// mappings.
+///
+/// # Rust notes
+///
 /// `AHUForestIsomorphismInspector`: joins each forest's roots under a fresh root vertex.
 pub struct AHUForestIsomorphismInspector<'g, G: Graph> {
     forest1: &'g G,

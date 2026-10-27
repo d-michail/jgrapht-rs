@@ -419,6 +419,23 @@ pub enum OverflowStrategy {
     ThrowExceptionOnOverflow,
 }
 
+/// Edge betweenness centrality.
+///
+/// A natural extension of betweenness to edges by counting the total shortest paths that pass
+/// through an edge. See the paper: Ulrik Brandes: On Variants of Shortest-Path Betweenness
+/// Centrality and their Generic Computation. Social Networks 30(2):136-145, 2008, for a nice
+/// discussion of different variants of betweenness centrality. Note that this implementation does
+/// not work for graphs which have multiple edges. Self-loops do not influence the result and are
+/// thus ignored.
+///
+/// This implementation allows the user to compute centrality contributions only from a subset of the
+/// graph vertices, i.e. to start shortest path computations only from a subset of the vertices. This
+/// allows centrality approximations in big graphs. Note that in this case, the user is responsible
+/// for any normalization necessary due to duplicate shortest paths that might occur in undirected
+/// graphs.
+///
+/// # Rust notes
+///
 /// Edge betweenness: for every edge the sum over source/target pairs of the fraction of shortest
 /// paths through it. Graphs with parallel edges are rejected.
 pub struct EdgeBetweennessCentrality<'g, G: Graph> {
@@ -620,6 +637,10 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
     }
 }
 
+/// An interface for all algorithms which assign scores to vertices of a graph.
+///
+/// # Rust notes
+///
 /// Scores of all vertices, available after construction (`VertexScoringAlgorithm`).
 pub trait VertexScoringAlgorithm<V, S: Clone = f64> {
     fn scores(&self) -> &HashMap<V, S>;
@@ -666,6 +687,31 @@ fn all_distances<G: Graph>(g: &G, incoming: bool) -> Vec<Vec<f64>> {
     }
 }
 
+/// Closeness centrality.
+///
+/// Computes the closeness centrality of each vertex of a graph. The closeness of a vertex $x$ is
+/// defined as the reciprocal of the farness, that is $H(x)= 1 / \sum_{y \neq x} d(x,y)$, where
+/// $d(x,y)$ is the shortest path distance from $x$ to $y$. When normalization is used, the score is
+/// multiplied by $n-1$ where $n$ is the total number of vertices in the graph. For more details see
+/// [wikipedia](https://en.wikipedia.org/wiki/Closeness_centrality) and
+///
+/// - Alex Bavelas. Communication patterns in task-oriented groups. J. Acoust. Soc. Am,
+/// 22(6):725–730, 1950.
+///
+/// This implementation computes by default the closeness centrality using outgoing paths and
+/// normalizes the scores. This behavior can be adjusted by the constructor arguments.
+///
+/// When the graph is disconnected, the closeness centrality score equals $0$ for all vertices. In
+/// the case of weakly connected digraphs, the closeness centrality of several vertices might be 0.
+/// See `HarmonicCentrality` for a different approach in case of disconnected graphs.
+///
+/// Shortest paths are computed either by using Dijkstra's algorithm or Floyd-Warshall depending on
+/// whether the graph has edges with negative edge weights. Thus, the running time is either $O(n (m
+/// +n \log n))$ or $O(n^3)$ respectively, where $n$ is the number of vertices and $m$ the number of
+/// edges of the graph.
+///
+/// # Rust notes
+///
 /// Closeness centrality (`ClosenessCentrality`): the inverse of the sum of distances to all other
 /// vertices, scaled by `n - 1` when normalized. Unreachable vertices give a score of 0.
 pub struct ClosenessCentrality<V> {
@@ -702,6 +748,32 @@ impl<V> VertexScoringAlgorithm<V> for ClosenessCentrality<V> {
     }
 }
 
+/// Harmonic centrality.
+///
+/// The harmonic centrality of a vertex $x$ is defined as $H(x)=\sum_{y \neq x} 1/d(x,y)$, where
+/// $d(x,y)$ is the shortest path distance from $x$ to $y$. In case a distance $d(x,y)=\infinity$,
+/// then $1/d(x,y)=0$. When normalization is used the score is divided by $n-1$ where $n$ is the
+/// total number of vertices in the graph.
+///
+/// For details see the following papers:
+///
+/// - Yannick Rochat. Closeness centrality extended to unconnected graphs: The harmonic centrality
+/// index. Applications of Social Network Analysis, 2009.
+/// - Newman, Mark. 2003. The Structure and Function of Complex Networks. SIAM Review, 45(mars),
+/// 167–256.
+///
+/// and the [wikipedia](https://en.wikipedia.org/wiki/Closeness_centrality) article.
+///
+/// This implementation computes by default the centrality using outgoing paths and normalizes the
+/// scores. This behavior can be adjusted by the constructor arguments.
+///
+/// Shortest paths are computed either by using Dijkstra's algorithm or Floyd-Warshall depending on
+/// whether the graph has edges with negative edge weights. Thus, the running time is either $O(n (m
+/// + n \log n))$ or $O(n^3)$ respectively, where $n$ is the number of vertices and $m$ the number of
+/// edges of the graph.
+///
+/// # Rust notes
+///
 /// Harmonic centrality (`HarmonicCentrality`): the sum of inverse distances to all other
 /// vertices, divided by `n - 1` when normalized.
 pub struct HarmonicCentrality<V> {
@@ -740,6 +812,28 @@ impl<V> VertexScoringAlgorithm<V> for HarmonicCentrality<V> {
     }
 }
 
+/// Computes the coreness of each vertex in an undirected graph.
+///
+/// A $k$-core of a graph $G$ is a maximal connected subgraph of $G$ in which all vertices have
+/// degree at least $k$. Equivalently, it is one of the connected components of the subgraph of $G$
+/// formed by repeatedly deleting all vertices of degree less than $k$. A vertex $u$ has coreness $c$
+/// if it belongs to a $c$-core but not to any $(c+1)$-core.
+///
+/// If a non-empty k-core exists, then, clearly, $G$ has
+/// [degeneracy](https://en.wikipedia.org/wiki/Degeneracy_(graph_theory)) at least $k$,
+/// and the degeneracy of $G$ is the largest $k$ for which $G$ has a $k$-core.
+///
+/// As described in the following paper
+///
+/// - D. W. Matula and L. L. Beck. Smallest-last ordering and clustering and graph coloring
+/// algorithms. Journal of the ACM, 30(3):417--427, 1983.
+///
+/// it is possible to find a vertex ordering of a finite graph $G$ that optimizes the coloring number
+/// of the ordering, in linear time, by using a bucket queue to repeatedly find and remove the vertex
+/// of smallest degree.
+///
+/// # Rust notes
+///
 /// Coreness (k-core numbers) of an undirected simple graph and its degeneracy (`Coreness`).
 pub struct Coreness<V> {
     scores: HashMap<V, usize>,
@@ -768,6 +862,33 @@ impl<V> VertexScoringAlgorithm<V, usize> for Coreness<V> {
     }
 }
 
+/// Clustering coefficient. This implementation computes the global, the local and the average
+/// clustering coefficient in an undirected or a directed network.
+///
+/// The
+/// [local clustering coefficient](https://en.wikipedia.org/wiki/Clustering_coefficient#Local_clustering_coefficient) of a vertex in a graph quantifies how close its neighbors are to being
+/// a clique. For a vertex $v$ it counts how many of its direct neighbors are connected by an edge
+/// over the total number of neighbor pairs. In the case of undirected graphs the total number of
+/// possible neighbor pairs is only half compared to directed graphs.
+///
+/// The local clustering coefficient of a graph was introduced in *D. J. Watts and Steven Strogatz
+/// (June 1998). "Collective dynamics of 'small-world' networks". Nature. 393 (6684): 440–442.
+/// doi:10.1038/30918*. It is simply the average of the local clustering coefficients of all the
+/// vertices of the graph.
+///
+/// The global clustering coefficient of a graph is based on triplets of nodes. A triplet is three
+/// graph nodes which are connected either by two edges or by three edges. A triplet which is
+/// connected by two edges, is called an open triplet. A triplet which is connected with three edges
+/// is called a closed triplet. The global clustering coefficient is defined as the number of closed
+/// triplets over the total number of triplets (open and closed). It was introduced in *R. D. Luce
+/// and A. D. Perry (1949). "A method of matrix analysis of group structure". Psychometrika. 14 (1):
+/// 95–116. doi:10.1007/BF02289146*.
+///
+/// The running time is $O(|V| + \Delta(G)^2)$ where $|V|$ is the number of vertices and $\Delta(G)$
+/// is the maximum degree of a vertex. The space complexity is $O(|V|)$.
+///
+/// # Rust notes
+///
 /// Local, average and global clustering coefficients (`ClusteringCoefficient`). In directed
 /// graphs a vertex' neighbourhood is the union of predecessors and successors and the edges
 /// among its members are counted with their direction.
@@ -873,6 +994,26 @@ fn incoming_lists<G: Graph>(
         .collect()
 }
 
+/// Eigenvector-centrality implementation.
+///
+/// Eigenvector centrality, introduced in 1895 by Edmund Landau for chess tournaments, associates
+/// with a (weighted) graph the left dominant eigenvector of its adjacency matrix. More information
+/// can be found on [wikipedia](https://en.wikipedia.org/wiki/Eigenvector_centrality).
+///
+/// This is a simple iterative implementation of the
+/// [power method](https://en.wikipedia.org/wiki/Power_iteration) which stops after a
+/// given number of iterations or if centrality values between two iterations do not change more than
+/// a predefined value (technically, we stop when the ℓ_2 norm of the difference
+/// between the current estimate and the next one drops below a given threshold). Correspondingly,
+/// the result will be ℓ_2-normalized.
+///
+/// Each iteration of the algorithm runs in linear time O(n+m) when n is the number of nodes and m
+/// the number of edges of the graph. The maximum number of iterations can be adjusted by the caller.
+/// The default value is `EigenvectorCentrality#MAX_ITERATIONS_DEFAULT`. Also in case of
+/// weighted graphs, negative weights are not expected.
+///
+/// # Rust notes
+///
 /// Eigenvector centrality by the power method (`EigenvectorCentrality`).
 pub struct EigenvectorCentrality<V> {
     scores: HashMap<V, f64>,
@@ -933,6 +1074,31 @@ impl<V> VertexScoringAlgorithm<V> for EigenvectorCentrality<V> {
     }
 }
 
+/// Katz centrality implementation.
+///
+/// The [wikipedia](https://en.wikipedia.org/wiki/Katz_centrality) article contains a nice
+/// description of Katz centrality. Every path coming into a node contributes to its Katz centrality
+/// by α^*k*, where α is the *damping factor* and *k*
+/// is the length of the path.
+///
+/// This is a simple iterative implementation of Katz centrality which stops after a given number of
+/// iterations or if the Katz centrality values between two iterations do not change more than a
+/// predefined value. Each iteration increases the length of the paths contributing to the centrality
+/// value. Note that unless the damping factor is smaller than the reciprocal of the
+/// [spectral radius](https://en.wikipedia.org/wiki/Spectral_radius) of the adjacency
+/// matrix, the computation will not converge.
+///
+/// This implementation makes it possible to provide an exogenous factor in the form of a
+/// `ToDoubleFunction` mapping each vertex to its exogenous score. Each path is then multiplied
+/// by the exogenous score of its starting vertex. The `default exogenous function` maps all vertices to one, as in standard Katz centrality.
+///
+/// Each iteration of the algorithm runs in linear time O(n+m) when n is the number of nodes and m
+/// the number of edges of the graph. The maximum number of iterations can be adjusted by the caller.
+/// The default value is `KatzCentrality#MAX_ITERATIONS_DEFAULT`. Also in case of weighted
+/// graphs, negative weights are not expected.
+///
+/// # Rust notes
+///
 /// Katz centrality (`KatzCentrality`): `x = damping * A^T x + exogenous`.
 pub struct KatzCentrality<V> {
     scores: HashMap<V, f64>,
@@ -1005,6 +1171,29 @@ impl<V> VertexScoringAlgorithm<V> for KatzCentrality<V> {
     }
 }
 
+/// PageRank implementation.
+///
+/// The [wikipedia](https://en.wikipedia.org/wiki/PageRank) article contains a nice
+/// description of PageRank. The method can be found on the article: Sergey Brin and Larry Page: The
+/// Anatomy of a Large-Scale Hypertextual Web Search Engine. Proceedings of the 7th World-Wide Web
+/// Conference, Brisbane, Australia, April 1998. See also the following
+/// [page](http://infolab.stanford.edu/~backrub/google.html).
+///
+/// This is a simple iterative implementation of PageRank which stops after a given number of
+/// iterations or if the PageRank values between two iterations do not change more than a predefined
+/// value. The implementation uses the variant which divides by the number of nodes, thus forming a
+/// probability distribution over graph nodes.
+///
+/// Each iteration of the algorithm runs in linear time $O(n+m)$ when $n$ is the number of nodes and
+/// $m$ the number of edges of the graph. The maximum number of iterations can be adjusted by the
+/// caller. The default value is `PageRank#MAX_ITERATIONS_DEFAULT`.
+///
+/// If the graph is a weighted graph, a weighted variant is used where the probability of following
+/// an edge e out of node $v$ is equal to the weight of $e$ over the sum of weights of all outgoing
+/// edges of $v$.
+///
+/// # Rust notes
+///
 /// PageRank (`PageRank`), weighted when the graph is.
 pub struct PageRank<V> {
     scores: HashMap<V, f64>,
@@ -1090,6 +1279,32 @@ impl<V> VertexScoringAlgorithm<V> for PageRank<V> {
     }
 }
 
+/// Betweenness centrality.
+///
+/// Computes the betweenness centrality of each vertex of a graph. The betweenness centrality of a
+/// node $v$ is given by the expression: $g(v)= \sum_{s \neq v \neq
+/// t}\frac{\sigma_{st}(v)}{\sigma_{st}}$ where $\sigma_{st}$ is the total number of shortest paths
+/// from node $s$ to node $t$ and $\sigma_{st}(v)$ is the number of those paths that pass through
+/// $v$. For more details see
+/// [wikipedia](https://en.wikipedia.org/wiki/Betweenness_centrality).
+///
+/// The algorithm is based on
+///
+/// - Brandes, Ulrik (2001). "A faster algorithm for betweenness centrality". Journal of
+/// Mathematical Sociology. 25 (2): 163–177.
+///
+/// The running time is $O(nm)$ and $O(nm +n^2 \log n)$ for unweighted and weighted graph
+/// respectively, where $n$ is the number of vertices and $m$ the number of edges of the graph. The
+/// space complexity is $O(n + m)$.
+///
+/// Note that this running time assumes that arithmetic is performed between numbers whose
+/// representation needs a number of bits which is logarithmic in the instance size. There are
+/// instances where this is not true and path counters might grow super exponential. This class
+/// allows the user to adjust whether an exception is thrown in case overflow occurs. Default
+/// behavior is to ignore overflow issues.
+///
+/// # Rust notes
+///
 /// Vertex betweenness centrality by Brandes' algorithm (`BetweennessCentrality`). Weighted
 /// graphs (by their `GraphType`) use a pairing heap, others a plain queue. Undirected scores are
 /// halved; with `normalize` they are divided by `(n - 1)(n - 2)`.
@@ -1232,6 +1447,34 @@ impl<V> VertexScoringAlgorithm<V> for BetweennessCentrality<V> {
     }
 }
 
+/// Betweenness centrality with arbitrary precision arithmetic.
+///
+/// Computes the betweenness centrality of each vertex of a graph. The betweenness centrality of a
+/// node $v$ is given by the expression: $g(v)= \sum_{s \neq v \neq
+/// t}\frac{\sigma_{st}(v)}{\sigma_{st}}$ where $\sigma_{st}$ is the total number of shortest paths
+/// from node $s$ to node $t$ and $\sigma_{st}(v)$ is the number of those paths that pass through
+/// $v$. For more details see
+/// [wikipedia](https://en.wikipedia.org/wiki/Betweenness_centrality).
+///
+/// The algorithm is based on
+///
+/// - Brandes, Ulrik (2001). "A faster algorithm for betweenness centrality". Journal of
+/// Mathematical Sociology. 25 (2): 163–177.
+///
+/// The running time is $O(nm)$ and $O(nm +n^2 \log n)$ for unweighted and weighted graph
+/// respectively, where $n$ is the number of vertices and $m$ the number of edges of the graph. The
+/// space complexity is $O(n + m)$.
+///
+/// Note that this running time assumes that arithmetic is performed between numbers whose
+/// representation needs a number of bits which is logarithmic in the instance size. There are
+/// instances where this is not true, and thus it is not safe to assume that arithmetic takes
+/// constant time.
+///
+/// This class uses arbitrary precision arithmetic (except for the execution of Dijkstra's
+/// algorithm). The precision can be adjusted by the constructor parameters.
+///
+/// # Rust notes
+///
 /// Java-compatible arbitrary-precision betweenness centrality (`ApBetweennessCentrality`).
 ///
 /// Scores use a pure-Rust [`dashu_float::FBig`] with radix 10 and rounding toward zero, matching

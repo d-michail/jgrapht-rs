@@ -183,6 +183,13 @@ impl PriorityQueue {
     }
 }
 
+/// Implements the [Stoer and Wagner minimum cut algorithm](http://dl.acm.org/citation.cfm?id=263872). Deterministically computes the minimum cut in $O(|V||E| + |V| \log |V|)$ time.
+/// This implementation uses Java's PriorityQueue and requires $O(|V||E| \log |E|)$ time. M. Stoer
+/// and F. Wagner, "A Simple Min-Cut Algorithm", Journal of the ACM, volume 44, number 4. pp 585-591,
+/// 1997.
+///
+/// # Rust notes
+///
 /// The Stoer–Wagner minimum cut of an undirected graph.
 ///
 /// The cut is computed on construction; read it with [`min_cut_weight`](Self::min_cut_weight) and

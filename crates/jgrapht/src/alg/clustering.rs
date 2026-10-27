@@ -132,6 +132,17 @@ use rheaps::tree::PairingHeap;
 use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
+/// A [modularity](https://en.wikipedia.org/wiki/Modularity_(networks)) measurer.
+///
+/// This is a utility class which computes the modularity function. It takes as input a list of
+/// vertex classes $C$ and a graph $G$ and calculates: $Q = \frac{1}{2m} \sum_{ij} \left( A_{ij} -
+/// \frac{k_i k_j}{2m} \right) \delta(C_i, C_j)$. Here $m$ is the total number of edges and $k_i$ is
+/// the degree of vertex $i$. $A_{ij}$ is either $1$ or $0$ depending on whether edge $(i,j)$ belongs
+/// to the graph and $\delta(C_i, C_j)$ is 1 if vertices $i$ and $j$ belong to the same class, $0$
+/// otherwise.
+///
+/// # Rust notes
+///
 /// Modularity of a partition of an undirected (possibly weighted) graph
 /// (`UndirectedModularityMeasurer`).
 pub struct UndirectedModularityMeasurer<'g, G: Graph> {
@@ -209,6 +220,16 @@ impl<'g, G: Graph> UndirectedModularityMeasurer<'g, G> {
     }
 }
 
+/// The Girvan-Newman clustering algorithm.
+///
+/// The algorithm is described in: Girvan, Michelle, and Mark EJ Newman. "Community structure in
+/// social and biological networks." Proceedings of the national academy of sciences 99.12 (2002):
+/// 7821-7826.
+///
+/// Running time is $O(m^2 n)$ or $O(m^2n + m n^2 \log n)$ for weighted graphs.
+///
+/// # Rust notes
+///
 /// Girvan–Newman divisive clustering: removes the edge of highest betweenness until the graph
 /// has `k` connected components (`GirvanNewmanClustering`).
 pub struct GirvanNewmanClustering<'g, G: Graph> {
@@ -278,6 +299,19 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for GirvanNewmanClustering<'_, G> 
     }
 }
 
+/// The k spanning tree clustering algorithm.
+///
+/// The algorithm finds a minimum spanning tree $T$ using Prim's algorithm, then executes Kruskal's
+/// algorithm only on the edges of $T$ until $k$ trees are formed. The resulting trees are the final
+/// clusters. The total running time is $O(m + n \log n)$.
+///
+/// The algorithm is strongly related to single linkage cluster analysis, also known as single-link
+/// clustering. For more information see: J. C. Gower and G. J. S. Ross. Minimum Spanning Trees and
+/// Single Linkage Cluster Analysis. Journal of the Royal Statistical Society. Series C (Applied
+/// Statistics), 18(1):54--64, 1969.
+///
+/// # Rust notes
+///
 /// Clustering by cutting the heaviest edges of a minimum spanning tree (`KSpanningTreeClustering`).
 pub struct KSpanningTreeClustering<'g, G: Graph> {
     graph: &'g G,
@@ -325,6 +359,20 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for KSpanningTreeClustering<'_, G>
     }
 }
 
+/// A naive implementation of greedy modularity maximization for community detection.
+///
+/// The algorithm partitions the vertices of an undirected graph into communities by greedily
+/// maximizing the [modularity](https://en.wikipedia.org/wiki/Modularity_(networks)) of
+/// possible communities. Greedy modularity maximization begins with each node in its own community
+/// and repeatedly joins the pair of communities that lead to the largest modularity until no further
+/// increase in modularity is possible (a maximum).
+///
+/// This implementation is simple but computationally expensive, with a worst-case complexity of
+/// **O(n^4)**. It is intended as an easy-to-understand reference implementation rather than a
+/// performance-optimized solution.
+///
+/// # Rust notes
+///
 /// Greedy agglomerative modularity maximisation by exhaustive pair merging, `O(n^3)` merges to
 /// try (`NaiveGreedyModularityAlgorithm`); mostly useful as a reference.
 pub struct NaiveGreedyModularityAlgorithm<'g, G: Graph> {
@@ -387,6 +435,22 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for NaiveGreedyModularityAlgorithm
 type MaxHeap = PairingHeap<Reverse<OrderedF64>, (usize, usize)>;
 type Handle = <MaxHeap as AddressableHeap<Reverse<OrderedF64>, (usize, usize)>>::Handle;
 
+/// The Greedy Modularity algorithm.
+///
+/// The algorithm partitions the vertices of an undirected graph into communities by greedily
+/// maximizing the [modularity](https://en.wikipedia.org/wiki/Modularity_(networks)) of
+/// possible communities. Greedy modularity maximization begins with each node in its own community
+/// and repeatedly joins the pair of communities that lead to the largest modularity until no further
+/// increase in modularity is possible (a maximum).
+///
+/// The algorithm is due to Clauset, Newman and Moore. It is described in detail in the following
+/// [paper](https://doi.org/10.1103/PhysRevE.70.066111):
+///
+/// - Clauset, A., Newman, M. E., & Moore, C. “Finding community structure in very large
+/// networks.” Physical Review E 70(6), 2004.
+///
+/// # Rust notes
+///
 /// Clauset–Newman–Moore greedy modularity maximisation with heaps (`GreedyModularityAlgorithm`),
 /// for directed and undirected graphs.
 ///
@@ -601,6 +665,26 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgorithm<'_, 
     }
 }
 
+/// A label propagation clustering algorithm.
+///
+/// The algorithm is a near linear time algorithm capable of discovering communities in large graphs.
+/// It is described in detail in the following
+/// [paper](http://dx.doi.org/10.1103/PhysRevE.76.036106):
+///
+/// - Raghavan, U. N., Albert, R., and Kumara, S. (2007). Near linear time algorithm to detect
+/// community structures in large-scale networks. Physical review E, 76(3), 036106.
+///
+/// As the paper title suggests the running time is close to linear. The algorithm runs in
+/// iterations, each of which runs in $O(n + m)$ where $n$ is the number of vertices and $m$ is the
+/// number of edges. The authors found experimentally that in most cases, 95% of the nodes or more
+/// are classified correctly by the end of iteration 5. See the paper for more details.
+///
+/// The algorithm is randomized, meaning that two runs on the same graph may return different
+/// results. If the user requires deterministic behavior, the random number generator can be provided
+/// by the constructor.
+///
+/// # Rust notes
+///
 /// Asynchronous label propagation clustering as in JGraphT (`LabelPropagationClustering`): vertices
 /// in random order adopt the most frequent neighbour label, ties broken at random. The random
 /// draws reproduce JGraphT's for a [`JavaRandom`](crate::util::java::JavaRandom) with the same seed.

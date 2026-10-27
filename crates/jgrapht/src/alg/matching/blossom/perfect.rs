@@ -50,6 +50,108 @@ impl<'g, G: Graph> BlossomVDualSolution<'g, G> {
     }
 }
 
+/// This class computes weighted perfect matchings in general graphs using the Blossom V algorithm.
+/// If maximum or minimum weight matching algorithms is needed, see
+/// `KolmogorovWeightedMatching`
+///
+/// Let $G = (V, E, c)$ be an undirected graph with a real-valued cost function defined on it. A
+/// matching is an edge-disjoint subset of edges $M \subseteq E$. A matching is perfect if $2|M| =
+/// |V|$. In the weighted perfect matching problem the goal is to maximize or minimize the weighted
+/// sum of the edges in the matching. This class supports pseudographs, but a problem on a
+/// pseudograph can be easily reduced to a problem on a simple graph. Moreover, this reduction can
+/// heavily influence the running time since only an edge with a maximum or minimum weight between
+/// two vertices can belong to the matching in the corresponding optimization problems. Currently,
+/// users are responsible for doing this reduction themselves before invoking the algorithm.
+///
+/// Note that if the graph is unweighted and dense, `SparseEdmondsMaximumCardinalityMatching`
+/// may be a better choice.
+///
+/// For more information about the algorithm see the following paper: *Kolmogorov, V. Math. Prog.
+/// Comp. (2009) 1: 43. <https://doi.org/10.1007/s12532-009-0002-8>*, and the original
+/// implementation: *<http://pub.ist.ac.at/~vnk/software/blossom5-v2.05.src.tar.gz>*
+///
+/// The algorithm can be divided into two phases: initialization and the main algorithm. The
+/// initialization phase is responsible for converting the specified graph into the form convenient
+/// for the algorithm and for finding an initial matching to speed up the main part. Furthermore, the
+/// main part of the algorithm can be further divided into primal and dual updates. The primal phases
+/// are aimed at augmenting the matching so that the value of the objective function of the primal
+/// linear program increases. Dual updates are aimed at increasing the objective function of the dual
+/// linear program. The algorithm iteratively performs these primal and dual operations to build
+/// alternating trees of tight edges and augment the matching. Thus, at any stage of the algorithm
+/// the matching consists of tight edges. This means that the resulting perfect matching meets
+/// complementary slackness conditions, and is therefore optimal.
+///
+/// At construction time the set of options can be specified to define the strategies used by the
+/// algorithm to perform initialization, dual updates, etc. This can be done with the
+/// `BlossomVOptions`. During the construction time the objective sense of the optimization
+/// problem can be specified, i.e. whether to maximize of minimize the weight of the resulting
+/// perfect matching. Default objective sense of the algorithm is to minimize the weight of the
+/// resulting perfect matching. If the objective sense of the algorithm is to maximize the weight of
+/// the matching, the problem is reduced to minimum weight perfect matching problem by multiplying
+/// all edge weights by $-1$. This class supports retrieving statistics for the algorithm
+/// performance, see `KolmogorovWeightedPerfectMatching#getStatistics()`. It provides the time
+/// elapsed during primal operations and dual updates, as well as the number of these primal
+/// operations performed.
+///
+/// The solution to a weighted perfect matching problem instance comes with a certificate of
+/// optimality, which is represented by a solution to a dual linear program; see
+/// `DualSolution`. This class encapsulates a mapping from the node sets of odd cardinality to
+/// the corresponding dual variables. This mapping doesn't contain the sets whose dual variables are
+/// $0$. The computation of the dual solution is performed lazily and doesn't affect the running time
+/// of finding a weighted perfect matching.
+///
+/// Here we describe the certificates of optimality more precisely. Let the graph $G = (V, E)$ be an
+/// undirected graph with cost function $c: V \mapsto \mathbb{R}$ defined on it. Let $\mathcal{O}$ be
+/// the set of all subsets of $V$ of odd cardinality containing at least 3 vertices, and $\delta(S),
+/// S \subset V$ be the set of boundary edges of $V$. Then **minimum** weight perfect matching
+/// problem has the following linear programming formulation:
+///
+/// \[ \begin{align} \mbox{minimize} \qquad & \sum_{e\in E}c_e \cdot x_e &\\ s.t. \qquad
+/// & \sum_{e\in \delta^(i)} x_e = 1 & \forall i\in V\\ & \sum_{e\in \delta(S)}x_e \ge 1
+/// & \forall S\in \mathcal{O} \\ & x_e \ge 0 & \forall e\in E \end{align}\] The
+/// corresponding dual linear program has the following form:
+///
+/// \[ \begin{align} \mbox{maximize} \qquad & \sum_{x \in V}y_e &\\ s.t. \qquad & y_u +
+/// y_v + \sum_{S\in \mathcal{O}: e \in \delta(S)}y_S \le c_e & \forall\ e = \{u, v\}\in E\\
+/// & x_S \ge 0 & \forall S\in \mathcal{O} \end{align} \] Let's use the following notation:
+/// $slack(e) = c_e - y_u - y_v - \sum_{S\in \mathcal{O}: e \in \delta(S)}y_S$. Complementary
+/// slackness conditions have the following form:
+///
+/// \[ \begin{align} slack(e) > 0 &\Rightarrow x_e = 0 \\ y_S > 0 &\Rightarrow
+/// \sum_{e\in \delta(S)}x_e = 1 \end{align} \] Therefore, the slacks of all edges will be
+/// non-negative and the slacks of matched edges will be $0$.
+///
+/// The **maximum** weight perfect matching problem has the following linear programming
+/// formulation:
+///
+/// \[ \begin{align} \mbox{maximize} \qquad & \sum_{e\in E}c_e \cdot x_e &\\ s.t. \qquad
+/// &\sum_{e\in \delta^(i)} x_e = 1 & \forall i\in V\\ & \sum_{e\in \delta(S)}x_e \ge 1
+/// & \forall S\in \mathcal{O} \\ & x_e \ge 0 & \forall e\in E \end{align} \]
+///
+/// The corresponding dual linear program has the following form:
+///
+/// \[ \begin{align} \mbox{minimize} \qquad & \sum_{x \in V}y_e &\\ s.t. \qquad & y_u +
+/// y_v + \sum_{S\in \mathcal{O}: e \in \delta(S)}y_S \ge c_e & \forall\ e = \{u, v\}\in E\\
+/// & x_S \le 0 & \forall S\in \mathcal{O} \end{align} \]
+///
+/// Complementary slackness conditions have the following form:
+///
+/// \[ \begin{align} slack(e) < 0 &\Rightarrow x_e = 0 \\ y_S < 0 &\Rightarrow
+/// \sum_{e\in \delta(S)}x_e = 1 \end{align} \]
+///
+/// Therefore, the slacks of all edges will be non-positive and the slacks of matched edges will be
+/// $0$.
+///
+/// This class supports testing the optimality of the solution via
+/// `KolmogorovWeightedPerfectMatching#testOptimality()`. It also supports retrieval of the
+/// computation error when the edge weights are real values via
+/// `KolmogorovWeightedPerfectMatching#getError()`. Both optimality test and error computation
+/// are performed lazily and don't affect the running time of the main algorithm. If the problem
+/// instance doesn't contain a perfect matching at all, the algorithm doesn't find a minimum weight
+/// maximum matching; instead, it throws an exception.
+///
+/// # Rust notes
+///
 /// Kolmogorov's Blossom V algorithm for minimum- or maximum-weight perfect matchings.
 pub struct KolmogorovWeightedPerfectMatching<'g, G: Graph> {
     graph: &'g G,

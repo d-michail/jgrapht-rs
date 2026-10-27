@@ -22,6 +22,32 @@ use std::collections::HashSet;
 /// `PathGrowingWeightedMatching.DEFAULT_USE_HEURISTICS`.
 pub const DEFAULT_USE_HEURISTICS: bool = true;
 
+/// A linear time $\frac{1}{2}$-approximation algorithm for finding a maximum weight matching in an
+/// arbitrary graph. Linear time here means $O(m)$ where m is the cardinality of the edge set, even
+/// if the graph contains isolated vertices. $\frac{1}{2}$-approximation means that for any graph
+/// instance, the algorithm computes a matching whose weight is at least half of the weight of a
+/// maximum weight matching. The implementation accepts directed and undirected graphs which may
+/// contain self-loops and multiple edges. There is no assumption on the edge weights, i.e. they can
+/// also be negative or zero.
+///
+/// The algorithm is due to Drake and Hougardy, described in detail in the following paper:
+///
+/// - D.E. Drake, S. Hougardy, A Simple Approximation Algorithm for the Weighted Matching Problem,
+/// Information Processing Letters 85, 211-213, 2003.
+///
+/// This particular implementation uses by default two additional heuristics discussed by the authors
+/// which also take linear time but improve the quality of the matchings. These heuristics can be
+/// disabled by calling the constructor `PathGrowingWeightedMatching(Graph, boolean)`.
+/// Disabling the heuristics has the effect of fewer passes over the edge set of the input graph,
+/// probably at the expense of the total weight of the matching.
+///
+/// For a discussion on engineering approximate weighted matching algorithms see the following paper:
+///
+/// - Jens Maue and Peter Sanders. Engineering algorithms for approximate weighted matching.
+/// International Workshop on Experimental and Efficient Algorithms, Springer, 2007.
+///
+/// # Rust notes
+///
 /// `PathGrowingWeightedMatching`: Drake and Hougardy's linear time 1/2-approximation of the
 /// maximum weight matching. With the heuristics, every grown path is solved optimally by dynamic
 /// programming and the matching is extended to a maximal one.

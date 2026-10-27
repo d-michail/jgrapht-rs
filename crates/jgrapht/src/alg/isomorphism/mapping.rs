@@ -21,6 +21,11 @@ use std::fmt;
 /// Marks an unmatched vertex in the `core` arrays handed to [`IsomorphicGraphMapping::from_cores`].
 pub const NULL_NODE: usize = usize::MAX;
 
+/// This class represents a GraphMapping between two (subgraph)isomorphic graphs. In the subgraph
+/// isomorphic case, the second one is assumed to be a subgraph of the first one.
+///
+/// # Rust notes
+///
 /// `IsomorphicGraphMapping`: a vertex mapping between two graphs of the same type, in both
 /// directions, with the induced edge correspondence.
 pub struct IsomorphicGraphMapping<'g, G: Graph> {

@@ -71,6 +71,16 @@ impl<E: Clone + Eq + std::hash::Hash> CycleBasis<E> {
     }
 }
 
+/// Allows to derive an undirected [cycle basis](https://en.wikipedia.org/wiki/Cycle_basis) of a given graph.
+///
+/// Note that undirected cycle bases are defined for both undirected and directed graphs. For a
+/// discussion of different kinds of cycle bases in graphs see the following paper.
+///
+/// - Christian Liebchen, and Romeo Rizzi. Classes of Cycle Bases. Discrete Applied Mathematics,
+/// 155(3), 337-355, 2007.
+///
+/// # Rust notes
+///
 /// `CycleBasisAlgorithm`.
 pub trait CycleBasisAlgorithm<E> {
     fn get_cycle_basis(&mut self) -> Result<CycleBasis<E>>;
@@ -216,6 +226,20 @@ fundamental_basis!(
     pop_back
 );
 
+/// Find a cycle basis of an undirected graph using a variant of Paton's algorithm.
+///
+/// See:
+/// K. Paton, An algorithm for finding a fundamental set of cycles for an undirected linear graph,
+/// Comm. ACM 12 (1969), pp. 514-518.
+///
+/// Note that Paton's algorithm produces a fundamental cycle basis while this implementation produces
+/// a [weakly fundamental cycle basis](https://en.wikipedia.org/wiki/Cycle_space#Fundamental_and_weakly_fundamental_bases). A cycle basis is called weakly fundamental if there exists a linear
+/// ordering of the cycles in a cycle basis such that each cycle includes at least one edge that is
+/// not part of any previous cycle. Every fundamental cycle basis is weakly fundamental (for all
+/// linear orderings) but not necessarily vice versa.
+///
+/// # Rust notes
+///
 /// `PatonCycleBase`: Paton's 1969 algorithm for a cycle basis of an undirected graph without
 /// parallel edges.
 pub struct PatonCycleBase<'g, G: Graph> {

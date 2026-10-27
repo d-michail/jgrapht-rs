@@ -28,6 +28,31 @@ pub enum IterationOrder {
     LexBfs,
 }
 
+/// Tests whether a graph is [chordal](https://en.wikipedia.org/wiki/Chordal_graph). A
+/// chordal graph is a simple graph in which all
+/// [cycles](http://mathworld.wolfram.com/GraphCycle.html) of four or more vertices have
+/// a [chord](http://mathworld.wolfram.com/CycleChord.html). A chord is an edge that is
+/// not part of the cycle but connects two vertices of the cycle. A graph is chordal if and only if
+/// it has a [perfect elimination order](https://en.wikipedia.org/wiki/Chordal_graph#Perfect_elimination_and_efficient_recognition). A perfect elimination order in a graph is an ordering of the
+/// vertices of the graph such that, for each vertex $v$, $v$ and the neighbors of $v$ that occur
+/// after $v$ in the order form a clique. This implementation uses either
+/// `MaximumCardinalityIterator` or `LexBreadthFirstIterator` to compute a perfect
+/// elimination order. The desired method is specified during construction time.
+///
+/// Chordal graphs are a subset of the [perfect graphs](http://mathworld.wolfram.com/PerfectGraph.html). They may be recognized in polynomial time, and several problems that are hard
+/// on other classes of graphs such as minimum vertex coloring or determining maximum cardinality
+/// cliques and independent set can be performed in polynomial time when the input is chordal.
+///
+/// All methods in this class run in $\mathcal{O}(|V| + |E|)$ time. Determining whether a graph is
+/// chordal, as well as computing a perfect elimination order takes $\mathcal{O}(|V| + |E|)$ time,
+/// independent of the algorithm (`MaximumCardinalityIterator` or
+/// `LexBreadthFirstIterator`) used to compute the perfect elimination order.
+///
+/// All the methods in this class are invoked in a lazy fashion, meaning that computations are only
+/// started once the method gets invoked.
+///
+/// # Rust notes
+///
 /// `ChordalityInspector`: tests whether a graph is chordal (every cycle of length at least four
 /// has a chord) by checking the order of a maximum cardinality or lexicographic BFS search.
 /// Only undirected graphs are supported (the vertex-order iterators reject directed graphs, as in

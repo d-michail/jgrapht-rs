@@ -25,6 +25,14 @@ use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
+/// A general interface for a layout 2D algorithm.
+///
+/// A layout algorithm takes as input a graph and computes point coordinates for each of the graph
+/// vertices. Details such as the dimensions of the drawable area, the storage of the vertices'
+/// coordinates, etc. are provided using a `LayoutModel2D`.
+///
+/// # Rust notes
+///
 /// A layout algorithm (`LayoutAlgorithm2D`).
 pub trait LayoutAlgorithm2D<G: Graph> {
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()>;
@@ -51,6 +59,14 @@ fn tolerance() -> ToleranceDoubleComparator {
     ToleranceDoubleComparator::new(ToleranceDoubleComparator::DEFAULT_EPSILON).unwrap()
 }
 
+/// Circular layout.
+///
+/// The algorithm places the graph vertices on a circle evenly spaced. The vertices are iterated
+/// based on the iteration order of the vertex set of the graph. The order can be adjusted by
+/// providing an external comparator.
+///
+/// # Rust notes
+///
 /// Vertices evenly spaced on a circle (`CircularLayoutAlgorithm2D`).
 pub struct CircularLayoutAlgorithm2D<V> {
     radius: f64,
@@ -116,6 +132,10 @@ impl<G: Graph> LayoutAlgorithm2D<G> for CircularLayoutAlgorithm2D<G::Vertex> {
     }
 }
 
+/// Random layout. The algorithm assigns vertex coordinates uniformly at random.
+///
+/// # Rust notes
+///
 /// Uniformly random positions (`RandomLayoutAlgorithm2D`).
 pub struct RandomLayoutAlgorithm2D<R = JavaRandom> {
     rng: R,
@@ -148,6 +168,15 @@ impl<G: Graph, R: RandomSource> LayoutAlgorithm2D<G> for RandomLayoutAlgorithm2D
     }
 }
 
+/// A layout algorithm which re-scales vertex positions to (center-scale,center+scale) in all
+/// dimensions.
+///
+/// The algorithm first subtracts the mean on each axis separately, then all values are adjusted so
+/// that the maximum magnitude becomes scale. The result is finally translated back to the old
+/// center. This procedure preserves the aspect ratio.
+///
+/// # Rust notes
+///
 /// Recentres a layout and scales it to `[-scale, scale]` around the old centre
 /// (`RescaleLayoutAlgorithm2D`).
 pub struct RescaleLayoutAlgorithm2D {
@@ -225,6 +254,16 @@ pub enum SecondLayerOrder {
     BarycenterGreedy,
 }
 
+/// A two layered bipartite layout.
+///
+/// The algorithm draws a bipartite graph using straight edges. Vertices are arranged along two
+/// vertical or horizontal lines. No attempt is made to minimize edge crossings.
+///
+/// The order of the vertices can be adjusted by providing a vertex comparator. Similarly the user
+/// can also determine the two partitions or can let the algorithm compute them.
+///
+/// # Rust notes
+///
 /// Draws the two sides of a bipartite graph on two parallel lines
 /// (`TwoLayeredBipartiteLayout2D` and its greedy subclasses).
 pub struct TwoLayeredBipartiteLayout2D<V> {

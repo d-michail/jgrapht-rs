@@ -89,6 +89,11 @@ impl<'a, V, E> IntoIterator for &'a Matching<V, E> {
     }
 }
 
+/// Allows to derive a [matching](http://en.wikipedia.org/wiki/Matching_(graph_theory)) of
+/// a given graph.
+///
+/// # Rust notes
+///
 /// `MatchingAlgorithm`.
 pub trait MatchingAlgorithm<V, E> {
     /// Computes a matching.

@@ -32,6 +32,11 @@ impl<E: Eq + std::hash::Hash> MaximumFlow<E> {
     }
 }
 
+/// Allows to derive [maximum-flow](https://en.wikipedia.org/wiki/Maximum_flow_problem)
+/// from the supplied [flow network](https://en.wikipedia.org/wiki/Flow_network)
+///
+/// # Rust notes
+///
 /// `MaximumFlowAlgorithm` together with the `FlowAlgorithm` queries.
 pub trait MaximumFlowAlgorithm<V, E> {
     /// Computes a maximum flow from `source` to `sink`.
@@ -49,6 +54,21 @@ pub trait MaximumFlowAlgorithm<V, E> {
     fn flow_direction(&self, edge: &E) -> Result<V>;
 }
 
+/// Given a weighted graph $G(V,E)$ (directed or undirected). This class computes a minimum $s-t$
+/// cut. A cut is a partitioning of the vertices into two disjoint sets $S, T $such that $s \in S, t
+/// \in T$, and that $S \cup T = V$. The *capacity* of a cut is defined as the sum of the
+/// weights of the edges from $S$ to $T$. In case of a directed graph, only the edges with their tail
+/// in $S$ and their head in $T$ are counted. In cased of a undirected graph, all edges with one
+/// endpoint in $S$ and one endpoint in $T$ are counted. For a given $s$ and $t$, this class computes
+/// two partitions $S$ and $T$ such that the capacity of the cut is minimized. When each edge has
+/// equal weight, by definition this class minimizes the number of edges from $S$ to $T$.
+///
+/// Note: it is not recommended to use this class to calculate the overall minimum cut in a graph by
+/// iteratively invoking this class for all source-sink pairs. This is computationally expensive.
+/// Instead, use the StoerWagnerMinimumCut implementation.
+///
+/// # Rust notes
+///
 /// `MinimumSTCutAlgorithm`.
 pub trait MinimumSTCutAlgorithm<V, E> {
     /// Computes a minimum cut and returns its capacity.

@@ -19,6 +19,25 @@ use crate::graph::Graph;
 use crate::util::ToleranceDoubleComparator;
 use std::collections::VecDeque;
 
+/// [Push-relabel maximum flow](https://en.wikipedia.org/wiki/Push%E2%80%93relabel_maximum_flow_algorithm) algorithm designed by Andrew V. Goldberg and Robert Tarjan. Current
+/// implementation complexity upper-bound is $O(V^3)$. For more details see: *"A new approach to
+/// the maximum flow problem"* by Andrew V. Goldberg and Robert Tarjan *STOC '86: Proceedings of
+/// the eighteenth annual ACM symposium on Theory of computing*
+///
+/// This implementation is based on *On Implementing the Push—Relabel Method for the Maximum Flow
+/// Problem* by B. V. Cherkassky and A.V. Goldberg (Cherkassky, B. & Goldberg, A. Algorithmica
+/// (1997) 19: 390. <https://doi.org/10.1007/PL00009180>) and *Introduction to Algorithms* (3rd
+/// Edition).
+///
+/// This class can also computes minimum $s-t$ cuts. Effectively, to compute a minimum $s-t$ cut, the
+/// implementation first computes a minimum $s-t$ flow, after which a BFS is run on the residual
+/// graph.
+///
+/// Note: even though the algorithm accepts any kind of graph, currently only Simple directed and
+/// undirected graphs are supported (and tested!).
+///
+/// # Rust notes
+///
 /// `PushRelabelMFImpl`: FIFO push-relabel with the global-relabelling and gap heuristics,
 /// `O(V³)`.
 pub struct PushRelabelMFImpl<'g, G: Graph> {

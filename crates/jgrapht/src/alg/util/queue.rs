@@ -12,6 +12,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+/// Primitive but efficient implementation of a fixed size queue for integers.
+///
+/// Note: this queue is not implemented as a ring, so at most $N$ enqueue operations are allowed,
+/// where $N$ is the maximum capacity of the queue! After that, `clear()` must be invoked.
+///
+/// # Rust notes
+///
 /// Array-backed queue of `usize` with a fixed capacity (`FixedSizeIntegerQueue`): elements can be
 /// enqueued only `capacity` times between calls to [`clear`](Self::clear).
 #[derive(Debug, Clone)]

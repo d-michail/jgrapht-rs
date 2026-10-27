@@ -200,6 +200,16 @@ pub fn inverse_linear_temperature(a: f64, b: f64) -> TemperatureModel {
     })
 }
 
+/// Fruchterman and Reingold Force-Directed Placement Algorithm.
+///
+/// The algorithm belongs in the broad category of
+/// [force directed graph drawing](https://en.wikipedia.org/wiki/Force-directed_graph_drawing) algorithms and is described in the paper:
+///
+/// - Thomas M. J. Fruchterman and Edward M. Reingold. Graph drawing by force-directed placement.
+/// Software: Practice and experience, 21(11):1129--1164, 1991.
+///
+/// # Rust notes
+///
 /// The Fruchterman–Reingold layout (`FRLayoutAlgorithm2D`); with a `theta` (see
 /// [`indexed`](Self::indexed)) repulsive forces are approximated through a quad tree
 /// (`IndexedFRLayoutAlgorithm2D`).

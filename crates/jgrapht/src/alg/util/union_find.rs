@@ -17,6 +17,14 @@ use indexmap::IndexMap;
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
+/// An implementation of [Union Find](http://en.wikipedia.org/wiki/Disjoint-set_data_structure) data structure. Union Find is a disjoint-set data structure. It supports two operations:
+/// finding the set a specific element is in, and merging two sets. The implementation uses union by
+/// rank and path compression to achieve an amortized cost of $O(\alpha(n))$ per operation where
+/// $\alpha$ is the inverse Ackermann function. UnionFind uses the hashCode and equals method of the
+/// elements it operates on.
+///
+/// # Rust notes
+///
 /// Union–find over arbitrary elements with union by rank and path compression (`UnionFind<T>`).
 /// Elements keep insertion order.
 #[derive(Debug, Clone)]

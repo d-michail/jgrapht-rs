@@ -18,6 +18,10 @@
 use indexmap::IndexMap;
 use std::hash::{Hash, Hasher};
 
+/// A 2-dimensional point in Euclidean space.
+///
+/// # Rust notes
+///
 /// A point in the plane. Equality and hashing compare the bit patterns of the coordinates, like
 /// Java's `Double.doubleToLongBits`: `NaN == NaN` and `0.0 != -0.0`.
 #[derive(Debug, Clone, Copy)]
@@ -80,6 +84,10 @@ pub mod points {
     }
 }
 
+/// A 2-dimensional box (rectangle).
+///
+/// # Rust notes
+///
 /// An axis-parallel box given by its lower-left corner and its sides (`Box2D`).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Box2D {
@@ -159,6 +167,15 @@ pub mod boxes {
     }
 }
 
+/// A general interface for the 2D layout model.
+///
+/// The layout model provides the necessary components to a `LayoutAlgorithm2D` in order to
+/// draw a graph. Its responsibility is to provide the available drawable area, to be able to store
+/// and answer queries about vertex coordinates, and to allow someone to fix (make permanent) a
+/// vertex location.
+///
+/// # Rust notes
+///
 /// Positions of vertices inside a drawable area (`LayoutModel2D`).
 pub trait LayoutModel2D<V> {
     fn drawable_area(&self) -> Box2D;
@@ -180,6 +197,10 @@ pub trait LayoutModel2D<V> {
     }
 }
 
+/// A layout model which uses a hashtable to store the vertices' locations.
+///
+/// # Rust notes
+///
 /// A layout model backed by an insertion-ordered map (`MapLayoutModel2D`).
 #[derive(Debug, Clone)]
 pub struct MapLayoutModel2D<V: Eq + Hash> {
@@ -237,6 +258,10 @@ impl<V: Eq + Hash + Clone> LayoutModel2D<V> for MapLayoutModel2D<V> {
     }
 }
 
+/// A layout model wrapper which adds support for listeners.
+///
+/// # Rust notes
+///
 /// A layout model that notifies listeners about every accepted position change
 /// (`ListenableLayoutModel2D`).
 pub struct ListenableLayoutModel2D<V, M: LayoutModel2D<V>> {

@@ -20,6 +20,16 @@ use crate::graph::{props, BaseGraph, Graph, GraphMut, UGraph, Undirected};
 use crate::GraphType;
 use indexmap::IndexSet;
 
+/// This class computes weighted matchings in general graphs. Depending on the constructor parameter
+/// the weight of the resulting matching is maximized or minimized. If maximum of minimum weight
+/// *perfect* algorithm is needed, see `KolmogorovWeightedPerfectMatching`.
+///
+/// This class reduces both maximum and minimum weight matching problems to the maximum and minimum
+/// weight perfect matching problems correspondingly. See `KolmogorovWeightedPerfectMatching`
+/// for relative definitions and algorithm description
+///
+/// # Rust notes
+///
 /// Kolmogorov's reduction of general weighted matching to weighted perfect matching.
 pub struct KolmogorovWeightedMatching<'g, G: Graph> {
     graph: &'g G,

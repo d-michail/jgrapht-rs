@@ -21,6 +21,10 @@ use indexmap::IndexSet;
 use std::collections::VecDeque;
 
 /// Constructs the transitive closure of the input graph.
+///
+/// # Rust notes
+///
+/// Constructs the transitive closure of the input graph.
 #[derive(Debug, Clone, Copy)]
 pub struct TransitiveClosure;
 
@@ -176,6 +180,16 @@ impl BitSet {
 }
 
 /// Harry Hsu's transitive reduction algorithm (JACM 22(1), 1975).
+/// An implementation of Harry Hsu's
+/// [transitive reduction algorithm](https://en.wikipedia.org/wiki/Transitive_reduction).
+///
+/// cf. [Harry Hsu. "An algorithm for finding a minimal equivalent graph of a digraph.", Journal of the ACM, 22(1):11-16, January 1975.](http://projects.csail.mit.edu/jacm/References/hsu1975:11.html)
+///
+/// This is a port from a python example by Michael Clerx, posted as an answer to a question about
+/// [transitive reduction algorithm pseudocode](http://stackoverflow.com/questions/1690953/transitive-reduction-algorithm-pseudocode) on [Stack Overflow](http://stackoverflow.com)
+///
+/// # Rust notes
+///
 #[derive(Debug, Clone, Copy)]
 pub struct TransitiveReduction;
 

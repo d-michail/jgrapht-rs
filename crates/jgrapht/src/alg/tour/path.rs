@@ -28,6 +28,28 @@ pub enum SearchStatus {
     Aborted,
 }
 
+/// Tri-state result of a `HamiltonianPathAlgorithm` search.
+///
+/// A Hamiltonian path search can terminate in three distinct ways:
+///
+/// - `Status#PATH_FOUND` — a Hamiltonian path was discovered. The path is available via
+/// `getPath()`.
+/// - `Status#PROVEN_ABSENT` — the search ran to completion (or was rejected by a sound
+/// precheck) and proved that no Hamiltonian path exists.
+/// - `Status#ABORTED` — the search hit a configured limit before completing. Whether a
+/// Hamiltonian path exists in the input graph is unknown.
+///
+/// Callers must consult `getStatus()` before interpreting an empty `getPath()`:
+/// an empty path may mean either `Status#PROVEN_ABSENT` or `Status#ABORTED`, and
+/// the two have very different semantic implications.
+///
+/// Instances are obtained either from a `HamiltonianPathAlgorithm` implementation or via
+/// the `found(GraphPath, long)`, `provenAbsent(long)`, and
+/// `aborted(long)` static factory methods on this interface, which return a default
+/// immutable implementation.
+///
+/// # Rust notes
+///
 /// `HamiltonianPathSearchResult`: the outcome of a Hamiltonian path search.
 #[derive(Debug, Clone)]
 pub struct HamiltonianPathSearchResult<V, E> {
@@ -74,6 +96,26 @@ impl<V, E> HamiltonianPathSearchResult<V, E> {
     }
 }
 
+/// An algorithm solving the [Hamiltonian path problem](https://en.wikipedia.org/wiki/Hamiltonian_path).
+///
+/// A Hamiltonian path is a path in an undirected or directed graph that visits every vertex
+/// exactly once. Unlike a Hamiltonian cycle, a Hamiltonian path is not required to return to the
+/// start vertex. The path's endpoints may be any pair of vertices (or a single vertex if the graph
+/// has only one vertex).
+///
+/// Deciding whether a Hamiltonian path exists in a general graph is NP-complete. Implementations
+/// of this interface are therefore expected to use exact, exponential-time algorithms (possibly
+/// with pruning) or specialised polynomial-time algorithms for restricted graph classes. Callers
+/// should consult each implementation's JavaDoc for complexity and recommended graph sizes.
+///
+/// This interface is the path-specific counterpart of
+/// `HamiltonianCycleAlgorithm`. It is intentionally separate because the path problem does
+/// not require a return edge from the last visited vertex to the first, and because the existing
+/// cycle / tour APIs often assume tour or complete-graph semantics that are not appropriate for
+/// Hamiltonian paths.
+///
+/// # Rust notes
+///
 /// `HamiltonianPathAlgorithm`.
 pub trait HamiltonianPathAlgorithm<G: Graph> {
     fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>>;
@@ -151,6 +193,35 @@ fn build_adjacency<G: Graph>(
 
 /// `DagHamiltonianPath`: a Hamiltonian path of a DAG exists iff its topological order is a path.
 #[derive(Default)]
+/// Polynomial-time Hamiltonian path algorithm for directed acyclic graphs.
+///
+/// Hamiltonian path existence in a directed acyclic graph (DAG) reduces to deciding whether the
+/// longest directed path covers all vertices. This implementation computes a topological order,
+/// runs the standard longest-path-in-DAG dynamic program over that order, and reconstructs a
+/// Hamiltonian path when the longest path's length equals the vertex count.
+///
+/// The longest-path-in-DAG DP is a textbook reduction; see for example CLRS, "Introduction to
+/// Algorithms" (4th ed.), section on single-source shortest paths in DAGs, which dualises to
+/// longest-path by negating edge weights, and the MIT 6.s078 lecture notes
+/// ([lecture 17 on dynamic programming, MIT 6.s078, Spring 2022](https://people.csail.mit.edu/virgi/6.s078/lecture17.pdf)) for the Hamiltonian-path framing.
+///
+/// Total complexity is `O(|V| + |E|)` time and `O(|V|)` space.
+///
+/// This class only accepts directed acyclic graphs. Passing a directed graph that contains a
+/// cycle causes an `IllegalArgumentException` wrapping the
+/// `org.jgrapht.traverse.NotDirectedAcyclicGraphException` thrown by
+/// `TopologicalOrderIterator` when the topological pass discovers the cycle; passing an
+/// undirected graph or `null` also fails with an `IllegalArgumentException`
+/// (or `NullPointerException` respectively). To solve the Hamiltonian path problem on
+/// cyclic directed graphs, use `BacktrackingHamiltonianPath` or
+/// `HeldKarpHamiltonianPath`.
+///
+/// In multigraphs, parallel edges between the same vertex pair do not change the result. The
+/// returned path uses an arbitrary representative edge selected via `Graph#getEdge` and
+/// is not weight-optimised across parallel edges.
+///
+/// # Rust notes
+///
 pub struct DagHamiltonianPath;
 
 impl DagHamiltonianPath {
@@ -240,6 +311,42 @@ impl<G: Graph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
 pub struct HeldKarpHamiltonianPath {
     max_vertices: usize,
     states_expanded: u64,
+/// Dynamic-programming algorithm for the
+/// [Hamiltonian path problem](https://en.wikipedia.org/wiki/Hamiltonian_path).
+///
+/// The implementation follows the classic Held-Karp subset DP, adapted to find a Hamiltonian
+/// *path* rather than a Hamiltonian cycle. The state `dp[subset][v]` is
+/// `true` when there exists a simple path that visits exactly the vertices in
+/// `subset` and whose last vertex is `v`. The transition extends a path ending at
+/// `v` by a new vertex `u` whenever the edge `(v, u)` exists and `u` is
+/// not yet in the subset. A Hamiltonian path exists if and only if `dp[fullMask][v]` is
+/// `true` for some `v`.
+///
+/// The subset-DP formulation is due to Held and Karp,
+/// ["A Dynamic Programming Approach to Sequencing Problems", J. SIAM 10(1), 1962](https://www.jstor.org/stable/2098806), and independently to Bellman, "Dynamic Programming
+/// Treatment of the Travelling Salesman Problem", J. ACM 9(1), 1962. The Hamiltonian-path
+/// variant (where the DP does not need a closing edge back to the start) is a standard textbook
+/// adaptation; see for example CLRS, "Introduction to Algorithms" (4th ed.), the
+/// dynamic-programming chapter, and the MIT 6.s078 lecture notes on advanced algorithms
+/// (lecture 17).
+///
+/// Complexity is `O(n^2 * 2^n)` time and `O(n * 2^n)` space, where `n` is the
+/// number of vertices. Because the running time and memory grow exponentially in `n`,
+/// this class refuses graphs with more than `getMaxVertices()` vertices by throwing
+/// `IllegalArgumentException`. The default ceiling is `DEFAULT_MAX_VERTICES`; the
+/// single-argument constructor lets callers opt in to a higher ceiling up to
+/// `HARD_MAX_VERTICES` when they have the memory headroom. Callers handling larger
+/// graphs should use `BacktrackingHamiltonianPath` instead and accept the lack of
+/// polynomial-bound guarantees.
+///
+/// The algorithm is exact and deterministic. It supports directed and undirected graphs and
+/// tolerates parallel edges and self-loops (self-loops are ignored because they cannot extend a
+/// simple path). In multigraphs, parallel edges between the same vertex pair collapse to a
+/// single DP transition; the returned path uses an arbitrary representative edge selected via
+/// `Graph#getEdge` and is not weight-optimised across parallel edges.
+///
+/// # Rust notes
+///
 }
 
 impl HeldKarpHamiltonianPath {
@@ -372,6 +479,79 @@ impl<G: Graph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath {
 #[derive(Default)]
 pub struct BacktrackingHamiltonianPath {
     states_expanded: u64,
+/// Exact backtracking algorithm for the
+/// [Hamiltonian path problem](https://en.wikipedia.org/wiki/Hamiltonian_path) on
+/// directed and undirected graphs.
+///
+/// The algorithm performs depth-first search over simple paths. From each candidate start vertex
+/// it tries to extend the current path by an unused adjacent vertex; the first path that visits
+/// every vertex exactly once is returned. If the exhaustive search proves that no such path
+/// exists, a `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` result is returned.
+///
+/// The unbounded `getPath(Graph)` entry point only returns `PATH_FOUND` or
+/// `PROVEN_ABSENT`. The bounded `searchWithStateLimit(Graph, long)` variant may
+/// additionally return `HamiltonianPathSearchResult.Status#ABORTED` when the search hits
+/// its state budget before completing.
+///
+/// This implementation is a straightforward exact DFS / backtracking solver for Hamiltonian
+/// path existence, using standard pruning and candidate-ordering ideas rather than reproducing
+/// any single published algorithm verbatim. For background see Rubin, F., "A Search Procedure
+/// for Hamilton Paths and Circuits", JACM 21(4), 1974 (backtracking search); the
+/// minimum-remaining-values candidate ordering is in the spirit of Warnsdorff's rule (Warnsdorff,
+/// "Des Rösselsprunges einfachste und allgemeinste Lösung", 1823) and of
+/// constraint-satisfaction reachability propagation (Tsang, "Foundations of Constraint
+/// Satisfaction", 1993); the structural prechecks (block / cut-vertex / bridge / SCC) are
+/// well-known necessary conditions from graph theory (see Diestel, "Graph Theory", chapter 3,
+/// for the underlying decompositions).
+///
+/// The general Hamiltonian path problem is NP-complete. This implementation is exact and runs in
+/// exponential time in the worst case, so callers should expect it to be suitable for relatively
+/// small graphs (the practical limit depends heavily on graph structure: sparse and highly
+/// constrained graphs are typically tractable for much larger `n` than dense random
+/// graphs).
+///
+/// The implementation applies the following correctness-preserving prechecks and search
+/// heuristics, none of which can cause a false negative:
+///
+/// - If the graph contains exactly one vertex, the singleton path is returned.
+/// - If an undirected graph is not connected, no Hamiltonian path can exist, so a
+/// `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` result is returned without DFS
+/// search.
+/// - If an undirected graph has more than two vertices of degree 1, no Hamiltonian path can
+/// exist (a Hamiltonian path has at most two endpoints, and any degree-1 vertex must be one of
+/// them).
+/// - For undirected graphs, every cut vertex (articulation point) must belong to at most two
+/// biconnected blocks. A Hamiltonian path visits each vertex once with at most two path-edges
+/// incident to it, so it cannot enter more than two blocks meeting at a single cut vertex.
+/// - For undirected graphs, the bridge tree (whose nodes are the 2-edge-connected components
+/// and whose edges are the original graph's bridges) must itself be a path. Equivalently, no
+/// 2-edge-connected component may have more than two incident bridges, since a Hamiltonian
+/// path enters and leaves each such component at most once.
+/// - For directed graphs, the strongly connected component condensation must itself admit a
+/// Hamiltonian path. Any Hamiltonian path in the original directed graph projects to one on the
+/// condensation DAG; when that condensation has no Hamiltonian path, the original graph cannot
+/// either.
+/// - At every search step the current endpoint must be able to reach every still-unvisited
+/// vertex through unvisited intermediaries. Otherwise the branch is pruned.
+/// - Candidate next vertices are tried in ascending order of their remaining (unvisited)
+/// onward degree. This is a minimum-remaining-values style heuristic: vertices with few onward
+/// options tend to fail or commit early, which generally reduces search.
+///
+/// Empty graphs are rejected with an `IllegalArgumentException`, matching the convention
+/// used by other Hamiltonian / TSP solvers in JGraphT (for example
+/// `org.jgrapht.alg.tour.HeldKarpTSP`). Graphs with self-loops are accepted but self-loops
+/// are ignored, since they cannot be part of a simple path. In multigraphs, parallel edges
+/// between the same pair of vertices collapse into a single DFS branch and the returned path
+/// picks an arbitrary representative edge via `Graph#getEdge`; the result is not
+/// weight-optimised across parallel edges.
+///
+/// The returned `GraphPath` is a `GraphWalk` whose vertex list contains every vertex
+/// of the graph exactly once, whose consecutive vertices are connected by an edge of the graph
+/// (respecting direction in directed graphs), and whose weight is the sum of the chosen edges'
+/// weights according to `Graph#getEdgeWeight(Object)`.
+///
+/// # Rust notes
+///
     max_states_limit: u64,
     aborted: bool,
 }

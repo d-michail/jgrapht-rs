@@ -53,6 +53,14 @@ impl fmt::Display for DualUpdateStrategy {
     }
 }
 
+/// BlossomVOptions that define the strategies to use during the algorithm for updating duals and
+/// initializing the matching
+///
+/// According to the experimental results, the greedy initialization substantially speeds up the
+/// algorithm.
+///
+/// # Rust notes
+///
 /// Configuration for Kolmogorov's Blossom V algorithm.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BlossomVOptions {
@@ -164,6 +172,12 @@ impl fmt::Display for BlossomVOptions {
     }
 }
 
+/// Enum specifying the objective sense of the algorithm. `ObjectiveSense#MAXIMIZE` means the
+/// goal is to maximize the linear programming objective value, `ObjectiveSense#MINIMIZE` - to
+/// minimize the linear programming objective value.
+///
+/// # Rust notes
+///
 /// Whether a weighted matching objective is minimized or maximized.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectiveSense {

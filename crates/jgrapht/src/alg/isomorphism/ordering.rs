@@ -17,6 +17,11 @@ use std::borrow::Cow;
 use std::cell::{Cell, OnceCell};
 use std::collections::HashMap;
 
+/// This class represents the order on the graph vertices. There are also some helper-functions for
+/// receiving outgoing/incoming edges, etc.
+///
+/// # Rust notes
+///
 /// `GraphOrdering`: numbers the vertices of a graph `0..n` (optionally by ascending degree) and
 /// answers adjacency queries on those numbers, caching lazily as the Java class does.
 pub struct GraphOrdering<'g, G: Graph> {

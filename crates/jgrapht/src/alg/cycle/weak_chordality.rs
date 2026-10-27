@@ -61,6 +61,46 @@ impl Adj {
 type Separator = Vec<(usize, i32)>;
 type SeparatorWithEdge = (Separator, (usize, usize));
 
+/// Tests whether a graph is [weakly chordal](http://www.graphclasses.org/classes/gc_14.html). Weakly chordal graphs are also known as weakly triangulated graphs. Triangulated in
+/// the context of chordality has a different meaning than triangulated in the context of planarity,
+/// where it refers to a maximal planar graph, see:
+/// [http://mathworld.wolfram.com/TriangulatedGraph.html](http://mathworld.wolfram.com/TriangulatedGraph.html)
+///
+/// The following definitions of are equivalent:
+///
+/// - A graph is weakly chordal (weakly triangulated) if neither it nor its complement contains a
+/// [chordless cycles](http://mathworld.wolfram.com/ChordlessCycle.html) with five or more
+/// vertices.
+/// - A 2-pair in a graph is a pair of non-adjacent vertices $x$, $y$ such that every chordless
+/// path has exactly two edges. A graph is weakly chordal if every connected
+/// [induced subgraph](https://en.wikipedia.org/wiki/Induced_subgraph) $H$ that is not a
+/// complete graph, contains a 2-pair.
+///
+/// Chordal and weakly chordal graphs are
+/// [perfect](http://mathworld.wolfram.com/PerfectGraph.html).
+/// For more details, refer to: Hayward, R.B. Weakly triangulated graphs, Journal of Combinatorial
+/// Theory, Series B, vol 39, Issue 3, pp 200-208, 1985.
+///
+/// The implementation in this class is based on: Lars Severin Skeide (2002)
+/// [*Recognizing weakly chordal graphs*](http://www.ii.uib.no/~skeide/rec_wcg.pdf).
+/// Candidate Scientist Thesis in Informatics. Department of Informatics, University of Bergen,
+/// Norway. The terminology used in this implementation is consistent with the one used in this
+/// thesis.
+///
+/// Both the runtime complexity and space complexity of the algorithm implemented in this class is
+/// $\mathcal{O}(|E|^2)$.
+/// The inspected `graph` is specified at the construction time and cannot be modified. When
+/// the graph is modified externally, the behavior of the `WeakChordalityInspector` is
+/// undefined.
+///
+/// In the case the inspected graph in not weakly chordal, this inspector provides a certificate in
+/// the form of some [hole](http://graphclasses.org/smallgraphs.html#holes) or
+/// [anti-hole](http://graphclasses.org/smallgraphs.html#antiholes). The running time of
+/// finding a hole is $\mathcal{O}(|V| + |E|)$ and of finding an anti-hole - $\mathcal{O}(|E|^2)$ in
+/// the worst case.
+///
+/// # Rust notes
+///
 /// `WeakChordalityInspector`: tests whether neither the graph nor its complement has an induced
 /// cycle of length at least five (Nikolopoulos and Palios), and finds such a hole or antihole.
 /// Directed graphs are treated as undirected.

@@ -153,6 +153,42 @@ type CostFn<'a, V> = Box<dyn Fn(&V) -> f64 + 'a>;
 type ChangeFn<'a, V> = Box<dyn Fn(&V, &V) -> f64 + 'a>;
 
 /// Zhang–Shasha tree edit distance of two rooted trees, with the edit script
+/// Dynamic programming algorithm for computing edit distance between trees.
+///
+/// The algorithm is originally described in Zhang, Kaizhong & Shasha, Dennis. (1989). Simple
+/// Fast Algorithms for the Editing Distance Between Trees and Related Problems. SIAM J. Comput.. 18.
+/// 1245-1262. 10.1137/0218082.
+///
+/// The time complexity of the algorithm is $O(|T_1|\cdot|T_2|\cdot min(depth(T_1),leaves(T_1)) \cdot
+/// min(depth(T_2),leaves(T_2)))$. Space complexity is $O(|T_1|\cdot |T_2|)$, where $|T_1|$ and
+/// $|T_2|$ denote number of vertices in trees $T_1$ and $T_2$ correspondingly, $leaves()$ function
+/// returns number of leaf vertices in a tree.
+///
+/// The tree edit distance problem is defined in a following way. Consider $2$ trees $T_1$ and $T_2$
+/// with root vertices $r_1$ and $r_2$ correspondingly. For those trees there are 3 elementary
+/// modification actions:
+///
+/// - Remove a vertex $v$ from $T_1$.
+/// - Insert a vertex $v$ into $T_2$.
+/// - Change vertex $v_1$ in $T_1$ to vertex $v_2$ in $T_2$.
+///
+/// The algorithm assigns a cost to each of those operations which also depends on the vertices. The
+/// problem is then to compute a sequence of edit operations which transforms $T_1$ into $T_2$ and
+/// has a minimum cost over all such sequences. Here the cost of a sequence of edit operations is
+/// defined as sum of costs of individual operations.
+///
+/// The algorithm is based on a dynamic programming principle and assigns a label to each vertex in
+/// the trees which is equal to its index in post-oder traversal. It also uses a notion of a keyroot
+/// which is defined as a vertex in a tree which has a left sibling. Additionally a special $l()$
+/// function is introduced with returns for every vertex the index of its leftmost child wrt the
+/// post-order traversal in the tree.
+///
+/// Solving the tree edit problem distance is divided into computing edit distance for every pair of
+/// subtrees rooted at vertices $v_1$ and $v_2$ where $v_1$ is a keyroot in the first tree and $v_2$
+/// is a keyroot in the second tree.
+///
+/// # Rust notes
+///
 /// (`ZhangShashaTreeEditDistance`).
 pub struct ZhangShashaTreeEditDistance<'a, G: Graph> {
     tree1: &'a G,

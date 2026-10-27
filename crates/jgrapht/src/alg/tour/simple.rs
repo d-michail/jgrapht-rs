@@ -30,6 +30,14 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 type Tour<G> = Result<Option<GraphWalk<<G as Graph>::Vertex, <G as Graph>::Edge>>>;
 
+/// Generate a random tour.
+///
+/// This class generates a random Hamiltonian Cycle. This is a simple unoptimised solution to the
+/// Travelling Salesman Problem, or more usefully is a starting point for optimising a tour using
+/// TwoOptHeuristicTSP.
+///
+/// # Rust notes
+///
 /// `RandomTourTSP`: a uniformly random permutation of the vertices.
 pub struct RandomTourTSP<R = StdRng> {
     rng: R,
@@ -67,6 +75,35 @@ impl<G: Graph, R: RandomSource> HamiltonianCycleAlgorithm<G> for RandomTourTSP<R
     }
 }
 
+/// The nearest neighbour heuristic algorithm for the TSP problem.
+///
+/// The travelling salesman problem (TSP) asks the following question: "Given a list of cities and
+/// the distances between each pair of cities, what is the shortest possible route that visits each
+/// city exactly once and returns to the origin city?".
+///
+/// This is perhaps the simplest and most straightforward TSP heuristic. The key to this algorithm is
+/// to always visit the nearest city.
+///
+/// The tour computed with a `Nearest-Neighbor-Heuristic` can vary depending on the first
+/// vertex visited. The first vertex for the next or for multiple subsequent tour computations (calls
+/// of `getTour(Graph)`) can be specified in the constructors
+/// `NearestNeighborHeuristicTSP(Object)` or `NearestNeighborHeuristicTSP(Iterable)`.
+/// This can be used for example to ensure that the first vertices visited are different for
+/// subsequent calls of `getTour(Graph)`. Once each specified first vertex is used, the first
+/// vertex in subsequent tour computations is selected randomly from the graph. Alternatively
+/// `NearestNeighborHeuristicTSP(Random)` or `NearestNeighborHeuristicTSP(long)` can be
+/// used to specify a `Random` used to randomly select the vertex visited first.
+///
+/// The implementation of this class is based on:
+/// Nilsson, Christian. "Heuristics for the traveling salesman problem." Linkoping University 38
+/// (2003)
+///
+/// The runtime complexity of this class is $O(V^2)$.
+///
+/// This algorithm requires that the graph is complete.
+///
+/// # Rust notes
+///
 /// `NearestNeighborHeuristicTSP`: starts at a given or random vertex and repeatedly walks to the
 /// nearest unvisited vertex.
 pub struct NearestNeighborHeuristicTSP<V, R = StdRng> {
@@ -158,6 +195,23 @@ fn nearest_neighbor<G: Graph>(
     closest
 }
 
+/// A 2-approximation algorithm for the metric TSP problem.
+///
+/// The travelling salesman problem (TSP) asks the following question: "Given a list of cities and
+/// the distances between each pair of cities, what is the shortest possible route that visits each
+/// city exactly once and returns to the origin city?". In the metric TSP, the intercity distances
+/// satisfy the triangle inequality.
+///
+/// This is an implementation of the folklore algorithm which returns a depth-first ordering of the
+/// minimum spanning tree. The algorithm is a 2-approximation assuming that the instance satisfies
+/// the triangle inequality. The implementation requires the input graph to be undirected and
+/// complete. The running time is $O(|V|^2 \log |V|)$.
+///
+/// See [wikipedia](https://en.wikipedia.org/wiki/Travelling_salesman_problem) for more
+/// details.
+///
+/// # Rust notes
+///
 /// `TwoApproxMetricTSP`: shortcuts a depth-first walk of a minimum spanning tree.
 #[derive(Default)]
 pub struct TwoApproxMetricTSP;
@@ -192,6 +246,26 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for TwoApproxMetricTSP {
     }
 }
 
+/// The greedy heuristic algorithm for the TSP problem.
+///
+/// The travelling salesman problem (TSP) asks the following question: "Given a list of cities and
+/// the distances between each pair of cities, what is the shortest possible route that visits each
+/// city exactly once and returns to the origin city?".
+///
+/// The Greedy heuristic gradually constructs a tour by repeatedly selecting the shortest edge and
+/// adding it to the tour as long as it doesn’t create a cycle with less than N edges, or increases
+/// the degree of any node to more than 2. We must not add the same edge twice of course.
+///
+/// The implementation of this class is based on:
+/// Nilsson, Christian. "Heuristics for the traveling salesman problem." Linkoping University 38
+/// (2003)
+///
+/// The runtime complexity of this class is $O(V^2 log(V))$.
+///
+/// This algorithm requires that the graph is complete.
+///
+/// # Rust notes
+///
 /// `GreedyHeuristicTSP`: repeatedly adds the cheapest edge that keeps a partial tour.
 #[derive(Default)]
 pub struct GreedyHeuristicTSP;
@@ -247,6 +321,24 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for GreedyHeuristicTSP {
     }
 }
 
+/// A dynamic programming algorithm for the TSP problem.
+///
+/// The travelling salesman problem (TSP) asks the following question: "Given a list of cities and
+/// the distances between each pair of cities, what is the shortest possible route that visits each
+/// city exactly once and returns to the origin city?".
+///
+/// This is an implementation of the Held-Karp algorithm which returns a optimal, minimum-cost
+/// Hamiltonian tour. The implementation requires the input graph to contain at least one vertex. The
+/// running time is $O(2^{|V|} \times |V|^2)$ and it takes $O(2^{|V|} \times |V|)$ extra memory.
+///
+/// See [wikipedia](https://en.wikipedia.org/wiki/Travelling_salesman_problem) for more
+/// details about TSP.
+///
+/// See [wikipedia](https://en.wikipedia.org/wiki/Held%E2%80%93Karp_algorithm) for more
+/// details about the dynamic programming algorithm.
+///
+/// # Rust notes
+///
 /// `HeldKarpTSP`: the exact dynamic program, `O(2^n n²)`; at most 31 vertices.
 #[derive(Default)]
 pub struct HeldKarpTSP;
@@ -342,6 +434,36 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for HeldKarpTSP {
     }
 }
 
+/// Palmer's algorithm for computing Hamiltonian cycles in graphs that meet Ore's condition. Ore gave
+/// a sufficient condition for a graph to be Hamiltonian, essentially stating that a graph with
+/// sufficiently many edges must contain a Hamilton cycle.
+///
+/// Specifically, Ore's theorem considers the sum of the degrees of pairs of non-adjacent vertices:
+/// if every such pair has a sum that at least equals the total number of vertices in the graph, then
+/// the graph is Hamiltonian.
+///
+/// A Hamiltonian cycle, also called a Hamiltonian circuit, Hamilton cycle, or Hamilton circuit, is a
+/// graph cycle (i.e., closed loop) through a graph that visits each node exactly once (Skiena 1990,
+/// p. 196).
+///
+/// This is an implementation of the CRISS-CROSS algorithm described by E. M. Palmer in his paper.
+/// The algorithm takes a simple graph that meets Ore's condition (see
+/// `GraphTests#hasOreProperty(Graph)`) and returns a Hamiltonian cycle. The algorithm runs in
+/// $O(|V|^3)$ time and uses $O(|V|)$ space. In contrast to the most other algorithms in this package
+/// this algorithm does only attempt to find any Hamiltonian cycle in the graph and does not attempt
+/// to find the shortest cycle. The advantage of this algorithm is that accepted graphs only need to
+/// meet Ore's condition which is less strict than the completeness requirement of most of the other
+/// algorithms.
+///
+/// The original algorithm is described in: Palmer, E. M. (1997), "The hidden algorithm of Ore's
+/// theorem on Hamiltonian cycles", Computers & Mathematics with Applications, 34 (11): 113–119,
+/// doi:10.1016/S0898-1221(97)00225-3
+///
+/// See [wikipedia](https://en.wikipedia.org/wiki/Ore%27s_theorem) for a short description
+/// of Ore's theorem and Palmer's algorithm.
+///
+/// # Rust notes
+///
 /// `PalmerHamiltonianCycle`: closes the gaps of an arbitrary vertex ordering in graphs that satisfy
 /// Ore's property.
 #[derive(Default)]
