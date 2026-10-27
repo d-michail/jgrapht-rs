@@ -1,3 +1,7 @@
+//! Shared identifier and attribute-provider support for graph exporters.
+
+#![deny(missing_docs)]
+
 use crate::{AttributeMap, IoError, Result};
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -16,10 +20,12 @@ impl<T> Default for IntegerIdProvider<T> {
 }
 
 impl<T> IntegerIdProvider<T> {
+    /// Creates a provider whose first identifier is `"1"`.
     pub fn new() -> Self {
         Self::with_start(1)
     }
 
+    /// Creates a provider whose first identifier is the decimal form of `next_id`.
     pub fn with_start(next_id: i64) -> Self {
         Self {
             next_id,
@@ -29,6 +35,7 @@ impl<T> IntegerIdProvider<T> {
 }
 
 impl<T: Clone + Eq + Hash> IntegerIdProvider<T> {
+    /// Returns the stable identifier assigned to `value`, allocating one on first use.
     pub fn id(&mut self, value: &T) -> String {
         let id = self.ids.entry(value.clone()).or_insert_with(|| {
             let id = self.next_id;
@@ -55,6 +62,7 @@ pub struct BaseExporter<V, E> {
 }
 
 impl<V, E> BaseExporter<V, E> {
+    /// Creates shared exporter state with the required vertex identifier provider.
     pub fn new(provider: impl FnMut(&V) -> String + 'static) -> Self {
         Self {
             graph_id_provider: None,
@@ -66,34 +74,42 @@ impl<V, E> BaseExporter<V, E> {
         }
     }
 
+    /// Sets the provider used to identify the graph itself.
     pub fn set_graph_id_provider(&mut self, provider: impl FnMut() -> String + 'static) {
         self.graph_id_provider = Some(Box::new(provider));
     }
 
+    /// Returns whether a graph identifier provider is configured.
     pub fn has_graph_id_provider(&self) -> bool {
         self.graph_id_provider.is_some()
     }
 
+    /// Removes the graph identifier provider.
     pub fn clear_graph_id_provider(&mut self) {
         self.graph_id_provider = None;
     }
 
+    /// Sets the provider for graph-level attributes.
     pub fn set_graph_attribute_provider(&mut self, provider: impl Fn() -> AttributeMap + 'static) {
         self.graph_attribute_provider = Some(Box::new(provider));
     }
 
+    /// Returns whether a graph attribute provider is configured.
     pub fn has_graph_attribute_provider(&self) -> bool {
         self.graph_attribute_provider.is_some()
     }
 
+    /// Removes the graph attribute provider.
     pub fn clear_graph_attribute_provider(&mut self) {
         self.graph_attribute_provider = None;
     }
 
+    /// Replaces the required vertex identifier provider.
     pub fn set_vertex_id_provider(&mut self, provider: impl FnMut(&V) -> String + 'static) {
         self.vertex_id_provider = Box::new(provider);
     }
 
+    /// Sets the provider for per-vertex attributes.
     pub fn set_vertex_attribute_provider(
         &mut self,
         provider: impl Fn(&V) -> AttributeMap + 'static,
@@ -101,52 +117,68 @@ impl<V, E> BaseExporter<V, E> {
         self.vertex_attribute_provider = Some(Box::new(provider));
     }
 
+    /// Returns whether a vertex attribute provider is configured.
     pub fn has_vertex_attribute_provider(&self) -> bool {
         self.vertex_attribute_provider.is_some()
     }
 
+    /// Removes the vertex attribute provider.
     pub fn clear_vertex_attribute_provider(&mut self) {
         self.vertex_attribute_provider = None;
     }
 
+    /// Sets the optional edge identifier provider.
     pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
         self.edge_id_provider = Some(Box::new(provider));
     }
 
+    /// Returns whether an edge identifier provider is configured.
     pub fn has_edge_id_provider(&self) -> bool {
         self.edge_id_provider.is_some()
     }
 
+    /// Removes the edge identifier provider.
     pub fn clear_edge_id_provider(&mut self) {
         self.edge_id_provider = None;
     }
 
+    /// Sets the provider for per-edge attributes.
     pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
         self.edge_attribute_provider = Some(Box::new(provider));
     }
 
+    /// Returns whether an edge attribute provider is configured.
     pub fn has_edge_attribute_provider(&self) -> bool {
         self.edge_attribute_provider.is_some()
     }
 
+    /// Removes the edge attribute provider.
     pub fn clear_edge_attribute_provider(&mut self) {
         self.edge_attribute_provider = None;
     }
 
+    /// Invokes the graph identifier provider, or returns `None` when none is configured.
     pub fn graph_id(&mut self) -> Option<String> {
         self.graph_id_provider.as_mut().map(|provider| provider())
     }
 
+    /// Invokes the graph attribute provider, or returns `None` when none is configured.
     pub fn graph_attributes(&self) -> Option<AttributeMap> {
         self.graph_attribute_provider
             .as_ref()
             .map(|provider| provider())
     }
 
+    /// Returns one graph attribute by key from a freshly provided attribute map.
     pub fn graph_attribute(&self, key: &str) -> Option<crate::Attribute> {
         self.graph_attributes()?.shift_remove(key)
     }
 
+    /// Returns the identifier for `vertex`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`IoError::Export`] if the provider returns an empty identifier.
     pub fn vertex_id(&mut self, vertex: &V) -> Result<String> {
         let id = (self.vertex_id_provider)(vertex);
         if id.is_empty() {
@@ -156,28 +188,33 @@ impl<V, E> BaseExporter<V, E> {
         }
     }
 
+    /// Invokes the vertex attribute provider for `vertex`, if configured.
     pub fn vertex_attributes(&self, vertex: &V) -> Option<AttributeMap> {
         self.vertex_attribute_provider
             .as_ref()
             .map(|provider| provider(vertex))
     }
 
+    /// Returns one attribute for `vertex` by key from a freshly provided attribute map.
     pub fn vertex_attribute(&self, vertex: &V, key: &str) -> Option<crate::Attribute> {
         self.vertex_attributes(vertex)?.shift_remove(key)
     }
 
+    /// Invokes the edge identifier provider for `edge`, if configured.
     pub fn edge_id(&mut self, edge: &E) -> Option<String> {
         self.edge_id_provider
             .as_mut()
             .map(|provider| provider(edge))
     }
 
+    /// Invokes the edge attribute provider for `edge`, if configured.
     pub fn edge_attributes(&self, edge: &E) -> Option<AttributeMap> {
         self.edge_attribute_provider
             .as_ref()
             .map(|provider| provider(edge))
     }
 
+    /// Returns one attribute for `edge` by key from a freshly provided attribute map.
     pub fn edge_attribute(&self, edge: &E, key: &str) -> Option<crate::Attribute> {
         self.edge_attributes(edge)?.shift_remove(key)
     }
