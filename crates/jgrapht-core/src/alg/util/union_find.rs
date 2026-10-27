@@ -1,0 +1,157 @@
+use crate::{GraphError, Result};
+use indexmap::IndexMap;
+use std::fmt::{Debug, Display};
+use std::hash::Hash;
+
+/// Union–find over arbitrary elements with union by rank and path compression (`UnionFind<T>`).
+/// Elements keep insertion order.
+#[derive(Debug, Clone)]
+pub struct UnionFind<T: Eq + Hash + Clone> {
+    parent: IndexMap<T, T>,
+    rank: IndexMap<T, usize>,
+    count: usize,
+}
+
+impl<T: Eq + Hash + Clone> UnionFind<T> {
+    pub fn new(elements: impl IntoIterator<Item = T>) -> Self {
+        let mut uf = UnionFind {
+            parent: IndexMap::new(),
+            rank: IndexMap::new(),
+            count: 0,
+        };
+        for e in elements {
+            if !uf.parent.contains_key(&e) {
+                uf.parent.insert(e.clone(), e.clone());
+                uf.rank.insert(e, 0);
+                uf.count += 1;
+            }
+        }
+        uf
+    }
+
+    pub fn add_element(&mut self, element: T) -> Result<()> {
+        if self.contains(&element) {
+            return Err(GraphError::InvalidArgument(
+                "element is already contained in UnionFind".into(),
+            ));
+        }
+        self.parent.insert(element.clone(), element.clone());
+        self.rank.insert(element, 0);
+        self.count += 1;
+        Ok(())
+    }
+
+    pub fn contains(&self, element: &T) -> bool {
+        self.parent.contains_key(element)
+    }
+
+    /// Representative of the set containing `element`.
+    pub fn find(&mut self, element: &T) -> Result<T> {
+        if !self.contains(element) {
+            return Err(GraphError::InvalidArgument(
+                "element is not contained in this UnionFind data structure".into(),
+            ));
+        }
+        let mut current = element.clone();
+        loop {
+            let parent = &self.parent[&current];
+            if *parent == current {
+                break;
+            }
+            current = parent.clone();
+        }
+        let root = current;
+        let mut current = element.clone();
+        while current != root {
+            let parent = self.parent[&current].clone();
+            self.parent.insert(current, root.clone());
+            current = parent;
+        }
+        Ok(root)
+    }
+
+    pub fn union(&mut self, element1: &T, element2: &T) -> Result<()> {
+        if !self.contains(element1) || !self.contains(element2) {
+            return Err(GraphError::InvalidArgument(
+                "elements must be contained in given set".into(),
+            ));
+        }
+        let parent1 = self.find(element1)?;
+        let parent2 = self.find(element2)?;
+        if parent1 == parent2 {
+            return Ok(());
+        }
+        let (rank1, rank2) = (self.rank[&parent1], self.rank[&parent2]);
+        if rank1 > rank2 {
+            self.parent.insert(parent2, parent1);
+        } else if rank1 < rank2 {
+            self.parent.insert(parent1, parent2);
+        } else {
+            self.parent.insert(parent2, parent1.clone());
+            self.rank.insert(parent1, rank1 + 1);
+        }
+        self.count -= 1;
+        Ok(())
+    }
+
+    pub fn in_same_set(&mut self, element1: &T, element2: &T) -> Result<bool> {
+        Ok(self.find(element1)? == self.find(element2)?)
+    }
+
+    pub fn number_of_sets(&self) -> usize {
+        self.count
+    }
+
+    pub fn len(&self) -> usize {
+        self.parent.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.parent.is_empty()
+    }
+
+    /// Puts every element back into its own set.
+    pub fn reset(&mut self) {
+        for (k, v) in self.parent.iter_mut() {
+            *v = k.clone();
+        }
+        for r in self.rank.values_mut() {
+            *r = 0;
+        }
+        self.count = self.parent.len();
+    }
+}
+
+impl<T: Eq + Hash + Clone + Display> Display for UnionFind<T> {
+    /// `{{rep:a,b}, {rep2:c}}` like JGraphT's `toString`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut uf = self.clone();
+        let mut sets: IndexMap<T, Vec<T>> = IndexMap::new();
+        let keys: Vec<T> = uf.parent.keys().cloned().collect();
+        for t in keys {
+            let rep = uf.find(&t).expect("element present");
+            sets.entry(rep).or_default().push(t);
+        }
+        let parts: Vec<String> = sets
+            .iter()
+            .map(|(rep, members)| {
+                let m: Vec<String> = members.iter().map(|x| x.to_string()).collect();
+                format!("{{{}:{}}}", rep, m.join(","))
+            })
+            .collect();
+        write!(f, "{{{}}}", parts.join(", "))
+    }
+}
+
+impl<T: Eq + Hash + Clone + Debug> UnionFind<T> {
+    /// The current partition, sets in order of first appearance.
+    pub fn sets(&mut self) -> Vec<Vec<T>> {
+        let keys: Vec<T> = self.parent.keys().cloned().collect();
+        let mut sets: IndexMap<T, Vec<T>> = IndexMap::new();
+        for t in keys {
+            let rep = self.find(&t).expect("element present");
+            sets.entry(rep).or_default().push(t);
+        }
+        sets.into_values().collect()
+    }
+}

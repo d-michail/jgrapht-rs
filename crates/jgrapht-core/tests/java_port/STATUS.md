@@ -41,3 +41,9 @@ mechanism that has no Rust counterpart (serialization, JVM collections, thread-s
 Note: `rheaps` 0.16.2 matches JHeaps' tie-breaking for insert/pop, decrease-key and delete
 (`tests/heap_equivalence.rs`), so the algorithms use `rheaps::tree::PairingHeap`.
 `util::heap::JavaPairingHeap` is kept as the oracle (verified against the real JHeaps jar).
+
+## alg/
+
+| Java test | Rust module | State |
+|---|---|---|
+| `alg/util/*` (AliasMethodSampler, FixedSizeIntegerQueue, NeighborCache, Pair (+UnorderedPair), UnionFind, VertexDegreeComparator) | `alg_util_tests` | done (`NeighborCache` results are snapshots, not live views; `UnorderedPair` has one element type) |

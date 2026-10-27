@@ -5,6 +5,7 @@
     clippy::useless_vec
 )]
 
+mod alg_util_tests;
 mod common;
 
 mod directed_acyclic_graph_test;

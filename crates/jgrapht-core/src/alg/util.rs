@@ -3,6 +3,23 @@
 use crate::graph::{Graph, GraphExt};
 use std::collections::HashMap;
 
+mod neighbor_cache;
+mod pair;
+mod queue;
+mod union_find;
+
+pub use neighbor_cache::{NeighborCache, Neighbors};
+pub use pair::{Pair, Triple, UnorderedPair};
+pub use queue::FixedSizeIntegerQueue;
+pub use union_find::UnionFind;
+
+/// `VertexDegreeComparator.of(g)`: a comparison function ordering vertices by degree.
+pub fn vertex_degree_comparator<G: Graph>(
+    g: &G,
+) -> impl Fn(&G::Vertex, &G::Vertex) -> std::cmp::Ordering + '_ {
+    move |a, b| g.degree_of(a).cmp(&g.degree_of(b))
+}
+
 pub struct Indexed<'g, G: Graph> {
     pub g: &'g G,
     pub vs: Vec<&'g G::Vertex>,
