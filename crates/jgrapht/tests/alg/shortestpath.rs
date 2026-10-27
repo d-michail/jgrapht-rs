@@ -10,14 +10,26 @@ mod advanced_speedups;
 mod all_directed_paths;
 #[path = "shortestpath/basic_classes.rs"]
 mod basic_classes;
+#[path = "shortestpath/bellman_ford.rs"]
+mod bellman_ford;
 #[path = "shortestpath/bounded_pruned_yen.rs"]
 mod bounded_pruned_yen;
+#[path = "shortestpath/dag_all_paths_counter.rs"]
+mod dag_all_paths_counter;
+#[path = "shortestpath/dijkstra.rs"]
+mod dijkstra;
 #[path = "shortestpath/disjoint_paths.rs"]
 mod disjoint_paths;
 #[path = "shortestpath/eppstein.rs"]
 mod eppstein;
 #[path = "shortestpath/foundational_classes.rs"]
 mod foundational_classes;
+#[path = "shortestpath/int_vertex_dijkstra.rs"]
+mod int_vertex_dijkstra;
+#[path = "shortestpath/johnson.rs"]
+mod johnson;
+#[path = "shortestpath/multi_objective.rs"]
+mod multi_objective;
 #[path = "shortestpath/path_results.rs"]
 mod path_results;
 #[path = "shortestpath/ported_classes.rs"]

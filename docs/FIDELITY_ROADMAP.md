@@ -50,7 +50,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 | C12 | **done** `matching/legacy.rs` (deleted; callers use the matching classes) | Dense/Sparse Edmonds, Kuhn–Munkres, greedy, path-growing; Blossom V remains tracked by F3 | |
 | C13 (done) | `paths.rs` (deleted; callers/tests use `AllDirectedPaths`, `BellmanFordShortestPath`, `SuurballeKDisjointShortestPaths` and `BhandariKDisjointShortestPaths`; the non-Java vertex-disjoint helper was removed) | Java classes, with typed Bellman–Ford negative-cycle errors carrying the detected `GraphWalk` | |
 | C14 | `shortestpath/*` functions **[needs 1i]** | Java algorithm classes | |
-| C15 | `ChinesePostman` **[needs 1g]** | faithful class | |
+| C15 | **done** `ChinesePostman` | faithful class using Blossom V for undirected augmentation and Kuhn–Munkres for directed augmentation | |
 
 ## D. Audit of earlier modules
 
@@ -101,13 +101,16 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
   large edge lists are generated into `tests/alg/blossom_data.rs` by
   `scripts/port_blossom_fixtures.py`, retaining the upstream case numbers.
 
-**F4. Dependents of Blossom V.** `ChristofidesThreeHalvesApproxMetricTSP` (uses `KolmogorovWeightedPerfectMatching` on the odd-degree vertices; port the Java class and its tests, then delete `christofides_tour` in `tour/legacy.rs`, C6) and `ChinesePostman` (class and tests, C15).
+**F4 (done). Dependents of Blossom V.** `ChristofidesThreeHalvesApproxMetricTSP` (uses `KolmogorovWeightedPerfectMatching` on the odd-degree vertices; port the Java class and its tests, then delete `christofides_tour` in `tour/legacy.rs`, C6) and `ChinesePostman` (class and tests, C15).
 
 - **F4a Christofides complete:** `ChristofidesThreeHalvesApproxMetricTSP` uses Kruskal, Blossom V
   on the induced odd-degree subgraph, Hierholzer, and Euler-tour shortcutting. All 11 upstream
   scenarios pass, the temporary subset-DP/greedy `christofides_tour` helper is deleted, and C6 is
   complete.
-- **F4b remaining:** port `ChinesePostman` and its tests, then close C15 and F4.
+- **F4b Chinese Postman complete:** `ChinesePostman` uses Dijkstra shortest paths and Blossom V
+  to pair odd-degree vertices in undirected graphs, and Dijkstra plus Kuhn–Munkres to balance
+  directed graphs. All 16 upstream scenarios pass, including weighted, unweighted, loop,
+  multigraph, pseudograph, and smoke cases. C15 and F4 are complete.
 
 ## G. Shortest-path package (1i): checkpoint and hand-off
 
@@ -115,11 +118,11 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
 
 Implemented in `crates/jgrapht/src/alg/shortestpath/`: Java-style BFS, Dijkstra and closest-first iterator, Bellman–Ford, A*/ALT, bidirectional Dijkstra/A*, Floyd–Warshall, Johnson, list/tree single-source paths, `TreeMeasurer`, array-backed integer Dijkstra, sequential delta stepping, `DagAllPathsCounter`, default/Dijkstra/CH many-to-many, Martin and label-correcting multi-objective paths, `AllDirectedPaths`, Suurballe/Bhandari, lazy Yen, bounded/pruned Yen, Eppstein sidetrack heaps, sequential contraction hierarchies, and transit-node routing. C13 deleted the old `alg/paths.rs` helpers and their non-Java vertex-disjoint implementation; callers now use the shortest-path classes directly.
 
-Current validation: `cargo test -p jgrapht --test alg shortestpath:: -- --nocapture` passes **111/111** shortest-path tests. These include the complete 20-test `AllDirectedPathsTest`, all 46 inherited and class-specific Suurballe/Bhandari disjoint-path cases, complete list/tree single-source path-result contracts, all four seeded `AllPairsShortestPathsTest` cross-checks, focused Java-derived golden sequences for Yen/Eppstein, bounded-pruned equivalence tests, foundational class contracts, CH/TNR comparisons with Dijkstra, and Java-derived Bellman–Ford negative-cycle payload tests.
+Current validation: `cargo test -p jgrapht --test alg shortestpath:: -- --nocapture` passes **149/149** shortest-path tests. These include the complete `BellmanFordShortestPathTest` (12 cases including the inherited path test), `DagAllPathsCounterTest` (5), `DijkstraShortestPathTest` (5 including the inherited path test), `IntVertexDijkstraShortestPathTest` (5), `JohnsonShortestPathsTest` (3), `MartinShortestPathTest` (2), `LabelCorrectingMultiObjectiveShortestPathTest` (5), 20-test `AllDirectedPathsTest`, all 46 inherited and class-specific Suurballe/Bhandari disjoint-path cases, complete list/tree single-source path-result contracts, all four seeded `AllPairsShortestPathsTest` cross-checks, focused Java-derived golden sequences for Yen/Eppstein, bounded-pruned equivalence tests, foundational class contracts, and CH/TNR comparisons with Dijkstra.
 
 Strict-fidelity work still required before marking 1i or C14 done:
 
-- Port the remaining 34 Java shortest-path test files / roughly 213 tests and record each class separately in `STATUS.md`; the checkpoint is a coherent implementation base, not a completed package port.
+- Port the remaining 27 Java shortest-path test files / roughly 178 tests and record each class separately in `STATUS.md`; the checkpoint is a coherent implementation base, not a completed package port.
 - Make contraction preprocessing reproduce Java's parallel independent-set/random-tie ordering and implement Java's bucket-based CH many-to-many algorithm. The checkpoint uses deterministic sequential witness searches and materialized CH point queries.
 - Complete transit-node routing's Java Voronoi locality filter and exact access-node selection. The checkpoint's conservative locality filter is correct but not technique-faithful.
 - Add bounded-pruned Yen's alternate A* spur engine and settled-vertex accounting (`expanded_vertices` is currently zero).

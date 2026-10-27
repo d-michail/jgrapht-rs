@@ -1,0 +1,144 @@
+use jgrapht::alg::shortestpath::{DijkstraShortestPath, ShortestPathAlgorithm};
+use jgrapht::{DefaultEdge, DiGraph, GraphMutExt, UGraph};
+
+fn undirected_fixture() -> (UGraph<&'static str>, [DefaultEdge; 6]) {
+    let mut graph = UGraph::<&str>::simple().weighted();
+    graph.add_vertices(["v1", "v2", "v3", "v4", "v5"]);
+    let edges = [
+        graph.add_weighted_edge(&"v1", &"v2", 2.0).unwrap().unwrap(),
+        graph.add_weighted_edge(&"v1", &"v3", 3.0).unwrap().unwrap(),
+        graph
+            .add_weighted_edge(&"v1", &"v5", 100.0)
+            .unwrap()
+            .unwrap(),
+        graph.add_weighted_edge(&"v2", &"v4", 5.0).unwrap().unwrap(),
+        graph
+            .add_weighted_edge(&"v3", &"v4", 20.0)
+            .unwrap()
+            .unwrap(),
+        graph.add_weighted_edge(&"v4", &"v5", 5.0).unwrap().unwrap(),
+    ];
+    (graph, edges)
+}
+
+#[test]
+fn test_path_between() {
+    let (graph, [e12, e13, _, e24, _, e45]) = undirected_fixture();
+    let algorithm = DijkstraShortestPath::new(&graph);
+
+    assert_eq!(algorithm.path(&"v1", &"v2").unwrap().unwrap().edges, [e12]);
+    assert_eq!(
+        algorithm.path(&"v1", &"v4").unwrap().unwrap().edges,
+        [e12, e24]
+    );
+    assert_eq!(
+        algorithm.path(&"v1", &"v5").unwrap().unwrap().edges,
+        [e12, e24, e45]
+    );
+    assert_eq!(
+        algorithm.path(&"v3", &"v4").unwrap().unwrap().edges,
+        [e13, e12, e24]
+    );
+}
+
+#[test]
+fn test_constructor() {
+    let (graph, [e12, e13, _, e24, _, _]) = undirected_fixture();
+    let path = DijkstraShortestPath::new(&graph)
+        .radius(f64::INFINITY)
+        .path(&"v3", &"v4")
+        .unwrap()
+        .unwrap();
+    assert_eq!(path.edges, [e13, e12, e24]);
+    assert_eq!(path.weight, 10.0);
+
+    assert!(
+        DijkstraShortestPath::new(&graph)
+            .radius(7.0)
+            .path(&"v3", &"v4")
+            .unwrap()
+            .is_none()
+    );
+}
+
+fn directed_fixture() -> (DiGraph<&'static str>, [DefaultEdge; 5]) {
+    let mut graph = DiGraph::<&str>::pseudo().weighted();
+    graph.add_vertices(["v1", "v2", "v3", "v4", "v5"]);
+    let edges = [
+        graph.add_weighted_edge(&"v1", &"v2", 3.0).unwrap().unwrap(),
+        graph.add_weighted_edge(&"v2", &"v4", 1.0).unwrap().unwrap(),
+        graph.add_weighted_edge(&"v1", &"v3", 1.0).unwrap().unwrap(),
+        graph.add_weighted_edge(&"v3", &"v2", 1.0).unwrap().unwrap(),
+        graph.add_weighted_edge(&"v3", &"v4", 3.0).unwrap().unwrap(),
+    ];
+    (graph, edges)
+}
+
+#[test]
+fn test_shortest_path_tree() {
+    let (graph, [_, e24, e13, e32, _]) = directed_fixture();
+    let paths = DijkstraShortestPath::new(&graph)
+        .single_source(&"v1")
+        .unwrap();
+
+    assert_eq!(paths.source(), &"v1");
+    for (vertex, weight) in [
+        ("v1", 0.0),
+        ("v2", 2.0),
+        ("v3", 1.0),
+        ("v4", 3.0),
+        ("v5", f64::INFINITY),
+    ] {
+        assert_eq!(paths.weight(&vertex), weight);
+    }
+
+    let p11 = paths.path(&"v1").unwrap();
+    assert_eq!(p11.start_vertex(), Some(&"v1"));
+    assert_eq!(p11.end_vertex(), Some(&"v1"));
+    assert_eq!(p11.weight, 0.0);
+    assert!(p11.edges.is_empty());
+
+    let p12 = paths.path(&"v2").unwrap();
+    assert_eq!(p12.start_vertex(), Some(&"v1"));
+    assert_eq!(p12.end_vertex(), Some(&"v2"));
+    assert_eq!(p12.weight, 2.0);
+    assert_eq!(p12.edges, [e13, e32]);
+
+    let p13 = paths.path(&"v3").unwrap();
+    assert_eq!(p13.weight, 1.0);
+    assert_eq!(p13.edges, [e13]);
+
+    let p14 = paths.path(&"v4").unwrap();
+    assert_eq!(p14.weight, 3.0);
+    assert_eq!(p14.edges, [e13, e32, e24]);
+    assert!(paths.path(&"v5").is_none());
+}
+
+#[test]
+fn test_get_path_weight() {
+    let (graph, _) = directed_fixture();
+    let algorithm = DijkstraShortestPath::new(&graph);
+
+    for (target, weight) in [
+        ("v1", 0.0),
+        ("v2", 2.0),
+        ("v3", 1.0),
+        ("v4", 3.0),
+        ("v5", f64::INFINITY),
+    ] {
+        assert_eq!(algorithm.path_weight(&"v1", &target).unwrap(), weight);
+    }
+}
+
+#[test]
+fn test_non_negative_weights() {
+    let mut graph = DiGraph::<&str>::pseudo().weighted();
+    graph.add_vertices(["v1", "v2"]);
+    graph.add_weighted_edge(&"v1", &"v2", -100.0).unwrap();
+
+    assert!(
+        DijkstraShortestPath::new(&graph)
+            .path(&"v1", &"v2")
+            .is_err()
+    );
+}
