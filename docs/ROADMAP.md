@@ -108,7 +108,7 @@ These are graph storage implementations, not a separate integration boundary. Po
 
 - README: Java-to-Rust mapping table, per-package status, how to run the Java-port suite.
 - API pass: naming consistency (`*_num` vs `*_count`), error types, `#[non_exhaustive]` on public enums, docs for every public item (`#![warn(missing_docs)]`), doc examples.
-- `benches/` (criterion) for the Java `perf/` tests (15), compared with the Java numbers. Started in `crates/jgrapht/benches/`: `graph_perf` (`GraphPerformanceTest`) and `shortestpath_perf` (`DijkstraShortestPathPerformanceTest` plus the `BaseGraph` vs sparse Dijkstra/BFS comparison from Phase 3b); `algorithms_perf` adds the flow, spanning-tree and maximal-clique tests. The remaining perf tests (shortest-path variants, LCA, matching, tour, DAG, tree connectivity) are still to port.
+- `benches/` (criterion) for the Java `perf/` tests (15), compared with the Java numbers. Started in `crates/jgrapht/benches/`: `graph_perf` (`GraphPerformanceTest`) and `shortestpath_perf` (`DijkstraShortestPathPerformanceTest` plus the `BaseGraph` vs sparse Dijkstra/BFS comparison from Phase 3b); `algorithms_perf` adds the flow, spanning-tree and maximal-clique tests. `structures_perf` adds LCA, tree dynamic connectivity, path-growing / Hopcroft–Karp matching and DAG Hamiltonian path. The remaining perf tests (shortest-path variants, `DirectedAcyclicGraph*`, `HamiltonianPath*`, Blossom V) are still to port.
 - CI (fmt, clippy, tests on stable and MSRV, nightly doc build) and publishing `jgrapht`/`jgrapht-io` to crates.io once the user is ready.
 - Re-run the heap differential test against each `rheaps` release.
 

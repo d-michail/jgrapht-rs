@@ -28,3 +28,7 @@ harness = false
 [[bench]]
 name = "algorithms_perf"
 harness = false
+
+[[bench]]
+name = "structures_perf"
+harness = false
