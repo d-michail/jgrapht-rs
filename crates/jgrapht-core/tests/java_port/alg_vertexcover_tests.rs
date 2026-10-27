@@ -6,21 +6,22 @@ use crate::vertex_cover_data::{UNWEIGHTED, WEIGHTED};
 use jgrapht::alg::cover::*;
 use jgrapht::alg::interfaces::VertexCoverAlgorithm;
 use jgrapht::generate::*;
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashMap;
 use std::sync::Mutex;
 
 const TEST_GRAPH_SIZE: usize = 200;
 const TEST_REPEATS: usize = 20;
 
-static RANDOM: Mutex<Option<JavaRandom>> = Mutex::new(None);
+static RANDOM: Mutex<Option<StdRng>> = Mutex::new(None);
 
 fn random_int(bound: i32) -> i32 {
     let mut guard = RANDOM.lock().unwrap();
     guard
-        .get_or_insert_with(|| JavaRandom::new(0))
-        .next_int_bound(bound)
+        .get_or_insert_with(|| StdRng::seed_from_u64((0) as u64))
+        .random_range(0..bound)
 }
 
 fn is_cover<G: Graph>(g: &G, cover: &VertexCover<G::Vertex>) -> bool {
@@ -33,7 +34,7 @@ fn is_cover<G: Graph>(g: &G, cover: &VertexCover<G::Vertex>) -> bool {
 fn create_random_pseudo_graph(vertices: usize) -> UGraph<i32> {
     let mut g = UGraph::<i32>::pseudo().with_vertex_factory(|i| i as i32);
     let m = random_int((vertices / 2) as i32) as usize + 1;
-    GnmRandomGraphGenerator::new(vertices, m, JavaRandom::from_time(), false, false)
+    GnmRandomGraphGenerator::new(vertices, m, StdRng::from_os_rng(), false, false)
         .unwrap()
         .generate_default(&mut g)
         .unwrap();

@@ -12,8 +12,9 @@ use jgrapht::alg::transform::line_graph_into;
 use jgrapht::generate::*;
 use jgrapht::graph::props;
 use jgrapht::graph::{Directed, Undirected};
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashSet;
 
 mod line_graph_converter_test {
@@ -304,18 +305,19 @@ mod kou_markowsky_berman_algorithm_test {
         let mut g = UGraph::<String>::simple()
             .weighted()
             .with_vertex_factory(|i| i.to_string());
-        GnpRandomGraphGenerator::new(25, 0.5, JavaRandom::from_time(), false)
+        GnpRandomGraphGenerator::new(25, 0.5, StdRng::from_os_rng(), false)
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
-        let mut rand = JavaRandom::from_time();
+        let mut rand = StdRng::from_os_rng();
         let edges: Vec<DefaultEdge> = g.edges().cloned().collect();
         for e in &edges {
-            let w = rand.next_int_bound(10) as f64 + (1.0 + rand.next_int_bound(10) as f64) / 10.0;
+            let w =
+                rand.random_range(0..10) as f64 + (1.0 + rand.random_range(0..10) as f64) / 10.0;
             g.set_edge_weight(e, w).unwrap();
         }
         let mut shuffled: Vec<String> = g.vertices().cloned().collect();
-        jgrapht::util::java::java_shuffle(&mut shuffled, &mut JavaRandom::from_time());
+        jgrapht::util::java::java_shuffle(&mut shuffled, &mut StdRng::from_os_rng());
         let selected: Vec<String> = shuffled[..10].to_vec();
         let tree = kmb_steiner_tree(&g, &selected).unwrap();
         let vs = tree_vertices(&g, &tree.edges);
@@ -385,7 +387,7 @@ mod bipartite_partitioning_test {
     #[test]
     fn test_random_bipartite() {
         let mut generator =
-            GnpRandomBipartiteGraphGenerator::new(10, 10, 0.8, JavaRandom::from_time()).unwrap();
+            GnpRandomBipartiteGraphGenerator::new(10, 10, 0.8, StdRng::from_os_rng()).unwrap();
         for _ in 0..100 {
             let mut g = UGraph::<i32>::pseudo().with_vertex_factory(|i| i as i32);
             generator.generate_default(&mut g).unwrap();
@@ -448,12 +450,12 @@ mod bipartite_partitioning_test {
 
     #[test]
     fn test_bipartite() {
-        let mut random = JavaRandom::new(0x88);
+        let mut random = StdRng::seed_from_u64((0x88) as u64);
         for _ in 0..100 {
             let mut graph = int_graph();
             let (a, b) = (
-                1 + random.next_int_bound(100) as usize,
-                1 + random.next_int_bound(200) as usize,
+                1 + random.random_range(0..100) as usize,
+                1 + random.random_range(0..200) as usize,
             );
             CompleteBipartite(a, b)
                 .generate_default(&mut graph)
@@ -464,13 +466,13 @@ mod bipartite_partitioning_test {
 
     #[test]
     fn test_bipartite_2() {
-        let mut random = JavaRandom::new(0x88);
+        let mut random = StdRng::seed_from_u64((0x88) as u64);
         for _ in 0..100 {
             let mut graph = int_graph();
-            let n1 = 1 + random.next_int_bound(100) as usize;
-            let n2 = 1 + random.next_int_bound(200) as usize;
+            let n1 = 1 + random.random_range(0..100) as usize;
+            let n2 = 1 + random.random_range(0..200) as usize;
             let m = 4 * n1 * n2 / 10;
-            GnmRandomBipartiteGraphGenerator::new(n1, n2, m, JavaRandom::from_time())
+            GnmRandomBipartiteGraphGenerator::new(n1, n2, m, StdRng::from_os_rng())
                 .generate_default(&mut graph)
                 .unwrap();
             assert_bipartite(&graph);
@@ -486,12 +488,12 @@ mod bipartite_partitioning_test {
 
     #[test]
     fn test_forest() {
-        let mut random = JavaRandom::new(0x88);
+        let mut random = StdRng::seed_from_u64((0x88) as u64);
         for _ in 0..100 {
             let mut graph = int_graph();
-            let t = 10 + random.next_int_bound(50) as usize;
-            let n = 100 + random.next_int_bound(200) as usize;
-            BarabasiAlbertForestGenerator::new(t, n, JavaRandom::from_time())
+            let t = 10 + random.random_range(0..50) as usize;
+            let n = 100 + random.random_range(0..200) as usize;
+            BarabasiAlbertForestGenerator::new(t, n, StdRng::from_os_rng())
                 .unwrap()
                 .generate_default(&mut graph)
                 .unwrap();
@@ -568,7 +570,7 @@ mod gon_algorithm_test {
     ];
 
     fn gon() -> GonHeuristic<i32> {
-        GonHeuristic::with_rng(JavaRandom::from_time())
+        GonHeuristic::with_rng(StdRng::from_os_rng())
     }
 
     #[test]

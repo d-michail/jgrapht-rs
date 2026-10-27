@@ -1,14 +1,15 @@
 //! Ports of `org.jgrapht.alg.lca` tests: LCATreeTestBase (run for the binary lifting, Euler tour,
 //! heavy path and Tarjan finders) and NaiveLCAFinderTest.
 //!
-//! `null` arguments are not applicable; the forest generators get a fresh seeded `JavaRandom`.
+//! `null` arguments are not applicable; the forest generators get a fresh seeded `StdRng`.
 
 use jgrapht::alg::connectivity::connected_components;
 use jgrapht::alg::interfaces::LowestCommonAncestorAlgorithm;
 use jgrapht::alg::lca::*;
 use jgrapht::generate::*;
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashSet;
 
 type Boxed<'a, V> = Box<dyn LowestCommonAncestorAlgorithm<V> + 'a>;
@@ -66,18 +67,18 @@ fn forest(trees: usize, n: usize, start: i32, seed: i64) -> UGraph<i32> {
     } else {
         UGraph::<i32>::simple().with_vertex_factory(|i| i as i32 + 1)
     };
-    BarabasiAlbertForestGenerator::new(trees, n, JavaRandom::new(seed))
+    BarabasiAlbertForestGenerator::new(trees, n, StdRng::seed_from_u64((seed) as u64))
         .unwrap()
         .generate_default(&mut g)
         .unwrap();
     g
 }
 
-fn generate_queries(q: usize, vertices: &[i32], random: &mut JavaRandom) -> Vec<(i32, i32)> {
+fn generate_queries(q: usize, vertices: &[i32], random: &mut StdRng) -> Vec<(i32, i32)> {
     (0..q)
         .map(|_| {
-            let a = vertices[random.next_int_bound(vertices.len() as i32) as usize];
-            let b = vertices[random.next_int_bound(vertices.len() as i32) as usize];
+            let a = vertices[random.random_range(0..vertices.len() as i32) as usize];
+            let b = vertices[random.random_range(0..vertices.len() as i32) as usize];
             (a, b)
         })
         .collect()
@@ -225,7 +226,7 @@ macro_rules! lca_tree_tests {
             #[test]
             fn test_long_chain() {
                 let (n, q) = (2000, 100_000);
-                let mut random = JavaRandom::new(0x88);
+                let mut random = StdRng::seed_from_u64((0x88) as u64);
                 let g = int_graph(n, &(1..n).map(|i| (i, i + 1)).collect::<Vec<_>>());
                 let vertices: Vec<i32> = g.vertices().copied().collect();
                 let queries = generate_queries(q, &vertices, &mut random);
@@ -361,8 +362,8 @@ macro_rules! lca_tree_tests {
             #[test]
             fn random_huge_connected_tree() {
                 let (n, q) = (100_000, 200_000);
-                let mut random = JavaRandom::new(0x88);
-                let g = forest(1, n, 1, random.next_long());
+                let mut random = StdRng::seed_from_u64((0x88) as u64);
+                let g = forest(1, n, 1, random.random::<i64>());
                 let vertices: Vec<i32> = g.vertices().copied().collect();
                 let alg1 = $solver(&g, &[vertices[0]]).unwrap();
                 let alg2 = other(&g, &[vertices[0]]).unwrap();
@@ -376,9 +377,9 @@ macro_rules! lca_tree_tests {
             #[test]
             fn random_huge_possibly_disconnected_tree() {
                 let (n, q) = (100_000, 200_000);
-                let mut random = JavaRandom::new(0x55);
-                let num_trees = 100 + random.next_int_bound(200) as usize;
-                let g = forest(num_trees, n, 1, random.next_long());
+                let mut random = StdRng::seed_from_u64((0x55) as u64);
+                let num_trees = 100 + random.random_range(0..200) as usize;
+                let g = forest(num_trees, n, 1, random.random::<i64>());
                 let vertices: Vec<i32> = g.vertices().copied().collect();
                 let roots = roots_of(&g);
                 let alg1 = $solver(&g, &roots).unwrap();
@@ -392,10 +393,10 @@ macro_rules! lca_tree_tests {
 
             #[test]
             fn test_small_connected_trees() {
-                let mut random = JavaRandom::new(0x88);
+                let mut random = StdRng::seed_from_u64((0x88) as u64);
                 for _ in 0..10_000 {
-                    let n = 10 + random.next_int_bound(100) as usize;
-                    let g = forest(1, n, 1, random.next_int() as i64);
+                    let n = 10 + random.random_range(0..100) as usize;
+                    let g = forest(1, n, 1, random.random::<i32>() as i64);
                     let vertices: Vec<i32> = g.vertices().copied().collect();
                     let roots = [vertices[0]];
                     let alg1 = $solver(&g, &roots).unwrap();
@@ -410,10 +411,10 @@ macro_rules! lca_tree_tests {
 
             #[test]
             fn test_small_disconnected_trees() {
-                let mut random = JavaRandom::new(0x88);
+                let mut random = StdRng::seed_from_u64((0x88) as u64);
                 for _ in 0..10_000 {
-                    let n = 10 + random.next_int_bound(200) as usize;
-                    let g = forest(n / 10, n, 1, random.next_int() as i64);
+                    let n = 10 + random.random_range(0..200) as usize;
+                    let g = forest(n / 10, n, 1, random.random::<i32>() as i64);
                     let roots = roots_of(&g);
                     let alg1 = $solver(&g, &roots).unwrap();
                     let alg2 = other(&g, &roots).unwrap();

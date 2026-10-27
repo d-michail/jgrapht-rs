@@ -4,9 +4,10 @@ use super::interfaces::CentersLocationAlgorithm;
 use super::util::Indexed;
 use crate::graph::{Graph, props};
 use crate::util::OrderedF64;
-use crate::util::java::{JavaRandom, RandomSource};
+use crate::util::java::RandomSource;
 use crate::{GraphError, Result};
 use indexmap::{IndexMap, IndexSet};
+use rand::rngs::StdRng;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::{HashMap, HashSet};
@@ -60,14 +61,14 @@ pub fn greedy_k_center<G: Graph>(g: &G, k: usize, weighted: bool) -> Result<(Vec
 /// distances (`GonHeuristic`): a 2-approximation of the k-center problem.
 ///
 /// Like in JGraphT, the initial center chosen on the first call is kept for later calls.
-pub struct GonHeuristic<V: Eq + Hash + Clone, R = JavaRandom> {
+pub struct GonHeuristic<V: Eq + Hash + Clone, R = StdRng> {
     initial_centers: Option<HashSet<V>>,
     rng: Option<R>,
     assignment: Option<IndexMap<V, V>>,
     covering_radius: f64,
 }
 
-impl<V: Eq + Hash + Clone> GonHeuristic<V, JavaRandom> {
+impl<V: Eq + Hash + Clone> GonHeuristic<V, StdRng> {
     /// The first center is the given one(s); with an empty set a random vertex is used.
     pub fn with_initial_centers(initial_centers: HashSet<V>) -> Self {
         GonHeuristic {

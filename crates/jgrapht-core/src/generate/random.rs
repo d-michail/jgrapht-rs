@@ -619,7 +619,7 @@ impl<R: RandomSource> PruferTreeGenerator<R> {
         })
     }
 }
-impl PruferTreeGenerator<crate::util::java::JavaRandom> {
+impl PruferTreeGenerator<rand::rngs::StdRng> {
     /// The tree with the given Prüfer sequence (`n = sequence.len() + 2` vertices).
     pub fn from_sequence(sequence: &[usize]) -> Result<Self> {
         let n = sequence.len() + 2;

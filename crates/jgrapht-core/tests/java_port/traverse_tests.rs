@@ -6,8 +6,9 @@
 
 use jgrapht::generate::{GraphGenerator, Linear, Ring};
 use jgrapht::traverse::*;
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;
@@ -1007,8 +1008,14 @@ mod random_walk {
     fn test_invalid_vertex() {
         let graph = DiGraph::<&str>::with_loops();
         assert!(
-            RandomWalkVertexIterator::new(&graph, &"unknown", 100, false, JavaRandom::new(1))
-                .is_err()
+            RandomWalkVertexIterator::new(
+                &graph,
+                &"unknown",
+                100,
+                false,
+                StdRng::seed_from_u64((1) as u64)
+            )
+            .is_err()
         );
     }
 
@@ -1017,9 +1024,14 @@ mod random_walk {
         let mut graph = DiGraph::<&str>::with_loops();
         graph.add_vertex("123");
         let start = graph.vertices().next().unwrap();
-        let mut it =
-            RandomWalkVertexIterator::new(&graph, start, u64::MAX, false, JavaRandom::new(1))
-                .unwrap();
+        let mut it = RandomWalkVertexIterator::new(
+            &graph,
+            start,
+            u64::MAX,
+            false,
+            StdRng::seed_from_u64((1) as u64),
+        )
+        .unwrap();
         assert_eq!(it.next(), Some(&"123"));
         assert_eq!(it.next(), None);
     }
@@ -1029,8 +1041,14 @@ mod random_walk {
         let mut graph = DiGraph::<String>::with_loops();
         Linear(10).generate(&mut graph, |i| i.to_string()).unwrap();
         let start = graph.vertices().next().unwrap();
-        let it = RandomWalkVertexIterator::new(&graph, start, u64::MAX, false, JavaRandom::new(7))
-            .unwrap();
+        let it = RandomWalkVertexIterator::new(
+            &graph,
+            start,
+            u64::MAX,
+            false,
+            StdRng::seed_from_u64((7) as u64),
+        )
+        .unwrap();
         assert_eq!(it.count(), 10);
     }
 
@@ -1041,8 +1059,14 @@ mod random_walk {
             .generate(&mut graph, |i| (i + 1).to_string())
             .unwrap();
         let start = graph.vertices().find(|v| *v == "1").unwrap();
-        let it =
-            RandomWalkVertexIterator::new(&graph, start, 4, false, JavaRandom::new(3)).unwrap();
+        let it = RandomWalkVertexIterator::new(
+            &graph,
+            start,
+            4,
+            false,
+            StdRng::seed_from_u64((3) as u64),
+        )
+        .unwrap();
         assert_eq!(it.count(), 5);
     }
 
@@ -1051,8 +1075,14 @@ mod random_walk {
         let mut graph = DiGraph::<String>::with_loops();
         Ring(5).generate(&mut graph, |i| i.to_string()).unwrap();
         let start = graph.vertices().next().unwrap();
-        let it =
-            RandomWalkVertexIterator::new(&graph, start, 20, false, JavaRandom::new(11)).unwrap();
+        let it = RandomWalkVertexIterator::new(
+            &graph,
+            start,
+            20,
+            false,
+            StdRng::seed_from_u64((11) as u64),
+        )
+        .unwrap();
         for (step, v) in it.enumerate() {
             assert_eq!(*v, (step % 5).to_string());
         }
@@ -1065,8 +1095,14 @@ mod random_walk {
         graph.add_edge(&"0".to_string(), &"1".to_string()).unwrap();
         graph.add_edge(&"1".to_string(), &"2".to_string()).unwrap();
         let start = graph.vertices().next().unwrap();
-        let it = RandomWalkVertexIterator::new(&graph, start, u64::MAX, false, JavaRandom::new(5))
-            .unwrap();
+        let it = RandomWalkVertexIterator::new(
+            &graph,
+            start,
+            u64::MAX,
+            false,
+            StdRng::seed_from_u64((5) as u64),
+        )
+        .unwrap();
         assert_eq!(it.take(10000).count(), 10000);
     }
 }

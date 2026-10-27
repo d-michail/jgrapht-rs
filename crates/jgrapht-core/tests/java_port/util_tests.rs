@@ -5,9 +5,10 @@
 //! (`BTreeMap`), `DoublyLinkedListTest` (`VecDeque`/`LinkedList`), `PrefetchIteratorTest`,
 //! `UnmodifiableUnionSetTest` (iterator chains), `StopWatch` (helper).
 
-use jgrapht::util::java::JavaRandom;
 use jgrapht::util::supplier::*;
 use jgrapht::util::{VertexToIntegerMapping, radix_sort};
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashSet;
 
 #[test]
@@ -23,10 +24,10 @@ fn vertex_mapping_not_unique_elements() {
 
 #[test]
 fn vertex_mapping_random_instances() {
-    let mut random = JavaRandom::new(0x88);
-    let mut supplier = string_supplier(random.next_int_bound(100));
+    let mut random = StdRng::seed_from_u64((0x88) as u64);
+    let mut supplier = string_supplier(random.random_range(0..100));
     for _ in 0..1024 {
-        let n = 10 + random.next_int_bound(1024) as usize;
+        let n = 10 + random.random_range(0..1024) as usize;
         let vertices: HashSet<String> = (0..n).map(|_| supplier()).collect();
         let m = VertexToIntegerMapping::new(vertices).unwrap();
         assert_eq!((m.vertex_map().len(), m.index_list().len()), (n, n));
@@ -79,9 +80,9 @@ fn radix_sort_empty_and_small() {
 
 #[test]
 fn radix_sort_random_huge_array() {
-    let mut random = JavaRandom::new(0x881);
+    let mut random = StdRng::seed_from_u64((0x881) as u64);
     let mut list: Vec<u32> = (0..1_000_000)
-        .map(|_| random.next_int_bound(i32::MAX) as u32)
+        .map(|_| random.random_range(0..i32::MAX) as u32)
         .collect();
     radix_sort(&mut list);
     assert!(is_sorted(&list));
@@ -89,11 +90,11 @@ fn radix_sort_random_huge_array() {
 
 #[test]
 fn radix_sort_random_arrays() {
-    let mut random = JavaRandom::new(0x88);
+    let mut random = StdRng::seed_from_u64((0x88) as u64);
     for _ in 0..50_000 {
-        let n = 1 + random.next_int_bound(100) as usize;
+        let n = 1 + random.random_range(0..100) as usize;
         let mut list: Vec<u32> = (0..n)
-            .map(|_| random.next_int_bound(i32::MAX) as u32)
+            .map(|_| random.random_range(0..i32::MAX) as u32)
             .collect();
         let mut expected = list.clone();
         expected.sort_unstable();

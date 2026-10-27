@@ -130,9 +130,12 @@ pub mod supplier {
     }
     /// Pseudo-random, version-4 style UUID strings (not cryptographically random).
     pub fn random_uuid_string_supplier() -> impl FnMut() -> String {
-        let mut rng = super::java::JavaRandom::from_time();
+        let mut rng = <rand::rngs::StdRng as rand::SeedableRng>::from_os_rng();
         move || {
-            let (a, b) = (rng.next_long() as u64, rng.next_long() as u64);
+            let (a, b) = (
+                rand::Rng::random::<u64>(&mut rng),
+                rand::Rng::random::<u64>(&mut rng),
+            );
             let a = (a & 0xffff_ffff_ffff_0fff) | 0x4000;
             let b = (b & 0x3fff_ffff_ffff_ffff) | 0x8000_0000_0000_0000;
             format!(

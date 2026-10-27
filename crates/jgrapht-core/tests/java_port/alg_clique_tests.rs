@@ -8,8 +8,9 @@ use jgrapht::alg::connectivity::connected_components;
 use jgrapht::alg::interfaces::MaximalCliqueEnumerationAlgorithm;
 use jgrapht::generate::*;
 use jgrapht::util::HashableSet;
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashSet;
 use std::time::Duration;
 
@@ -141,13 +142,18 @@ bron_kerbosch_tests!(
 
 #[test]
 fn all_variants_random_instances() {
-    let mut rng = JavaRandom::new(33);
+    let mut rng = StdRng::seed_from_u64((33) as u64);
     for _ in 0..10 {
         let mut g = UGraph::<i32>::simple().with_vertex_factory(|i| i as i32);
-        GnpRandomGraphGenerator::new(30, 0.5, JavaRandom::new(rng.next_long()), false)
-            .unwrap()
-            .generate_default(&mut g)
-            .unwrap();
+        GnpRandomGraphGenerator::new(
+            30,
+            0.5,
+            StdRng::seed_from_u64((rng.random::<i64>()) as u64),
+            false,
+        )
+        .unwrap()
+        .generate_default(&mut g)
+        .unwrap();
         let collect = |cliques: &[HashSet<i32>]| -> HashSet<HashableSet<i32>> {
             cliques.iter().cloned().map(HashableSet).collect()
         };
@@ -537,7 +543,7 @@ mod clique_minimal_separator_decomposition_test {
             let m = (1.1 * (n as f64).ln() / n as f64 * (n * (n - 1) / 2) as f64).ceil() as usize;
             let g = loop {
                 let mut g = UGraph::<i32>::simple().with_vertex_factory(|i| i as i32 + 1);
-                GnmRandomGraphGenerator::new(n as usize, m, JavaRandom::from_time(), false, false)
+                GnmRandomGraphGenerator::new(n as usize, m, StdRng::from_os_rng(), false, false)
                     .unwrap()
                     .generate_default(&mut g)
                     .unwrap();

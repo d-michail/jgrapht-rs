@@ -2,7 +2,7 @@
 //! HeavyPathDecompositionTest.
 //!
 //! The Java tests of `null` graph / `null` root are not applicable. The forest generators get a
-//! fresh `JavaRandom` seeded from the test's random stream (Java shares one `Random`).
+//! fresh `StdRng` seeded from the test's random stream (Java shares one `Random`).
 
 use jgrapht::alg::connectivity::connected_component_of;
 use jgrapht::alg::decomposition::{
@@ -11,9 +11,10 @@ use jgrapht::alg::decomposition::{
 use jgrapht::alg::matching::hopcroft_karp_with_partitions;
 use jgrapht::generate::*;
 use jgrapht::traverse::BreadthFirstIterator;
-use jgrapht::util::java::JavaRandom;
 use jgrapht::view::AsSubgraph;
 use jgrapht::*;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::{HashMap, HashSet};
 
 mod dulmage_mendelsohn_decomposition_test {
@@ -27,9 +28,9 @@ mod dulmage_mendelsohn_decomposition_test {
         }
     }
 
-    fn random_imbalance(random: &mut JavaRandom, n: i32) -> i32 {
+    fn random_imbalance(random: &mut StdRng, n: i32) -> i32 {
         let max = n.div_euclid(4);
-        random.next_int_bound(max * 2) - max
+        random.random_range(0..max * 2) - max
     }
 
     fn assert_valid_decomposition(
@@ -98,15 +99,15 @@ mod dulmage_mendelsohn_decomposition_test {
 
     #[test]
     fn test_generated_graph() {
-        let mut random = JavaRandom::new(1);
+        let mut random = StdRng::seed_from_u64((1) as u64);
         for vertices in 20..120 {
-            let edges = random.next_int_bound(max_edges(vertices) / 2);
+            let edges = random.random_range(0..max_edges(vertices) / 2);
             let imbalance = random_imbalance(&mut random, vertices);
             let mut generator = GnmRandomBipartiteGraphGenerator::new(
                 (vertices - imbalance) as usize,
                 (vertices + imbalance) as usize,
                 edges as usize,
-                JavaRandom::new(0),
+                StdRng::seed_from_u64((0) as u64),
             );
             let mut graph = UGraph::<i32>::simple().with_vertex_factory(|i| i as i32);
             let (a, b) = generator.generate_partitions(&mut graph).unwrap();
@@ -309,7 +310,7 @@ mod heavy_path_decomposition_test {
 
     fn forest(trees: usize, n: usize, seed: i64) -> G {
         let mut graph = G::simple().with_vertex_factory(|i| i as i32);
-        BarabasiAlbertForestGenerator::new(trees, n, JavaRandom::new(seed))
+        BarabasiAlbertForestGenerator::new(trees, n, StdRng::seed_from_u64((seed) as u64))
             .unwrap()
             .generate_default(&mut graph)
             .unwrap();
@@ -318,10 +319,10 @@ mod heavy_path_decomposition_test {
 
     #[test]
     fn test_random_trees() {
-        let mut random = JavaRandom::new(0x2882);
+        let mut random = StdRng::seed_from_u64((0x2882) as u64);
         for _ in 0..100 {
-            let n = 1024 + random.next_int_bound(1 << 12) as usize;
-            let graph = forest(1, n, random.next_long());
+            let n = 1024 + random.random_range(0..1 << 12) as usize;
+            let graph = forest(1, n, random.random::<i64>());
             let roots = vec![*graph.vertices().next().unwrap()];
             let d = HeavyPathDecomposition::with_roots(&graph, roots.clone()).unwrap();
             assert!(is_valid_decomposition(&graph, &roots, &d));
@@ -330,11 +331,11 @@ mod heavy_path_decomposition_test {
 
     #[test]
     fn test_random_forests() {
-        let mut random = JavaRandom::new(0x1881);
+        let mut random = StdRng::seed_from_u64((0x1881) as u64);
         for _ in 0..1000 {
-            let trees = 1 + random.next_int_bound(20) as usize;
-            let n = 50 + random.next_int_bound(1 << 11) as usize;
-            let graph = forest(trees, n, random.next_long());
+            let trees = 1 + random.random_range(0..20) as usize;
+            let n = 50 + random.random_range(0..1 << 11) as usize;
+            let graph = forest(trees, n, random.random::<i64>());
             let roots: Vec<i32> = jgrapht::alg::connectivity::connected_components(&graph)
                 .into_iter()
                 .map(|c| c[0])
@@ -346,7 +347,11 @@ mod heavy_path_decomposition_test {
 
     #[test]
     fn test_huge_tree() {
-        let graph = forest(1, 1 << 19, JavaRandom::new(0x118811).next_long());
+        let graph = forest(
+            1,
+            1 << 19,
+            StdRng::seed_from_u64((0x118811) as u64).random::<i64>(),
+        );
         let roots = vec![*graph.vertices().next().unwrap()];
         let d = HeavyPathDecomposition::with_roots(&graph, roots.clone()).unwrap();
         assert!(is_valid_decomposition(&graph, &roots, &d));
