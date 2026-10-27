@@ -161,7 +161,7 @@ pub fn is_tree<G: Graph>(g: &G) -> bool {
 /// Kahn's algorithm.
 pub fn is_dag<G: DirectedGraph>(g: &G) -> bool {
     let mut indeg: HashMap<&G::Vertex, usize> =
-        g.vertices().map(|v| (v, g.in_degree_of(v))).collect();
+        g.vertices().map(|v| (v, g.in_degree_of(v).unwrap())).collect();
     let mut q: VecDeque<_> = indeg
         .iter()
         .filter(|(_, d)| **d == 0)
@@ -184,7 +184,7 @@ pub fn is_dag<G: DirectedGraph>(g: &G) -> bool {
 /// More edges than `max_degree * floor(n / 2)` (a sufficient condition for chromatic index
 /// `max_degree + 1`). Panics-free: an empty graph is not overfull.
 pub fn is_overfull<G: Graph>(g: &G) -> bool {
-    let Some(max_degree) = g.vertices().map(|v| g.degree_of(v)).max() else {
+    let Some(max_degree) = g.vertices().map(|v| g.degree_of(v).unwrap()).max() else {
         return false;
     };
     g.edge_count() as f64 > max_degree as f64 * (g.vertex_count() / 2) as f64
@@ -196,7 +196,7 @@ pub fn is_split<G: Graph>(g: &G) -> bool {
     if g.graph_type().directed || !is_simple(g) || g.vertex_count() == 0 {
         return false;
     }
-    let mut degrees: Vec<usize> = g.vertices().map(|v| g.degree_of(v)).collect();
+    let mut degrees: Vec<usize> = g.vertices().map(|v| g.degree_of(v).unwrap()).collect();
     degrees.sort_unstable_by(|a, b| b.cmp(a));
     let mut m = 1;
     while m < degrees.len() && degrees[m] >= m {
@@ -210,7 +210,7 @@ pub fn is_split<G: Graph>(g: &G) -> bool {
 
 /// Every vertex has degree three.
 pub fn is_cubic<G: Graph>(g: &G) -> bool {
-    g.vertices().all(|v| g.degree_of(v) == 3)
+    g.vertices().all(|v| g.degree_of(v).unwrap() == 3)
 }
 
 /// Ore's condition: simple, undirected, `n >= 3` and `deg(u) + deg(v) >= n` for all
@@ -223,7 +223,7 @@ pub fn has_ore_property<G: Graph>(g: &G) -> bool {
     let vs: Vec<_> = g.vertices().collect();
     for (i, v) in vs.iter().enumerate() {
         for w in &vs[i + 1..] {
-            if !g.contains_edge_between(v, w) && g.degree_of(v) + g.degree_of(w) < n {
+            if !g.contains_edge_between(v, w) && g.degree_of(v).unwrap() + g.degree_of(w).unwrap() < n {
                 return false;
             }
         }
@@ -300,14 +300,14 @@ fn reachable_with_degree<'a, G: Graph>(
     let mut queue = VecDeque::from([start]);
     while let Some(cur) = queue.pop_front() {
         visited.insert(cur);
-        for e in g.edges_of(cur) {
+        for e in g.edges_of(cur).unwrap() {
             let Some(opp) = g.opposite_vertex(e, cur) else {
                 continue;
             };
             if visited.contains(opp) {
                 continue;
             }
-            if g.degree_of(opp) == degree {
+            if g.degree_of(opp).unwrap() == degree {
                 reachable.insert(opp);
             } else {
                 queue.push_back(opp);
@@ -321,7 +321,7 @@ fn reachable_with_degree<'a, G: Graph>(
 pub fn is_k33_subdivision<G: Graph>(g: &G) -> bool {
     let mut degree3 = Vec::new();
     for v in g.vertices() {
-        match g.degree_of(v) {
+        match g.degree_of(v).unwrap() {
             3 => degree3.push(v),
             2 => {}
             _ => return false,
@@ -344,7 +344,7 @@ pub fn is_k33_subdivision<G: Graph>(g: &G) -> bool {
 pub fn is_k5_subdivision<G: Graph>(g: &G) -> bool {
     let mut deg4 = HashSet::new();
     for v in g.vertices() {
-        match g.degree_of(v) {
+        match g.degree_of(v).unwrap() {
             4 => {
                 deg4.insert(v);
             }

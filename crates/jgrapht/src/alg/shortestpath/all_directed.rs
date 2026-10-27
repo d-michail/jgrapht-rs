@@ -175,7 +175,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
         }
         while let Some(vertex) = queue.pop_front() {
             let child_distance = vertex_distance[vertex] + 1;
-            for edge in self.graph.in_edges_of(vertex) {
+            for edge in self.graph.in_edges_of(vertex).unwrap() {
                 let source = self.graph.edge_source(edge).expect("edge in graph");
                 if let Some(forward) = forward {
                     let Some(&source_distance) = forward.get(source) else {

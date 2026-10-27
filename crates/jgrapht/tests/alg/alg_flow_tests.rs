@@ -92,10 +92,10 @@ fn verify_directed<
     }
     for v in network.vertices() {
         let mut balance = 0.0;
-        for e in network.out_edges_of(v) {
+        for e in network.out_edges_of(v).unwrap() {
             balance -= flow[e];
         }
-        for e in network.in_edges_of(v) {
+        for e in network.in_edges_of(v).unwrap() {
             balance += flow[e];
         }
         let want = if *v == source {
@@ -136,7 +136,7 @@ fn verify_undirected<
     }
     for u in graph.vertices() {
         let mut balance = 0.0;
-        for e in graph.edges_of(u) {
+        for e in graph.edges_of(u).unwrap() {
             let v = solver.flow_direction(e).unwrap();
             if *u == v {
                 balance += flow[e];
@@ -1183,11 +1183,11 @@ mod capacity_scaling_minimum_cost_flow_test {
         for vertex in graph.vertices() {
             let supply = problem.node_supply(vertex);
             let flow_in: i32 = graph
-                .in_edges_of(vertex)
+                .in_edges_of(vertex).unwrap()
                 .map(|e| flow.flow(e).unwrap() as i32)
                 .sum();
             let flow_out: i32 = graph
-                .out_edges_of(vertex)
+                .out_edges_of(vertex).unwrap()
                 .map(|e| flow.flow(e).unwrap() as i32)
                 .sum();
             if supply != flow_out - flow_in {

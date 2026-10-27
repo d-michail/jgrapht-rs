@@ -140,7 +140,7 @@ where
                         best_cycle = cycle;
                     }
                 }
-                for e in g.out_edges_of(tail) {
+                for e in g.out_edges_of(tail).unwrap() {
                     let current_vertex = g.edge_target(e).unwrap();
                     let edge_weight = weight(e);
                     let current_label = label(current_vertex);

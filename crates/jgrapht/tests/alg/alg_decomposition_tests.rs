@@ -199,14 +199,14 @@ mod heavy_path_decomposition_test {
             let mut size_subtree: HashMap<&Gr::Vertex, usize> = HashMap::new();
             for v in order {
                 size_subtree.insert(v, 1);
-                for edge in graph.edges_of(v) {
+                for edge in graph.edges_of(v).unwrap() {
                     let u = graph.opposite_vertex(edge, v).unwrap();
                     if Some(u) != bfs.parent(v) {
                         let size_u = size_subtree[u];
                         *size_subtree.get_mut(v).unwrap() += size_u;
                     }
                 }
-                for edge in graph.edges_of(v) {
+                for edge in graph.edges_of(v).unwrap() {
                     let u = graph.opposite_vertex(edge, v).unwrap();
                     if Some(u) == bfs.parent(v) {
                         continue;

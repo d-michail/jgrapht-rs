@@ -97,7 +97,7 @@ impl<G: Graph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G> {
             }
             let v = queue.pop_front().unwrap();
             unknown.shift_remove(&v);
-            for e in g.edges_of(&v) {
+            for e in g.edges_of(&v).unwrap() {
                 let n = g.opposite_vertex(e, &v).unwrap().clone();
                 if unknown.contains(&n) {
                     queue.push_back(n.clone());
@@ -139,7 +139,7 @@ impl<G: Graph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G> {
             } else {
                 return false;
             };
-            for e in g.edges_of(v) {
+            for e in g.edges_of(v).unwrap() {
                 if !other.contains(g.opposite_vertex(e, v).unwrap()) {
                     return false;
                 }

@@ -220,12 +220,12 @@ impl HierholzerEulerianCycle {
         }
         let directed = graph.graph_type().directed;
         if !directed {
-            if graph.vertices().any(|v| graph.degree_of(v) % 2 == 1) {
+            if graph.vertices().any(|v| graph.degree_of(v).unwrap() % 2 == 1) {
                 return false;
             }
         } else if graph
             .vertices()
-            .any(|v| graph.in_degree_of(v) != graph.out_degree_of(v))
+            .any(|v| graph.in_degree_of(v).unwrap() != graph.out_degree_of(v).unwrap())
         {
             return false;
         }
@@ -233,7 +233,7 @@ impl HierholzerEulerianCycle {
         // undirected component structure decides both cases.
         let mut found_component_with_edges = false;
         for component in ConnectivityInspector::new().connected_sets(graph) {
-            if component.iter().any(|v| graph.degree_of(v) > 0) {
+            if component.iter().any(|v| graph.degree_of(v).unwrap() > 0) {
                 if found_component_with_edges {
                     return false;
                 }
@@ -270,7 +270,7 @@ impl<G: Graph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
         let mut vertex_index: HashMap<&G::Vertex, usize> = HashMap::new();
         for (i, v) in vs.iter().enumerate() {
             vertex_index.insert(*v, i);
-            if g.out_degree_of(v) > 0 {
+            if g.out_degree_of(v).unwrap() > 0 {
                 let n = run.vnodes.len();
                 run.vnodes.push(VertexNode {
                     prev: NIL,

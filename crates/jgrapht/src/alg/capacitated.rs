@@ -87,7 +87,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> CapacitatedSpanningTree<V, E> {
             }
             current.insert(next.clone());
         }
-        root_edges_explored == tree.degree_of(root)
+        root_edges_explored == tree.degree_of(root).unwrap()
     }
 }
 
@@ -290,7 +290,7 @@ impl<V: Eq + Hash + Clone> Solution<V> {
         with_root.insert(problem.root.clone());
         let (tree_edges, _) = problem.mst_with_root(&with_root);
         let tree = AsSubgraph::with_edges(problem.graph, with_root.iter().cloned(), tree_edges);
-        let degree_of_root = tree.degree_of(&problem.root);
+        let degree_of_root = tree.degree_of(&problem.root).unwrap();
         if degree_of_root == 1 {
             return IndexSet::new();
         }
@@ -1363,7 +1363,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
     ) -> f64 {
         let st =
             AsSubgraph::with_edges(p.graph, subset.iter().cloned(), tree.edges.iter().cloned());
-        let degree_of_root = st.degree_of(&p.root);
+        let degree_of_root = st.degree_of(&p.root).unwrap();
         if degree_of_root == 1 {
             return total_demand;
         }

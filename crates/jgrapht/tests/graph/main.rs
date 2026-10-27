@@ -13,5 +13,6 @@ mod graph_walk_test;
 mod graphs_test;
 mod listenable_graph_test;
 mod simple_directed_graph_test;
+mod sparse_int_graph_test;
 mod graph_basic_extra;
 mod views;

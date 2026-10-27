@@ -116,7 +116,7 @@ impl<'a, G: Graph> Algorithm<'a, G> {
             .iter()
             .map(|v| {
                 graph
-                    .edges_of(v)
+                    .edges_of(v).unwrap()
                     .map(|e| vertex_index_map[graph.opposite_vertex(e, v).expect("incident edge")])
                     .collect()
             })
@@ -173,7 +173,11 @@ impl<'a, G: Graph> Algorithm<'a, G> {
         }
         p.push_back(x);
         let mut p2 = VecDeque::new();
-        self.find_path(&mut p2, self.source_bridge[x] as usize, self.mate[x] as usize);
+        self.find_path(
+            &mut p2,
+            self.source_bridge[x] as usize,
+            self.mate[x] as usize,
+        );
         while let Some(last) = p2.pop_back() {
             p.push_back(last);
         }
@@ -428,7 +432,11 @@ impl<'g, G: Graph + 'g> MatchingAlgorithm<G::Vertex, G::Edge>
             let mut alg = Algorithm::new(self.graph);
             let matching_edges = alg.compute_matching(self.initializer.as_deref_mut())?;
             let cardinality = matching_edges.len();
-            self.result = Some(Matching::new(self.graph, matching_edges, cardinality as f64));
+            self.result = Some(Matching::new(
+                self.graph,
+                matching_edges,
+                cardinality as f64,
+            ));
             self.odd_set_cover = Some(alg.compute_odd_set_cover());
         }
         Ok(self.result.clone().expect("computed"))

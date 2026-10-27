@@ -421,9 +421,9 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
         let mut ret = None;
         for v in nodes {
             let degree = if incoming {
-                target.in_degree_of(v)
+                target.in_degree_of(v).unwrap()
             } else {
-                target.out_degree_of(v)
+                target.out_degree_of(v).unwrap()
             };
             acc += degree as f32 + bias;
             ret = Some(v.clone());

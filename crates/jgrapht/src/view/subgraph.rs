@@ -73,11 +73,12 @@ impl<G: Graph, FV: Fn(&G::Vertex) -> bool, FE: Fn(&G::Edge) -> bool> Graph
     fn is_edge_directed(&self, e: &G::Edge) -> bool {
         self.graph.is_edge_directed(e)
     }
-    fn edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
+    fn edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
         let ok = self.vertex_ok(v);
-        self.graph
-            .edges_of(v)
-            .filter(move |e| ok && self.edge_ok(e))
+        Ok(self
+            .graph
+            .edges_of(v)?
+            .filter(move |e| ok && self.edge_ok(e)))
     }
     fn edges_between<'a>(
         &'a self,
@@ -248,11 +249,12 @@ impl<G: Graph> Graph for AsSubgraph<G> {
             .then(|| self.base.edge_target(e))
             .flatten()
     }
-    fn edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
+    fn edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
         let ok = self.vertices.contains(v);
-        self.base
-            .edges_of(v)
-            .filter(move |e| ok && self.edges.contains(*e))
+        Ok(self
+            .base
+            .edges_of(v)?
+            .filter(move |e| ok && self.edges.contains(*e)))
     }
     fn edges_between<'a>(
         &'a self,
@@ -275,7 +277,7 @@ impl<G: Graph> GraphMut for AsSubgraph<G> {
     }
     fn remove_vertex(&mut self, v: &G::Vertex) -> bool {
         if self.vertices.contains(v) {
-            let incident: Vec<G::Edge> = self.edges_of(v).cloned().collect();
+            let incident: Vec<G::Edge> = self.edges_of(v).unwrap().cloned().collect();
             for e in incident {
                 self.edges.shift_remove(&e);
             }

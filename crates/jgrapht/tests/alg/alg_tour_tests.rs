@@ -1333,7 +1333,7 @@ mod palmer_hamiltonian_cycle_test {
                 for j in i + 1..vertex_list.len() {
                     let (u, v) = (vertex_list[i], vertex_list[j]);
                     if !graph.contains_edge_between(&u, &v)
-                        && (graph.degree_of(&u) + graph.degree_of(&v)) < n as usize
+                        && (graph.degree_of(&u).unwrap() + graph.degree_of(&v).unwrap()) < n as usize
                     {
                         graph.add_edge(&u, &v).unwrap();
                         break 'search;
@@ -1369,7 +1369,7 @@ mod palmer_hamiltonian_cycle_test {
                 let mut changed = false;
                 java_shuffle(&mut vertex_list, &mut random);
                 'search: for &v in &vertex_list {
-                    if graph.degree_of(&v) < ((n + 1) / 2) as usize {
+                    if graph.degree_of(&v).unwrap() < ((n + 1) / 2) as usize {
                         for &u in &vertex_list {
                             if u != v && !graph.contains_edge_between(&u, &v) {
                                 graph.add_edge(&u, &v).unwrap();

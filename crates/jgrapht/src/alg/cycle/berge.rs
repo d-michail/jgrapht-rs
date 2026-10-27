@@ -173,14 +173,14 @@ impl Core {
     fn bf_odd_hole_certificate<S: Graph<Vertex = usize, Edge = DefaultEdge>>(&mut self, g: &S) {
         let vertices: Vec<usize> = g.vertices().copied().collect();
         for &start in &vertices {
-            if g.degree_of(&start) < 2 {
+            if g.degree_of(&start).unwrap() < 2 {
                 continue;
             }
             let mut set: VSet = vertices.iter().copied().collect();
             for &neighbor_of_start in &vertices {
                 if neighbor_of_start == start
                     || !ce(g, start, neighbor_of_start)
-                    || g.degree_of(&neighbor_of_start) != 2
+                    || g.degree_of(&neighbor_of_start).unwrap() != 2
                 {
                     continue;
                 }
@@ -191,7 +191,7 @@ impl Core {
                         || neighbors_neighbor == neighbor_of_start
                         || !ce(g, neighbors_neighbor, neighbor_of_start)
                         || ce(g, neighbors_neighbor, start)
-                        || g.degree_of(&neighbors_neighbor) < 2
+                        || g.degree_of(&neighbors_neighbor).unwrap() < 2
                     {
                         continue;
                     }
@@ -537,7 +537,7 @@ impl Core {
                         || subg.vertex_count() != set.len()
                         || subg.edge_count() != subg.vertex_count()
                         || subg.vertex_count() % 2 == 0
-                        || subg.vertices().any(|t| subg.degree_of(t) != 2)
+                        || subg.vertices().any(|t| subg.degree_of(t).unwrap() != 2)
                     {
                         continue;
                     }

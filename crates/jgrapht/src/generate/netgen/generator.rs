@@ -428,7 +428,7 @@ impl<'a, G: GraphMut, R: RandomSource> Run<'a, G, R> {
             possible -= 1;
         }
         let v = &self.nodes[node].vertex;
-        for arc in self.graph.out_edges_of(v) {
+        for arc in self.graph.out_edges_of(v).unwrap() {
             let head = self.graph.edge_target(arc).unwrap();
             if nodes.contains(&self.index[head]) {
                 possible -= 1;

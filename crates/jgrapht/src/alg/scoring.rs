@@ -18,7 +18,7 @@ pub fn degree_centrality<G: Graph>(g: &G, normalize: bool) -> HashMap<G::Vertex,
     let ix = Indexed::new(g);
     let d = (ix.n().max(2) - 1) as f64;
     let s = (0..ix.n())
-        .map(|v| g.degree_of(ix.vs[v]) as f64 / if normalize { d } else { 1.0 })
+        .map(|v| g.degree_of(ix.vs[v]).unwrap() as f64 / if normalize { d } else { 1.0 })
         .collect();
     scores(&ix, s)
 }
@@ -523,7 +523,7 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
         while let Some(v) = queue.pop_front() {
             stack.push(v.clone());
             let v_distance = dist[&v];
-            for e in g.out_edges_of(&v) {
+            for e in g.out_edges_of(&v).unwrap() {
                 let w = g.opposite_vertex(e, &v).unwrap();
                 if *w == v {
                     continue;
@@ -558,7 +558,7 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
         while let Some((OrderedF64(v_distance), v)) = heap.pop() {
             final_dist.insert(v.clone(), v_distance);
             stack.push(v.clone());
-            for e in g.out_edges_of(&v) {
+            for e in g.out_edges_of(&v).unwrap() {
                 let w = g.opposite_vertex(e, &v).unwrap();
                 if *w == v {
                     continue;
@@ -775,7 +775,7 @@ impl<'g, G: Graph> ClusteringCoefficient<'g, G> {
 
     fn local(g: &G, v: &G::Vertex) -> f64 {
         let hood: indexmap::IndexSet<&G::Vertex> = g
-            .edges_of(v)
+            .edges_of(v).unwrap()
             .filter_map(|e| g.opposite_vertex(e, v))
             .collect();
         let k = hood.len() as f64;
@@ -807,15 +807,15 @@ impl<'g, G: Graph> ClusteringCoefficient<'g, G> {
         let mut triplets = 0.0;
         for v in g.vertices() {
             if !g.graph_type().directed {
-                let d = g.degree_of(v) as f64;
+                let d = g.degree_of(v).unwrap() as f64;
                 triplets += d * (d - 1.0) / 2.0;
             } else {
                 let preds: std::collections::HashSet<_> = g
-                    .in_edges_of(v)
+                    .in_edges_of(v).unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .collect();
                 let succs: std::collections::HashSet<_> = g
-                    .out_edges_of(v)
+                    .out_edges_of(v).unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .collect();
                 triplets += preds.len() as f64 * succs.len() as f64;
@@ -843,7 +843,7 @@ fn incoming_lists<G: Graph>(g: &G, vs: &[&G::Vertex]) -> Vec<Vec<(usize, f64)>> 
     let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
     vs.iter()
         .map(|v| {
-            g.in_edges_of(v)
+            g.in_edges_of(v).unwrap()
                 .map(|e| {
                     (
                         idx[g.opposite_vertex(e, v).unwrap()],
@@ -1016,7 +1016,7 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
         let weighted = g.graph_type().weighted;
-        let out_degree: Vec<usize> = vs.iter().map(|v| g.out_degree_of(v)).collect();
+        let out_degree: Vec<usize> = vs.iter().map(|v| g.out_degree_of(v).unwrap()).collect();
         let incoming = incoming_lists(g, &vs);
         let mut weight_sum = vec![0.0; n];
         if weighted {
@@ -1096,7 +1096,7 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
         let out: Vec<Vec<(usize, f64)>> = vs
             .iter()
             .map(|v| {
-                g.out_edges_of(v)
+                g.out_edges_of(v).unwrap()
                     .map(|e| {
                         (
                             idx[g.opposite_vertex(e, v).unwrap()],
@@ -1329,7 +1329,7 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
         let out: Vec<Vec<(usize, f64)>> = vs
             .iter()
             .map(|v| {
-                g.out_edges_of(v)
+                g.out_edges_of(v).unwrap()
                     .map(|e| {
                         (
                             idx[g.opposite_vertex(e, v).unwrap()],

@@ -96,7 +96,9 @@ impl SimpleMatching {
     /// The exposed vertices in increasing order (the iteration order of Java's `HashSet<Integer>`
     /// of small integers).
     fn exposed(&self) -> Vec<usize> {
-        (0..self.mate.len()).filter(|&v| self.is_exposed(v)).collect()
+        (0..self.mate.len())
+            .filter(|&v| self.is_exposed(v))
+            .collect()
     }
 }
 
@@ -323,7 +325,13 @@ impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
         self.path = path;
     }
 
-    fn build_path(&self, path: &mut [usize], mut i: usize, mut start: usize, end: Option<usize>) -> usize {
+    fn build_path(
+        &self,
+        path: &mut [usize],
+        mut i: usize,
+        mut start: usize,
+        end: Option<usize>,
+    ) -> usize {
         loop {
             while self.levels.is_odd(start) {
                 let bridge = self.bridges[&start];
@@ -372,8 +380,10 @@ impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
             .collect();
         let subgraph = AsSubgraph::induced(graph, other_vertices.iter().cloned()); // induced subgraph
         let connected_components = ConnectivityInspector::new().connected_sets(&subgraph);
-        let nr_odd_cardinality_components =
-            connected_components.iter().filter(|s| s.len() % 2 == 1).count();
+        let nr_odd_cardinality_components = connected_components
+            .iter()
+            .filter(|s| s.len() % 2 == 1)
+            .count();
         Ok(matching.edges().len() as f64
             == (graph.vertex_count() + odd_vertices.len() - nr_odd_cardinality_components) as f64
                 / 2.0)

@@ -82,7 +82,7 @@ mod vertex_degree_comparator_test {
             let mut vertices: Vec<i32> = graph.vertices().copied().collect();
             vertices.sort_by(vertex_degree_comparator(&graph));
             for w in vertices.windows(2) {
-                assert!(graph.degree_of(&w[0]) <= graph.degree_of(&w[1]));
+                assert!(graph.degree_of(&w[0]).unwrap() <= graph.degree_of(&w[1]).unwrap());
             }
         }
     }

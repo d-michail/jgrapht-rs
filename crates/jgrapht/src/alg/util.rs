@@ -17,7 +17,7 @@ pub use union_find::UnionFind;
 pub fn vertex_degree_comparator<G: Graph>(
     g: &G,
 ) -> impl Fn(&G::Vertex, &G::Vertex) -> std::cmp::Ordering + '_ {
-    move |a, b| g.degree_of(a).cmp(&g.degree_of(b))
+    move |a, b| g.degree_of(a).unwrap().cmp(&g.degree_of(b).unwrap())
 }
 
 pub struct Indexed<'g, G: Graph> {

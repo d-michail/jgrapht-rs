@@ -185,7 +185,7 @@ impl<'g, G: Graph> FlowNet<'g, G> {
         let g = self.graph;
         if self.directed {
             for u in 0..self.vs.len() {
-                for e in g.out_edges_of(self.vs[u]) {
+                for e in g.out_edges_of(self.vs[u]).unwrap() {
                     let ei = self.eindex[e];
                     let v = self.vindex[g.edge_target(e).unwrap()];
                     let forward = self.create_edge(u, v, ei);
@@ -367,7 +367,7 @@ impl<'g, G: Graph> FlowNet<'g, G> {
             let mut cut = IndexSet::new();
             if self.directed {
                 for v in &p1 {
-                    for e in g.out_edges_of(v) {
+                    for e in g.out_edges_of(v).unwrap() {
                         if !p1.contains(g.edge_target(e).unwrap()) {
                             cut.insert(e.clone());
                         }

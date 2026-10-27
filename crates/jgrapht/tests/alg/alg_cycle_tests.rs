@@ -4216,7 +4216,7 @@ mod berge_graph_inspector_test {
                 (
                     subg.vertex_count(),
                     subg.edge_count(),
-                    subg.vertices().all(|t| subg.edges_of(t).count() == 2),
+                    subg.vertices().all(|t| subg.edges_of(t).unwrap().count() == 2),
                 )
             })
         } else {
@@ -4225,7 +4225,7 @@ mod berge_graph_inspector_test {
                 (
                     subg.vertex_count(),
                     subg.edge_count(),
-                    subg.vertices().all(|t| subg.edges_of(t).count() == 2),
+                    subg.vertices().all(|t| subg.edges_of(t).unwrap().count() == 2),
                 )
             })
         }

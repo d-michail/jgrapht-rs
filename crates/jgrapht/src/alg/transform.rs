@@ -68,16 +68,16 @@ where
     };
     if g.graph_type().directed {
         for v in g.vertices() {
-            for e1 in g.in_edges_of(v) {
-                for e2 in g.out_edges_of(v) {
+            for e1 in g.in_edges_of(v).unwrap() {
+                for e2 in g.out_edges_of(v).unwrap() {
                     link(target, e1, e2)?;
                 }
             }
         }
     } else {
         for v in g.vertices() {
-            for e1 in g.edges_of(v) {
-                for e2 in g.edges_of(v) {
+            for e1 in g.edges_of(v).unwrap() {
+                for e2 in g.edges_of(v).unwrap() {
                     if e1 != e2 {
                         link(target, e1, e2)?;
                     }
@@ -99,7 +99,7 @@ pub fn contract_edge<G: GraphMut>(g: &mut G, e: &G::Edge) -> Result<()> {
         return Ok(());
     }
     let incident: Vec<(G::Edge, G::Vertex, G::Vertex, f64)> = g
-        .edges_of(&t)
+        .edges_of(&t).unwrap()
         .filter(|x| *x != e)
         .map(|x| {
             (

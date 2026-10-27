@@ -151,7 +151,7 @@ fn colorings() {
             .unwrap()
             .generate_indexed(&mut g)
             .unwrap();
-        let max_deg = g.vertices().map(|v| g.degree_of(v)).max().unwrap();
+        let max_deg = g.vertices().map(|v| g.degree_of(v).unwrap()).max().unwrap();
         for c in [
             greedy_coloring(&g),
             largest_degree_first_coloring(&g),

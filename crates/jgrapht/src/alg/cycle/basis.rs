@@ -166,7 +166,7 @@ macro_rules! fundamental_basis {
                     pred.insert(s.clone(), None);
                     queue.$push(s.clone());
                     while let Some(v) = queue.$pop() {
-                        for e in graph.edges_of(&v) {
+                        for e in graph.edges_of(&v).unwrap() {
                             let u = graph.opposite_vertex(e, &v).expect("edge of the graph");
                             if !pred.contains_key(u) {
                                 pred.insert(u.clone(), Some(e.clone()));
@@ -240,7 +240,7 @@ impl<'g, G: Graph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, G> {
             used.insert(root.clone(), IndexMap::new());
             stack.push(root.clone());
             while let Some(current) = stack.pop() {
-                for e in graph.edges_of(&current) {
+                for e in graph.edges_of(&current).unwrap() {
                     let neighbor = graph
                         .opposite_vertex(e, &current)
                         .expect("edge of the graph");

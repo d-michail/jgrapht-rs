@@ -42,7 +42,11 @@ impl<'g, G: Graph> HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G> {
         let p1: Vec<G::Vertex> = partition1.into_iter().collect();
         let p2: Vec<G::Vertex> = partition2.into_iter().collect();
         // Ensure that partition1 is smaller or equal in size compared to partition 2
-        let (partition1, partition2) = if p1.len() <= p2.len() { (p1, p2) } else { (p2, p1) };
+        let (partition1, partition2) = if p1.len() <= p2.len() {
+            (p1, p2)
+        } else {
+            (p2, p1)
+        };
         Ok(Self {
             graph,
             partition1,
@@ -118,11 +122,7 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge>
             .iter()
             .map(|v| match v {
                 None => Vec::new(),
-                Some(v) => graph
-                    .neighbor_list_of(v)
-                    .iter()
-                    .map(|w| index[w])
-                    .collect(),
+                Some(v) => graph.neighbor_list_of(v).iter().map(|w| index[w]).collect(),
             })
             .collect();
         let n = vertices.len();
@@ -166,7 +166,12 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge>
             if state.matching[i] != DUMMY {
                 let (a, b) = (state.vertices[i], state.vertices[state.matching[i]]);
                 if let (Some(a), Some(b)) = (a, b) {
-                    edges.insert(graph.get_edge(a, b).expect("matched vertices are adjacent").clone());
+                    edges.insert(
+                        graph
+                            .get_edge(a, b)
+                            .expect("matched vertices are adjacent")
+                            .clone(),
+                    );
                 }
             }
         }

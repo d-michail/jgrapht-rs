@@ -178,7 +178,7 @@ fn color_in_order<G: Graph>(g: &G, order: &[G::Vertex]) -> Result<Coloring<G::Ve
     let mut max_color: i64 = -1;
     let mut used: HashSet<usize> = HashSet::new();
     for v in order {
-        for e in g.edges_of(v) {
+        for e in g.edges_of(v).unwrap() {
             let u = g.opposite_vertex(e, v).unwrap();
             if v == u {
                 return Err(GraphError::InvalidArgument(SELF_LOOPS_NOT_ALLOWED.into()));
@@ -203,7 +203,7 @@ fn color_in_order<G: Graph>(g: &G, order: &[G::Vertex]) -> Result<Coloring<G::Ve
 
 fn degrees<G: Graph>(g: &G) -> (Vec<&G::Vertex>, Vec<usize>, usize) {
     let vs: Vec<&G::Vertex> = g.vertices().collect();
-    let degree: Vec<usize> = vs.iter().map(|v| g.edges_of(v).count()).collect();
+    let degree: Vec<usize> = vs.iter().map(|v| g.edges_of(v).unwrap().count()).collect();
     let max = degree.iter().copied().max().unwrap_or(0);
     (vs, degree, max)
 }
@@ -293,7 +293,7 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for SmallestDegreeLastColoring
                 buckets[i].remove(&v);
                 order.push_front(vs[v].clone());
                 degree.remove(&v);
-                for e in g.edges_of(vs[v]) {
+                for e in g.edges_of(vs[v]).unwrap() {
                     let u = g.opposite_vertex(e, vs[v]).unwrap();
                     if vs[v] == u {
                         return Err(GraphError::InvalidArgument(SELF_LOOPS_NOT_ALLOWED.into()));
@@ -470,7 +470,7 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for SaturationDegreeColoring<'
             max_color = max_color.max(c as i64);
             colors.insert(vs[v].clone(), c);
             colored[v] = true;
-            for e in g.edges_of(vs[v]) {
+            for e in g.edges_of(vs[v]).unwrap() {
                 let u = index[g.opposite_vertex(e, vs[v]).unwrap()];
                 if !colored[u] {
                     if adj_colors[u].contains(&c) {
@@ -561,7 +561,7 @@ impl<V: Clone + Eq + Hash> BrownBacktrackColoring<V> {
             .iter()
             .map(|v| {
                 graph
-                    .edges_of(v)
+                    .edges_of(v).unwrap()
                     .map(|e| index[graph.opposite_vertex(e, v).unwrap()])
                     .collect()
             })
@@ -704,7 +704,7 @@ pub(crate) fn predecessors<G: Graph>(
 ) -> HashSet<G::Vertex> {
     let mut predecessors = HashSet::new();
     let vertex_position = vertex_in_order[vertex];
-    for edge in graph.edges_of(vertex) {
+    for edge in graph.edges_of(vertex).unwrap() {
         let opposite_vertex = graph.opposite_vertex(edge, vertex).expect("incident edge");
         if vertex_in_order[opposite_vertex] < vertex_position {
             predecessors.insert(opposite_vertex.clone());
@@ -923,7 +923,7 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlgorithm<'
             .iter()
             .map(|v| {
                 let mut seen = HashSet::new();
-                g.out_edges_of(v)
+                g.out_edges_of(v).unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .map(|w| index[w])
                     .filter(|w| seen.insert(*w))

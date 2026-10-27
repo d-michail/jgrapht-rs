@@ -35,7 +35,7 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumCardinalit
             // sort edges in increasing order of the total degree of their endpoints
             let degree = |e: &G::Edge| {
                 let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
-                graph.degree_of(s) + graph.degree_of(t)
+                graph.degree_of(s).unwrap() + graph.degree_of(t).unwrap()
             };
             let mut all_edges: Vec<&G::Edge> = graph.edges().collect();
             all_edges.sort_by_key(|e| degree(e));
@@ -53,7 +53,7 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumCardinalit
                 if matched.contains(v) {
                     continue;
                 }
-                for e in graph.edges_of(v) {
+                for e in graph.edges_of(v).unwrap() {
                     let w = graph.opposite_vertex(e, v).expect("incident edge");
                     if v != w && !matched.contains(w) {
                         edges.insert(e.clone());
@@ -100,7 +100,7 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeightedMatching<
         if self.normalize_edge_costs {
             let degree = |e: &G::Edge| {
                 let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
-                (graph.degree_of(s) + graph.degree_of(t)) as f64
+                (graph.degree_of(s).unwrap() + graph.degree_of(t).unwrap()) as f64
             };
             all_edges.sort_by(|e1, e2| {
                 ordering(

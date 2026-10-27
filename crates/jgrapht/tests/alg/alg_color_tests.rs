@@ -386,7 +386,7 @@ mod chordal_graph_coloring_test {
 
     fn assert_is_coloring(g: &G, coloring: &Coloring<i32>) {
         for v in g.vertices() {
-            for e in g.edges_of(v) {
+            for e in g.edges_of(v).unwrap() {
                 let other = g.opposite_vertex(e, v).unwrap();
                 if v != other {
                     assert_ne!(coloring.colors[v], coloring.colors[other]);

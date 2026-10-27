@@ -40,11 +40,12 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for ChristofidesThreeHalvesApproxMet
             mst_and_matching.add_edge(source, target)?;
         }
 
-        let odd_degree_vertices: Vec<_> = mst_and_matching
-            .vertices()
-            .filter(|vertex| mst_and_matching.degree_of(vertex) % 2 == 1)
-            .cloned()
-            .collect();
+        let mut odd_degree_vertices = Vec::new();
+        for vertex in mst_and_matching.vertices() {
+            if mst_and_matching.degree_of(vertex)? % 2 == 1 {
+                odd_degree_vertices.push(vertex.clone());
+            }
+        }
         let subgraph = AsSubgraph::induced(graph, odd_degree_vertices);
         let mut matching = KolmogorovWeightedPerfectMatching::new(&subgraph)?;
         for edge in matching.get_matching()?.edges() {

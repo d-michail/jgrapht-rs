@@ -53,22 +53,22 @@ macro_rules! forward_graph {
         fn is_edge_directed(&$s, e: &<Self as Graph>::Edge) -> bool { $inner.is_edge_directed(e) }
     };
     (@one $s:ident => $inner:expr; edges_of) => {
-        fn edges_of(&$s, v: &<Self as Graph>::Vertex) -> impl Iterator<Item = &<Self as Graph>::Edge> { $inner.edges_of(v) }
+        fn edges_of(&$s, v: &<Self as Graph>::Vertex) -> $crate::Result<impl Iterator<Item = &<Self as Graph>::Edge>> { $inner.edges_of(v) }
     };
     (@one $s:ident => $inner:expr; in_edges_of) => {
-        fn in_edges_of(&$s, v: &<Self as Graph>::Vertex) -> impl Iterator<Item = &<Self as Graph>::Edge> { $inner.in_edges_of(v) }
+        fn in_edges_of(&$s, v: &<Self as Graph>::Vertex) -> $crate::Result<impl Iterator<Item = &<Self as Graph>::Edge>> { $inner.in_edges_of(v) }
     };
     (@one $s:ident => $inner:expr; out_edges_of) => {
-        fn out_edges_of(&$s, v: &<Self as Graph>::Vertex) -> impl Iterator<Item = &<Self as Graph>::Edge> { $inner.out_edges_of(v) }
+        fn out_edges_of(&$s, v: &<Self as Graph>::Vertex) -> $crate::Result<impl Iterator<Item = &<Self as Graph>::Edge>> { $inner.out_edges_of(v) }
     };
     (@one $s:ident => $inner:expr; in_degree_of) => {
-        fn in_degree_of(&$s, v: &<Self as Graph>::Vertex) -> usize { $inner.in_degree_of(v) }
+        fn in_degree_of(&$s, v: &<Self as Graph>::Vertex) -> $crate::Result<usize> { $inner.in_degree_of(v) }
     };
     (@one $s:ident => $inner:expr; out_degree_of) => {
-        fn out_degree_of(&$s, v: &<Self as Graph>::Vertex) -> usize { $inner.out_degree_of(v) }
+        fn out_degree_of(&$s, v: &<Self as Graph>::Vertex) -> $crate::Result<usize> { $inner.out_degree_of(v) }
     };
     (@one $s:ident => $inner:expr; degree_of) => {
-        fn degree_of(&$s, v: &<Self as Graph>::Vertex) -> usize { $inner.degree_of(v) }
+        fn degree_of(&$s, v: &<Self as Graph>::Vertex) -> $crate::Result<usize> { $inner.degree_of(v) }
     };
     (@one $s:ident => $inner:expr; edges_between) => {
         fn edges_between<'a>(&'a $s, u: &'a <Self as Graph>::Vertex, v: &'a <Self as Graph>::Vertex)
@@ -161,16 +161,16 @@ impl<G: DirectedGraph> Graph for EdgeReversed<G> {
     fn edge_target(&self, e: &G::Edge) -> Option<&G::Vertex> {
         self.0.edge_source(e)
     }
-    fn in_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
+    fn in_edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
         self.0.out_edges_of(v)
     }
-    fn out_edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
+    fn out_edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
         self.0.in_edges_of(v)
     }
-    fn in_degree_of(&self, v: &G::Vertex) -> usize {
+    fn in_degree_of(&self, v: &G::Vertex) -> Result<usize> {
         self.0.out_degree_of(v)
     }
-    fn out_degree_of(&self, v: &G::Vertex) -> usize {
+    fn out_degree_of(&self, v: &G::Vertex) -> Result<usize> {
         self.0.in_degree_of(v)
     }
     fn edges_between<'a>(

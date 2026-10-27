@@ -145,7 +145,7 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
         let graph = self.graph;
         let vertex_position = vertex_in_order[vertex];
         let mut predecessors: Vec<&G::Vertex> = Vec::new();
-        for edge in graph.edges_of(vertex) {
+        for edge in graph.edges_of(vertex).unwrap() {
             let opposite = graph
                 .opposite_vertex(edge, vertex)
                 .expect("edge of the graph");
@@ -178,7 +178,7 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
     ) {
         visited.insert(current.clone(), true);
         let graph = self.graph;
-        for edge in graph.edges_of(current) {
+        for edge in graph.edges_of(current).unwrap() {
             let opposite = graph
                 .opposite_vertex(edge, current)
                 .expect("edge of the graph");
@@ -207,7 +207,7 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
             minimized.push(vertex.clone());
             cycle_vertices.remove(vertex);
             let mut forward: Vec<&G::Vertex> = Vec::new();
-            for edge in graph.edges_of(vertex) {
+            for edge in graph.edges_of(vertex).unwrap() {
                 let opposite = graph
                     .opposite_vertex(edge, vertex)
                     .expect("edge of the graph");

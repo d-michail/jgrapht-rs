@@ -269,7 +269,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Graph for BaseGra
             .get(e)
             .map(|r| if self.ty.weighted { r.weight } else { 1.0 })
     }
-    fn edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
+    fn edges_of(&self, v: &V) -> Result<impl Iterator<Item = &E>> {
         // JGraphT order: incoming edges first, then outgoing edges (self-loops only once)
         let a = self.vertices.get(v);
         let inc = a.into_iter().flat_map(|a| a.inc.iter());
@@ -277,9 +277,9 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Graph for BaseGra
             .into_iter()
             .flat_map(|a| a.out.iter())
             .filter(move |e| !D::DIRECTED || self.edges[*e].src != self.edges[*e].tgt);
-        inc.chain(out)
+        Ok(inc.chain(out))
     }
-    fn in_edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
+    fn in_edges_of(&self, v: &V) -> Result<impl Iterator<Item = &E>> {
         let a = self.vertices.get(v);
         // undirected graphs keep every incident edge in `out`
         let (inc, out) = if D::DIRECTED {
@@ -287,24 +287,25 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> Graph for BaseGra
         } else {
             (None, a.map(|a| &a.out))
         };
-        inc.into_iter()
+        Ok(inc
+            .into_iter()
             .flat_map(|s| s.iter())
-            .chain(out.into_iter().flat_map(|s| s.iter()))
+            .chain(out.into_iter().flat_map(|s| s.iter())))
     }
-    fn out_edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
-        self.out_edges(v)
+    fn out_edges_of(&self, v: &V) -> Result<impl Iterator<Item = &E>> {
+        Ok(self.out_edges(v))
     }
-    fn in_degree_of(&self, v: &V) -> usize {
+    fn in_degree_of(&self, v: &V) -> Result<usize> {
         match self.vertices.get(v) {
-            None => 0,
-            Some(a) if D::DIRECTED => a.inc.len(),
+            None => Ok(0),
+            Some(a) if D::DIRECTED => Ok(a.inc.len()),
             Some(_) => self.degree_of(v),
         }
     }
-    fn out_degree_of(&self, v: &V) -> usize {
+    fn out_degree_of(&self, v: &V) -> Result<usize> {
         match self.vertices.get(v) {
-            None => 0,
-            Some(a) if D::DIRECTED => a.out.len(),
+            None => Ok(0),
+            Some(a) if D::DIRECTED => Ok(a.out.len()),
             Some(_) => self.degree_of(v),
         }
     }
@@ -337,7 +338,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphMut for Base
         if !self.vertices.contains_key(v) {
             return false;
         }
-        let incident: Vec<E> = self.edges_of(v).cloned().collect();
+        let incident: Vec<E> = self.edges_of(v).unwrap().cloned().collect();
         for e in &incident {
             self.remove_edge(e);
         }

@@ -126,7 +126,7 @@ impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for TopologicalAdvance<'g, G> {
         match result {
             Some(v) => {
                 let g = self.g;
-                for e in g.out_edges_of(v) {
+                for e in g.out_edges_of(v).unwrap() {
                     let Some(other) = g.opposite_vertex(e, v) else {
                         continue;
                     };
@@ -170,7 +170,7 @@ impl<'g, G: DirectedGraph + 'g> TopologicalOrderIterator<'g, G> {
         let mut in_degree = HashMap::new();
         for v in g.vertices() {
             let mut d = 0;
-            for e in g.in_edges_of(v) {
+            for e in g.in_edges_of(v).unwrap() {
                 if g.opposite_vertex(e, v) == Some(v) {
                     return Err(GraphError::CycleProhibited);
                 }
@@ -272,7 +272,7 @@ impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for LexAdvance<'g, G> {
         let v = self.poll()?;
         let g = self.g;
         let mut unvisited: IndexSet<&'g G::Vertex> = IndexSet::new();
-        for e in g.edges_of(v) {
+        for e in g.edges_of(v).unwrap() {
             if let Some(o) = g.opposite_vertex(e, v) {
                 if self.bucket_of.contains_key(o) {
                     unvisited.insert(o);
@@ -333,7 +333,7 @@ impl<'g, G: Graph + 'g> MaxCardAdvance<'g, G> {
     fn update_neighbours(&mut self, v: &'g G::Vertex) {
         let g = self.g;
         let mut processed: HashSet<&'g G::Vertex> = HashSet::new();
-        for e in g.edges_of(v) {
+        for e in g.edges_of(v).unwrap() {
             let Some(o) = g.opposite_vertex(e, v) else {
                 continue;
             };
@@ -429,7 +429,7 @@ impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for DegeneracyAdvance<'g, G> {
             .expect("non-empty bucket");
         self.degrees.shift_remove(v);
         let g = self.g;
-        for e in g.edges_of(v) {
+        for e in g.edges_of(v).unwrap() {
             let Some(u) = g.opposite_vertex(e, v) else {
                 continue;
             };
@@ -457,7 +457,7 @@ impl<'g, G: Graph + 'g> DegeneracyOrderingIterator<'g, G> {
         let (mut min_degree, mut max_degree) = (usize::MAX, 0);
         for v in g.vertices() {
             let d = g
-                .edges_of(v)
+                .edges_of(v).unwrap()
                 .filter(|e| g.opposite_vertex(e, v) != Some(v))
                 .count();
             degrees.insert(v, d);

@@ -85,7 +85,7 @@ impl<G: Graph> Graph for Listenable<G> {
     fn edge_weight(&self, e: &G::Edge) -> Option<f64> {
         self.graph.edge_weight(e)
     }
-    fn edges_of(&self, v: &G::Vertex) -> impl Iterator<Item = &G::Edge> {
+    fn edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
         self.graph.edges_of(v)
     }
     fn edges_between<'a>(
@@ -114,7 +114,7 @@ impl<G: GraphMut> GraphMut for Listenable<G> {
         if !self.graph.contains_vertex(v) {
             return false;
         }
-        let incident: Vec<_> = self.graph.edges_of(v).cloned().collect();
+        let incident: Vec<_> = self.graph.edges_of(v).unwrap().cloned().collect();
         for e in &incident {
             self.remove_edge(e);
         }

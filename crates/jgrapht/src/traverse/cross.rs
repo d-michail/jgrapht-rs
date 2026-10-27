@@ -189,7 +189,7 @@ impl<'g, G: Graph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
         let g = self.core.g;
         let edges: Vec<&'g G::Edge> = match &self.selector {
             Some(f) => f(g, v),
-            None => g.out_edges_of(v).collect(),
+            None => g.out_edges_of(v).unwrap().collect(),
         };
         for e in edges {
             self.core.listeners.edge_traversed(e);

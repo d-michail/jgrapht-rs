@@ -72,7 +72,7 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         let mut neighbors = vec![Vec::new(); n];
         let mut adjacent = vec![HashSet::new(); n];
         for (i, v) in vertices.iter().enumerate() {
-            for e in graph.edges_of(v) {
+            for e in graph.edges_of(v).unwrap() {
                 let o = index[graph.opposite_vertex(e, v).expect("edge of the graph")];
                 neighbors[i].push(o);
                 adjacent[i].insert(o);

@@ -553,7 +553,7 @@ where
                 for vertex in &vertices {
                     let id = self.base.vertex_id(vertex)?;
                     write!(output, "{}", escape_field(&id, self.delimiter))?;
-                    for edge in graph.out_edges_of(vertex) {
+                    for edge in graph.out_edges_of(vertex).unwrap() {
                         let source = graph.edge_source(edge).expect("graph edge source");
                         let target = graph.edge_target(edge).expect("graph edge target");
                         let opposite = if source == vertex { target } else { source };

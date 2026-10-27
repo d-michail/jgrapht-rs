@@ -37,7 +37,7 @@ fn union_successors<G: Graph>(g1: &G, g2: &G) -> Vec<Vec<usize>> {
         for v in g.vertices() {
             let mut seen = HashSet::new();
             succ.push(
-                g.out_edges_of(v)
+                g.out_edges_of(v).unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .map(|w| index[w] + offset)
                     .filter(|w| seen.insert(*w))

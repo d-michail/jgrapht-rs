@@ -40,7 +40,7 @@ impl DagAllPathsCounter {
             if count == UBig::ZERO {
                 continue;
             }
-            for edge in graph.out_edges_of(vertices[index]) {
+            for edge in graph.out_edges_of(vertices[index]).unwrap() {
                 let child = graph.edge_target(edge).expect("edge in graph");
                 ways[positions[child]] += &count;
             }

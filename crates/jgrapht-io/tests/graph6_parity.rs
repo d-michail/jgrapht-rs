@@ -12,7 +12,7 @@ fn import_undirected(encoded: &str) -> UGraph<usize> {
 }
 
 fn signature<G: Graph>(graph: &G) -> (usize, usize, Vec<usize>) {
-    let mut degrees: Vec<_> = graph.vertices().map(|v| graph.degree_of(v)).collect();
+    let mut degrees: Vec<_> = graph.vertices().map(|v| graph.degree_of(v).unwrap()).collect();
     degrees.sort_unstable();
     (graph.vertex_count(), graph.edge_count(), degrees)
 }

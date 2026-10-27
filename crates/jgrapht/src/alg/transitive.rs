@@ -41,9 +41,9 @@ impl TransitiveClosure {
             for v1 in &vertex_set {
                 new_edge_targets.clear();
 
-                for v1_out_edge in graph.out_edges_of(v1) {
+                for v1_out_edge in graph.out_edges_of(v1).unwrap() {
                     let v2 = graph.edge_target(v1_out_edge).expect("edge target");
-                    for v2_out_edge in graph.out_edges_of(v2) {
+                    for v2_out_edge in graph.out_edges_of(v2).unwrap() {
                         let v3 = graph.edge_target(v2_out_edge).expect("edge target");
 
                         if v1 == v3 {

@@ -145,7 +145,7 @@ impl<V: Clone + Eq + Hash> Forest<V> {
     fn dfs<G: Graph<Vertex = V>>(&mut self, g: &G, root: usize, comp: usize, clock: &mut i64) {
         let children_of = |f: &Self, u: usize| -> Vec<usize> {
             let vu = &f.vertices[u];
-            g.out_edges_of(vu)
+            g.out_edges_of(vu).unwrap()
                 .filter_map(|e| g.opposite_vertex(e, vu))
                 .map(|w| f.index[w])
                 .collect()
@@ -452,7 +452,7 @@ impl<'g, G: Graph> TarjanLcaFinder<'g, G> {
             uf.add_element(root.clone())?;
             ancestors.insert(root.clone(), root.clone());
             let nbrs = |u: &G::Vertex| -> Vec<G::Vertex> {
-                g.out_edges_of(u)
+                g.out_edges_of(u).unwrap()
                     .filter_map(|e| g.opposite_vertex(e, u).cloned())
                     .collect()
             };
@@ -530,7 +530,7 @@ impl<'g, G: DirectedGraph> NaiveLcaFinder<'g, G> {
         let mut queue = std::collections::VecDeque::from([start.clone()]);
         while let Some(v) = queue.pop_front() {
             let next: Vec<G::Vertex> = reversed
-                .out_edges_of(&v)
+                .out_edges_of(&v).unwrap()
                 .filter_map(|e| reversed.edge_target(e).cloned())
                 .collect();
             for w in next {
@@ -567,7 +567,7 @@ impl<G: DirectedGraph> NaiveLcaFinder<'_, G> {
         common
             .iter()
             .filter(|anc| {
-                !self.graph.out_edges_of(anc).any(|e| {
+                !self.graph.out_edges_of(anc).unwrap().any(|e| {
                     self.graph
                         .edge_target(e)
                         .is_some_and(|t| common.contains(t))

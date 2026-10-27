@@ -26,7 +26,7 @@ impl<'g, G: Graph> GraphOrdering<'g, G> {
         let mut vertices: Vec<&'g G::Vertex> = graph.vertices().collect();
         if order_by_degree {
             // stable, like List.sort
-            vertices.sort_by_key(|v| graph.degree_of(v));
+            vertices.sort_by_key(|v| graph.degree_of(v).unwrap());
         }
         let n = vertices.len();
         let order = vertices.iter().enumerate().map(|(i, v)| (*v, i)).collect();
@@ -65,9 +65,9 @@ impl<'g, G: Graph> GraphOrdering<'g, G> {
             res.push(self.order[if s == vertex { t } else { s }]);
         };
         if out {
-            g.out_edges_of(vertex).for_each(&mut push);
+            g.out_edges_of(vertex).unwrap().for_each(&mut push);
         } else {
-            g.in_edges_of(vertex).for_each(&mut push);
+            g.in_edges_of(vertex).unwrap().for_each(&mut push);
         }
         res
     }

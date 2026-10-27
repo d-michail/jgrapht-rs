@@ -490,7 +490,7 @@ mod edge_selection_test {
 
         let mut iterator = DepthFirstIterator::new(&graph);
         iterator.set_edge_selector(|g, v| {
-            g.out_edges_of(v)
+            g.out_edges_of(v).unwrap()
                 .filter(|e| {
                     if v.0 % 2 == 0 {
                         e.0 == "BLUE"

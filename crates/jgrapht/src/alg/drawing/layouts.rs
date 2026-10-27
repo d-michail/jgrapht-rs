@@ -367,12 +367,12 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
         for (i, v) in partition.iter().enumerate() {
             let key = match self.order {
                 SecondLayerOrder::BarycenterGreedy => {
-                    let degree = graph.degree_of(v);
+                    let degree = graph.degree_of(v).unwrap();
                     if degree == 0 {
                         -f64::MAX
                     } else {
                         let sum: f64 = graph
-                            .out_edges_of(v)
+                            .out_edges_of(v).unwrap()
                             .map(|e| coord(graph.opposite_vertex(e, v).unwrap()))
                             .sum();
                         sum / degree as f64
@@ -380,7 +380,7 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
                 }
                 _ => {
                     let mut other: Vec<f64> = graph
-                        .edges_of(v)
+                        .edges_of(v).unwrap()
                         .map(|e| coord(graph.opposite_vertex(e, v).unwrap()))
                         .collect();
                     other.sort_by(|a, b| a.total_cmp(b));
@@ -399,7 +399,7 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
             if d != Ordering::Equal {
                 return d;
             }
-            let (dv, du) = (graph.degree_of(v), graph.degree_of(u));
+            let (dv, du) = (graph.degree_of(v).unwrap(), graph.degree_of(u).unwrap());
             if dv % 2 == 1 && du % 2 == 0 {
                 return Ordering::Less;
             }

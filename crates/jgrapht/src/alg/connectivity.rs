@@ -123,7 +123,7 @@ pub fn strongly_connected_components_kosaraju<G: DirectedGraph>(g: &G) -> Vec<Ve
         seen.insert(root);
         while let Some(v) = stack.pop() {
             comp.push(v.clone());
-            for e in rev.edges_of(v) {
+            for e in rev.edges_of(v).unwrap() {
                 let n = if rev.edge_source(e) == Some(v) {
                     rev.edge_target(e)
                 } else {
@@ -288,7 +288,7 @@ pub fn block_cut_tree<G: Graph>(g: &G) -> BlockCutTree<G::Vertex> {
     }
     // isolated vertices form singleton blocks
     for v in g.vertices() {
-        if g.edges_of(v).next().is_none() {
+        if g.edges_of(v).unwrap().next().is_none() {
             blocks.push(vec![v.clone()]);
         }
     }
@@ -467,7 +467,7 @@ fn bfs_undirected<G: Graph>(g: &G, start: &G::Vertex) -> Vec<G::Vertex> {
     while head < order.len() {
         let v = order[head];
         head += 1;
-        for e in g.edges_of(v) {
+        for e in g.edges_of(v).unwrap() {
             if let Some(u) = g.opposite_vertex(e, v) {
                 if seen.insert(u) {
                     order.push(u);
@@ -650,7 +650,7 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
             .iter()
             .map(|v| {
                 graph
-                    .edges_of(v)
+                    .edges_of(v).unwrap()
                     .map(|e| {
                         let nv = graph.opposite_vertex(e, v).unwrap();
                         (e.clone(), idx[nv])
@@ -986,7 +986,7 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
         let mut min_degree = usize::MAX;
         let mut min_degree_vertex = None;
         for v in graph.vertices() {
-            let d = graph.degree_of(v);
+            let d = graph.degree_of(v).unwrap();
             if d < min_degree {
                 min_degree = d;
                 min_degree_vertex = Some(v.clone());
@@ -1121,7 +1121,7 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
 
 /// Successors in a directed graph, neighbours in an undirected one (`Graphs.successorListOf`).
 fn successor_list<G: Graph>(g: &G, v: &G::Vertex) -> Vec<G::Vertex> {
-    g.out_edges_of(v)
+    g.out_edges_of(v).unwrap()
         .filter_map(|e| g.opposite_vertex(e, v).cloned())
         .collect()
 }

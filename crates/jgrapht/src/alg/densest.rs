@@ -223,7 +223,7 @@ where
 
     fn outgoing_weight(&self, v: &G::Vertex) -> f64 {
         self.graph
-            .out_edges_of(v)
+            .out_edges_of(v).unwrap()
             .map(|e| Self::weight_of(self.graph, e))
             .sum()
     }

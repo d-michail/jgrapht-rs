@@ -42,7 +42,9 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge>
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         if self.partition1.len() != self.partition2.len() {
-            return invalid("Graph supplied isn't complete bipartite with equally sized partitions!");
+            return invalid(
+                "Graph supplied isn't complete bipartite with equally sized partitions!",
+            );
         }
         let p1: HashSet<G::Vertex> = self.partition1.iter().cloned().collect();
         let p2: HashSet<G::Vertex> = self.partition2.iter().cloned().collect();
@@ -51,7 +53,9 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge>
         }
         let partition = self.partition1.len();
         if graph.edge_count() != partition * partition {
-            return invalid("Graph supplied isn't complete bipartite with equally sized partitions!");
+            return invalid(
+                "Graph supplied isn't complete bipartite with equally sized partitions!",
+            );
         }
         if !props::is_simple(graph) {
             return invalid("Only simple graphs supported");
@@ -100,7 +104,10 @@ impl KuhnMunkresMatrixImplementation {
                     continue;
                 }
                 cost_matrix[i][j] = g
-                    .edge_weight(g.get_edge(source, target).expect("complete bipartite graph"))
+                    .edge_weight(
+                        g.get_edge(source, target)
+                            .expect("complete bipartite graph"),
+                    )
                     .unwrap_or(1.0);
             }
         }
@@ -158,7 +165,8 @@ impl KuhnMunkresMatrixImplementation {
     }
 
     fn build_maximal_matching(&mut self) -> usize {
-        let mut matching_size_lower_bound = self.column_matched.iter().filter(|&&c| c != -1).count();
+        let mut matching_size_lower_bound =
+            self.column_matched.iter().filter(|&&c| c != -1).count();
 
         for j in 0..self.excess_matrix[0].len() {
             if self.row_matched[j] == -1 {

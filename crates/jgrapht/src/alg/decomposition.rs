@@ -186,7 +186,7 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
                 self.component[u] = Some(c);
                 self.size_subtree[u] = 1;
                 let vertex_u = self.index_list[u].clone();
-                let edges: Vec<G::Edge> = self.graph.edges_of(&vertex_u).cloned().collect();
+                let edges: Vec<G::Edge> = self.graph.edges_of(&vertex_u).unwrap().cloned().collect();
                 for edge in &edges {
                     let child = self.opposite(edge, u);
                     if !explored[child] {
@@ -199,7 +199,7 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
                 let mut path_child: Option<usize> = None;
                 let mut path_edge: Option<G::Edge> = None;
                 let vertex_u = self.index_list[u].clone();
-                let edges: Vec<G::Edge> = self.graph.edges_of(&vertex_u).cloned().collect();
+                let edges: Vec<G::Edge> = self.graph.edges_of(&vertex_u).unwrap().cloned().collect();
                 for edge in &edges {
                     let child = self.opposite(edge, u);
                     if Some(child) != self.parent[u] {
@@ -422,14 +422,14 @@ where
             seen
         };
         let forward = |v: &G::Vertex| {
-            dg.out_edges_of(v)
+            dg.out_edges_of(v).unwrap()
                 .map(|e| dg.edge_target(e).unwrap().clone())
                 .collect()
         };
         let subset1 = reach(&forward, &unmatched1);
         let rev = EdgeReversed(&dg);
         let backward = |v: &G::Vertex| {
-            rev.out_edges_of(v)
+            rev.out_edges_of(v).unwrap()
                 .map(|e| rev.edge_target(e).unwrap().clone())
                 .collect()
         };
@@ -513,7 +513,7 @@ where
                     h.add_vertex(e.clone());
                 } else {
                     let find =
-                        |v: &G::Vertex| g.edges_of(v).find(|o| matched.contains(*o)).cloned();
+                        |v: &G::Vertex| g.edges_of(v).unwrap().find(|o| matched.contains(*o)).cloned();
                     let (e1, e2) = (find(v1), find(v2));
                     if let (Some(e1), Some(e2)) = (e1, e2) {
                         h.add_vertex(e1.clone());

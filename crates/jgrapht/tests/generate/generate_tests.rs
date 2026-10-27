@@ -85,7 +85,7 @@ mod graph_generator_test {
         assert_eq!((g.vertex_count(), g.edge_count()), (SIZE, SIZE - 1));
         let (start, end) = (result["Start Vertex"][0], result["End Vertex"][0]);
         for v in g.vertices() {
-            let (i, o) = (g.in_degree_of(v), g.out_degree_of(v));
+            let (i, o) = (g.in_degree_of(v).unwrap(), g.out_degree_of(v).unwrap());
             if *v == start {
                 assert_eq!((i, o), (0, 1));
             } else if *v == end {
@@ -105,13 +105,13 @@ mod graph_generator_test {
             .unwrap();
         assert_eq!((g.vertex_count(), g.edge_count()), (SIZE, SIZE));
         let start = *g.vertices().next().unwrap();
-        assert_eq!(g.out_degree_of(&start), 1);
+        assert_eq!(g.out_degree_of(&start).unwrap(), 1);
         let mut next = start;
         let mut seen = HashSet::new();
         for _ in 0..SIZE {
-            let e = g.out_edges_of(&next).next().unwrap();
+            let e = g.out_edges_of(&next).unwrap().next().unwrap();
             next = *g.edge_target(e).unwrap();
-            assert_eq!((g.in_degree_of(&next), g.out_degree_of(&next)), (1, 1));
+            assert_eq!((g.in_degree_of(&next).unwrap(), g.out_degree_of(&next).unwrap()), (1, 1));
             assert!(seen.insert(next));
         }
         assert_eq!(next, start);
@@ -670,11 +670,11 @@ mod windmill_graphs_generator_test {
     fn verify_degree(g: &UGraph<i32>, mode: WindmillMode, m: usize, n: usize) {
         let vs: Vec<i32> = g.vertices().copied().collect();
         if mode == WindmillMode::DutchWindmill {
-            assert_eq!(g.degree_of(&vs[0]), 2 * m);
-            assert!(vs[1..].iter().all(|v| g.degree_of(v) == 2));
+            assert_eq!(g.degree_of(&vs[0]).unwrap(), 2 * m);
+            assert!(vs[1..].iter().all(|v| g.degree_of(v).unwrap() == 2));
         } else {
-            assert_eq!(g.degree_of(&vs[0]), m * (n - 1));
-            assert!(vs[1..].iter().all(|v| g.degree_of(v) == n - 1));
+            assert_eq!(g.degree_of(&vs[0]).unwrap(), m * (n - 1));
+            assert!(vs[1..].iter().all(|v| g.degree_of(v).unwrap() == n - 1));
         }
     }
 
@@ -1563,12 +1563,12 @@ mod scale_free_kleinberg_lcd {
         generator.set_allowing_multiple_edges(false);
         let mut g = loops_d(0);
         generator.generate_default(&mut g).unwrap();
-        assert_eq!(g.vertices().filter(|v| g.out_degree_of(v) == 0).count(), 0);
+        assert_eq!(g.vertices().filter(|v| g.out_degree_of(v).unwrap() == 0).count(), 0);
         let mut generator = dsf(0.0, 0.3, 0.5, 0.5, -1, 1000).unwrap();
         generator.set_allowing_multiple_edges(false);
         let mut g = loops_d(0);
         generator.generate_default(&mut g).unwrap();
-        assert_eq!(g.vertices().filter(|v| g.in_degree_of(v) == 0).count(), 0);
+        assert_eq!(g.vertices().filter(|v| g.in_degree_of(v).unwrap() == 0).count(), 0);
     }
 
     #[test]
@@ -1673,7 +1673,7 @@ mod prufer_watts_regular {
             .generate_default(&mut tree)
             .unwrap();
         assert_eq!(tree.vertex_count(), 6);
-        let mut degrees: Vec<usize> = tree.vertices().map(|v| tree.degree_of(v)).collect();
+        let mut degrees: Vec<usize> = tree.vertices().map(|v| tree.degree_of(v).unwrap()).collect();
         degrees.sort_unstable();
         assert_eq!(degrees, [1, 1, 1, 1, 2, 4]);
     }
@@ -1799,7 +1799,7 @@ mod prufer_watts_regular {
     }
 
     fn all_degrees<G: Graph<Vertex = i32>>(g: &G, d: usize) {
-        assert!(g.vertices().all(|v| g.degree_of(v) == d));
+        assert!(g.vertices().all(|v| g.degree_of(v).unwrap() == d));
     }
 
     #[test]
@@ -1923,13 +1923,13 @@ mod planted_partition_tests {
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
-        assert!(g.vertices().all(|v| g.degree_of(v) == l * k - 1));
+        assert!(g.vertices().all(|v| g.degree_of(v).unwrap() == l * k - 1));
         let mut g = loops_d(0);
         pp(l, k, 1.0, 1.0, false)
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
-        assert!(g.vertices().all(|v| g.degree_of(v) == 2 * (l * k - 1)));
+        assert!(g.vertices().all(|v| g.degree_of(v).unwrap() == 2 * (l * k - 1)));
     }
 
     #[test]

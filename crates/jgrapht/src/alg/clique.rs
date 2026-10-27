@@ -181,7 +181,7 @@ impl<'g, G: Graph> BronKerboschBase<'g, G> {
 
     fn neighbors(&self, v: &G::Vertex) -> HashSet<G::Vertex> {
         self.graph
-            .edges_of(v)
+            .edges_of(v).unwrap()
             .filter_map(|e| self.graph.opposite_vertex(e, v).cloned())
             .collect()
     }
@@ -307,7 +307,7 @@ impl<'g, G: Graph> PivotBronKerboschCliqueFinder<'g, G> {
         let mut best: Option<(usize, &G::Vertex)> = None;
         for u in p.iter().chain(x.iter()) {
             let count = g
-                .edges_of(u)
+                .edges_of(u).unwrap()
                 .filter(|e| g.opposite_vertex(e, u).is_some_and(|w| p.contains(w)))
                 .count();
             if best.is_none_or(|(c, _)| count > c) {

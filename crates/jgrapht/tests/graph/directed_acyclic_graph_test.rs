@@ -71,7 +71,7 @@ fn test_cycle_detection_in_random_graph_build() {
             dag.vertices().collect::<HashSet<_>>()
         );
         for sv in compare.vertices() {
-            for oe in compare.out_edges_of(sv) {
+            for oe in compare.out_edges_of(sv).unwrap() {
                 let tv = compare.edge_target(oe).unwrap();
                 assert!(dag.contains_edge_between(sv, tv));
             }

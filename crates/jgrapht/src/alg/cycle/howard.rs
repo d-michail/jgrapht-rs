@@ -77,7 +77,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
             self.vertex_distance.insert(v.clone(), f64::INFINITY);
         }
         for u in component.vertices() {
-            for e in component.in_edges_of(u) {
+            for e in component.in_edges_of(u).unwrap() {
                 let v = component
                     .opposite_vertex(e, u)
                     .expect("edge of the component");
@@ -155,7 +155,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
         reached.insert(cycle_vertex, true);
         let current_mean = self.current_cycle_weight / self.current_cycle_length as f64;
         while let Some(u) = queue.pop_front() {
-            for e in component.in_edges_of(&u) {
+            for e in component.in_edges_of(&u).unwrap() {
                 let v = component
                     .opposite_vertex(e, &u)
                     .expect("edge of the component");
@@ -171,7 +171,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
         }
         let mut improved = false;
         for u in component.vertices() {
-            for e in component.in_edges_of(u) {
+            for e in component.in_edges_of(u).unwrap() {
                 let v = component
                     .opposite_vertex(e, u)
                     .expect("edge of the component");
@@ -245,7 +245,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> MinimumCycleMe
             let mut skip = component.vertex_count() == 0;
             skip |= component.vertex_count() == 1
                 && component
-                    .in_edges_of(component.vertices().next().expect("one vertex"))
+                    .in_edges_of(component.vertices().next().expect("one vertex")).unwrap()
                     .next()
                     .is_none();
             if skip {

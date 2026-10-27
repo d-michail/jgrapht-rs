@@ -74,9 +74,9 @@ where
             MatrixFormat::SparseAdjacency => {
                 for from in &vertices {
                     let edges: Vec<_> = if graph.graph_type().directed {
-                        graph.out_edges_of(from).collect()
+                        graph.out_edges_of(from).unwrap().collect()
                     } else {
-                        graph.edges_of(from).collect()
+                        graph.edges_of(from).unwrap().collect()
                     };
                     let mut counts = IndexMap::<V, usize>::new();
                     for edge in edges {
@@ -94,7 +94,7 @@ where
             MatrixFormat::SparseLaplacian => {
                 for from in &vertices {
                     let mut neighbors = Vec::new();
-                    for edge in graph.edges_of(from) {
+                    for edge in graph.edges_of(from).unwrap() {
                         let source = graph.edge_source(edge).unwrap();
                         let target = graph.edge_target(edge).unwrap();
                         neighbors.push(if source == from { target } else { source });
@@ -108,7 +108,7 @@ where
             MatrixFormat::SparseNormalizedLaplacian => {
                 for from in &vertices {
                     let mut neighbors = IndexSet::new();
-                    for edge in graph.edges_of(from) {
+                    for edge in graph.edges_of(from).unwrap() {
                         let source = graph.edge_source(edge).unwrap();
                         let target = graph.edge_target(edge).unwrap();
                         neighbors.insert(if source == from {
@@ -123,7 +123,7 @@ where
                         writeln!(output, "{} {} 1", ids[from], ids[from])?;
                         for to in neighbors {
                             let value = -1.0
-                                / ((graph.degree_of(from) * graph.degree_of(&to)) as f64).sqrt();
+                                / ((graph.degree_of(from).unwrap() * graph.degree_of(&to).unwrap()) as f64).sqrt();
                             writeln!(output, "{} {} {}", ids[from], ids[&to], format_f64(value))?;
                         }
                     }

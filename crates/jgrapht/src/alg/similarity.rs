@@ -65,7 +65,7 @@ impl<V: Clone + PartialEq> TreeOrdering<V> {
             state: u8,
         }
         let successors = |v: &V| -> Vec<V> {
-            tree.out_edges_of(v)
+            tree.out_edges_of(v).unwrap()
                 .filter_map(|e| tree.opposite_vertex(e, v).cloned())
                 .collect()
         };

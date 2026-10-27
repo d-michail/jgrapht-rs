@@ -26,7 +26,7 @@ fn index_graph<G: Graph>(g: &G) -> (Vec<G::Vertex>, Vec<Vec<usize>>) {
     let out = vs
         .iter()
         .map(|v| {
-            g.out_edges_of(v)
+            g.out_edges_of(v).unwrap()
                 .map(|e| index[g.edge_target(e).expect("edge of the graph")])
                 .collect()
         })

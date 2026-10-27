@@ -23,7 +23,7 @@ pub trait GraphExt: Graph {
 
     /// Adjacent vertices, ignoring direction. Parallel edges yield repeats.
     fn neighbors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.edges_of(v)
+        self.edges_of(v).unwrap()
             .filter_map(move |e| self.opposite_vertex(e, v))
     }
 
@@ -34,7 +34,7 @@ pub trait GraphExt: Graph {
         v: &'a Self::Vertex,
     ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)> {
         let directed = self.graph_type().directed;
-        self.edges_of(v).filter_map(move |e| {
+        self.edges_of(v).unwrap().filter_map(move |e| {
             let (s, t) = self.edge_endpoints(e)?;
             if directed {
                 (s == v).then_some((e, t))
@@ -50,7 +50,7 @@ pub trait GraphExt: Graph {
         v: &'a Self::Vertex,
     ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)> {
         let directed = self.graph_type().directed;
-        self.edges_of(v).filter_map(move |e| {
+        self.edges_of(v).unwrap().filter_map(move |e| {
             let (s, t) = self.edge_endpoints(e)?;
             if directed {
                 (t == v).then_some((e, s))
@@ -97,7 +97,7 @@ impl<G: Graph + ?Sized> GraphExt for G {}
 
 pub trait DirectedExt: DirectedGraph {
     fn successors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.out_edges_of(v)
+        self.out_edges_of(v).unwrap()
             .filter_map(move |e| self.edge_target(e))
     }
     fn successor_list_of(&self, v: &Self::Vertex) -> Vec<Self::Vertex> {
@@ -140,16 +140,16 @@ pub trait DirectedExt: DirectedGraph {
         crate::traverse::topological_sort(self).map(|v| v.into_iter().cloned().collect())
     }
     fn vertex_has_successors(&self, v: &Self::Vertex) -> bool {
-        self.out_edges_of(v).next().is_some()
+        self.out_edges_of(v).unwrap().next().is_some()
     }
     fn vertex_has_predecessors(&self, v: &Self::Vertex) -> bool {
-        self.in_edges_of(v).next().is_some()
+        self.in_edges_of(v).unwrap().next().is_some()
     }
     fn predecessors_of<'a>(
         &'a self,
         v: &'a Self::Vertex,
     ) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.in_edges_of(v).filter_map(move |e| self.edge_source(e))
+        self.in_edges_of(v).unwrap().filter_map(move |e| self.edge_source(e))
     }
 }
 impl<G: DirectedGraph + ?Sized> DirectedExt for G {}

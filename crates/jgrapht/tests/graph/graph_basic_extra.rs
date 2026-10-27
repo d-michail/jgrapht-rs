@@ -9,7 +9,7 @@ fn undirected_simple() {
     assert_eq!(g.vertex_count(), 3);
     assert_eq!(g.edge_count(), 2);
     assert!(g.get_edge(&"b", &"a").is_some());
-    assert_eq!(g.degree_of(&"b"), 2);
+    assert_eq!(g.degree_of(&"b").unwrap(), 2);
     assert_eq!(g.add_edge(&"a", &"b").unwrap(), None); // parallel refused
     assert_eq!(g.add_edge(&"a", &"a"), Err(GraphError::LoopsNotAllowed));
     assert_eq!(g.opposite_vertex(&e, &"a"), Some(&"b"));
@@ -24,8 +24,8 @@ fn pseudograph_loops_and_multi() {
     g.add_vertex(1);
     g.add_edge(&1, &1).unwrap().unwrap();
     g.add_edge(&1, &1).unwrap().unwrap();
-    assert_eq!(g.degree_of(&1), 4);
-    assert_eq!(g.edges_of(&1).count(), 2);
+    assert_eq!(g.degree_of(&1).unwrap(), 4);
+    assert_eq!(g.edges_of(&1).unwrap().count(), 2);
     assert!(props::has_multiple_edges(&g) && props::has_self_loops(&g));
 }
 
@@ -36,8 +36,8 @@ fn directed_weighted() {
     g.add_weighted_edge(&1, &2, 2.5).unwrap();
     g.add_weighted_edge(&2, &3, 1.0).unwrap();
     g.add_edge(&2, &1).unwrap();
-    assert_eq!(g.out_degree_of(&2), 2);
-    assert_eq!(g.in_degree_of(&2), 1);
+    assert_eq!(g.out_degree_of(&2).unwrap(), 2);
+    assert_eq!(g.in_degree_of(&2).unwrap(), 1);
     assert_eq!(g.successors_of(&1).collect::<Vec<_>>(), [&2]);
     assert_eq!(g.predecessors_of(&3).collect::<Vec<_>>(), [&2]);
     assert!(g.get_edge(&2, &1).is_some() && g.get_edge(&3, &2).is_none());

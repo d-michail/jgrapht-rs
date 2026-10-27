@@ -233,7 +233,7 @@ fn min_cost_flow_works() {
         .get_minimum_cost_flow(&problem)
         .unwrap();
     assert_eq!(
-        g.out_edges_of(&0)
+        g.out_edges_of(&0).unwrap()
             .map(|edge| flow.flow(edge).unwrap())
             .sum::<f64>(),
         6.0

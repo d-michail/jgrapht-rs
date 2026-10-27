@@ -61,9 +61,9 @@ mod directed_graph_test {
     #[test]
     fn test_edges_of() {
         let g = multi_triangle();
-        assert_eq!(g.edges_of(&V1).count(), 3);
-        assert_eq!(g.edges_of(&V2).count(), 3);
-        assert_eq!(g.edges_of(&V3).count(), 2);
+        assert_eq!(g.edges_of(&V1).unwrap().count(), 3);
+        assert_eq!(g.edges_of(&V2).unwrap().count(), 3);
+        assert_eq!(g.edges_of(&V3).unwrap().count(), 2);
     }
 
     #[test]
@@ -71,9 +71,9 @@ mod directed_graph_test {
         let g = multi_triangle();
         assert_eq!(
             (
-                g.in_degree_of(&V1),
-                g.in_degree_of(&V2),
-                g.in_degree_of(&V3)
+                g.in_degree_of(&V1).unwrap(),
+                g.in_degree_of(&V2).unwrap(),
+                g.in_degree_of(&V3).unwrap()
             ),
             (2, 1, 1)
         );
@@ -84,9 +84,9 @@ mod directed_graph_test {
         let g = multi_triangle();
         assert_eq!(
             (
-                g.out_degree_of(&V1),
-                g.out_degree_of(&V2),
-                g.out_degree_of(&V3)
+                g.out_degree_of(&V1).unwrap(),
+                g.out_degree_of(&V2).unwrap(),
+                g.out_degree_of(&V3).unwrap()
             ),
             (1, 2, 1)
         );
@@ -209,23 +209,23 @@ mod incoming_outgoing_edges_test {
         let edges = |it: Vec<&DefaultEdge>| it.into_iter().copied().collect::<HashSet<_>>();
         let check = |g: &BaseGraph<i32, DefaultEdge, D>| {
             if D::DIRECTED {
-                assert!(edges(g.in_edges_of(&1).collect()).is_empty());
-                assert_eq!(g.in_degree_of(&1), 0);
-                assert_eq!(edges(g.out_edges_of(&1).collect()), set([e]));
-                assert_eq!(g.out_degree_of(&1), 1);
-                assert_eq!(edges(g.in_edges_of(&2).collect()), set([e]));
-                assert_eq!(g.in_degree_of(&2), 1);
-                assert!(edges(g.out_edges_of(&2).collect()).is_empty());
-                assert_eq!(g.out_degree_of(&2), 0);
-                assert!(edges(g.in_edges_of(&3).collect()).is_empty());
-                assert_eq!((g.in_degree_of(&3), g.out_degree_of(&3)), (0, 0));
+                assert!(edges(g.in_edges_of(&1).unwrap().collect()).is_empty());
+                assert_eq!(g.in_degree_of(&1).unwrap(), 0);
+                assert_eq!(edges(g.out_edges_of(&1).unwrap().collect()), set([e]));
+                assert_eq!(g.out_degree_of(&1).unwrap(), 1);
+                assert_eq!(edges(g.in_edges_of(&2).unwrap().collect()), set([e]));
+                assert_eq!(g.in_degree_of(&2).unwrap(), 1);
+                assert!(edges(g.out_edges_of(&2).unwrap().collect()).is_empty());
+                assert_eq!(g.out_degree_of(&2).unwrap(), 0);
+                assert!(edges(g.in_edges_of(&3).unwrap().collect()).is_empty());
+                assert_eq!((g.in_degree_of(&3).unwrap(), g.out_degree_of(&3).unwrap()), (0, 0));
             } else {
-                assert_eq!(edges(g.edges_of(&1).collect()), set([e]));
-                assert_eq!(g.degree_of(&1), 1);
-                assert_eq!(edges(g.edges_of(&2).collect()), set([e]));
-                assert_eq!(g.degree_of(&2), 1);
-                assert!(edges(g.edges_of(&3).collect()).is_empty());
-                assert_eq!(g.degree_of(&3), 0);
+                assert_eq!(edges(g.edges_of(&1).unwrap().collect()), set([e]));
+                assert_eq!(g.degree_of(&1).unwrap(), 1);
+                assert_eq!(edges(g.edges_of(&2).unwrap().collect()), set([e]));
+                assert_eq!(g.degree_of(&2).unwrap(), 1);
+                assert!(edges(g.edges_of(&3).unwrap().collect()).is_empty());
+                assert_eq!(g.degree_of(&3).unwrap(), 0);
             }
         };
         check(&g);
@@ -250,30 +250,30 @@ mod incoming_outgoing_edges_test {
         let e52 = add(5, 2);
         let e55_2 = add(5, 5);
         let es = |it: Vec<&DefaultEdge>| it.into_iter().copied().collect::<HashSet<_>>();
-        assert_eq!([1, 2, 3, 4, 5].map(|v| g.degree_of(&v)), [1, 5, 2, 3, 5]);
-        assert_eq!(es(g.edges_of(&1).collect()), set([e12]));
+        assert_eq!([1, 2, 3, 4, 5].map(|v| g.degree_of(&v).unwrap()), [1, 5, 2, 3, 5]);
+        assert_eq!(es(g.edges_of(&1).unwrap().collect()), set([e12]));
         assert_eq!(
-            es(g.edges_of(&2).collect()),
+            es(g.edges_of(&2).unwrap().collect()),
             set([e12, e23_1, e23_2, e24, e52])
         );
-        assert_eq!(es(g.edges_of(&3).collect()), set([e23_1, e23_2]));
-        assert_eq!(es(g.edges_of(&4).collect()), set([e24, e44]));
-        assert_eq!(es(g.edges_of(&5).collect()), set([e52, e55_1, e55_2]));
-        assert_eq!([1, 2, 3, 4, 5].map(|v| g.in_degree_of(&v)), [0, 2, 2, 2, 2]);
-        assert!(es(g.in_edges_of(&1).collect()).is_empty());
-        assert_eq!(es(g.in_edges_of(&2).collect()), set([e12, e52]));
-        assert_eq!(es(g.in_edges_of(&3).collect()), set([e23_1, e23_2]));
-        assert_eq!(es(g.in_edges_of(&4).collect()), set([e24, e44]));
-        assert_eq!(es(g.in_edges_of(&5).collect()), set([e55_1, e55_2]));
+        assert_eq!(es(g.edges_of(&3).unwrap().collect()), set([e23_1, e23_2]));
+        assert_eq!(es(g.edges_of(&4).unwrap().collect()), set([e24, e44]));
+        assert_eq!(es(g.edges_of(&5).unwrap().collect()), set([e52, e55_1, e55_2]));
+        assert_eq!([1, 2, 3, 4, 5].map(|v| g.in_degree_of(&v).unwrap()), [0, 2, 2, 2, 2]);
+        assert!(es(g.in_edges_of(&1).unwrap().collect()).is_empty());
+        assert_eq!(es(g.in_edges_of(&2).unwrap().collect()), set([e12, e52]));
+        assert_eq!(es(g.in_edges_of(&3).unwrap().collect()), set([e23_1, e23_2]));
+        assert_eq!(es(g.in_edges_of(&4).unwrap().collect()), set([e24, e44]));
+        assert_eq!(es(g.in_edges_of(&5).unwrap().collect()), set([e55_1, e55_2]));
         assert_eq!(
-            [1, 2, 3, 4, 5].map(|v| g.out_degree_of(&v)),
+            [1, 2, 3, 4, 5].map(|v| g.out_degree_of(&v).unwrap()),
             [1, 3, 0, 1, 3]
         );
-        assert_eq!(es(g.out_edges_of(&1).collect()), set([e12]));
-        assert_eq!(es(g.out_edges_of(&2).collect()), set([e23_1, e23_2, e24]));
-        assert!(es(g.out_edges_of(&3).collect()).is_empty());
-        assert_eq!(es(g.out_edges_of(&4).collect()), set([e44]));
-        assert_eq!(es(g.out_edges_of(&5).collect()), set([e52, e55_1, e55_2]));
+        assert_eq!(es(g.out_edges_of(&1).unwrap().collect()), set([e12]));
+        assert_eq!(es(g.out_edges_of(&2).unwrap().collect()), set([e23_1, e23_2, e24]));
+        assert!(es(g.out_edges_of(&3).unwrap().collect()).is_empty());
+        assert_eq!(es(g.out_edges_of(&4).unwrap().collect()), set([e44]));
+        assert_eq!(es(g.out_edges_of(&5).unwrap().collect()), set([e52, e55_1, e55_2]));
         for ty in all_types() {
             test_add_duplicate_edge(DiGraph::<i32>::with_graph_type(ty));
         }
@@ -294,7 +294,7 @@ mod incoming_outgoing_edges_test {
         let e52 = add(5, 2);
         let e55_2 = add(5, 5);
         let es = |it: Vec<&DefaultEdge>| it.into_iter().copied().collect::<HashSet<_>>();
-        assert_eq!([1, 2, 3, 4, 5].map(|v| g.degree_of(&v)), [1, 5, 2, 3, 5]);
+        assert_eq!([1, 2, 3, 4, 5].map(|v| g.degree_of(&v).unwrap()), [1, 5, 2, 3, 5]);
         let expected = [
             set([e12]),
             set([e12, e23_1, e23_2, e24, e52]),
@@ -304,11 +304,11 @@ mod incoming_outgoing_edges_test {
         ];
         for (i, want) in expected.iter().enumerate() {
             let v = i as i32 + 1;
-            assert_eq!(&es(g.edges_of(&v).collect()), want);
-            assert_eq!(&es(g.in_edges_of(&v).collect()), want);
-            assert_eq!(&es(g.out_edges_of(&v).collect()), want);
-            assert_eq!(g.in_degree_of(&v), g.degree_of(&v));
-            assert_eq!(g.out_degree_of(&v), g.degree_of(&v));
+            assert_eq!(&es(g.edges_of(&v).unwrap().collect()), want);
+            assert_eq!(&es(g.in_edges_of(&v).unwrap().collect()), want);
+            assert_eq!(&es(g.out_edges_of(&v).unwrap().collect()), want);
+            assert_eq!(g.in_degree_of(&v).unwrap(), g.degree_of(&v).unwrap());
+            assert_eq!(g.out_degree_of(&v).unwrap(), g.degree_of(&v).unwrap());
         }
         for ty in all_types() {
             test_add_duplicate_edge(UGraph::<i32>::with_graph_type(ty));
@@ -353,8 +353,8 @@ mod generic_graphs_test {
         g.add_vertex(v1.clone());
         g.add_vertex(v2.clone());
         g.add_edge_with(&v1, &v2, DefaultEdge(0)).unwrap();
-        assert_eq!(g.degree_of(&v1), 2);
-        assert_eq!(g.degree_of(&v2), 2);
+        assert_eq!(g.degree_of(&v1).unwrap(), 2);
+        assert_eq!(g.degree_of(&v2).unwrap(), 2);
     }
 }
 

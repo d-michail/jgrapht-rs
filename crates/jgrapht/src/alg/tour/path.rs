@@ -111,12 +111,12 @@ fn build_adjacency<G: Graph>(
             let mut neighbours: IndexSet<usize> = IndexSet::new();
             let others: Vec<&G::Vertex> = if directed {
                 graph
-                    .out_edges_of(u_vertex)
+                    .out_edges_of(u_vertex).unwrap()
                     .map(|e| graph.edge_target(e).expect("edge of the graph"))
                     .collect()
             } else {
                 graph
-                    .edges_of(u_vertex)
+                    .edges_of(u_vertex).unwrap()
                     .map(|e| {
                         graph
                             .opposite_vertex(e, u_vertex)
@@ -162,12 +162,12 @@ impl<G: Graph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
             .enumerate()
             .map(|(i, v)| (v.clone(), i))
             .collect();
-        let mut in_degree: Vec<usize> = index_list.iter().map(|v| graph.in_degree_of(v)).collect();
+        let mut in_degree: Vec<usize> = index_list.iter().map(|v| graph.in_degree_of(v).unwrap()).collect();
         let mut queue: VecDeque<usize> = (0..n).filter(|&i| in_degree[i] == 0).collect();
         let mut topo = Vec::with_capacity(n);
         while let Some(u) = queue.pop_front() {
             topo.push(u);
-            for e in graph.out_edges_of(&index_list[u]) {
+            for e in graph.out_edges_of(&index_list[u]).unwrap() {
                 let v = vertex_map[graph.edge_target(e).expect("edge of the graph")];
                 in_degree[v] -= 1;
                 if in_degree[v] == 0 {
@@ -192,7 +192,7 @@ impl<G: Graph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
         let mut best_length = 1;
         for i in 0..n {
             let v = &index_list[topo[i]];
-            for e in graph.in_edges_of(v) {
+            for e in graph.in_edges_of(v).unwrap() {
                 let u = position[vertex_map[graph.edge_source(e).expect("edge of the graph")]];
                 if longest[u] + 1 > longest[i] {
                     longest[i] = longest[u] + 1;
@@ -544,7 +544,7 @@ impl BacktrackingHamiltonianPath {
 
     fn effective_undirected_degree<G: Graph>(graph: &G, v: &G::Vertex) -> usize {
         graph
-            .edges_of(v)
+            .edges_of(v).unwrap()
             .filter(|e| graph.opposite_vertex(e, v).is_some_and(|o| o != v))
             .count()
     }

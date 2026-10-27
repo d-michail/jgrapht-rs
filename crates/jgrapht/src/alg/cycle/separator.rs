@@ -77,7 +77,7 @@ impl<'g, G: UndirectedGraph> ChordalGraphMinimalVertexSeparatorFinder<'g, G> {
     ) -> Vec<G::Vertex> {
         let position = vertex_in_order[vertex];
         let mut predecessors: Vec<(usize, G::Vertex)> = Vec::new();
-        for edge in self.graph.edges_of(vertex) {
+        for edge in self.graph.edges_of(vertex).unwrap() {
             let opposite = self
                 .graph
                 .opposite_vertex(edge, vertex)

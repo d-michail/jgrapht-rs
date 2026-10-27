@@ -431,7 +431,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
                     current_dfs_index,
                 );
                 current_dfs_index += 1;
-                for e in graph.edges_of(&info.current) {
+                for e in graph.edges_of(&info.current).unwrap() {
                     let opposite = graph.opposite_vertex(e, &info.current).unwrap();
                     if let Some(&opposite_node) = vertex_map.get(opposite) {
                         if info.parent.as_ref() == Some(opposite) {

@@ -3,6 +3,7 @@
 mod base;
 pub mod builder;
 mod ext;
+pub mod sparse;
 pub mod props;
 
 pub use base::{BaseGraph, DefaultEdge, DiGraph, Directed, Direction, UGraph, Undirected};
@@ -38,8 +39,9 @@ pub trait Graph {
     fn edge_weight(&self, e: &Self::Edge) -> Option<f64>;
 
     /// All edges touching `v` (empty if `v` is absent). Directed graphs yield in- and out-edges,
-    /// a self-loop appears once.
-    fn edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge>;
+    /// a self-loop appears once. Fails with [`crate::GraphError::Unsupported`] on graphs that do
+    /// not index incoming edges.
+    fn edges_of(&self, v: &Self::Vertex) -> Result<impl Iterator<Item = &Self::Edge>>;
 
     /// Edges from `u` to `v` (either orientation for undirected graphs).
     fn edges_between<'a>(
@@ -54,33 +56,35 @@ pub trait Graph {
         self.graph_type().directed
     }
     /// Edges entering `v`; undirected edges count as entering (`incomingEdgesOf`).
-    fn in_edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge> {
-        self.edges_of(v)
-            .filter(move |e| !self.is_edge_directed(e) || self.edge_target(e) == Some(v))
+    fn in_edges_of(&self, v: &Self::Vertex) -> Result<impl Iterator<Item = &Self::Edge>> {
+        Ok(self
+            .edges_of(v)?
+            .filter(move |e| !self.is_edge_directed(e) || self.edge_target(e) == Some(v)))
     }
     /// Edges leaving `v`; undirected edges count as leaving (`outgoingEdgesOf`).
-    fn out_edges_of(&self, v: &Self::Vertex) -> impl Iterator<Item = &Self::Edge> {
-        self.edges_of(v)
-            .filter(move |e| !self.is_edge_directed(e) || self.edge_source(e) == Some(v))
+    fn out_edges_of(&self, v: &Self::Vertex) -> Result<impl Iterator<Item = &Self::Edge>> {
+        Ok(self
+            .edges_of(v)?
+            .filter(move |e| !self.is_edge_directed(e) || self.edge_source(e) == Some(v)))
     }
     /// `inDegreeOf`: incoming edge count; equals [`Graph::degree_of`] for undirected graphs.
-    fn in_degree_of(&self, v: &Self::Vertex) -> usize {
+    fn in_degree_of(&self, v: &Self::Vertex) -> Result<usize> {
         let t = self.graph_type();
         if t.directed {
-            self.in_edges_of(v).count()
+            Ok(self.in_edges_of(v)?.count())
         } else if t.mixed {
-            self.in_edges_of(v).map(|e| self.mixed_weight(e)).sum()
+            Ok(self.in_edges_of(v)?.map(|e| self.mixed_weight(e)).sum())
         } else {
             self.degree_of(v)
         }
     }
     /// `outDegreeOf`: outgoing edge count; equals [`Graph::degree_of`] for undirected graphs.
-    fn out_degree_of(&self, v: &Self::Vertex) -> usize {
+    fn out_degree_of(&self, v: &Self::Vertex) -> Result<usize> {
         let t = self.graph_type();
         if t.directed {
-            self.out_edges_of(v).count()
+            Ok(self.out_edges_of(v)?.count())
         } else if t.mixed {
-            self.out_edges_of(v).map(|e| self.mixed_weight(e)).sum()
+            Ok(self.out_edges_of(v)?.map(|e| self.mixed_weight(e)).sum())
         } else {
             self.degree_of(v)
         }
@@ -102,8 +106,9 @@ pub trait Graph {
         self.get_edge(u, v).is_some()
     }
     /// Degree; self-loops count twice.
-    fn degree_of(&self, v: &Self::Vertex) -> usize {
-        self.edges_of(v)
+    fn degree_of(&self, v: &Self::Vertex) -> Result<usize> {
+        Ok(self
+            .edges_of(v)?
             .map(|e| {
                 if self.edge_source(e) == self.edge_target(e) {
                     2
@@ -111,7 +116,7 @@ pub trait Graph {
                     1
                 }
             })
-            .sum()
+            .sum())
     }
 }
 

@@ -40,7 +40,7 @@ impl<'g, G: UndirectedGraph> ChordalGraphIndependentSetFinder<'g, G> {
             for previous in perfect_elimination_order.iter().rev() {
                 if !restricted.contains(previous) {
                     is.insert(previous.clone());
-                    for edge in self.graph.edges_of(previous) {
+                    for edge in self.graph.edges_of(previous).unwrap() {
                         let opposite = self
                             .graph
                             .opposite_vertex(edge, previous)

@@ -63,7 +63,7 @@ impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
     ) -> Option<(G::Edge, f64, G::Vertex)> {
         let graph = self.graph;
         let mut best: Option<(G::Edge, f64, G::Vertex)> = None;
-        for e in graph.edges_of(x) {
+        for e in graph.edges_of(x).unwrap() {
             let other = graph.opposite_vertex(e, x).expect("incident edge");
             if visible_vertex.contains(other) && other != x {
                 let cur_weight = graph.edge_weight(e).unwrap_or(1.0);
@@ -149,7 +149,8 @@ impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
             }
 
             // find maximum weight matching of path using dynamic programming
-            let (path_weight, path_matching) = path_solver.get_maximum_weight_matching(graph, &path);
+            let (path_weight, path_matching) =
+                path_solver.get_maximum_weight_matching(graph, &path);
             // add it to result while keeping track of matched vertices
             matching_weight += path_weight;
             for e in path_matching {

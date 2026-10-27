@@ -138,7 +138,7 @@ impl<'g, G: Graph> UndirectedModularityMeasurer<'g, G> {
                 .sum();
             for v in graph.vertices() {
                 let mut sum = 0.0;
-                for e in graph.out_edges_of(v) {
+                for e in graph.out_edges_of(v).unwrap() {
                     let u = graph.opposite_vertex(e, v).unwrap();
                     let w = graph.edge_weight(e).unwrap_or(1.0);
                     sum += if u == v { 2.0 * w } else { w };
@@ -148,7 +148,7 @@ impl<'g, G: Graph> UndirectedModularityMeasurer<'g, G> {
         } else {
             m = graph.edge_count() as f64;
             for v in graph.vertices() {
-                degrees.insert(v.clone(), graph.degree_of(v) as f64);
+                degrees.insert(v.clone(), graph.degree_of(v).unwrap() as f64);
             }
         }
         Ok(UndirectedModularityMeasurer { graph, m, degrees })
@@ -421,8 +421,8 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgorithm<'_, 
             if vi == vj {
                 continue;
             }
-            let ki = g.degree_of(vs[vi]) as i64;
-            let kj = g.degree_of(vs[vj]) as i64;
+            let ki = g.degree_of(vs[vi]).unwrap() as i64;
+            let kj = g.degree_of(vs[vj]).unwrap() as i64;
             let value = (1.0 / m) - ((ki * kj) as f64 / (2.0 * m * m));
             dq.entry(vi).or_default().insert(vj, value);
             dq.entry(vj).or_default().insert(vi, value);
@@ -450,12 +450,12 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgorithm<'_, 
         if g.graph_type().directed {
             b = vec![0.0; vs.len()];
             for i in 0..vs.len() {
-                a[i] = g.out_degree_of(vs[i]) as f64 / m;
-                b[i] = g.in_degree_of(vs[i]) as f64 / m;
+                a[i] = g.out_degree_of(vs[i]).unwrap() as f64 / m;
+                b[i] = g.in_degree_of(vs[i]).unwrap() as f64 / m;
             }
         } else {
             for i in 0..vs.len() {
-                a[i] = g.degree_of(vs[i]) as f64 / (2.0 * m);
+                a[i] = g.degree_of(vs[i]).unwrap() as f64 / (2.0 * m);
             }
             b = a.clone();
         }
@@ -620,7 +620,7 @@ impl<G: Graph, R: RandomSource> ClusteringAlgorithm<G::Vertex>
         let nbrs: Vec<Vec<usize>> = vs
             .iter()
             .map(|v| {
-                g.edges_of(v)
+                g.edges_of(v).unwrap()
                     .map(|e| index[g.opposite_vertex(e, v).unwrap()])
                     .collect()
             })
@@ -670,7 +670,7 @@ impl<G: Graph, R: RandomSource> ClusteringAlgorithm<G::Vertex>
             let mut all: Vec<usize> = (0..vs.len()).collect();
             java_shuffle(&mut all, &mut *rng);
             for &v in &all {
-                if g.degree_of(vs[v]) == 0 {
+                if g.degree_of(vs[v]).unwrap() == 0 {
                     continue;
                 }
                 let (counts, other_max) = counts_and_max(v, &labels);

@@ -109,7 +109,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
         Self::check(g, v)?;
         Ok(self.predecessors.entry(v.clone()).or_insert_with(|| {
             Neighbors::from_list(
-                g.in_edges_of(v)
+                g.in_edges_of(v).unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v).cloned())
                     .collect::<Vec<_>>(),
             )
@@ -120,7 +120,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
         Self::check(g, v)?;
         Ok(self.successors.entry(v.clone()).or_insert_with(|| {
             Neighbors::from_list(
-                g.out_edges_of(v)
+                g.out_edges_of(v).unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v).cloned())
                     .collect::<Vec<_>>(),
             )
