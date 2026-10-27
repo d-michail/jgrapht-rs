@@ -125,10 +125,8 @@ impl Pool {
         let new_head = self.prev[l.head];
         let mut current = l.head;
         loop {
-            let next = self.next[current];
-            self.next[current] = self.prev[current];
-            self.prev[current] = next;
-            current = next;
+            std::mem::swap(&mut self.next[current], &mut self.prev[current]);
+            current = self.prev[current];
             if current == l.head {
                 break;
             }

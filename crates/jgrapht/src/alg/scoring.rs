@@ -570,15 +570,12 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
                     ));
                 }
                 let new_distance = v_distance + e_weight;
-                let current: Option<f64> = match handles.get(w) {
-                    None => None,
-                    Some(h) => Some(
-                        final_dist
-                            .get(w)
-                            .copied()
-                            .unwrap_or_else(|| heap.key(*h).map(|k| k.0).unwrap_or(f64::INFINITY)),
-                    ),
-                };
+                let current: Option<f64> = handles.get(w).map(|h| {
+                    final_dist
+                        .get(w)
+                        .copied()
+                        .unwrap_or_else(|| heap.key(*h).map(|k| k.0).unwrap_or(f64::INFINITY))
+                });
                 let w_key = match current {
                     None => {
                         let h = heap.insert(OrderedF64(new_distance), w.clone());
@@ -775,7 +772,8 @@ impl<'g, G: Graph> ClusteringCoefficient<'g, G> {
 
     fn local(g: &G, v: &G::Vertex) -> f64 {
         let hood: indexmap::IndexSet<&G::Vertex> = g
-            .edges_of(v).unwrap()
+            .edges_of(v)
+            .unwrap()
             .filter_map(|e| g.opposite_vertex(e, v))
             .collect();
         let k = hood.len() as f64;
@@ -811,11 +809,13 @@ impl<'g, G: Graph> ClusteringCoefficient<'g, G> {
                 triplets += d * (d - 1.0) / 2.0;
             } else {
                 let preds: std::collections::HashSet<_> = g
-                    .in_edges_of(v).unwrap()
+                    .in_edges_of(v)
+                    .unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .collect();
                 let succs: std::collections::HashSet<_> = g
-                    .out_edges_of(v).unwrap()
+                    .out_edges_of(v)
+                    .unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .collect();
                 triplets += preds.len() as f64 * succs.len() as f64;
@@ -843,7 +843,8 @@ fn incoming_lists<G: Graph>(g: &G, vs: &[&G::Vertex]) -> Vec<Vec<(usize, f64)>> 
     let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
     vs.iter()
         .map(|v| {
-            g.in_edges_of(v).unwrap()
+            g.in_edges_of(v)
+                .unwrap()
                 .map(|e| {
                     (
                         idx[g.opposite_vertex(e, v).unwrap()],
@@ -1096,7 +1097,8 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
         let out: Vec<Vec<(usize, f64)>> = vs
             .iter()
             .map(|v| {
-                g.out_edges_of(v).unwrap()
+                g.out_edges_of(v)
+                    .unwrap()
                     .map(|e| {
                         (
                             idx[g.opposite_vertex(e, v).unwrap()],
@@ -1329,7 +1331,8 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
         let out: Vec<Vec<(usize, f64)>> = vs
             .iter()
             .map(|v| {
-                g.out_edges_of(v).unwrap()
+                g.out_edges_of(v)
+                    .unwrap()
                     .map(|e| {
                         (
                             idx[g.opposite_vertex(e, v).unwrap()],

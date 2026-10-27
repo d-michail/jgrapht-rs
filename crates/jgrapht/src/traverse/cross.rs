@@ -48,9 +48,9 @@ type EdgeSelector<'g, G> =
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum State {
-    BeforeComponent,
-    WithinComponent,
-    AfterComponent,
+    Before,
+    Within,
+    After,
 }
 
 /// Traverses a graph component by component. With cross-component traversal on (the default when
@@ -85,7 +85,7 @@ impl<'g, G: Graph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
             entire: None,
             starts: None,
             start_vertex: None,
-            state: State::BeforeComponent,
+            state: State::Before,
             selector: None,
         };
         let first = match starts {
@@ -161,8 +161,8 @@ impl<'g, G: Graph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
     pub fn has_next(&mut self) -> bool {
         self.encounter_start_vertex();
         if self.strategy.is_exhausted(&mut self.core) {
-            if self.state == State::WithinComponent {
-                self.state = State::AfterComponent;
+            if self.state == State::Within {
+                self.state = State::After;
                 self.core.listeners.component_finished();
             }
             loop {
@@ -177,7 +177,7 @@ impl<'g, G: Graph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
                 }
                 if !self.core.seen.contains_key(v) {
                     self.strategy.encounter(&mut self.core, v, None);
-                    self.state = State::BeforeComponent;
+                    self.state = State::Before;
                     return true;
                 }
             }
@@ -212,8 +212,8 @@ impl<'g, G: Graph + 'g, S: Strategy<'g, G>> Iterator for CrossComponentIterator<
         if !self.has_next() {
             return None;
         }
-        if self.state == State::BeforeComponent {
-            self.state = State::WithinComponent;
+        if self.state == State::Before {
+            self.state = State::Within;
             self.core.listeners.component_started();
         }
         let v = self.strategy.provide_next(&mut self.core);
@@ -336,6 +336,12 @@ impl<'g, G: Graph + 'g> DfsStrategy<'g, G> {
             c.seen.insert(v, VisitColor::Black);
             c.finish_vertex(v);
         }
+    }
+}
+
+impl<'g, G: Graph + 'g> Default for DfsStrategy<'g, G> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -317,7 +317,7 @@ impl<'g, G: Graph + 'g> GusfieldGomoryHuCutTree<'g, G> {
         let mut v = target.clone();
         while v != *source {
             let pred = predecessor[&v].clone();
-            edges.insert(tree.get_edge(&v, &pred).unwrap().clone());
+            edges.insert(*tree.get_edge(&v, &pred).unwrap());
             v = pred;
         }
         edges.into_iter().collect()

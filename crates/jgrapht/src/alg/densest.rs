@@ -2,8 +2,8 @@
 
 use super::flow::{MinimumSTCutAlgorithm, PushRelabelMFImpl};
 use super::util::Indexed;
-use crate::graph::{Graph, GraphMut};
 use crate::Result;
+use crate::graph::{Graph, GraphMut};
 use std::collections::HashSet;
 
 fn simple_edges<G: Graph>(ix: &Indexed<'_, G>) -> Vec<(usize, usize)> {
@@ -209,21 +209,22 @@ where
     fn numerator<H: Graph<Vertex = G::Vertex>>(&self, g: &H) -> f64 {
         let edges: f64 = g.edges().map(|e| Self::weight_of(g, e)).sum();
         match &self.kind {
-            DensityKind::NodeWeights(w) => edges + g.vertices().map(|v| w(v)).sum::<f64>(),
+            DensityKind::NodeWeights(w) => edges + g.vertices().map(w).sum::<f64>(),
             _ => edges,
         }
     }
 
     fn denominator<H: Graph<Vertex = G::Vertex>>(&self, g: &H) -> f64 {
         match &self.kind {
-            DensityKind::NodeWeightPerEdgeWeight(w) => g.vertices().map(|v| w(v)).sum(),
+            DensityKind::NodeWeightPerEdgeWeight(w) => g.vertices().map(w).sum(),
             _ => g.vertex_count() as f64,
         }
     }
 
     fn outgoing_weight(&self, v: &G::Vertex) -> f64 {
         self.graph
-            .out_edges_of(v).unwrap()
+            .out_edges_of(v)
+            .unwrap()
             .map(|e| Self::weight_of(self.graph, e))
             .sum()
     }
