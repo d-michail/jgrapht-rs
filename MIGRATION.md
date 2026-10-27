@@ -60,6 +60,23 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 18: planarity, centers, certificates
+
+* Planarity: `inspector.is_planar()` is unchanged. `embedding()` (an error for a non-planar graph)
+  and `kuratowski_subdivision()` (an error for a planar one) are replaced by
+  `inspector.planarity() -> PlanarityResult`, with `Planar(Embedding)` / `NonPlanar(AsSubgraph)` and the
+  accessors `embedding()` / `kuratowski_subdivision()` returning `Option`.
+* k-centers: `centers(graph, k)` returns `CentersSolution<V>` (`centers()`, `assignment()`,
+  `covering_radius()`). The trait methods `assignment()` and `covering_radius()`, which failed with
+  `Unsupported` before the first `centers` call, are gone. With `k` equal to the vertex count the
+  solution has an empty assignment and radius `0`.
+* LCA: `lca_set` is no longer on `LowestCommonAncestorAlgorithm`; import
+  `AllLowestCommonAncestors` (implemented by `NaiveLcaFinder`) to call it.
+* Certificates: `WeakChordalityInspector::get_certificate` and `BergeGraphInspector::get_certificate`
+  return `WeakChordalityCertificate::{Hole, Antihole}` / `BergeCertificate::{OddHole, OddAntihole}`
+  over closed vertex lists (with `vertex_list()` and `is_hole()`); `certificate_is_in_complement()` is
+  gone. `BergeGraphInspector<V, E>` is now `BergeGraphInspector<V>`.
+
 ## Step 17: flow results
 
 The flow algorithms keep no state to query afterwards; every run returns what it produced.

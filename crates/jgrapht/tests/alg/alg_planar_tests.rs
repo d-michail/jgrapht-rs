@@ -33,8 +33,8 @@ fn undirected(edges: &[(i32, i32)]) -> UGraph<i32> {
 fn test_on_graph(edges: &[(i32, i32)]) {
     let graph = undirected(edges);
     let mut inspector = BoyerMyrvoldPlanarityInspector::new(&graph);
-    if inspector.is_planar() {
-        let embedding = inspector.embedding().unwrap();
+    let result = inspector.planarity();
+    if let Some(embedding) = result.embedding() {
         let mut counts: HashMap<DefaultEdge, usize> = HashMap::new();
         let mut degree_sum = 0;
         for v in graph.vertices() {
@@ -50,8 +50,8 @@ fn test_on_graph(edges: &[(i32, i32)]) {
         }
         assert_eq!(degree_sum, 2 * graph.edge_count());
     } else {
-        let subdivision = inspector.kuratowski_subdivision().unwrap();
-        assert!(props::is_kuratowski_subdivision(&subdivision));
+        let subdivision = result.kuratowski_subdivision().unwrap();
+        assert!(props::is_kuratowski_subdivision(subdivision));
     }
 }
 
@@ -61,21 +61,19 @@ fn test_non_planar_graph_no_embedding() {
         .flat_map(|i| (i + 1..5).map(move |j| (i, j)))
         .collect();
     let graph = undirected(&k5);
-    assert!(
-        BoyerMyrvoldPlanarityInspector::new(&graph)
-            .embedding()
-            .is_err()
-    );
+    let result = BoyerMyrvoldPlanarityInspector::new(&graph).planarity();
+    assert!(!result.is_planar());
+    assert!(result.embedding().is_none());
+    assert!(result.kuratowski_subdivision().is_some());
 }
 
 #[test]
 fn test_planar_graph_no_kuratowski_subdivision() {
     let graph = undirected(&[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]);
-    assert!(
-        BoyerMyrvoldPlanarityInspector::new(&graph)
-            .kuratowski_subdivision()
-            .is_err()
-    );
+    let result = BoyerMyrvoldPlanarityInspector::new(&graph).planarity();
+    assert!(result.is_planar());
+    assert!(result.kuratowski_subdivision().is_none());
+    assert!(result.embedding().is_some());
 }
 
 #[test]
@@ -133,7 +131,7 @@ fn embeddings_satisfy_eulers_formula() {
         if !inspector.is_planar() {
             continue;
         }
-        let emb = inspector.embedding().unwrap().clone();
+        let emb = inspector.planarity().embedding().unwrap().clone();
         // isolated vertices add one face each to the dart count, they have no darts
         let isolated = graph.vertices().filter(|v| graph.degree_of(v) == 0).count();
         let faces = face_count(&graph, &emb) + isolated;
@@ -163,7 +161,7 @@ fn agrees_with_the_left_right_test_on_random_graphs() {
         let is_planar = inspector.is_planar();
         if is_planar {
             planar += 1;
-            let emb = inspector.embedding().unwrap().clone();
+            let emb = inspector.planarity().embedding().unwrap().clone();
             let isolated = g.vertices().filter(|v| g.degree_of(v) == 0).count();
             assert_eq!(
                 g.vertex_count() + face_count(&g, &emb) + isolated,
@@ -171,8 +169,9 @@ fn agrees_with_the_left_right_test_on_random_graphs() {
                 "seed {seed}"
             );
         } else {
-            let sub = inspector.kuratowski_subdivision().unwrap();
-            assert!(props::is_kuratowski_subdivision(&sub), "seed {seed}");
+            let result = inspector.planarity();
+            let sub = result.kuratowski_subdivision().unwrap();
+            assert!(props::is_kuratowski_subdivision(sub), "seed {seed}");
         }
     }
     assert!(
@@ -211,7 +210,7 @@ fn scales_linearly_on_grids() {
         let mut inspector = BoyerMyrvoldPlanarityInspector::new(&g);
         assert!(inspector.is_planar());
         assert_eq!(
-            inspector.embedding().unwrap().iter().count(),
+            inspector.planarity().embedding().unwrap().iter().count(),
             g.vertex_count()
         );
         times.push(start.elapsed().as_secs_f64());

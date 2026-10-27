@@ -22,9 +22,39 @@ use crate::graph::IncidenceGraph;
 use super::interfaces::Embedding;
 use crate::graph::{GraphExt};
 use crate::view::AsSubgraph;
-use crate::{GraphError, Result};
 use indexmap::IndexMap;
 use std::collections::{HashMap, HashSet};
+
+/// The outcome of a planarity test together with its certificate.
+pub enum PlanarityResult<'g, G: IncidenceGraph> {
+    /// The graph is planar; this is a combinatorial embedding of it.
+    Planar(Embedding<G::Vertex, G::Edge>),
+    /// The graph is not planar; this subgraph is a subdivision of K5 or K3,3.
+    NonPlanar(AsSubgraph<&'g G>),
+}
+
+impl<'g, G: IncidenceGraph> PlanarityResult<'g, G> {
+    /// Whether the graph is planar.
+    pub fn is_planar(&self) -> bool {
+        matches!(self, Self::Planar(_))
+    }
+
+    /// The embedding, if the graph is planar.
+    pub fn embedding(&self) -> Option<&Embedding<G::Vertex, G::Edge>> {
+        match self {
+            Self::Planar(embedding) => Some(embedding),
+            Self::NonPlanar(_) => None,
+        }
+    }
+
+    /// The Kuratowski subdivision, if the graph is not planar.
+    pub fn kuratowski_subdivision(&self) -> Option<&AsSubgraph<&'g G>> {
+        match self {
+            Self::NonPlanar(subdivision) => Some(subdivision),
+            Self::Planar(_) => None,
+        }
+    }
+}
 
 /// A circular doubly linked list living in a [`Pool`]; constant time splicing and removal by
 /// handle, as with Java's `DoublyLinkedList`.
@@ -257,6 +287,10 @@ enum Finish {
 /// # Rust notes
 ///
 /// Planarity test, planar embedding and Kuratowski subdivision of a graph.
+///
+/// [`BoyerMyrvoldPlanarityInspector::planarity`] returns whichever certificate applies as one
+/// [`PlanarityResult`], so there is no embedding to ask for on a non-planar graph or subdivision to
+/// ask for on a planar one.
 pub struct BoyerMyrvoldPlanarityInspector<'g, G: IncidenceGraph> {
     graph: &'g G,
     n: usize,
@@ -306,23 +340,17 @@ impl<'g, G: IncidenceGraph> BoyerMyrvoldPlanarityInspector<'g, G> {
         self.lazy_test_planarity()
     }
 
-    /// The embedding; an error if the graph is not planar.
-    pub fn embedding(&mut self) -> Result<&Embedding<G::Vertex, G::Edge>> {
-        if !self.is_planar() {
-            return Err(GraphError::InvalidGraph(crate::GraphProperty::Planar));
-        }
-        self.lazy_compute_embedding();
-        Ok(self.embedding.as_ref().unwrap())
-    }
-
-    /// A subgraph that is a subdivision of K5 or K3,3; an error if the graph is planar.
-    pub fn kuratowski_subdivision(&mut self) -> Result<AsSubgraph<&'g G>> {
+    /// Tests the planarity of the graph and returns the certificate of the answer: a combinatorial
+    /// embedding if it is planar, a subdivision of K5 or K3,3 if it is not.
+    pub fn planarity(&mut self) -> PlanarityResult<'g, G> {
         if self.is_planar() {
-            return Err(GraphError::InvalidGraph(crate::GraphProperty::NonPlanar));
+            self.lazy_compute_embedding();
+            PlanarityResult::Planar(self.embedding.clone().expect("computed above"))
+        } else {
+            self.lazy_extract_kuratowski();
+            let (vs, es) = self.kuratowski.clone().expect("extracted above");
+            PlanarityResult::NonPlanar(AsSubgraph::with_edges(self.graph, vs, es))
         }
-        self.lazy_extract_kuratowski();
-        let (vs, es) = self.kuratowski.clone().unwrap();
-        Ok(AsSubgraph::with_edges(self.graph, vs, es))
     }
 
     // ----- node and edge construction -----------------------------------------------------------

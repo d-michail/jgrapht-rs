@@ -74,10 +74,52 @@ where
 ///
 /// Algorithms choosing `k` center vertices of a complete graph (`CentersLocationAlgorithm`).
 pub trait CentersLocationAlgorithm<V: Eq + Hash + Clone> {
-    fn centers<G: UndirectedGraph<Vertex = V> + OutgoingGraph>(&mut self, graph: &G, k: usize) -> Result<IndexSet<V>>;
-    /// Client to its closest center; an error before [`centers`](Self::centers) ran.
-    fn assignment(&self) -> Result<&IndexMap<V, V>>;
-    fn covering_radius(&self) -> Result<f64>;
+    /// Chooses `k` centers and returns them together with the assignment of every client to its
+    /// closest center and the covering radius, as one [`CentersSolution`].
+    fn centers<G: UndirectedGraph<Vertex = V> + OutgoingGraph>(
+        &mut self,
+        graph: &G,
+        k: usize,
+    ) -> Result<CentersSolution<V>>;
+}
+
+/// A solution of the vertex $k$-center problem: the centers, the assignment of the other vertices
+/// to them and the covering radius.
+#[derive(Debug, Clone)]
+pub struct CentersSolution<V: Eq + Hash> {
+    centers: IndexSet<V>,
+    assignment: IndexMap<V, V>,
+    covering_radius: f64,
+}
+
+impl<V: Eq + Hash> CentersSolution<V> {
+    pub(crate) fn new(
+        centers: IndexSet<V>,
+        assignment: IndexMap<V, V>,
+        covering_radius: f64,
+    ) -> Self {
+        CentersSolution {
+            centers,
+            assignment,
+            covering_radius,
+        }
+    }
+
+    /// The chosen centers.
+    pub fn centers(&self) -> &IndexSet<V> {
+        &self.centers
+    }
+
+    /// The mapping $f: V \setminus C \rightarrow C$ from every client to the center it is assigned
+    /// to (its closest one).
+    pub fn assignment(&self) -> &IndexMap<V, V> {
+        &self.assignment
+    }
+
+    /// The largest distance from a client to its center.
+    pub fn covering_radius(&self) -> f64 {
+        self.covering_radius
+    }
 }
 
 /// A decomposition of a tree into vertex-disjoint paths (`TreeToPathDecompositionAlgorithm.PathDecomposition`).
@@ -117,12 +159,27 @@ pub trait LowestCommonAncestorAlgorithm<V: Eq + Hash + Clone> {
         queries.iter().map(|(a, b)| self.lca(a, b)).collect()
     }
 
-    /// All lowest common ancestors (only meaningful for DAGs; trees have at most one).
-    fn lca_set(&self, _a: &V, _b: &V) -> Result<HashSet<V>> {
-        Err(crate::GraphError::Unsupported(
-            "lca_set is not supported by this algorithm".into(),
-        ))
-    }
+}
+
+/// A lowest-common-ancestor algorithm that can report *all* lowest common ancestors of two
+/// vertices, which in a DAG can be more than one (in a tree there is at most one).
+///
+/// Only algorithms that work on DAGs implement it; the tree-only finders implement just
+/// [`LowestCommonAncestorAlgorithm`]:
+///
+/// ```compile_fail,E0599
+/// use jgrapht::alg::interfaces::AllLowestCommonAncestors;
+/// use jgrapht::alg::lca::BinaryLiftingLcaFinder;
+/// use jgrapht::{DiGraph, GraphMutExt};
+///
+/// let mut tree = DiGraph::<u32>::simple();
+/// tree.add_edge_with_vertices(0, 1).unwrap();
+/// let finder = BinaryLiftingLcaFinder::new(&tree, 0).unwrap();
+/// let _ = finder.lca_set(&0, &1); // a tree finder has no `lca_set`
+/// ```
+pub trait AllLowestCommonAncestors<V: Eq + Hash + Clone>: LowestCommonAncestorAlgorithm<V> {
+    /// All lowest common ancestors of `a` and `b`; empty when they have none.
+    fn lca_set(&self, a: &V, b: &V) -> Result<HashSet<V>>;
 }
 
 /// A link prediction algorithm.

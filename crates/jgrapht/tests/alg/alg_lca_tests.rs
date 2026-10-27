@@ -18,7 +18,7 @@
 //! `null` arguments are not applicable; the forest generators get a fresh seeded `StdRng`.
 
 use jgrapht::alg::connectivity::connected_components;
-use jgrapht::alg::interfaces::LowestCommonAncestorAlgorithm;
+use jgrapht::alg::interfaces::{AllLowestCommonAncestors, LowestCommonAncestorAlgorithm};
 use jgrapht::alg::lca::*;
 use jgrapht::generate::*;
 use jgrapht::*;

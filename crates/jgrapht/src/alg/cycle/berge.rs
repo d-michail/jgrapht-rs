@@ -1069,13 +1069,40 @@ impl Core {
 /// The methods take the graph as an argument, like the Java class; undirected graphs only. The
 /// certificate (an odd hole of the graph or of its complement, i.e. an odd antihole) is available
 /// after [`is_berge`](Self::is_berge) with `compute_certificate`.
-pub struct BergeGraphInspector<V, E> {
+pub struct BergeGraphInspector<V> {
     core: Core,
-    certificate: Option<GraphWalk<V, E>>,
-    certificate_in_complement: bool,
+    certificate: Option<BergeCertificate<V>>,
 }
 
-impl<V, E> Default for BergeGraphInspector<V, E> {
+/// Why a graph is not a Berge graph: an odd hole of the graph or an odd antihole (an odd hole of
+/// its complement), as a closed vertex list (the first vertex is repeated at the end).
+///
+/// Like [`WeakChordalityCertificate`](super::WeakChordalityCertificate) it is a vertex list rather
+/// than a [`GraphWalk`](crate::GraphWalk), because an antihole has no edges between consecutive
+/// vertices.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BergeCertificate<V> {
+    /// An odd induced cycle of the graph.
+    OddHole(Vec<V>),
+    /// An odd induced cycle of the complement graph.
+    OddAntihole(Vec<V>),
+}
+
+impl<V> BergeCertificate<V> {
+    /// The closed vertex list of the cycle.
+    pub fn vertex_list(&self) -> &[V] {
+        match self {
+            Self::OddHole(vertices) | Self::OddAntihole(vertices) => vertices,
+        }
+    }
+
+    /// Whether the cycle is an odd hole of the graph (rather than an odd antihole).
+    pub fn is_hole(&self) -> bool {
+        matches!(self, Self::OddHole(_))
+    }
+}
+
+impl<V> Default for BergeGraphInspector<V> {
     fn default() -> Self {
         BergeGraphInspector {
             core: Core {
@@ -1084,19 +1111,18 @@ impl<V, E> Default for BergeGraphInspector<V, E> {
                 on_complement: false,
             },
             certificate: None,
-            certificate_in_complement: false,
         }
     }
 }
 
-impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGraphInspector<V, E> {
+impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     /// Constructs a new Berge graph inspector.
     pub fn new() -> Self {
         Self::default()
     }
 
     /// The graph on `0..n` mirroring `g`, and the vertex list of `g`.
-    fn convert<G: Graph<Vertex = V, Edge = E>>(g: &G) -> Result<(H, Vec<V>)> {
+    fn convert<G: Graph<Vertex = V>>(g: &G) -> Result<(H, Vec<V>)> {
         if g.graph_type().directed || g.graph_type().mixed {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
         }
@@ -1114,23 +1140,20 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
         Ok((h, vs))
     }
 
-    /// Maps the core's certificate back to a walk of `g` (or of its complement).
-    fn publish<G: Graph<Vertex = V, Edge = E>>(&mut self, g: &G, vs: &[V]) {
+    /// Maps the core's certificate back to the vertices of `g`.
+    fn publish<G: Graph<Vertex = V>>(&mut self, _g: &G, vs: &[V]) {
         if let Some((cycle, in_complement)) = &self.core.certificate {
             let vertices: Vec<V> = cycle.iter().map(|&i| vs[i].clone()).collect();
-            self.certificate_in_complement = *in_complement;
-            self.certificate = if *in_complement {
-                Some(GraphWalk::new_unchecked(vertices, Vec::new(), 0.0))
+            self.certificate = Some(if *in_complement {
+                BergeCertificate::OddAntihole(vertices)
             } else {
-                GraphWalk::from_vertex_list(g, vertices.clone(), 0.0)
-                    .ok()
-                    .or_else(|| Some(GraphWalk::new_unchecked(vertices, Vec::new(), 0.0)))
-            };
+                BergeCertificate::OddHole(vertices)
+            });
         }
     }
 
     /// `containsPyramid`.
-    pub fn contains_pyramid<G: Graph<Vertex = V, Edge = E>>(&mut self, g: &G) -> Result<bool> {
+    pub fn contains_pyramid<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
         let r = self.core.contains_pyramid(&h);
@@ -1139,7 +1162,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
     }
 
     /// `containsJewel`.
-    pub fn contains_jewel<G: Graph<Vertex = V, Edge = E>>(&mut self, g: &G) -> Result<bool> {
+    pub fn contains_jewel<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
         let r = self.core.contains_jewel(&h);
@@ -1148,7 +1171,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
     }
 
     /// `containsCleanShortestOddHole`.
-    pub fn contains_clean_shortest_odd_hole<G: Graph<Vertex = V, Edge = E>>(
+    pub fn contains_clean_shortest_odd_hole<G: Graph<Vertex = V>>(
         &mut self,
         g: &G,
     ) -> Result<bool> {
@@ -1160,7 +1183,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
     }
 
     /// `hasConfigurationType1`.
-    pub fn has_configuration_type1<G: Graph<Vertex = V, Edge = E>>(
+    pub fn has_configuration_type1<G: Graph<Vertex = V>>(
         &mut self,
         g: &G,
     ) -> Result<bool> {
@@ -1172,7 +1195,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
     }
 
     /// `hasConfigurationType2`.
-    pub fn has_configuration_type2<G: Graph<Vertex = V, Edge = E>>(
+    pub fn has_configuration_type2<G: Graph<Vertex = V>>(
         &mut self,
         g: &G,
     ) -> Result<bool> {
@@ -1184,7 +1207,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
     }
 
     /// `hasConfigurationType3`.
-    pub fn has_configuration_type3<G: Graph<Vertex = V, Edge = E>>(
+    pub fn has_configuration_type3<G: Graph<Vertex = V>>(
         &mut self,
         g: &G,
     ) -> Result<bool> {
@@ -1196,7 +1219,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
     }
 
     /// Whether `y` is adjacent to every vertex of `x`.
-    pub fn is_yx_complete<G: Graph<Vertex = V, Edge = E>>(
+    pub fn is_yx_complete<G: Graph<Vertex = V>>(
         &self,
         g: &G,
         y: &V,
@@ -1206,7 +1229,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
     }
 
     /// `routine3` of the algorithm: the candidate sets `X` for the shortest odd hole search.
-    pub fn routine3<G: Graph<Vertex = V, Edge = E>>(&self, g: &G) -> Result<Vec<Vec<V>>> {
+    pub fn routine3<G: Graph<Vertex = V>>(&self, g: &G) -> Result<Vec<Vec<V>>> {
         let (h, vs) = Self::convert(g)?;
         Ok(Core::routine3(&h)
             .into_iter()
@@ -1228,13 +1251,13 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
     /// if `computeCertificate` is `true`.
     ///
     /// Running this method takes $O(|V|^9)$, and computing the certificate takes $O(|V|^5)$.
-    pub fn is_berge<G: Graph<Vertex = V, Edge = E>>(&mut self, g: &G) -> Result<bool> {
+    pub fn is_berge<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         self.is_berge_with_certificate(g, false)
     }
 
     /// Whether `g` is a Berge graph; with `compute_certificate` an odd hole or odd antihole is
     /// kept for [`get_certificate`](Self::get_certificate) when it is not.
-    pub fn is_berge_with_certificate<G: Graph<Vertex = V, Edge = E>>(
+    pub fn is_berge_with_certificate<G: Graph<Vertex = V>>(
         &mut self,
         g: &G,
         compute_certificate: bool,
@@ -1273,13 +1296,8 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
         true
     }
 
-    /// The certificate found by the last run with `compute_certificate`.
-    pub fn get_certificate(&self) -> Option<&GraphWalk<V, E>> {
+    /// The odd hole or odd antihole found by the last run with `compute_certificate`, if any.
+    pub fn get_certificate(&self) -> Option<&BergeCertificate<V>> {
         self.certificate.as_ref()
-    }
-
-    /// Whether the certificate is an odd hole of the complement (an odd antihole of the graph).
-    pub fn certificate_is_in_complement(&self) -> bool {
-        self.certificate_in_complement
     }
 }

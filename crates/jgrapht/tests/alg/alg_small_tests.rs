@@ -576,7 +576,6 @@ mod bipartite_partitioning_test {
 
 mod gon_algorithm_test {
     use super::*;
-    use jgrapht::GraphError;
 
     fn weighted_undirected(edges: &[&[i32]]) -> UGraph<i32> {
         let mut g = UGraph::<i32>::simple().weighted();
@@ -626,7 +625,7 @@ mod gon_algorithm_test {
     #[test]
     fn test_get_one_center() {
         let graph = weighted_undirected(&[&[1, 2, 5]]);
-        let centers = gon().centers(&graph, 1).unwrap();
+        let centers = gon().centers(&graph, 1).unwrap().centers().clone();
         assert_eq!(centers.len(), 1);
         assert!(centers.contains(&1) || centers.contains(&2));
         assert!(!centers.contains(&5));
@@ -635,7 +634,7 @@ mod gon_algorithm_test {
     #[test]
     fn test_get_two_centers() {
         let graph = weighted_undirected(&[&[1, 2, 5]]);
-        let centers = gon().centers(&graph, 2).unwrap();
+        let centers = gon().centers(&graph, 2).unwrap().centers().clone();
         assert_eq!(centers.len(), 2);
         assert!(centers.contains(&1) && centers.contains(&2));
     }
@@ -649,19 +648,18 @@ mod gon_algorithm_test {
     #[test]
     fn test_get_one_center_with_min_cov_radius() {
         let graph = from_matrix(&[&[0, 5, 5], &[5, 0, 5], &[5, 5, 0]]);
-        let mut g = gon();
-        g.centers(&graph, 1).unwrap();
-        assert_eq!(g.covering_radius().unwrap(), 5.0);
+        let solution = gon().centers(&graph, 1).unwrap();
+        assert_eq!(solution.covering_radius(), 5.0);
     }
 
     #[test]
     fn test_dummy_graph_5_two_centers() {
         let graph = from_matrix(&DUMMY5);
         let mut gon = GonHeuristic::with_initial_centers(HashSet::from([0]));
-        let centers = gon.centers(&graph, 2).unwrap();
-        assert!(centers.contains(&4));
-        assert_eq!(gon.covering_radius().unwrap(), 7.0);
-        let a = gon.assignment().unwrap();
+        let solution = gon.centers(&graph, 2).unwrap();
+        assert!(solution.centers().contains(&4));
+        assert_eq!(solution.covering_radius(), 7.0);
+        let a = solution.assignment();
         assert_eq!((a[&1], a[&2], a[&3]), (4, 4, 4));
     }
 
@@ -669,10 +667,10 @@ mod gon_algorithm_test {
     fn test_dummy_graph_5_three_centers() {
         let graph = from_matrix(&DUMMY5);
         let mut gon = GonHeuristic::with_initial_centers(HashSet::from([0, 4]));
-        let centers = gon.centers(&graph, 3).unwrap();
-        assert!(centers.contains(&1));
-        assert_eq!(gon.covering_radius().unwrap(), 3.0);
-        let a = gon.assignment().unwrap();
+        let solution = gon.centers(&graph, 3).unwrap();
+        assert!(solution.centers().contains(&1));
+        assert_eq!(solution.covering_radius(), 3.0);
+        let a = solution.assignment();
         assert_eq!((a[&2], a[&3]), (1, 1));
     }
 
@@ -680,20 +678,22 @@ mod gon_algorithm_test {
     fn test_dummy_graph_5_four_centers() {
         let graph = from_matrix(&DUMMY5);
         let mut gon = GonHeuristic::with_initial_centers(HashSet::from([0, 4, 1]));
-        let centers = gon.centers(&graph, 4).unwrap();
-        assert!(centers.contains(&3));
-        assert_eq!(gon.covering_radius().unwrap(), 1.0);
-        assert_eq!(gon.assignment().unwrap()[&2], 3);
+        let solution = gon.centers(&graph, 4).unwrap();
+        assert!(solution.centers().contains(&3));
+        assert_eq!(solution.covering_radius(), 1.0);
+        assert_eq!(solution.assignment()[&2], 3);
     }
 
+    // JGraphT's `testEarlyAssignment` / `testEarlyCoveringRadius` have no counterpart: the
+    // assignment and the covering radius are fields of the solution `centers` returns, so they
+    // cannot be asked for before a computation.
     #[test]
-    fn test_early_assignment() {
-        let gon = GonHeuristic::<i32>::with_initial_centers(HashSet::from([0, 4, 1]));
-        assert!(matches!(gon.assignment(), Err(GraphError::Unsupported(_))));
-        assert!(matches!(
-            gon.covering_radius(),
-            Err(GraphError::Unsupported(_))
-        ));
+    fn every_vertex_a_center_has_nothing_to_cover() {
+        let graph = from_matrix(&DUMMY5);
+        let solution = gon().centers(&graph, 5).unwrap();
+        assert_eq!(solution.centers().len(), 5);
+        assert!(solution.assignment().is_empty());
+        assert_eq!(solution.covering_radius(), 0.0);
     }
 
     #[test]
@@ -722,8 +722,7 @@ mod gon_algorithm_test {
         }
         let mut gon = gon();
         for (k, bound) in [(5, 911.41), (10, 598.81), (20, 389.30), (40, 258.25)] {
-            gon.centers(&graph, k).unwrap();
-            let r = gon.covering_radius().unwrap();
+            let r = gon.centers(&graph, k).unwrap().covering_radius();
             assert!(r <= 2.0 * bound, "For k={k}, covering radius is {r}");
         }
     }

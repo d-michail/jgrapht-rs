@@ -95,7 +95,7 @@ impl<V: Clone + Eq + Hash> Lca<V> {
 // JGraphT's LCA finders
 
 use super::decomposition::HeavyPathDecomposition;
-use super::interfaces::LowestCommonAncestorAlgorithm;
+use super::interfaces::{AllLowestCommonAncestors, LowestCommonAncestorAlgorithm};
 use super::util::UnionFind;
 use crate::graph::DirectedGraph;
 use crate::view::EdgeReversed;
@@ -564,7 +564,11 @@ impl<G: DirectedGraph + IncidenceGraph> LowestCommonAncestorAlgorithm<G::Vertex>
         let set = self.lca_set_ordered(a, b)?;
         Ok(set.into_iter().next())
     }
+}
 
+impl<G: DirectedGraph + IncidenceGraph> AllLowestCommonAncestors<G::Vertex>
+    for NaiveLcaFinder<'_, G>
+{
     fn lca_set(&self, a: &G::Vertex, b: &G::Vertex) -> Result<HashSet<G::Vertex>> {
         self.check(a, b)?;
         Ok(self.lca_set_ordered(a, b)?.into_iter().collect())

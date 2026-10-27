@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1471 | 347 | 115 | 354 | 14 | 19 | 429 | 193 |
+| `jgrapht` | 1475 | 349 | 117 | 350 | 14 | 19 | 433 | 193 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -145,8 +145,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/matching/path_growing.rs` | `DynamicProgrammingPathSolver::get_maximum_weight_matching` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/matching/sparse_edmonds.rs` | `SparseEdmondsMaximumCardinalityMatching::get_odd_set_cover` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/matching/sparse_edmonds.rs` | `SparseEdmondsMaximumCardinalityMatching::is_optimal_matching` | 0 unwrap, 2 expect/panic/assert |
-| `jgrapht/src/alg/planar.rs` | `BoyerMyrvoldPlanarityInspector::embedding` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/planar.rs` | `BoyerMyrvoldPlanarityInspector::kuratowski_subdivision` | 1 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/alg/planar.rs` | `BoyerMyrvoldPlanarityInspector::planarity` | 0 unwrap, 2 expect/panic/assert |
 | `jgrapht/src/alg/scoring.rs` | `coreness` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/scoring.rs` | `ApBetweennessCentrality::with_precision` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/scoring.rs` | `BetweennessCentrality::with_options` | 1 unwrap, 0 expect/panic/assert |
@@ -358,11 +357,12 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/cycle/basis.rs` | `CycleBasisAlgorithm::get_cycle_basis` | Result | `Result<CycleBasis<E>>` |
 | `jgrapht/src/alg/cycle/basis.rs` | `PatonCycleBase::new` | Result | `Result<Self>` |
 | `jgrapht/src/alg/cycle/basis.rs` | `name::new` | Result | `Result<Self>` |
-| `jgrapht/src/alg/cycle/berge.rs` | `BergeGraphInspector::certificate_is_in_complement` | state query | `bool` |
+| `jgrapht/src/alg/cycle/berge.rs` | `BergeCertificate::is_hole` | infallible | `bool` |
+| `jgrapht/src/alg/cycle/berge.rs` | `BergeCertificate::vertex_list` | state query | `&[V]` |
 | `jgrapht/src/alg/cycle/berge.rs` | `BergeGraphInspector::contains_clean_shortest_odd_hole` | Result | `Result<bool>` |
 | `jgrapht/src/alg/cycle/berge.rs` | `BergeGraphInspector::contains_jewel` | Result | `Result<bool>` |
 | `jgrapht/src/alg/cycle/berge.rs` | `BergeGraphInspector::contains_pyramid` | Result | `Result<bool>` |
-| `jgrapht/src/alg/cycle/berge.rs` | `BergeGraphInspector::get_certificate` | Option | `Option<&GraphWalk<V, E>>` |
+| `jgrapht/src/alg/cycle/berge.rs` | `BergeGraphInspector::get_certificate` | Option | `Option<&BergeCertificate<V>>` |
 | `jgrapht/src/alg/cycle/berge.rs` | `BergeGraphInspector::has_configuration_type1` | Result | `Result<bool>` |
 | `jgrapht/src/alg/cycle/berge.rs` | `BergeGraphInspector::has_configuration_type2` | Result | `Result<bool>` |
 | `jgrapht/src/alg/cycle/berge.rs` | `BergeGraphInspector::has_configuration_type3` | Result | `Result<bool>` |
@@ -593,9 +593,11 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/independent_set.rs` | `ChordalGraphIndependentSetFinder::independent_set` | Option | `Option<HashSet<G::Vertex>>` |
 | `jgrapht/src/alg/independent_set.rs` | `ChordalGraphIndependentSetFinder::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/independent_set.rs` | `ChordalGraphIndependentSetFinder::with_order` | unchecked constructor | `Self` |
-| `jgrapht/src/alg/interfaces.rs` | `CentersLocationAlgorithm::assignment` | Result | `Result<&IndexMap<V, V>>` |
-| `jgrapht/src/alg/interfaces.rs` | `CentersLocationAlgorithm::centers` | Result | `Result<IndexSet<V>>` |
-| `jgrapht/src/alg/interfaces.rs` | `CentersLocationAlgorithm::covering_radius` | Result | `Result<f64>` |
+| `jgrapht/src/alg/interfaces.rs` | `AllLowestCommonAncestors::lca_set` | Result | `Result<HashSet<V>>` |
+| `jgrapht/src/alg/interfaces.rs` | `CentersLocationAlgorithm::centers` | Result | `Result<CentersSolution<V>>` |
+| `jgrapht/src/alg/interfaces.rs` | `CentersSolution::assignment` | state query | `&IndexMap<V, V>` |
+| `jgrapht/src/alg/interfaces.rs` | `CentersSolution::centers` | state query | `&IndexSet<V>` |
+| `jgrapht/src/alg/interfaces.rs` | `CentersSolution::covering_radius` | state query | `f64` |
 | `jgrapht/src/alg/interfaces.rs` | `Clustering::clusters` | state query | `&[IndexSet<V>]` |
 | `jgrapht/src/alg/interfaces.rs` | `Clustering::iter` | iterator | `impl Iterator<Item = &IndexSet<V>>` |
 | `jgrapht/src/alg/interfaces.rs` | `Clustering::new` | unchecked constructor | `Self` |
@@ -608,7 +610,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/interfaces.rs` | `LinkPredictionAlgorithm::predict_all` | Result | `Result<Vec<(V, V, f64)>>` |
 | `jgrapht/src/alg/interfaces.rs` | `LowestCommonAncestorAlgorithm::batch_lca` | Result | `Result<Vec<Option<V>>>` |
 | `jgrapht/src/alg/interfaces.rs` | `LowestCommonAncestorAlgorithm::lca` | Result<Option> | `Result<Option<V>>` |
-| `jgrapht/src/alg/interfaces.rs` | `LowestCommonAncestorAlgorithm::lca_set` | Result | `Result<HashSet<V>>` |
 | `jgrapht/src/alg/interfaces.rs` | `MaximalCliqueEnumerationAlgorithm::cliques` | Result | `Result<&[HashSet<V>]>` |
 | `jgrapht/src/alg/interfaces.rs` | `MaximalCliqueEnumerationAlgorithm::maximum_cliques` | Result | `Result<Vec<&HashSet<V>>>` |
 | `jgrapht/src/alg/interfaces.rs` | `Partitioning::iter` | iterator | `impl Iterator<Item = &IndexSet<V>>` |
@@ -769,10 +770,12 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/partition.rs` | `is_bipartite` | infallible | `bool` |
 | `jgrapht/src/alg/partition.rs` | `BipartitePartitioning::is_bipartite` | infallible | `bool` |
 | `jgrapht/src/alg/partition.rs` | `BipartitePartitioning::new` | unchecked constructor | `Self` |
-| `jgrapht/src/alg/planar.rs` | `BoyerMyrvoldPlanarityInspector::embedding` | Result | `Result<&Embedding<G::Vertex, G::Edge>>` |
 | `jgrapht/src/alg/planar.rs` | `BoyerMyrvoldPlanarityInspector::is_planar` | infallible | `bool` |
-| `jgrapht/src/alg/planar.rs` | `BoyerMyrvoldPlanarityInspector::kuratowski_subdivision` | Result | `Result<AsSubgraph<&'g G>>` |
 | `jgrapht/src/alg/planar.rs` | `BoyerMyrvoldPlanarityInspector::new` | unchecked constructor | `Self` |
+| `jgrapht/src/alg/planar.rs` | `BoyerMyrvoldPlanarityInspector::planarity` | state query | `PlanarityResult<'g, G>` |
+| `jgrapht/src/alg/planar.rs` | `PlanarityResult::embedding` | Option | `Option<&Embedding<G::Vertex, G::Edge>>` |
+| `jgrapht/src/alg/planar.rs` | `PlanarityResult::is_planar` | infallible | `bool` |
+| `jgrapht/src/alg/planar.rs` | `PlanarityResult::kuratowski_subdivision` | Option | `Option<&AsSubgraph<&'g G>>` |
 | `jgrapht/src/alg/scoring.rs` | `average_clustering_coefficient` | infallible | `f64` |
 | `jgrapht/src/alg/scoring.rs` | `betweenness_centrality` | infallible | `Betweenness<G::Vertex, G::Edge>` |
 | `jgrapht/src/alg/scoring.rs` | `closeness_centrality` | infallible | `HashMap<G::Vertex, f64>` |

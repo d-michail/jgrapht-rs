@@ -16,7 +16,7 @@
 
 use crate::graph::UndirectedGraph;
 use crate::graph::OutgoingGraph;
-use super::interfaces::CentersLocationAlgorithm;
+use super::interfaces::{CentersLocationAlgorithm, CentersSolution};
 use super::util::Indexed;
 use crate::graph::{Graph, props};
 use crate::util::OrderedF64;
@@ -127,8 +127,6 @@ pub fn greedy_k_center<G: Graph>(g: &G, k: usize, weighted: bool) -> Result<(Vec
 pub struct GonHeuristic<V: Eq + Hash + Clone, R = StdRng> {
     initial_centers: Option<HashSet<V>>,
     rng: Option<R>,
-    assignment: Option<IndexMap<V, V>>,
-    covering_radius: f64,
 }
 
 impl<V: Eq + Hash + Clone> GonHeuristic<V, StdRng> {
@@ -137,8 +135,6 @@ impl<V: Eq + Hash + Clone> GonHeuristic<V, StdRng> {
         GonHeuristic {
             initial_centers: Some(initial_centers),
             rng: None,
-            assignment: None,
-            covering_radius: 0.0,
         }
     }
 }
@@ -149,8 +145,6 @@ impl<V: Eq + Hash + Clone, R: RandomSource> GonHeuristic<V, R> {
         GonHeuristic {
             initial_centers: None,
             rng: Some(rng),
-            assignment: None,
-            covering_radius: 0.0,
         }
     }
 }
@@ -168,11 +162,16 @@ fn check_graph<G: UndirectedGraph + OutgoingGraph>(graph: &G) -> Result<()> {
 
 impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonHeuristic<V, R> {
     /// Computes the set of $k$ centers by using the Gon heuristic.
-    fn centers<G: OutgoingGraph<Vertex = V> + UndirectedGraph>(&mut self, graph: &G, k: usize) -> Result<IndexSet<V>> {
+    fn centers<G: OutgoingGraph<Vertex = V> + UndirectedGraph>(&mut self, graph: &G, k: usize) -> Result<CentersSolution<V>> {
         check_graph(graph)?;
         let n = graph.vertex_count();
         if n == k {
-            return Ok(graph.vertices().cloned().collect());
+            // every vertex is a center: nothing to assign, nothing to cover
+            return Ok(CentersSolution::new(
+                graph.vertices().cloned().collect(),
+                IndexMap::new(),
+                0.0,
+            ));
         }
         if n < k {
             return Err(GraphError::InvalidParameter {
@@ -256,30 +255,7 @@ impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonH
             assignment.insert(client.clone(), closest.unwrap().clone());
             radius = radius.max(min_dist);
         }
-        self.assignment = Some(assignment);
-        self.covering_radius = radius;
-        Ok(centers)
+        Ok(CentersSolution::new(centers, assignment, radius))
     }
 
-    /// Computes the assignment of vertices to their respective centers.
-    ///
-    /// This method computes and returns the mapping function $f:V\setminus C \rightarrow C$.
-    /// Each key represents a vertex in the graph, and the
-    /// corresponding value represents the center to which the vertex is assigned. The mapping
-    /// reflects the result of any center location algorithm after the `getCenters` method has been called.
-    fn assignment(&self) -> Result<&IndexMap<V, V>> {
-        self.assignment.as_ref().ok_or_else(|| {
-            GraphError::Unsupported("You must call centers() before calling assignment()".into())
-        })
-    }
-
-    /// Obtains the covering radius of the solution.
-    fn covering_radius(&self) -> Result<f64> {
-        if self.assignment.is_none() {
-            return Err(GraphError::Unsupported(
-                "You must call centers() before calling covering_radius()".into(),
-            ));
-        }
-        Ok(self.covering_radius)
-    }
 }

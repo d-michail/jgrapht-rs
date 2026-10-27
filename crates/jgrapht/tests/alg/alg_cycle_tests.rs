@@ -4474,7 +4474,7 @@ mod berge_graph_inspector_test {
 
     /// `verifyCertificate`: the certificate spans an odd cycle without chords, in the graph or in
     /// its complement.
-    fn verify_certificate<G: IncidenceGraph>(g: &G, dut: &BergeGraphInspector<G::Vertex, G::Edge>) -> bool {
+    fn verify_certificate<G: IncidenceGraph>(g: &G, dut: &BergeGraphInspector<G::Vertex>) -> bool {
         let Some(certificate) = dut.get_certificate() else {
             return false;
         };
@@ -4483,7 +4483,7 @@ mod berge_graph_inspector_test {
             let (vertices, edges, all_degree_two) = subg();
             vertices == edges && vertices % 2 == 1 && all_degree_two
         };
-        if dut.certificate_is_in_complement() {
+        if !certificate.is_hole() {
             let comp = complement_of(g);
             let subg = AsSubgraph::induced(&comp, set);
             check(&|| {
@@ -4888,5 +4888,60 @@ mod weak_chordality_certificate {
         }
         let certificate = inspector.get_certificate().unwrap();
         assert_eq!(certificate.vertex_list().len(), 6);
+    }
+}
+
+mod berge_certificate {
+    use jgrapht::alg::cycle::{BergeCertificate, BergeGraphInspector};
+    use jgrapht::{Graph, GraphMut, GraphMutExt, UGraph};
+
+    fn cycle(n: i32) -> UGraph<i32> {
+        let mut g = UGraph::<i32>::simple();
+        for i in 0..n {
+            g.add_edge_with_vertices(i, (i + 1) % n).unwrap();
+        }
+        g
+    }
+
+    fn complement(g: &UGraph<i32>) -> UGraph<i32> {
+        let mut c = UGraph::<i32>::simple();
+        let vs: Vec<i32> = g.vertices().copied().collect();
+        for &v in &vs {
+            c.add_vertex(v);
+        }
+        for (i, &u) in vs.iter().enumerate() {
+            for &v in &vs[i + 1..] {
+                if !g.contains_edge_between(&u, &v) {
+                    c.add_edge_with_vertices(u, v).unwrap();
+                }
+            }
+        }
+        c
+    }
+
+    #[test]
+    fn an_odd_hole_and_an_odd_antihole_are_told_apart() {
+        let hole = cycle(7);
+        let mut inspector = BergeGraphInspector::new();
+        assert!(!inspector.is_berge_with_certificate(&hole, true).unwrap());
+        let certificate = inspector.get_certificate().unwrap();
+        assert!(matches!(certificate, BergeCertificate::OddHole(_)));
+        assert!(certificate.is_hole());
+        assert_eq!(certificate.vertex_list().len(), 8);
+
+        let antihole = complement(&hole);
+        let mut inspector = BergeGraphInspector::new();
+        assert!(!inspector.is_berge_with_certificate(&antihole, true).unwrap());
+        let certificate = inspector.get_certificate().unwrap();
+        assert!(matches!(certificate, BergeCertificate::OddAntihole(_)));
+        assert!(!certificate.is_hole());
+        assert_eq!(certificate.vertex_list().first(), certificate.vertex_list().last());
+    }
+
+    #[test]
+    fn a_berge_graph_has_no_certificate() {
+        let mut inspector = BergeGraphInspector::new();
+        assert!(inspector.is_berge_with_certificate(&cycle(6), true).unwrap());
+        assert!(inspector.get_certificate().is_none());
     }
 }
