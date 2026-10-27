@@ -8,7 +8,7 @@ use jgrapht::generate::{GraphGenerator, Linear, Ring};
 use jgrapht::traverse::*;
 use jgrapht::*;
 use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::rc::Rc;

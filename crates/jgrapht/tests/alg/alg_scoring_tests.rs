@@ -798,7 +798,7 @@ mod page_rank {
 
     #[test]
     fn test_empty_graph() {
-        let mut g = DiGraph::<String>::pseudo();
+        let g = DiGraph::<String>::pseudo();
         let pr = PageRank::with_options(&g, 0.85, 100, 0.0001).unwrap();
         assert!(pr.scores().is_empty());
     }
@@ -1143,7 +1143,7 @@ mod katz_centrality {
 
     #[test]
     fn test_empty_graph() {
-        let mut g = DiGraph::<String>::pseudo();
+        let g = DiGraph::<String>::pseudo();
         let pr = KatzCentrality::with_options(&g, 0.85, |_| 1.0, 100, 0.0001).unwrap();
         assert!(pr.scores().is_empty());
     }

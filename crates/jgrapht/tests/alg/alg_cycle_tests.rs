@@ -1239,7 +1239,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
             .unwrap()
             .get_cycle_basis()
             .unwrap();
-        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         assert_eq!(13, cb.cycles().len());
         let c1 = cycles[0].clone();
         assert!(c1.contains(&ge(&graph, 0, 1)));
@@ -1357,7 +1357,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
             .unwrap()
             .get_cycle_basis()
             .unwrap();
-        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         assert_eq!(8, cb.cycles().len());
         let c1 = cycles[0].clone();
         assert!(c1.contains(&ge(&graph, 0, 1)));
@@ -1406,7 +1406,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
             .unwrap()
             .get_cycle_basis()
             .unwrap();
-        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         assert_eq!(1, cb.cycles().len());
         let c1 = cycles[0].clone();
         assert!(c1.contains(&e1));
@@ -1433,7 +1433,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
             .unwrap()
             .get_cycle_basis()
             .unwrap();
-        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         assert_eq!(3, cb.cycles().len());
         let c1 = cycles[0].clone();
         assert!(c1.contains(&e01_2));
@@ -1475,7 +1475,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
 
     #[test]
     fn test_empty_graph() {
-        let mut graph = UGraph::<i32>::pseudo();
+        let graph = UGraph::<i32>::pseudo();
         let cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
             .get_cycle_basis()
@@ -1726,7 +1726,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
             .get_cycle_basis()
             .unwrap();
         assert_eq!(13, cb.cycles().len());
-        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         let c1 = cycles[0].clone();
         assert!(c1.contains(&ge(&graph, 1, 2)));
         assert!(c1.contains(&ge(&graph, 2, 0)));
@@ -1825,7 +1825,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
             .get_cycle_basis()
             .unwrap();
         assert_eq!(8, cb.cycles().len());
-        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         let c1 = cycles[0].clone();
         assert!(c1.contains(&ge(&graph, 0, 1)));
         assert!(c1.contains(&e12_1));
@@ -1900,7 +1900,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
             .get_cycle_basis()
             .unwrap();
         assert_eq!(3, cb.cycles().len());
-        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         let c1 = cycles[0].clone();
         assert!(c1.contains(&e01_2));
         assert!(c1.contains(&e01_1));
@@ -1939,7 +1939,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
 
     #[test]
     fn test_empty_graph() {
-        let mut graph = UGraph::<i32>::pseudo();
+        let graph = UGraph::<i32>::pseudo();
         let cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
             .get_cycle_basis()
@@ -2453,9 +2453,9 @@ mod hierholzer_eulerian_cycle_test {
 
     #[test]
     fn test_null_eulerian() {
-        let mut g1 = UGraph::<i32>::pseudo();
+        let g1 = UGraph::<i32>::pseudo();
         assert!(!HierholzerEulerianCycle::new().is_eulerian(&g1));
-        let mut g2 = DiGraph::<i32>::pseudo();
+        let g2 = DiGraph::<i32>::pseudo();
         assert!(!HierholzerEulerianCycle::new().is_eulerian(&g2));
     }
 
@@ -3087,7 +3087,6 @@ mod hierholzer_eulerian_cycle_test {
 mod howard_minimum_mean_cycle_test {
     use super::*;
     use jgrapht::alg::cycle::{HowardMinimumMeanCycle, MinimumCycleMeanAlgorithm};
-    use jgrapht::graph::GraphExt;
 
     const GRAPH1: &[(i32, i32, i32)] = &[
         (1, 2, 1),
@@ -3384,7 +3383,6 @@ mod chordality_inspector_test {
     use crate::common::construct_graph;
     use jgrapht::alg::cycle::{ChordalityInspector, IterationOrder};
     use jgrapht::generate::named::{self, build};
-    use jgrapht::graph::GraphExt;
 
     const ORDERS: [IterationOrder; 2] = [IterationOrder::Mcs, IterationOrder::LexBfs];
 
@@ -3907,7 +3905,6 @@ mod weak_chordality_inspector_test {
     use jgrapht::alg::cycle::WeakChordalityInspector;
     use jgrapht::generate::named::{self, build};
     use jgrapht::generate::{Complete, GraphGenerator};
-    use jgrapht::graph::GraphExt;
 
     /// A vertex-edge graph with parallel edges ignored (`TestUtil.createUndirected`).
     fn undirected(edges: &[&[i32]]) -> UGraph<i32> {
@@ -4325,7 +4322,7 @@ mod berge_graph_inspector_test {
     #[test]
     fn check_is_y_x_complete() {
         let mut stimulus = graph();
-        let mut dut = BergeGraphInspector::new();
+        let dut = BergeGraphInspector::new();
         stimulus.add_vertex(1);
         stimulus.add_vertex(2);
         stimulus.add_vertex(3);
@@ -4465,7 +4462,7 @@ mod berge_graph_inspector_test {
     #[test]
     fn check_routine_3() {
         let mut stimulus = graph();
-        let mut dut = BergeGraphInspector::new();
+        let dut = BergeGraphInspector::new();
         stimulus.add_vertex(1);
         stimulus.add_vertex(2);
         stimulus.add_vertex(3);
