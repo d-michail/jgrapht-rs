@@ -1,6 +1,6 @@
 //! Port of the JGraphT alg tests. See ../STATUS.md.
 #![allow(clippy::bool_assert_comparison, clippy::approx_constant, clippy::useless_vec, dead_code)]
-#[path = "../port_common/mod.rs"]
+#[path = "../common/mod.rs"]
 mod common;
 
 mod alg_clique_tests;
@@ -27,3 +27,14 @@ mod flow_data;
 mod mincost_data;
 mod planar_data;
 mod vertex_cover_data;
+mod clique_cover;
+mod isomorphism;
+mod matching_color;
+mod misc_algs;
+mod paths_misc;
+mod planarity;
+mod scoring;
+mod shortestpath;
+mod spanning_flow;
+mod structure;
+mod structure2;
