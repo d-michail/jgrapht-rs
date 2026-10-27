@@ -12,7 +12,15 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! TSPLIB95 coordinate-instance and tour importer.
+//! TSPLIB95 coordinate-instance and tour import support.
+//!
+//! The importer reads `NODE_COORD_SECTION` data into a complete weighted graph
+//! and optionally maps a `TOUR_SECTION` to the created vertices. It supports
+//! the coordinate distance types `EUC_2D`, `EUC_3D`, `MAX_2D`, `MAX_3D`,
+//! `MAN_2D`, `MAN_3D`, `CEIL_2D`, `GEO`, and `ATT`. Other TSPLIB95 data
+//! sections and explicit edge-weight matrices are not imported.
+
+#![deny(missing_docs)]
 
 use crate::{GraphImporter, IoError, Result};
 use indexmap::IndexMap;
@@ -23,48 +31,80 @@ use std::io::Read;
 
 const VALID_TYPES: &[&str] = &["TSP", "ATSP", "SOP", "HCP", "CVRP", "TOUR"];
 const VALID_EDGE_WEIGHT_TYPES: &[&str] = &[
-    "EXPLICIT", "EUC_2D", "EUC_3D", "MAX_2D", "MAX_3D", "MAN_2D", "MAN_3D", "CEIL_2D",
-    "GEO", "ATT", "XRAY1", "XRAY2", "SPECIAL",
+    "EXPLICIT", "EUC_2D", "EUC_3D", "MAX_2D", "MAX_3D", "MAN_2D", "MAN_3D", "CEIL_2D", "GEO",
+    "ATT", "XRAY1", "XRAY2", "SPECIAL",
 ];
 const VALID_EDGE_WEIGHT_FORMATS: &[&str] = &[
-    "FUNCTION", "FULL_MATRIX", "UPPER_ROW", "LOWER_ROW", "UPPER_DIAG_ROW", "LOWER_DIAG_ROW",
-    "UPPER_COL", "LOWER_COL", "UPPER_DIAG_COL", "LOWER_DIAG_COL",
+    "FUNCTION",
+    "FULL_MATRIX",
+    "UPPER_ROW",
+    "LOWER_ROW",
+    "UPPER_DIAG_ROW",
+    "LOWER_DIAG_ROW",
+    "UPPER_COL",
+    "LOWER_COL",
+    "UPPER_DIAG_COL",
+    "LOWER_DIAG_COL",
 ];
 const VALID_EDGE_DATA_FORMATS: &[&str] = &["EDGE_LIST", "ADJ_LIST"];
 const VALID_NODE_COORD_TYPES: &[&str] = &["TWOD_COORDS", "THREED_COORDS", "NO_COORDS"];
 const VALID_DISPLAY_DATA_TYPES: &[&str] = &["COORD_DISPLAY", "TWOD_DISPLAY", "NO_DISPLAY"];
 
 #[derive(Debug, Clone, PartialEq)]
+/// A numbered node read from a TSPLIB95 `NODE_COORD_SECTION`.
 pub struct TsplibNode {
+    /// The node number specified by the source file.
     pub number: i32,
+    /// The node's two- or three-dimensional coordinates.
     pub coordinates: Vec<f64>,
 }
 
 #[derive(Debug, Clone)]
+/// Metadata collected from an imported TSPLIB95 file.
+///
+/// The structure contains the supported specification fields, the mapping
+/// between generated graph vertices and source nodes, and any imported tour.
 pub struct TsplibMetadata<V> {
+    /// The value of the `NAME` field.
     pub name: Option<String>,
     /// First comment, retained for compatibility with the initial Rust API.
     pub comment: Option<String>,
+    /// All values of the repeatable `COMMENT` field, in source order.
     pub comments: Vec<String>,
+    /// The value of the `TYPE` field.
     pub problem_type: Option<String>,
+    /// The value of `EDGE_WEIGHT_TYPE`, or an empty string when absent.
     pub edge_weight_type: String,
+    /// The value of `DIMENSION`, or zero when absent.
     pub dimension: usize,
+    /// The value of the `CAPACITY` field.
     pub capacity: Option<i32>,
+    /// The value of the `EDGE_WEIGHT_FORMAT` field.
     pub edge_weight_format: Option<String>,
+    /// The value of the `EDGE_DATA_FORMAT` field.
     pub edge_data_format: Option<String>,
+    /// The value of the `NODE_COORD_TYPE` field.
     pub node_coord_type: Option<String>,
+    /// The value of the `DISPLAY_DATA_TYPE` field.
     pub display_data_type: Option<String>,
+    /// Imported graph vertices mapped to their source nodes.
     pub nodes: IndexMap<V, TsplibNode>,
+    /// The imported tour, when the source contained a `TOUR_SECTION`.
     pub tour: Option<Vec<V>>,
     distinct_node_locations: bool,
     distinct_neighbor_distances: bool,
 }
 
 impl<V> TsplibMetadata<V> {
+    /// Returns whether all imported nodes have different coordinates.
     pub fn has_distinct_node_locations(&self) -> bool {
         self.distinct_node_locations
     }
 
+    /// Returns whether each vertex's incident edges have distinct weights.
+    ///
+    /// A true value means that no two other imported locations have the same
+    /// distance from any one location.
     pub fn has_distinct_neighbor_distances(&self) -> bool {
         self.distinct_neighbor_distances
     }
@@ -90,20 +130,38 @@ struct ParsedFile {
     tour_numbers: Option<Vec<i32>>,
 }
 
+/// Imports coordinate-based TSPLIB95 instances and tours.
+///
+/// Graph imports require a weighted destination graph. A
+/// `NODE_COORD_SECTION` creates one supplied vertex per node and a weighted
+/// edge for every pair of imported vertices; a directed graph receives both
+/// orientations. An empty destination graph is recommended.
+///
+/// Metadata for the most recently completed import is available through
+/// [`Self::metadata`]. Starting an import clears the previous metadata, and a
+/// failed import leaves it empty.
 pub struct TsplibImporter<V> {
     metadata: Option<TsplibMetadata<V>>,
 }
 
 impl<V> TsplibImporter<V> {
+    /// Creates a TSPLIB95 importer with no import metadata.
     pub fn new() -> Self {
         Self { metadata: None }
     }
 
+    /// Returns metadata for the most recently completed import.
     pub fn metadata(&self) -> Option<&TsplibMetadata<V>> {
         self.metadata.as_ref()
     }
 
-    /// Imports a tour file using the node-number mapping from a prior graph import.
+    /// Imports a tour using the node-number mapping from a prior graph import.
+    ///
+    /// The source should contain a `TOUR_SECTION`. Each listed node number is
+    /// resolved through `reference`; an unknown number is an error. If no tour
+    /// section is present, this returns `None`. Metadata parsed from the tour
+    /// file becomes the importer's current metadata while the reference node
+    /// mapping and distinctness results are retained.
     pub fn import_tour<R: Read>(
         &mut self,
         reference: &TsplibMetadata<V>,
@@ -132,7 +190,10 @@ impl<V> TsplibImporter<V> {
         Ok(tour)
     }
 
-    /// Computes the TSPLIB95 `GEO` distance between two coordinate nodes.
+    /// Computes the integer TSPLIB95 `GEO` distance between two nodes.
+    ///
+    /// The first two coordinates of each node are interpreted as geographical
+    /// latitude and longitude in TSPLIB's degree-minute representation.
     pub fn compute_2d_geographical_distance(a: &TsplibNode, b: &TsplibNode) -> i32 {
         geographical_distance(a, b) as i32
     }
@@ -306,9 +367,9 @@ fn parse_file(text: &str) -> Result<ParsedFile> {
                     coordinates: values[1..]
                         .iter()
                         .map(|value| {
-                            value.parse().map_err(|_| {
-                                IoError::Import("invalid TSPLIB coordinate".into())
-                            })
+                            value
+                                .parse()
+                                .map_err(|_| IoError::Import("invalid TSPLIB coordinate".into()))
                         })
                         .collect::<Result<_>>()?,
                 });
@@ -408,9 +469,7 @@ fn distance(kind: &str, a: &TsplibNode, b: &TsplibNode) -> f64 {
     }
 }
 
-fn number_mapping<V: Clone + Eq + Hash>(
-    nodes: &IndexMap<V, TsplibNode>,
-) -> HashMap<i32, V> {
+fn number_mapping<V: Clone + Eq + Hash>(nodes: &IndexMap<V, TsplibNode>) -> HashMap<i32, V> {
     nodes
         .iter()
         .map(|(vertex, node)| (node.number, vertex.clone()))
