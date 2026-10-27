@@ -87,3 +87,22 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
 **F3. Kolmogorov Blossom V** (`org/jgrapht/alg/matching/blossom/v5`, 5917 lines): `BlossomVOptions`, `BlossomVState`, `BlossomVNode`, `BlossomVEdge`, `BlossomVTree`, `BlossomVTreeEdge`, `BlossomVInitializer`, `BlossomVPrimalUpdater`, `BlossomVDualUpdater`, `KolmogorovWeightedPerfectMatching`, `KolmogorovWeightedMatching`, `ObjectiveSense`. Port into `src/alg/matching/blossom/` with arena/index based nodes, edges and trees (no pointers), same data structures and update rules as Java (priority queues of edges per tree, slack/dual bookkeeping, `ObjectiveSense`, options such as `InitializationType`, `UpdateDualsAfter`, `DualUpdateStrategy`). Port the Java tests in this order, running them after each step: `BlossomVStateTest`, `BlossomVTreeEdgeTest`, `BlossomVTreeTest`, `BlossomVNodeTest`, `BlossomVInitializerTest`, `BlossomVDualUpdaterTest`, `BlossomVPrimalUpdaterTest`, `KolmogorovWeightedMatchingTest` (19), `KolmogorovWeightedPerfectMatchingTest` (52); `BlossomVDebugger` is a test helper. Commit per step. Java's tests are sensitive to tie-breaking and iteration order: keep insertion order everywhere Java iterates a list.
 
 **F4. Dependents of Blossom V.** `ChristofidesThreeHalvesApproxMetricTSP` (uses `KolmogorovWeightedPerfectMatching` on the odd-degree vertices; port the Java class and its tests, delete `christofides_tour` in `tour/legacy.rs`, C6) and `ChinesePostman` (class and tests, C15). Then delete `matching/legacy.rs` completely.
+
+## G. Shortest-path package (1i): checkpoint and hand-off
+
+**Checkpoint commit: see the first local commit after `b887d7e`; work is intentionally incomplete.**
+
+Implemented in `crates/jgrapht-core/src/alg/shortestpath/`: Java-style BFS, Dijkstra and closest-first iterator, Bellman–Ford, A*/ALT, bidirectional Dijkstra/A*, Floyd–Warshall, Johnson, list/tree single-source paths, `TreeMeasurer`, array-backed integer Dijkstra, sequential delta stepping, `DagAllPathsCounter`, default/Dijkstra/CH many-to-many, Martin and label-correcting multi-objective paths, `AllDirectedPaths`, Suurballe/Bhandari, lazy Yen, bounded/pruned Yen, Eppstein sidetrack heaps, sequential contraction hierarchies, and transit-node routing. The old `alg/paths.rs` edge-disjoint and all-path helpers now delegate to the classes; its minimum-cost-flow dependency is gone. Vertex-disjoint paths use vertex splitting plus the Suurballe residual transformation.
+
+Validation at checkpoint: `cargo test -p jgrapht-core --test alg shortestpath:: -- --nocapture` passes **38/38** shortest-path tests. These include focused Java-derived golden sequences for Yen/Eppstein, bounded-pruned equivalence tests, foundational class contracts, CH/TNR comparisons with Dijkstra, and C13 compatibility tests.
+
+Strict-fidelity work still required before marking 1i, C13, or C14 done:
+
+- Port the remainder of Java's 41 shortest-path test files / roughly 283 tests and record each class separately in `STATUS.md`; the checkpoint is a coherent implementation base, not a completed package port.
+- Make contraction preprocessing reproduce Java's parallel independent-set/random-tie ordering and implement Java's bucket-based CH many-to-many algorithm. The checkpoint uses deterministic sequential witness searches and materialized CH point queries.
+- Complete transit-node routing's Java Voronoi locality filter and exact access-node selection. The checkpoint's conservative locality filter is correct but not technique-faithful.
+- Add bounded-pruned Yen's alternate A* spur engine and settled-vertex accounting (`expanded_vertices` is currently zero).
+- Finish Java-exact order/tie-breaking and full test coverage for all-directed paths, disjoint paths, many-to-many, multi-objective, integer Dijkstra, delta stepping, graph/tree measurers, and the path-result implementations.
+- C13 remains open until negative-cycle behavior is represented by the Java-style Bellman–Ford exception/cycle payload and all legacy helper callers/tests are migrated. C14 remains open until every retained functional entry point is verified as a thin class wrapper and the full class test suite passes.
+
+The matching section above is independent and was not edited by the shortest-path track.

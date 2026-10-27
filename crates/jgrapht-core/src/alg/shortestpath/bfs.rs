@@ -6,6 +6,15 @@ use std::collections::{HashMap, VecDeque};
 /// Fewest-edges paths (edge weights are ignored; a path's weight is its edge count).
 pub struct BfsShortestPath<'g, G>(pub &'g G);
 
+/// Java-compatible spelling of [`BfsShortestPath`].
+pub type BFSShortestPath<'g, G> = BfsShortestPath<'g, G>;
+
+impl<'g, G> BfsShortestPath<'g, G> {
+    pub fn new(graph: &'g G) -> Self {
+        Self(graph)
+    }
+}
+
 impl<G: Graph> ShortestPathAlgorithm<G> for BfsShortestPath<'_, G> {
     fn single_source(&self, s: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         let g = self.0;

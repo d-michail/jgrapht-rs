@@ -1,9 +1,10 @@
 use super::bellman_ford::relax_all;
 use super::search::search;
-use super::{AllPairsPaths, SingleSourcePaths};
-use crate::Result;
+use super::{AllPairsPaths, ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::Graph;
 use crate::util::OrderedF64;
+use crate::walk::GraphWalk;
+use crate::{GraphError, Result};
 use rheaps::tree::PairingHeap;
 use std::collections::HashMap;
 
@@ -39,4 +40,50 @@ pub fn johnson<G: Graph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
         );
     }
     Ok(AllPairsPaths { by_source })
+}
+
+/// Johnson all-pairs shortest paths.
+pub struct JohnsonShortestPaths<'g, G: Graph> {
+    graph: &'g G,
+    paths: AllPairsPaths<G::Vertex, G::Edge>,
+}
+
+impl<'g, G: Graph> JohnsonShortestPaths<'g, G> {
+    pub fn new(graph: &'g G) -> Result<Self> {
+        Ok(Self {
+            graph,
+            paths: johnson(graph)?,
+        })
+    }
+
+    pub fn graph(&self) -> &G {
+        self.graph
+    }
+}
+
+impl<G: Graph> ShortestPathAlgorithm<G> for JohnsonShortestPaths<'_, G> {
+    fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
+        self.paths
+            .from_source(source)
+            .cloned()
+            .ok_or(GraphError::VertexNotFound)
+    }
+
+    fn path(
+        &self,
+        source: &G::Vertex,
+        target: &G::Vertex,
+    ) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
+        if !self.graph.contains_vertex(source) || !self.graph.contains_vertex(target) {
+            return Err(GraphError::VertexNotFound);
+        }
+        Ok(self.paths.path(source, target))
+    }
+
+    fn path_weight(&self, source: &G::Vertex, target: &G::Vertex) -> Result<f64> {
+        if !self.graph.contains_vertex(source) || !self.graph.contains_vertex(target) {
+            return Err(GraphError::VertexNotFound);
+        }
+        Ok(self.paths.weight(source, target))
+    }
 }

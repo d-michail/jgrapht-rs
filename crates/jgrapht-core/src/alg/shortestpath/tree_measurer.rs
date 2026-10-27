@@ -1,0 +1,62 @@
+use crate::graph::{Graph, GraphExt};
+use crate::{GraphError, Result};
+use std::collections::{HashMap, HashSet, VecDeque};
+
+/// Linear-time center computation for an undirected tree.
+pub struct TreeMeasurer<'g, G> {
+    graph: &'g G,
+}
+
+impl<'g, G: Graph> TreeMeasurer<'g, G> {
+    pub fn new(graph: &'g G) -> Self {
+        Self { graph }
+    }
+
+    pub fn graph_center(&self) -> Result<Vec<G::Vertex>> {
+        if self.graph.graph_type().directed {
+            return Err(GraphError::InvalidArgument(
+                "tree measurer requires an undirected graph".into(),
+            ));
+        }
+        let Some(root) = self.graph.vertices().next() else {
+            return Ok(Vec::new());
+        };
+        let (end, _) = farthest(self.graph, root);
+        let (other_end, parent) = farthest(self.graph, end);
+
+        let mut diameter = vec![(*other_end).clone()];
+        let mut current = other_end;
+        while let Some(previous) = parent.get(current) {
+            diameter.push((**previous).clone());
+            current = *previous;
+        }
+        let middle = diameter.len() / 2;
+        if diameter.len() % 2 == 1 {
+            Ok(vec![diameter[middle].clone()])
+        } else {
+            Ok(vec![diameter[middle].clone(), diameter[middle - 1].clone()])
+        }
+    }
+}
+
+fn farthest<'g, G: Graph>(
+    graph: &'g G,
+    root: &'g G::Vertex,
+) -> (&'g G::Vertex, HashMap<&'g G::Vertex, &'g G::Vertex>) {
+    let mut queue = VecDeque::from([(root, 0usize)]);
+    let mut seen = HashSet::from([root]);
+    let mut parent = HashMap::new();
+    let mut result = (root, 0usize);
+    while let Some((vertex, depth)) = queue.pop_front() {
+        if depth > result.1 {
+            result = (vertex, depth);
+        }
+        for (_, target) in graph.outgoing_of(vertex) {
+            if seen.insert(target) {
+                parent.insert(target, vertex);
+                queue.push_back((target, depth + 1));
+            }
+        }
+    }
+    (result.0, parent)
+}

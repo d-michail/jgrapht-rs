@@ -1,3 +1,4 @@
+use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::walk::GraphWalk;
@@ -9,6 +10,265 @@ use std::collections::{BinaryHeap, HashMap, HashSet};
 /// incoming edges) from the sink, stopped when the frontiers can no longer improve the best
 /// meeting point. Requires non-negative weights.
 pub struct BidirectionalDijkstra<'g, G>(pub &'g G);
+
+/// Java-style bidirectional Dijkstra class, including its optional search
+/// radius.
+pub struct BidirectionalDijkstraShortestPath<'g, G> {
+    graph: &'g G,
+    radius: f64,
+}
+
+impl<'g, G: Graph> BidirectionalDijkstraShortestPath<'g, G> {
+    pub fn new(graph: &'g G) -> Self {
+        Self {
+            graph,
+            radius: f64::INFINITY,
+        }
+    }
+
+    pub fn with_radius(graph: &'g G, radius: f64) -> Result<Self> {
+        if radius.is_nan() || radius < 0.0 {
+            return Err(GraphError::InvalidArgument(
+                "radius must be non-negative".into(),
+            ));
+        }
+        Ok(Self { graph, radius })
+    }
+}
+
+impl<G: Graph> ShortestPathAlgorithm<G> for BidirectionalDijkstraShortestPath<'_, G> {
+    fn single_source(&self, _source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
+        Err(GraphError::Unsupported(
+            "bidirectional algorithms answer point-to-point queries only".into(),
+        ))
+    }
+
+    fn path(
+        &self,
+        source: &G::Vertex,
+        target: &G::Vertex,
+    ) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
+        Ok(BidirectionalDijkstra(self.graph)
+            .path(source, target)?
+            .filter(|path| path.weight <= self.radius))
+    }
+}
+
+/// Bidirectional A* point-to-point search.
+///
+/// Both frontiers re-open closed vertices when the heuristic is inconsistent.
+/// The conservative inconsistent-heuristic stopping rule is used, so any
+/// admissible heuristic is accepted.
+pub struct BidirectionalAStarShortestPath<'g, G, F> {
+    graph: &'g G,
+    heuristic: F,
+}
+
+impl<'g, G: Graph, F: Fn(&G::Vertex, &G::Vertex) -> f64> BidirectionalAStarShortestPath<'g, G, F> {
+    pub fn new(graph: &'g G, heuristic: F) -> Self {
+        Self { graph, heuristic }
+    }
+}
+
+impl<G: Graph, F: Fn(&G::Vertex, &G::Vertex) -> f64> ShortestPathAlgorithm<G>
+    for BidirectionalAStarShortestPath<'_, G, F>
+{
+    fn single_source(&self, _source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
+        Err(GraphError::Unsupported(
+            "bidirectional algorithms answer point-to-point queries only".into(),
+        ))
+    }
+
+    fn path(
+        &self,
+        source: &G::Vertex,
+        target: &G::Vertex,
+    ) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
+        bidirectional_astar(self.graph, source, target, &self.heuristic)
+    }
+}
+
+struct AStarSide<'g, G: Graph> {
+    score: HashMap<&'g G::Vertex, f64>,
+    key: HashMap<&'g G::Vertex, f64>,
+    pred: HashMap<&'g G::Vertex, (&'g G::Edge, &'g G::Vertex)>,
+    open: HashSet<&'g G::Vertex>,
+    closed: HashSet<&'g G::Vertex>,
+    nodes: Vec<&'g G::Vertex>,
+    heap: BinaryHeap<Reverse<(OrderedF64, usize)>>,
+}
+
+impl<'g, G: Graph> AStarSide<'g, G> {
+    fn new(start: &'g G::Vertex, estimate: f64) -> Self {
+        Self {
+            score: HashMap::from([(start, 0.0)]),
+            key: HashMap::from([(start, estimate)]),
+            pred: HashMap::new(),
+            open: HashSet::from([start]),
+            closed: HashSet::new(),
+            nodes: vec![start],
+            heap: BinaryHeap::from([Reverse((OrderedF64(estimate), 0))]),
+        }
+    }
+
+    fn clean(&mut self) {
+        while let Some(Reverse((OrderedF64(key), index))) = self.heap.peek().copied() {
+            let vertex = self.nodes[index];
+            if !self.open.contains(vertex) || key > self.key[vertex] {
+                self.heap.pop();
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn min_key(&mut self) -> f64 {
+        self.clean();
+        self.heap
+            .peek()
+            .map_or(f64::INFINITY, |Reverse((OrderedF64(key), _))| *key)
+    }
+
+    fn pop(&mut self) -> Option<(&'g G::Vertex, f64)> {
+        self.clean();
+        let Reverse((_, index)) = self.heap.pop()?;
+        let vertex = self.nodes[index];
+        self.open.remove(vertex);
+        self.closed.insert(vertex);
+        Some((vertex, self.score[vertex]))
+    }
+
+    fn update(
+        &mut self,
+        vertex: &'g G::Vertex,
+        parent: &'g G::Vertex,
+        edge: &'g G::Edge,
+        score: f64,
+        key: f64,
+    ) {
+        if score >= self.score.get(vertex).copied().unwrap_or(f64::INFINITY) {
+            return;
+        }
+        self.score.insert(vertex, score);
+        self.key.insert(vertex, key);
+        self.pred.insert(vertex, (edge, parent));
+        self.closed.remove(vertex);
+        self.open.insert(vertex);
+        self.nodes.push(vertex);
+        self.heap
+            .push(Reverse((OrderedF64(key), self.nodes.len() - 1)));
+    }
+}
+
+fn bidirectional_astar<G, F>(
+    graph: &G,
+    source: &G::Vertex,
+    target: &G::Vertex,
+    heuristic: &F,
+) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>>
+where
+    G: Graph,
+    F: Fn(&G::Vertex, &G::Vertex) -> f64,
+{
+    let source = graph
+        .vertices()
+        .find(|vertex| *vertex == source)
+        .ok_or(GraphError::VertexNotFound)?;
+    let target = graph
+        .vertices()
+        .find(|vertex| *vertex == target)
+        .ok_or(GraphError::VertexNotFound)?;
+    if source == target {
+        return Ok(Some(GraphWalk::single(source.clone())));
+    }
+
+    let mut forward = AStarSide::<G>::new(source, heuristic(source, target));
+    let mut backward = AStarSide::<G>::new(target, heuristic(source, target));
+    let mut scan_forward = true;
+    let mut best = f64::INFINITY;
+    let mut meeting = None;
+
+    loop {
+        let forward_key = forward.min_key();
+        let backward_key = backward.min_key();
+        if forward_key.is_infinite()
+            || backward_key.is_infinite()
+            || forward_key.max(backward_key) >= best
+        {
+            break;
+        }
+
+        let (side, other) = if scan_forward {
+            (&mut forward, &backward)
+        } else {
+            (&mut backward, &forward)
+        };
+        let Some((vertex, vertex_score)) = side.pop() else {
+            break;
+        };
+        let adjacent: Vec<_> = if scan_forward {
+            graph.outgoing_of(vertex).collect()
+        } else {
+            graph.incoming_of(vertex).collect()
+        };
+        for (edge, successor) in adjacent {
+            if successor == vertex {
+                continue;
+            }
+            let edge_weight = graph.edge_weight(edge).unwrap_or(1.0);
+            if edge_weight.is_nan() || edge_weight < 0.0 {
+                return Err(GraphError::InvalidArgument(
+                    "negative or NaN edge weight".into(),
+                ));
+            }
+            let candidate = vertex_score + edge_weight;
+            let estimate = if scan_forward {
+                heuristic(successor, target)
+            } else {
+                heuristic(source, successor)
+            };
+            side.update(successor, vertex, edge, candidate, candidate + estimate);
+
+            let joined = vertex_score
+                + edge_weight
+                + other.score.get(successor).copied().unwrap_or(f64::INFINITY);
+            if joined < best {
+                best = joined;
+                meeting = Some(successor);
+            }
+        }
+        scan_forward = if scan_forward {
+            forward.open.len() <= backward.open.len()
+        } else {
+            !(backward.open.len() <= forward.open.len())
+        };
+    }
+
+    let Some(meeting) = meeting else {
+        return Ok(None);
+    };
+    let mut vertices = vec![meeting.clone()];
+    let mut edges = Vec::new();
+    let mut current = meeting;
+    while let Some(&(edge, parent)) = forward.pred.get(current) {
+        edges.push(edge.clone());
+        vertices.push(parent.clone());
+        current = parent;
+    }
+    vertices.reverse();
+    edges.reverse();
+    current = meeting;
+    while let Some(&(edge, parent)) = backward.pred.get(current) {
+        edges.push(edge.clone());
+        vertices.push(parent.clone());
+        current = parent;
+    }
+    Ok(Some(GraphWalk {
+        vertices,
+        edges,
+        weight: best,
+    }))
+}
 
 struct Side<'g, G: Graph> {
     dist: HashMap<&'g G::Vertex, f64>,

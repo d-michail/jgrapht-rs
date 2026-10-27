@@ -2,6 +2,51 @@ use crate::walk::GraphWalk;
 use std::collections::HashMap;
 use std::hash::Hash;
 
+/// Explicit single-source path representation (JGraphT's
+/// `ListSingleSourcePathsImpl`).
+///
+/// Unlike [`SingleSourcePaths`], which stores a predecessor tree, this type
+/// materializes every supplied path. A missing entry for the source still
+/// denotes the zero-length path, matching the Java implementation.
+#[derive(Debug, Clone)]
+pub struct ListSingleSourcePaths<V, E> {
+    source: V,
+    paths: HashMap<V, GraphWalk<V, E>>,
+}
+
+impl<V: Clone + Eq + Hash, E: Clone> ListSingleSourcePaths<V, E> {
+    pub fn new(source: V, paths: HashMap<V, GraphWalk<V, E>>) -> Self {
+        Self { source, paths }
+    }
+
+    pub fn source(&self) -> &V {
+        &self.source
+    }
+
+    pub fn weight(&self, target: &V) -> f64 {
+        self.paths.get(target).map_or_else(
+            || {
+                if target == &self.source {
+                    0.0
+                } else {
+                    f64::INFINITY
+                }
+            },
+            |path| path.weight,
+        )
+    }
+
+    pub fn path(&self, target: &V) -> Option<GraphWalk<V, E>> {
+        self.paths.get(target).cloned().or_else(|| {
+            (target == &self.source).then(|| GraphWalk::singleton(self.source.clone(), 0.0))
+        })
+    }
+
+    pub fn paths(&self) -> &HashMap<V, GraphWalk<V, E>> {
+        &self.paths
+    }
+}
+
 /// Shortest paths from one source to everything reachable from it.
 #[derive(Debug, Clone)]
 pub struct SingleSourcePaths<V, E> {
@@ -12,7 +57,18 @@ pub struct SingleSourcePaths<V, E> {
     pub pred: HashMap<V, (E, V)>,
 }
 
+/// The compact predecessor-tree representation used by shortest-path
+/// algorithms (JGraphT's `TreeSingleSourcePathsImpl`).
+pub type TreeSingleSourcePaths<V, E> = SingleSourcePaths<V, E>;
+
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> SingleSourcePaths<V, E> {
+    pub fn source(&self) -> &V {
+        &self.source
+    }
+
+    pub fn distance_and_predecessor_map(&self) -> (&HashMap<V, f64>, &HashMap<V, (E, V)>) {
+        (&self.dist, &self.pred)
+    }
     /// Path weight, `f64::INFINITY` if `v` is unreachable.
     pub fn weight(&self, v: &V) -> f64 {
         self.dist.get(v).copied().unwrap_or(f64::INFINITY)

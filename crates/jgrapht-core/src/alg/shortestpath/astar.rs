@@ -15,6 +15,9 @@ pub struct AStar<'g, G, F, H = PairingHeap<OrderedF64, usize>> {
     _heap: PhantomData<fn() -> H>,
 }
 
+/// Java-compatible class name for [`AStar`].
+pub type AStarShortestPath<'g, G, F, H = PairingHeap<OrderedF64, usize>> = AStar<'g, G, F, H>;
+
 impl<'g, G: Graph, F: Fn(&G::Vertex, &G::Vertex) -> f64> AStar<'g, G, F> {
     pub fn new(g: &'g G, heuristic: F) -> Self {
         AStar {

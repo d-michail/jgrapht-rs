@@ -4,6 +4,17 @@ use jgrapht::*;
 use rand::{Rng, SeedableRng, rngs::StdRng};
 use rheaps::tree::FibonacciHeap;
 
+#[path = "shortestpath/advanced_speedups.rs"]
+mod advanced_speedups;
+#[path = "shortestpath/basic_classes.rs"]
+mod basic_classes;
+#[path = "shortestpath/bounded_pruned_yen.rs"]
+mod bounded_pruned_yen;
+#[path = "shortestpath/eppstein.rs"]
+mod eppstein;
+#[path = "shortestpath/ported_classes.rs"]
+mod ported_classes;
+
 fn weighted_di(edges: &[(u32, u32, f64)]) -> DiGraph<u32> {
     let mut g = DiGraph::<u32>::simple().weighted();
     for &(a, b, w) in edges {

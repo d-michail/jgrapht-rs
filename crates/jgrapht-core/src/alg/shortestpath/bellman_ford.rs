@@ -7,6 +7,15 @@ use std::collections::HashMap;
 /// (An undirected edge of negative weight is a negative cycle.)
 pub struct BellmanFord<'g, G>(pub &'g G);
 
+/// Java-compatible class name for [`BellmanFord`].
+pub type BellmanFordShortestPath<'g, G> = BellmanFord<'g, G>;
+
+impl<'g, G> BellmanFord<'g, G> {
+    pub fn new(graph: &'g G) -> Self {
+        Self(graph)
+    }
+}
+
 /// Relaxes all edges up to `|V|` rounds from the given initial distances.
 /// Returns `Err(NegativeCycle)` if still improving afterwards.
 pub(crate) fn relax_all<'g, G: Graph>(
