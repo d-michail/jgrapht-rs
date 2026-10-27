@@ -8,7 +8,7 @@ Status on 2026-10-27. Source of truth for what is ported: `crates/jgrapht/tests/
 |---|---|---|
 | core `graph/`, views, events, `traverse/`, `util/`, `generate/` (incl. netgen) | ported, tests ported (about 400 tests passing, `tests/{alg,graph,generate,traverse,util}`) | done |
 | core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1f (isomorphism, flow, tour, cycle done; 1458 ported tests pass in `tests/{alg,graph,generate,traverse,util}`); 1g (matching) and 1i (shortest paths) still functional. See `FIDELITY_ROADMAP.md` for deviations from Java |
-| `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | all planned format modules started; 277 Rust integration tests pass, with full Java test-parity expansion still in progress |
+| `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | all planned format modules started; 282 Rust integration tests pass, with full Java test-parity expansion still in progress |
 | `jgrapht::graph::{sparse,map}` | 22 files (about 2.5k loc), 4 test files | sparse (CSR) graphs done in `graph/sparse/`; map-based (`fastutil`) backends not started (Phase 3b) |
 | other modules (ext, guava, unimi-dsi, osm, demo) | see "Out of scope" | no |
 
@@ -63,11 +63,11 @@ now present with the shared Rust API, deterministic attributes, structured error
 parsing and baseline implementations of every planned format: DIMACS, CSV, graph6/sparse6/digraph6,
 JSON, GML, DOT, GraphML, GEXF, Lemon, Matrix and TSPLIB.
 Formats are not marked complete until their full upstream test files have been ported.
-DIMACS, CSV/DSV, graph6/sparse6/digraph6, JSON, GML, DOT, GraphML and GEXF are complete. DIMACS has 23 applicable
+DIMACS, CSV/DSV, graph6/sparse6/digraph6, JSON, GML, DOT, GraphML, GEXF and Lemon are complete. DIMACS has 23 applicable
 shared/provider, event importer, graph importer and exporter tests against the upstream fixtures;
 CSV has all 32 applicable upstream tests plus Visio coverage; the compact graph codecs have all 30
 upstream cases; JSON has all 23 upstream cases; GML has all 33 upstream cases; DOT has all 52
-upstream cases; GraphML has all 49 upstream cases; GEXF has all 11 upstream cases.
+upstream cases; GraphML has all 49 upstream cases; GEXF has all 11 upstream cases; Lemon has all 5 upstream cases.
 
 Workspace crate `crates/jgrapht-io` (lib name `jgrapht_io`), depending on `jgrapht`. All formats stay together as modules in this one companion crate; do not create a crate per format. The Java package has 62 files, 28 test files, about 283 tests and about 14k loc, of which about 30% are the event-driven importer variants.
 

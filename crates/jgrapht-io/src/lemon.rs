@@ -42,6 +42,13 @@ where
         }
     }
 
+    pub fn is_parameter(&self, parameter: LemonParameter) -> bool {
+        match parameter {
+            LemonParameter::ExportEdgeWeights => self.export_weights,
+            LemonParameter::EscapeStringsAsJava => self.escape_strings,
+        }
+    }
+
     fn prepare(&self, value: &str) -> String {
         if !self.escape_strings {
             return value.to_owned();
