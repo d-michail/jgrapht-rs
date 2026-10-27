@@ -20,9 +20,9 @@ use crate::graph::props::require_directed;
 use crate::graph::{Graph, GraphMut};
 use crate::util::ElementsSequenceGenerator;
 use crate::util::java::RandomSource;
+use crate::{GraphError, Result};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
-use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet};
 
 pub const MAX_NODE_NUM: i32 = 100 * 1000 * 1000;
@@ -409,7 +409,7 @@ impl<'a, G: GraphMut, R: RandomSource> Run<'a, G, R> {
         let out_degrees: Vec<i32> = tails
             .iter()
             .map(|&n| self.possible_arc_num(n, &heads_set))
-            .collect();
+            .collect::<Result<_>>()?;
         let degree_sum: i64 = out_degrees.iter().map(|&d| d as i64).sum();
         let tail_ids: Vec<usize> = (0..tails.len()).collect();
         let distribution = {
@@ -439,19 +439,19 @@ impl<'a, G: GraphMut, R: RandomSource> Run<'a, G, R> {
         Ok(())
     }
 
-    fn possible_arc_num(&self, node: usize, nodes: &HashSet<usize>) -> i32 {
+    fn possible_arc_num(&self, node: usize, nodes: &HashSet<usize>) -> Result<i32> {
         let mut possible = nodes.len() as i32;
         if nodes.contains(&node) {
             possible -= 1;
         }
         let v = &self.nodes[node].vertex;
-        for arc in self.graph.out_edges_of(v).unwrap() {
+        for arc in self.graph.out_edges_of(v)? {
             let head = self.graph.edge_target(arc).unwrap();
             if nodes.contains(&self.index[head]) {
                 possible -= 1;
             }
         }
-        possible
+        Ok(possible)
     }
 
     fn is_valid_arc(&self, tail: usize, head: usize) -> bool {
