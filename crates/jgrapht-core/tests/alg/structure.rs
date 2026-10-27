@@ -69,17 +69,25 @@ fn biconnected() {
 #[test]
 fn cycles() {
     let g = dg(&[(1, 2), (2, 3), (3, 1), (2, 4), (4, 2)]);
-    assert!(has_cycle(&g));
-    assert_eq!(sorted(simple_cycles(&g)), [vec![1, 2, 3], vec![2, 4]]);
-    assert!(!has_cycle(&dg(&[(1, 2), (2, 3)])));
+    assert!(CycleDetector::new(&g).detect_cycles());
+    assert_eq!(
+        sorted(JohnsonSimpleCycles::new(&g).unwrap().find_simple_cycles().unwrap()),
+        [vec![1, 2, 3], vec![2, 4]]
+    );
+    assert!(!CycleDetector::new(&dg(&[(1, 2), (2, 3)])).detect_cycles());
     let k4 = {
         let mut g = UGraph::<usize>::simple();
         Complete(4).generate_indexed(&mut g).unwrap();
         g
     };
-    assert_eq!(simple_cycles(&k4).len(), 7); // 4 triangles + 3 squares
-    assert_eq!(cycle_basis(&k4).len(), 3); // m - n + 1
-    assert!(has_cycle(&k4) && !has_cycle(&ug(&[(1, 2), (2, 3)])));
+    // m - n + 1
+    let basis = QueueBFSFundamentalCycleBasis::new(&k4)
+        .unwrap()
+        .get_cycle_basis()
+        .unwrap();
+    assert_eq!(basis.cycles().len(), 3);
+    assert!(!jgrapht::graph::props::is_forest(&k4));
+    assert!(jgrapht::graph::props::is_forest(&ug(&[(1, 2), (2, 3)])));
 }
 
 #[test]

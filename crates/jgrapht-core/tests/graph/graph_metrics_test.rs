@@ -1,6 +1,6 @@
 //! Port of `org.jgrapht.GraphMetricsTest`.
 
-use jgrapht::alg::cycle::simple_cycles;
+use jgrapht::alg::cycle::{DirectedSimpleCycles, JohnsonSimpleCycles};
 use jgrapht::alg::metrics::*;
 use jgrapht::generate::named::{self, build};
 use jgrapht::generate::*;
@@ -159,7 +159,13 @@ fn test_directed_graphs() {
     for _ in 0..10 {
         let mut graph = DiGraph::<i32>::simple();
         generate_ints(&mut graph, &mut gen_);
-        let min_cycle = simple_cycles(&graph).iter().map(Vec::len).min();
+        let min_cycle = JohnsonSimpleCycles::new(&graph)
+            .unwrap()
+            .find_simple_cycles()
+            .unwrap()
+            .iter()
+            .map(Vec::len)
+            .min();
         assert_eq!(min_cycle, girth(&graph));
     }
 }

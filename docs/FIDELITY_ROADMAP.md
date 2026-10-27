@@ -42,7 +42,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 | C4 | **done** `flow/legacy.rs`: `stoer_wagner` (deleted, callers use B1) | B1 | |
 | C5 | `tour/legacy.rs` (nearest neighbour, insertion, double tree, 2-opt, Held–Karp) | the tour classes | |
 | C6 | `tour/legacy.rs`: `christofides_tour` **[needs 1g]** | `ChristofidesThreeHalvesApproxMetricTSP` on the Java matching | |
-| C7 | `cycle/legacy.rs` (`has_cycle`, `simple_cycles`, `cycle_basis`, `cycle_to_walk`) | `CycleDetector`, the simple-cycle classes, cycle-basis classes | |
+| C7 | **done** `cycle/legacy.rs` (`has_cycle`, `simple_cycles`, `cycle_basis`, `cycle_to_walk`; deleted, callers use `CycleDetector`, `JohnsonSimpleCycles` and the cycle-basis classes) | `CycleDetector`, the simple-cycle classes, cycle-basis classes | |
 | C8 | **done** `hamiltonian.rs` (deleted; its one test now uses `BacktrackingHamiltonianPath`, Java has no general exact Hamiltonian cycle search) | `tour` Hamiltonian-path/cycle classes | |
 | C9 | **done** `eulerian.rs` (deleted; `props::is_eulerian` and Christofides use `HierholzerEulerianCycle`; the Eulerian-trail helper had no Java counterpart) | `HierholzerEulerianCycle` | |
 | C10 | **done** `chordal.rs` (deleted; `ChordalGraphColoring` and `ChordalGraphMaxCliqueFinder` now follow Java and use `ChordalityInspector`, new `ChordalGraphIndependentSetFinder`, `props::is_chordal` delegates to the inspector; the chromatic-number and maximal-cliques helpers had no Java counterpart) | `ChordalityInspector` | |

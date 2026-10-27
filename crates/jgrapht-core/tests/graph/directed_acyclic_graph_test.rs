@@ -5,7 +5,7 @@
 //! [`DirectedExt::topological_order`]. `testIterationBehaviors` (`ConcurrentModificationException`)
 //! has no Rust counterpart because the borrow checker forbids mutation during iteration.
 
-use jgrapht::alg::cycle::has_cycle;
+use jgrapht::alg::cycle::CycleDetector;
 use jgrapht::graph::DirectedExt;
 use jgrapht::traverse::TopologicalOrder;
 use jgrapht::*;
@@ -60,7 +60,7 @@ fn test_cycle_detection_in_random_graph_build() {
             );
             let dag_rejected = matches!(dag.add_edge(&s, &t), Err(GraphError::CycleProhibited));
             let compare_edge = compare.add_edge(&s, &t).unwrap();
-            let cycle_detected = has_cycle(&compare);
+            let cycle_detected = CycleDetector::new(&compare).detect_cycles();
             assert_eq!(dag_rejected, cycle_detected);
             if cycle_detected {
                 compare.remove_edge(&compare_edge.unwrap());
