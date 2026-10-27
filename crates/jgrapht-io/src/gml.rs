@@ -386,6 +386,7 @@ where
     }
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GmlParameter {
     ExportEdgeLabels,

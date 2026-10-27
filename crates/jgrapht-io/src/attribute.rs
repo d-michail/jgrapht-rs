@@ -3,6 +3,7 @@ use std::fmt;
 use std::str::FromStr;
 
 /// The declared type of an imported or exported attribute.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum AttributeType {
     Null,

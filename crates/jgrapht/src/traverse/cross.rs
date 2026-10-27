@@ -308,6 +308,7 @@ impl<'g, G: Graph + 'g> BreadthFirstIterator<'g, G> {
 
 // ---------------------------------------------------------------------------- depth-first
 
+#[non_exhaustive]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum VisitColor {
     White,

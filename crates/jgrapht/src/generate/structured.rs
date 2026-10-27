@@ -314,6 +314,7 @@ impl GraphGenerator for GeneralizedPetersen {
     }
 }
 
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WindmillMode {
     /// `m` copies of the complete graph `K_n` sharing one vertex.

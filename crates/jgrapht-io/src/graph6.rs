@@ -4,6 +4,7 @@ use crate::{EventDrivenImporter, GraphExporter, GraphImporter, ImportEvent, IoEr
 use jgrapht::{Graph, GraphMut};
 use std::io::{Read, Write};
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Graph6Format {
     #[default]

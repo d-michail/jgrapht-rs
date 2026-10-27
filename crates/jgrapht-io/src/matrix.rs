@@ -7,6 +7,7 @@ use jgrapht::Graph;
 use std::hash::Hash;
 use std::io::Write;
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum MatrixFormat {
     #[default]

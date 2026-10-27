@@ -19,6 +19,7 @@ fn nbrs<G: Graph>(ix: &Indexed<'_, G>) -> Vec<HashSet<usize>> {
         .collect()
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Measure {
     CommonNeighbors,

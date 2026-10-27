@@ -398,6 +398,7 @@ use rheaps::AddressableHeap;
 use rheaps::tree::PairingHeap;
 
 /// What to do when the number of shortest paths overflows a `long`.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OverflowStrategy {
     IgnoreOverflow,

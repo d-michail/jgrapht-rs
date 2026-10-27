@@ -9,6 +9,7 @@ use jgrapht::{Graph, GraphMut};
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DimacsFormat {
     ShortestPath,
@@ -254,6 +255,7 @@ where
     }
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DimacsParameter {
     ExportEdgeWeights,

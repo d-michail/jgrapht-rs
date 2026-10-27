@@ -1,6 +1,7 @@
 use crate::{Attribute, AttributeMap};
 
 /// A value emitted while parsing a graph document.
+#[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
 pub enum ImportEvent<V, E> {
     Start,

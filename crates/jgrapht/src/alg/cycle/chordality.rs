@@ -5,6 +5,7 @@ use std::collections::{HashMap, HashSet};
 
 /// `ChordalityInspector.IterationOrder`: the ordering that is checked for being a perfect
 /// elimination order.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IterationOrder {
     /// maximum cardinality search

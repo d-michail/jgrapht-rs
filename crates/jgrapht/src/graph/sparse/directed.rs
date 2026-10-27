@@ -6,6 +6,7 @@ use std::sync::OnceLock;
 const NO_INCOMING: &str = "this graph does not support incoming edges";
 
 /// Which incoming-edge index a [`SparseIntDirectedGraph`] builds.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IncomingEdgesSupport {
     /// `degree_of`, `edges_of`, `in_degree_of` and `in_edges_of` return `Unsupported`.

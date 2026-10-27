@@ -10,6 +10,7 @@ use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::io::{Read, Write};
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CsvFormat {
     EdgeList,
@@ -18,6 +19,7 @@ pub enum CsvFormat {
     Matrix,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CsvParameter {
     EdgeWeights,

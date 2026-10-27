@@ -519,6 +519,7 @@ pub struct GexfExporter<V, E> {
     next_edge_attribute: usize,
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum GexfParameter {
     ExportEdgeWeights,
@@ -526,11 +527,13 @@ pub enum GexfParameter {
     ExportEdgeTypes,
     ExportMeta,
 }
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GexfAttributeCategory {
     Node,
     Edge,
 }
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GexfAttributeType {
     Boolean,
