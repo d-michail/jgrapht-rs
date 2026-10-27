@@ -13,6 +13,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! JGraphT's JSON graph interchange format.
+//!
+//! A graph is represented by a root object containing a `nodes` array and an
+//! `edges` array. Node objects have an `id`; edge objects have `source` and
+//! `target` identifiers. Additional members become typed attributes.
+
+#![deny(missing_docs)]
 
 use crate::exporter::format_f64;
 use crate::{
@@ -374,8 +380,15 @@ fn object_attributes(object: &IndexMap<String, Value>, forbidden: &[&str]) -> At
         .collect()
 }
 
+/// An imported JSON edge: `(source_id, target_id, weight)`.
 pub type JsonEdge = (String, String, f64);
 
+/// Imports a JSON graph as vertices and edges with attribute maps.
+///
+/// Node identifiers may be strings or integers. Nodes without an `id` receive
+/// generated singleton identifiers. Arrays and objects nested inside node or
+/// edge attributes are retained as compact JSON strings. Edges without a
+/// numeric `weight` attribute receive weight `1.0`.
 pub struct JsonEventDrivenImporter {
     vertices_collection: String,
     edges_collection: String,
@@ -391,14 +404,17 @@ impl Default for JsonEventDrivenImporter {
 }
 
 impl JsonEventDrivenImporter {
+    /// Creates an importer using `nodes` and `edges` as collection names.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Sets the root-object member containing the vertex array.
     pub fn set_vertices_collection_name(&mut self, name: impl Into<String>) {
         self.vertices_collection = name.into();
     }
 
+    /// Sets the root-object member containing the edge array.
     pub fn set_edges_collection_name(&mut self, name: impl Into<String>) {
         self.edges_collection = name.into();
     }
@@ -500,6 +516,12 @@ impl EventDrivenImporter for JsonEventDrivenImporter {
 type VertexFactory<V> = Box<dyn FnMut(&str, &AttributeMap) -> V>;
 type EdgeFactory<E> = Box<dyn FnMut(&AttributeMap) -> E>;
 
+/// Imports a graph from JGraphT's JSON interchange format.
+///
+/// The destination graph must support the features present in the input, such
+/// as loops and parallel edges. Vertices and edges are created through the
+/// destination graph's suppliers unless custom factories are configured. A
+/// numeric edge `weight` is applied when the destination graph is weighted.
 pub struct JsonImporter<V, E> {
     parser: JsonEventDrivenImporter,
     vertex_factory: Option<VertexFactory<V>>,
@@ -517,14 +539,19 @@ impl<V, E> Default for JsonImporter<V, E> {
 }
 
 impl<V, E> JsonImporter<V, E> {
+    /// Creates an importer using the default collection names and graph suppliers.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Sets a factory which creates vertices from their JSON identifiers.
     pub fn set_vertex_factory(&mut self, mut factory: impl FnMut(&str) -> V + 'static) {
         self.vertex_factory = Some(Box::new(move |id, _| factory(id)));
     }
 
+    /// Sets a factory which creates vertices from identifiers and attributes.
+    ///
+    /// The supplied map contains every member of the node object except `id`.
     pub fn set_vertex_with_attributes_factory(
         &mut self,
         factory: impl FnMut(&str, &AttributeMap) -> V + 'static,
@@ -532,6 +559,10 @@ impl<V, E> JsonImporter<V, E> {
         self.vertex_factory = Some(Box::new(factory));
     }
 
+    /// Sets a factory which creates edges from their JSON attributes.
+    ///
+    /// The supplied map excludes the reserved members `id`, `source`, and
+    /// `target`.
     pub fn set_edge_with_attributes_factory(
         &mut self,
         factory: impl FnMut(&AttributeMap) -> E + 'static,
@@ -539,10 +570,12 @@ impl<V, E> JsonImporter<V, E> {
         self.edge_factory = Some(Box::new(factory));
     }
 
+    /// Sets the root-object member containing the vertex array.
     pub fn set_vertices_collection_name(&mut self, name: impl Into<String>) {
         self.parser.set_vertices_collection_name(name);
     }
 
+    /// Sets the root-object member containing the edge array.
     pub fn set_edges_collection_name(&mut self, name: impl Into<String>) {
         self.parser.set_edges_collection_name(name);
     }
@@ -606,6 +639,12 @@ where
     }
 }
 
+/// Exports a graph using JGraphT's JSON interchange format.
+///
+/// The output root contains `creator` and `version` metadata plus configurable
+/// vertex and edge collections. Vertices receive sequential integer-string
+/// identifiers by default. Attribute providers may emit booleans, numbers,
+/// nulls, and string values; non-finite floating-point values are rejected.
 pub struct JsonExporter<V, E> {
     base: BaseExporter<V, E>,
     vertices_collection: String,
@@ -616,11 +655,13 @@ impl<V, E> JsonExporter<V, E>
 where
     V: Clone + Eq + Hash + 'static,
 {
+    /// Creates an exporter with sequential integer vertex identifiers.
     pub fn new() -> Self {
         let mut ids = IntegerIdProvider::new();
         Self::with_vertex_id_provider(move |vertex| ids.id(vertex))
     }
 
+    /// Creates an exporter using `provider` to generate vertex identifiers.
     pub fn with_vertex_id_provider(provider: impl FnMut(&V) -> String + 'static) -> Self {
         Self {
             base: BaseExporter::new(provider),
@@ -629,10 +670,14 @@ where
         }
     }
 
+    /// Sets the provider used to generate optional edge identifiers.
     pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
         self.base.set_edge_id_provider(provider);
     }
 
+    /// Sets the provider of vertex attributes.
+    ///
+    /// An attribute named `id` is ignored because the key is reserved.
     pub fn set_vertex_attribute_provider(
         &mut self,
         provider: impl Fn(&V) -> AttributeMap + 'static,
@@ -640,14 +685,20 @@ where
         self.base.set_vertex_attribute_provider(provider);
     }
 
+    /// Sets the provider of edge attributes.
+    ///
+    /// Attributes named `id`, `source`, or `target` are ignored because those
+    /// keys are reserved.
     pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
         self.base.set_edge_attribute_provider(provider);
     }
 
+    /// Sets the root-object member used for the vertex array.
     pub fn set_vertices_collection_name(&mut self, name: impl Into<String>) {
         self.vertices_collection = name.into();
     }
 
+    /// Sets the root-object member used for the edge array.
     pub fn set_edges_collection_name(&mut self, name: impl Into<String>) {
         self.edges_collection = name.into();
     }
