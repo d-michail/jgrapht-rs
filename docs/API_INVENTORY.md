@@ -13,7 +13,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
 | `jgrapht` | 1470 | 344 | 124 | 348 | 16 | 19 | 426 | 193 |
-| `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
+| `jgrapht-io` | 159 | 84 | 9 | 13 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
 
@@ -1711,6 +1711,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht-io/src/csv.rs` | `CsvImporter::set_format` | infallible | `()` |
 | `jgrapht-io/src/csv.rs` | `CsvImporter::set_parameter` | infallible | `()` |
 | `jgrapht-io/src/csv.rs` | `CsvImporter::set_vertex_factory` | infallible | `()` |
+| `jgrapht-io/src/csv.rs` | `CsvImporter::try_set_vertex_factory` | infallible | `()` |
 | `jgrapht-io/src/csv.rs` | `CsvImporter::with_delimiter` | Result | `Result<Self>` |
 | `jgrapht-io/src/csv.rs` | `VisioExporter::new` | unchecked constructor | `Self` |
 | `jgrapht-io/src/csv.rs` | `VisioExporter::with_vertex_id_provider` | unchecked constructor | `Self` |
@@ -1727,6 +1728,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht-io/src/dimacs.rs` | `DimacsFormat::problem` | state query | `&'static str` |
 | `jgrapht-io/src/dimacs.rs` | `DimacsImporter::new` | unchecked constructor | `Self` |
 | `jgrapht-io/src/dimacs.rs` | `DimacsImporter::set_vertex_factory` | infallible | `()` |
+| `jgrapht-io/src/dimacs.rs` | `DimacsImporter::try_set_vertex_factory` | infallible | `()` |
 | `jgrapht-io/src/dimacs.rs` | `DimacsImporter::with_default_weight` | unchecked constructor | `Self` |
 | `jgrapht-io/src/dot.rs` | `is_valid_id` | infallible | `bool` |
 | `jgrapht-io/src/dot.rs` | `DotExporter::new` | unchecked constructor | `Self` |
@@ -1743,6 +1745,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht-io/src/dot.rs` | `DotImporter::set_vertex_attribute_consumer` | infallible | `()` |
 | `jgrapht-io/src/dot.rs` | `DotImporter::set_vertex_factory` | infallible | `()` |
 | `jgrapht-io/src/dot.rs` | `DotImporter::set_vertex_with_attributes_factory` | infallible | `()` |
+| `jgrapht-io/src/dot.rs` | `DotImporter::try_set_vertex_factory` | infallible | `()` |
 | `jgrapht-io/src/dot.rs` | `DotSubgraph::new` | unchecked constructor | `Self` |
 | `jgrapht-io/src/exporter.rs` | `BaseExporter::clear_edge_attribute_provider` | infallible | `()` |
 | `jgrapht-io/src/exporter.rs` | `BaseExporter::clear_edge_id_provider` | infallible | `()` |
@@ -1779,6 +1782,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht-io/src/gexf.rs` | `GexfImporter::set_schema_validation` | infallible | `()` |
 | `jgrapht-io/src/gexf.rs` | `GexfImporter::set_vertex_attribute_consumer` | infallible | `()` |
 | `jgrapht-io/src/gexf.rs` | `GexfImporter::set_vertex_factory` | infallible | `()` |
+| `jgrapht-io/src/gexf.rs` | `GexfImporter::try_set_vertex_factory` | infallible | `()` |
 | `jgrapht-io/src/gml.rs` | `Parser::is_parameter` | infallible | `bool` |
 | `jgrapht-io/src/gml.rs` | `Parser::new` | unchecked constructor | `Self` |
 | `jgrapht-io/src/gml.rs` | `Parser::new` | unchecked constructor | `Self` |
@@ -1791,12 +1795,14 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht-io/src/gml.rs` | `Parser::set_vertex_attribute_provider` | infallible | `()` |
 | `jgrapht-io/src/gml.rs` | `Parser::set_vertex_factory` | infallible | `()` |
 | `jgrapht-io/src/gml.rs` | `Parser::set_vertex_graphics_attribute_provider` | infallible | `()` |
+| `jgrapht-io/src/gml.rs` | `Parser::try_set_vertex_factory` | infallible | `()` |
 | `jgrapht-io/src/graph6.rs` | `Graph6EventDrivenImporter::new` | unchecked constructor | `Self` |
 | `jgrapht-io/src/graph6.rs` | `Graph6Exporter::format` | state query | `Graph6Format` |
 | `jgrapht-io/src/graph6.rs` | `Graph6Exporter::new` | unchecked constructor | `Self` |
 | `jgrapht-io/src/graph6.rs` | `Graph6Exporter::set_format` | infallible | `()` |
 | `jgrapht-io/src/graph6.rs` | `Graph6Importer::new` | unchecked constructor | `Self` |
 | `jgrapht-io/src/graph6.rs` | `Graph6Importer::set_vertex_factory` | infallible | `()` |
+| `jgrapht-io/src/graph6.rs` | `Graph6Importer::try_set_vertex_factory` | infallible | `()` |
 | `jgrapht-io/src/graphml.rs` | `GraphMlEventDrivenImporter::new` | unchecked constructor | `Self` |
 | `jgrapht-io/src/graphml.rs` | `GraphMlEventDrivenImporter::schema_validation` | state query | `bool` |
 | `jgrapht-io/src/graphml.rs` | `GraphMlEventDrivenImporter::set_edge_weight_attribute_name` | infallible | `()` |
@@ -1811,6 +1817,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht-io/src/graphml.rs` | `GraphMlImporter::set_vertex_attribute_consumer` | infallible | `()` |
 | `jgrapht-io/src/graphml.rs` | `GraphMlImporter::set_vertex_factory` | infallible | `()` |
 | `jgrapht-io/src/graphml.rs` | `GraphMlImporter::set_vertex_with_attributes_factory` | infallible | `()` |
+| `jgrapht-io/src/graphml.rs` | `GraphMlImporter::try_set_vertex_factory` | infallible | `()` |
 | `jgrapht-io/src/graphml.rs` | `SimpleGraphMlEdgeListImporter::new` | unchecked constructor | `Self` |
 | `jgrapht-io/src/graphml.rs` | `SimpleGraphMlEdgeListImporter::set_edge_weight_attribute_name` | infallible | `()` |
 | `jgrapht-io/src/graphml.rs` | `SimpleGraphMlEdgeListImporter::set_schema_validation` | infallible | `()` |
@@ -1828,7 +1835,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht-io/src/traits.rs` | `GraphExporter::export_to_string` | Result | `Result<String>` |
 | `jgrapht-io/src/traits.rs` | `GraphImporter::import_graph` | Result | `Result<()>` |
 | `jgrapht-io/src/traits.rs` | `GraphImporter::import_str` | Result | `Result<()>` |
-| `jgrapht-io/src/tsplib.rs` | `TsplibImporter::compute_2d_geographical_distance` | infallible | `i32` |
+| `jgrapht-io/src/tsplib.rs` | `TsplibImporter::compute_2d_geographical_distance` | Result | `Result<i32>` |
 | `jgrapht-io/src/tsplib.rs` | `TsplibImporter::import_tour` | Result<Option> | `Result<Option<Vec<V>>>` |
 | `jgrapht-io/src/tsplib.rs` | `TsplibImporter::metadata` | Option | `Option<&TsplibMetadata<V>>` |
 | `jgrapht-io/src/tsplib.rs` | `TsplibImporter::new` | unchecked constructor | `Self` |

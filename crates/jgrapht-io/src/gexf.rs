@@ -310,7 +310,7 @@ fn add_attvalue<R: Read>(
     Ok(())
 }
 
-type VertexFactory<V> = Box<dyn FnMut(&str) -> V>;
+type VertexFactory<V> = Box<dyn FnMut(&str) -> std::result::Result<V, crate::CallbackError>>;
 type VertexAttributeConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
 type EdgeAttributeConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()>>;
 
@@ -341,7 +341,17 @@ impl<V, E> GexfImporter<V, E> {
     ///
     /// The factory may be called for an endpoint before its node declaration
     /// when edges precede nodes in the document.
-    pub fn set_vertex_factory(&mut self, factory: impl FnMut(&str) -> V + 'static) {
+    pub fn set_vertex_factory(&mut self, mut factory: impl FnMut(&str) -> V + 'static) {
+        self.vertex_factory = Some(Box::new(move |id| Ok(factory(id))));
+    }
+
+    /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
+    /// example when it parses the identifier. Its error stops the import and is returned as
+    /// [`IoError::Callback`] with the factory's error as the source.
+    pub fn try_set_vertex_factory(
+        &mut self,
+        factory: impl FnMut(&str) -> std::result::Result<V, crate::CallbackError> + 'static,
+    ) {
         self.vertex_factory = Some(Box::new(factory));
     }
     /// Sets the consumer notified for every vertex attribute.
@@ -461,7 +471,7 @@ where
         return Ok(vertex.clone());
     }
     let vertex = if let Some(factory) = factory {
-        factory(id)
+        factory(id).map_err(IoError::Callback)?
     } else {
         graph.new_vertex()?
     };
@@ -844,12 +854,7 @@ where
         }
         writeln!(output, "    </nodes>\n    <edges>")?;
         for edge in graph.edges() {
-            let source = graph
-                .edge_source(edge)
-                .ok_or_else(|| IoError::Export("edge has no source".into()))?;
-            let target = graph
-                .edge_target(edge)
-                .ok_or_else(|| IoError::Export("edge has no target".into()))?;
+            let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             write!(
                 output,
                 "      <edge id=\"{}\" source=\"{}\" target=\"{}\"",
@@ -858,8 +863,8 @@ where
                         "GEXF edge id provider is missing".into()
                     ))?
                 ),
-                escape(&ids[source]),
-                escape(&ids[target])
+                escape(ids.get(source).ok_or_else(crate::exporter::missing_endpoint)?),
+                escape(ids.get(target).ok_or_else(crate::exporter::missing_endpoint)?)
             )?;
             if self.parameter(GexfParameter::ExportEdgeTypes) {
                 write!(
@@ -876,7 +881,7 @@ where
                 write!(
                     output,
                     " weight=\"{}\"",
-                    format_f64(graph.edge_weight(edge).unwrap_or(1.0))
+                    format_f64(crate::exporter::edge_weight(graph, edge)?)
                 )?;
             }
             let attributes = self.base.edge_attributes(edge).unwrap_or_default();

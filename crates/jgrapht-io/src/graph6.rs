@@ -271,7 +271,7 @@ impl EventDrivenImporter for Graph6EventDrivenImporter {
 /// Vertices are obtained from the graph's supplier unless a custom factory is
 /// configured.
 pub struct Graph6Importer<V> {
-    vertex_factory: Option<Box<dyn FnMut(usize) -> V>>,
+    vertex_factory: Option<Box<dyn FnMut(usize) -> std::result::Result<V, crate::CallbackError>>>,
 }
 
 impl<V> Graph6Importer<V> {
@@ -286,7 +286,17 @@ impl<V> Graph6Importer<V> {
     ///
     /// The factory is called once for each vertex in increasing identifier
     /// order.
-    pub fn set_vertex_factory(&mut self, factory: impl FnMut(usize) -> V + 'static) {
+    pub fn set_vertex_factory(&mut self, mut factory: impl FnMut(usize) -> V + 'static) {
+        self.vertex_factory = Some(Box::new(move |id| Ok(factory(id))));
+    }
+
+    /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
+    /// example when it parses the identifier. Its error stops the import and is returned as
+    /// [`IoError::Callback`] with the factory's error as the source.
+    pub fn try_set_vertex_factory(
+        &mut self,
+        factory: impl FnMut(usize) -> std::result::Result<V, crate::CallbackError> + 'static,
+    ) {
         self.vertex_factory = Some(Box::new(factory));
     }
 }
@@ -310,7 +320,7 @@ where
             match event {
                 ImportEvent::Vertex(id) => {
                     let vertex = if let Some(factory) = factory.as_mut() {
-                        let vertex = factory(id);
+                        let vertex = factory(id).map_err(IoError::Callback)?;
                         if !graph.add_vertex(vertex.clone()) {
                             return Err(IoError::Import(format!(
                                 "vertex factory produced a duplicate for graph6 id {id}"

@@ -38,7 +38,7 @@ mod traits;
 pub mod tsplib;
 
 pub use attribute::{Attribute, AttributeMap, AttributeType, DefaultAttribute};
-pub use error::{IoError, Result};
+pub use error::{CallbackError, IoError, Result};
 pub use event::ImportEvent;
 pub use exporter::{BaseExporter, IntegerIdProvider};
 pub use traits::{EventDrivenImporter, GraphExporter, GraphImporter};

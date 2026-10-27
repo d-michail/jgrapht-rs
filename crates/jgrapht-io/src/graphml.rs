@@ -335,7 +335,7 @@ fn parse<R: Read>(input: R) -> Result<ParsedDocument> {
     })
 }
 
-type VertexFactory<V> = Box<dyn FnMut(&str, &AttributeMap) -> V>;
+type VertexFactory<V> = Box<dyn FnMut(&str, &AttributeMap) -> std::result::Result<V, crate::CallbackError>>;
 type EdgeFactory<E> = Box<dyn FnMut(&AttributeMap) -> E>;
 type GraphAttributeConsumer = Box<dyn FnMut(&str, &Attribute) -> Result<()>>;
 type VertexAttributeConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
@@ -380,6 +380,16 @@ impl<V, E> GraphMlImporter<V, E> {
     /// Without a custom factory, vertices are obtained from the destination
     /// graph's vertex supplier.
     pub fn set_vertex_factory(&mut self, mut factory: impl FnMut(&str) -> V + 'static) {
+        self.vertex_factory = Some(Box::new(move |id, _| Ok(factory(id))));
+    }
+
+    /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
+    /// example when it parses the identifier. Its error stops the import and is returned as
+    /// [`IoError::Callback`] with the factory's error as the source.
+    pub fn try_set_vertex_factory(
+        &mut self,
+        mut factory: impl FnMut(&str) -> std::result::Result<V, crate::CallbackError> + 'static,
+    ) {
         self.vertex_factory = Some(Box::new(move |id, _| factory(id)));
     }
     /// Sets a factory which creates vertices from their identifiers and attributes.
@@ -389,9 +399,9 @@ impl<V, E> GraphMlImporter<V, E> {
     /// destination graph's vertex supplier.
     pub fn set_vertex_with_attributes_factory(
         &mut self,
-        factory: impl FnMut(&str, &AttributeMap) -> V + 'static,
+        mut factory: impl FnMut(&str, &AttributeMap) -> V + 'static,
     ) {
-        self.vertex_factory = Some(Box::new(factory));
+        self.vertex_factory = Some(Box::new(move |id, attributes| Ok(factory(id, attributes))));
     }
     /// Sets the GraphML attribute name from which edge weights are read.
     pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) {
@@ -475,7 +485,7 @@ where
                 )));
             }
             let vertex = if let Some(factory) = self.vertex_factory.as_mut() {
-                let vertex = factory(&node.id, &node.attributes);
+                let vertex = factory(&node.id, &node.attributes).map_err(IoError::Callback)?;
                 if !graph.add_vertex(vertex.clone()) {
                     return Err(IoError::Import(
                         "GraphML vertex factory produced duplicate".into(),
@@ -497,7 +507,7 @@ where
             for id in [&edge.source, &edge.target] {
                 if !vertices.contains_key(id) {
                     let vertex = if let Some(factory) = self.vertex_factory.as_mut() {
-                        factory(id, &AttributeMap::new())
+                        factory(id, &AttributeMap::new()).map_err(IoError::Callback)?
                     } else {
                         graph.new_vertex()?
                     };
@@ -869,12 +879,7 @@ where
             )?;
         }
         for edge in graph.edges() {
-            let source = graph
-                .edge_source(edge)
-                .ok_or_else(|| IoError::Export("edge has no source".into()))?;
-            let target = graph
-                .edge_target(edge)
-                .ok_or_else(|| IoError::Export("edge has no target".into()))?;
+            let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             let attrs = self.base.edge_attributes(edge).unwrap_or_default();
             let mut data = Vec::new();
             if self.export_edge_labels {
@@ -886,7 +891,7 @@ where
                 ));
             }
             if self.export_edge_weights {
-                let weight = graph.edge_weight(edge).unwrap_or(1.0);
+                let weight = crate::exporter::edge_weight(graph, edge)?;
                 if weight != 1.0 {
                     data.push(("edge_weight_key".to_owned(), format_f64(weight)));
                 }
@@ -907,8 +912,8 @@ where
                 "edge",
                 &format!(
                     "{edge_id}source=\"{}\" target=\"{}\"",
-                    escape_xml(&ids[source]),
-                    escape_xml(&ids[target])
+                    escape_xml(ids.get(source).ok_or_else(crate::exporter::missing_endpoint)?),
+                    escape_xml(ids.get(target).ok_or_else(crate::exporter::missing_endpoint)?)
                 ),
                 &data,
             )?;

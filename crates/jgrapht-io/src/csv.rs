@@ -403,7 +403,7 @@ impl EventDrivenImporter for CsvEventDrivenImporter {
     }
 }
 
-type VertexFactory<V> = Box<dyn FnMut(&str) -> V>;
+type VertexFactory<V> = Box<dyn FnMut(&str) -> std::result::Result<V, crate::CallbackError>>;
 
 /// Imports delimiter-separated graph data into a mutable graph.
 ///
@@ -478,7 +478,17 @@ impl<V> CsvImporter<V> {
     /// The factory is called once for each distinct identifier. Without a
     /// custom factory, vertices are obtained from the destination graph's
     /// vertex supplier.
-    pub fn set_vertex_factory(&mut self, factory: impl FnMut(&str) -> V + 'static) {
+    pub fn set_vertex_factory(&mut self, mut factory: impl FnMut(&str) -> V + 'static) {
+        self.vertex_factory = Some(Box::new(move |id| Ok(factory(id))));
+    }
+
+    /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
+    /// example when it parses the identifier. Its error stops the import and is returned as
+    /// [`IoError::Callback`] with the factory's error as the source.
+    pub fn try_set_vertex_factory(
+        &mut self,
+        factory: impl FnMut(&str) -> std::result::Result<V, crate::CallbackError> + 'static,
+    ) {
         self.vertex_factory = Some(Box::new(factory));
     }
 }
@@ -495,7 +505,7 @@ where
             match event {
                 ImportEvent::Vertex(id) => {
                     let vertex = if let Some(factory) = factory.as_mut() {
-                        let vertex = factory(&id);
+                        let vertex = factory(&id).map_err(IoError::Callback)?;
                         if !graph.add_vertex(vertex.clone()) {
                             return Err(IoError::Import(format!(
                                 "vertex factory produced a duplicate for CSV id {id:?}"
@@ -624,16 +634,9 @@ where
         match self.format {
             CsvFormat::EdgeList => {
                 for edge in graph.edges() {
-                    let source = self.base.vertex_id(
-                        graph
-                            .edge_source(edge)
-                            .ok_or_else(|| IoError::Export("edge has no source".into()))?,
-                    )?;
-                    let target = self.base.vertex_id(
-                        graph
-                            .edge_target(edge)
-                            .ok_or_else(|| IoError::Export("edge has no target".into()))?,
-                    )?;
+                    let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
+                    let source = self.base.vertex_id(source)?;
+                    let target = self.base.vertex_id(target)?;
                     write!(
                         output,
                         "{}{}{}",
@@ -656,8 +659,7 @@ where
                     let id = self.base.vertex_id(vertex)?;
                     write!(output, "{}", escape_field(&id, self.delimiter))?;
                     for edge in graph.out_edges_of(vertex) {
-                        let source = graph.edge_source(edge).expect("graph edge source");
-                        let target = graph.edge_target(edge).expect("graph edge target");
+                        let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
                         let opposite = if source == vertex { target } else { source };
                         let id = self.base.vertex_id(opposite)?;
                         write!(
@@ -710,7 +712,7 @@ where
                                 write!(
                                     output,
                                     "{}",
-                                    format_f64(graph.edge_weight(edge).unwrap_or(1.0))
+                                    format_f64(crate::exporter::edge_weight(graph, edge)?)
                                 )?;
                             } else {
                                 output.write_all(b"1")?;
@@ -780,12 +782,7 @@ where
             writeln!(output, "Shape,{name},,{name}")?;
         }
         for edge in graph.edges() {
-            let source = graph
-                .edge_source(edge)
-                .ok_or_else(|| IoError::Export("edge has no source".into()))?;
-            let target = graph
-                .edge_target(edge)
-                .ok_or_else(|| IoError::Export("edge has no target".into()))?;
+            let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             let source = self.base.vertex_id(source)?;
             let target = self.base.vertex_id(target)?;
             writeln!(output, "Link,{source}-->{target},,,{source},{target}")?;

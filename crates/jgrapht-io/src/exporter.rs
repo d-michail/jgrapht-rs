@@ -235,6 +235,42 @@ impl<V, E> BaseExporter<V, E> {
 }
 
 /// Java's `Double.toString` differs from Rust for integral finite values.
+/// Both endpoints of `edge`.
+///
+/// A [`Graph`](jgrapht::Graph) must give every edge it yields a source and a target that are
+/// vertices of the graph (its integrity contract). A graph that does not makes the export fail with
+/// [`IoError::Export`] rather than panic or write a reference to a vertex that is not exported.
+pub(crate) fn edge_endpoints<'g, G: jgrapht::Graph>(
+    graph: &'g G,
+    edge: &G::Edge,
+) -> Result<(&'g G::Vertex, &'g G::Vertex)> {
+    match (graph.edge_source(edge), graph.edge_target(edge)) {
+        (Some(source), Some(target)) => {
+            if graph.contains_vertex(source) && graph.contains_vertex(target) {
+                Ok((source, target))
+            } else {
+                Err(missing_endpoint())
+            }
+        }
+        _ => Err(IoError::Export(
+            "an edge of the graph has no source or target vertex".into(),
+        )),
+    }
+}
+
+/// The weight of `edge`, which a graph must provide for every edge it yields; a graph that does not
+/// makes the export fail with [`IoError::Export`] rather than panic.
+pub(crate) fn edge_weight<G: jgrapht::Graph>(graph: &G, edge: &G::Edge) -> Result<f64> {
+    graph
+        .edge_weight(edge)
+        .ok_or_else(|| IoError::Export("an edge of the graph has no weight".into()))
+}
+
+/// The error for an edge endpoint that has no vertex id, because it is not a vertex of the graph.
+pub(crate) fn missing_endpoint() -> IoError {
+    IoError::Export("an edge endpoint is not a vertex of the graph".into())
+}
+
 pub(crate) fn format_f64(value: f64) -> String {
     if value.is_nan() {
         return "NaN".into();

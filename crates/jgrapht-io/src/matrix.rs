@@ -112,6 +112,11 @@ where
         for vertex in &vertices {
             ids.insert(vertex.clone(), self.base.vertex_id(vertex)?);
         }
+        let id = |vertex: &V| {
+            ids.get(vertex).ok_or_else(|| {
+                IoError::Export("an edge endpoint is not a vertex of the graph".into())
+            })
+        };
         match self.format {
             MatrixFormat::SparseAdjacency => {
                 for from in &vertices {
@@ -122,14 +127,13 @@ where
                     };
                     let mut counts = IndexMap::<V, usize>::new();
                     for edge in edges {
-                        let source = graph.edge_source(edge).expect("edge source");
-                        let target = graph.edge_target(edge).expect("edge target");
+                        let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
                         let to = if source == from { target } else { source };
                         let amount = if to == from { 2 } else { 1 };
                         *counts.entry(to.clone()).or_default() += amount;
                     }
                     for (to, count) in counts {
-                        writeln!(output, "{} {} {count}", ids[from], ids[&to])?;
+                        writeln!(output, "{} {} {count}", ids[from], id(&to)?)?;
                     }
                 }
             }
@@ -137,13 +141,12 @@ where
                 for from in &vertices {
                     let mut neighbors = Vec::new();
                     for edge in graph.edges_of(from) {
-                        let source = graph.edge_source(edge).unwrap();
-                        let target = graph.edge_target(edge).unwrap();
+                        let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
                         neighbors.push(if source == from { target } else { source });
                     }
                     writeln!(output, "{} {} {}", ids[from], ids[from], neighbors.len())?;
                     for to in neighbors {
-                        writeln!(output, "{} {} -1", ids[from], ids[to])?;
+                        writeln!(output, "{} {} -1", ids[from], id(to)?)?;
                     }
                 }
             }
@@ -151,8 +154,7 @@ where
                 for from in &vertices {
                     let mut neighbors = IndexSet::new();
                     for edge in graph.edges_of(from) {
-                        let source = graph.edge_source(edge).unwrap();
-                        let target = graph.edge_target(edge).unwrap();
+                        let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
                         neighbors.insert(if source == from {
                             target.clone()
                         } else {
@@ -166,7 +168,7 @@ where
                         for to in neighbors {
                             let value = -1.0
                                 / ((graph.degree_of(from) * graph.degree_of(&to)) as f64).sqrt();
-                            writeln!(output, "{} {} {}", ids[from], ids[&to], format_f64(value))?;
+                            writeln!(output, "{} {} {}", ids[from], id(&to)?, format_f64(value))?;
                         }
                     }
                 }

@@ -513,7 +513,7 @@ impl EventDrivenImporter for JsonEventDrivenImporter {
     }
 }
 
-type VertexFactory<V> = Box<dyn FnMut(&str, &AttributeMap) -> V>;
+type VertexFactory<V> = Box<dyn FnMut(&str, &AttributeMap) -> std::result::Result<V, crate::CallbackError>>;
 type EdgeFactory<E> = Box<dyn FnMut(&AttributeMap) -> E>;
 
 /// Imports a graph from JGraphT's JSON interchange format.
@@ -546,6 +546,16 @@ impl<V, E> JsonImporter<V, E> {
 
     /// Sets a factory which creates vertices from their JSON identifiers.
     pub fn set_vertex_factory(&mut self, mut factory: impl FnMut(&str) -> V + 'static) {
+        self.vertex_factory = Some(Box::new(move |id, _| Ok(factory(id))));
+    }
+
+    /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
+    /// example when it parses the identifier. Its error stops the import and is returned as
+    /// [`IoError::Callback`] with the factory's error as the source.
+    pub fn try_set_vertex_factory(
+        &mut self,
+        mut factory: impl FnMut(&str) -> std::result::Result<V, crate::CallbackError> + 'static,
+    ) {
         self.vertex_factory = Some(Box::new(move |id, _| factory(id)));
     }
 
@@ -554,9 +564,9 @@ impl<V, E> JsonImporter<V, E> {
     /// The supplied map contains every member of the node object except `id`.
     pub fn set_vertex_with_attributes_factory(
         &mut self,
-        factory: impl FnMut(&str, &AttributeMap) -> V + 'static,
+        mut factory: impl FnMut(&str, &AttributeMap) -> V + 'static,
     ) {
-        self.vertex_factory = Some(Box::new(factory));
+        self.vertex_factory = Some(Box::new(move |id, attributes| Ok(factory(id, attributes))));
     }
 
     /// Sets a factory which creates edges from their JSON attributes.
@@ -598,7 +608,7 @@ where
                         return Err(IoError::Import(format!("duplicate JSON node id {id:?}")));
                     }
                     let vertex = if let Some(factory) = vertex_factory.as_mut() {
-                        let vertex = factory(&id, &attributes);
+                        let vertex = factory(&id, &attributes).map_err(IoError::Callback)?;
                         if !graph.add_vertex(vertex.clone()) {
                             return Err(IoError::Import(format!(
                                 "vertex factory produced a duplicate for JSON id {id:?}"
@@ -781,8 +791,9 @@ where
             if index > 0 {
                 output.write_all(b",")?;
             }
-            let source = self.base.vertex_id(graph.edge_source(edge).unwrap())?;
-            let target = self.base.vertex_id(graph.edge_target(edge).unwrap())?;
+            let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
+            let source = self.base.vertex_id(source)?;
+            let target = self.base.vertex_id(target)?;
             output.write_all(b"{")?;
             if let Some(id) = self.base.edge_id(edge) {
                 write!(output, "\"id\":{},", quote(&id))?;

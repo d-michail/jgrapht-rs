@@ -60,6 +60,20 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 20: the I/O crate
+
+* Exporters return `IoError::Export` (never panic) when a graph yields an edge with no source or
+  target, an endpoint that is not one of its vertices, or no weight.
+* `TsplibImporter::compute_2d_geographical_distance(a, b)` returns `Result<i32>`; a node with fewer
+  than two coordinates is `IoError::Import`.
+* New `IoError::Callback(CallbackError)` and `jgrapht_io::CallbackError`
+  (`Box<dyn Error + Send + Sync>`): a user callback failed, and its error is the `source()`.
+* New `try_set_vertex_factory` on the CSV, DIMACS, graph6, GML, GEXF, DOT, GraphML and JSON
+  importers, taking a closure that returns `Result<V, CallbackError>` (for example when it parses the
+  identifier). `set_vertex_factory` is unchanged for factories that cannot fail.
+* `GraphImporter::import_graph` documents that a failed import may leave the elements read before
+  the error in the graph; import into a fresh graph for all-or-nothing behavior.
+
 ## Step 19: no infinity for "unreachable"
 
 | Before | After |

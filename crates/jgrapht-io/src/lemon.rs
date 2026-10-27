@@ -20,7 +20,7 @@
 #![deny(missing_docs)]
 
 use crate::exporter::format_f64;
-use crate::{BaseExporter, GraphExporter, IntegerIdProvider, IoError, Result};
+use crate::{BaseExporter, GraphExporter, IntegerIdProvider, Result};
 use jgrapht::Graph;
 use std::hash::Hash;
 use std::io::Write;
@@ -127,12 +127,7 @@ where
             if self.export_weights { "weight" } else { "-" }
         )?;
         for edge in graph.edges() {
-            let source = graph
-                .edge_source(edge)
-                .ok_or_else(|| IoError::Export("edge has no source".into()))?;
-            let target = graph
-                .edge_target(edge)
-                .ok_or_else(|| IoError::Export("edge has no target".into()))?;
+            let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             let source = self.base.vertex_id(source)?;
             let target = self.base.vertex_id(target)?;
             write!(
@@ -145,7 +140,7 @@ where
                 write!(
                     output,
                     "\t{}",
-                    format_f64(graph.edge_weight(edge).unwrap_or(1.0))
+                    format_f64(crate::exporter::edge_weight(graph, edge)?)
                 )?;
             }
             writeln!(output)?;

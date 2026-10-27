@@ -35,7 +35,15 @@ pub enum IoError {
     /// The graph cannot be represented by the requested output format.
     #[error("export failed: {0}")]
     Export(String),
+    /// A user-supplied callback (such as a vertex factory) failed; the callback's own error is the
+    /// [`source`](std::error::Error::source).
+    #[error("callback failed: {0}")]
+    Callback(#[source] CallbackError),
 }
+
+/// The error type of fallible user callbacks, such as the factories given to
+/// `try_set_vertex_factory`.
+pub type CallbackError = Box<dyn std::error::Error + Send + Sync>;
 
 /// Result type used by fallible `jgrapht-io` operations.
 pub type Result<T, E = IoError> = std::result::Result<T, E>;

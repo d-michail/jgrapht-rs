@@ -227,7 +227,7 @@ impl EventDrivenImporter for DimacsEventDrivenImporter {
 /// replaced with the configured default weight.
 pub struct DimacsImporter<V> {
     default_weight: f64,
-    vertex_factory: Option<Box<dyn FnMut(usize) -> V>>,
+    vertex_factory: Option<Box<dyn FnMut(usize) -> std::result::Result<V, crate::CallbackError>>>,
 }
 
 impl<V> Default for DimacsImporter<V> {
@@ -254,7 +254,17 @@ impl<V> DimacsImporter<V> {
     ///
     /// Without a custom factory, vertices are obtained from the destination
     /// graph's vertex supplier.
-    pub fn set_vertex_factory(&mut self, factory: impl FnMut(usize) -> V + 'static) {
+    pub fn set_vertex_factory(&mut self, mut factory: impl FnMut(usize) -> V + 'static) {
+        self.vertex_factory = Some(Box::new(move |id| Ok(factory(id))));
+    }
+
+    /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
+    /// example when it parses the identifier. Its error stops the import and is returned as
+    /// [`IoError::Callback`] with the factory's error as the source.
+    pub fn try_set_vertex_factory(
+        &mut self,
+        factory: impl FnMut(usize) -> std::result::Result<V, crate::CallbackError> + 'static,
+    ) {
         self.vertex_factory = Some(Box::new(factory));
     }
 }
@@ -276,7 +286,7 @@ where
                 ImportEvent::VertexCount(count) => {
                     for id in 1..=count {
                         let vertex = if let Some(factory) = factory.as_mut() {
-                            let vertex = factory(id);
+                            let vertex = factory(id).map_err(IoError::Callback)?;
                             if !graph.add_vertex(vertex.clone()) {
                                 return Err(IoError::Import(format!(
                                     "vertex factory produced duplicate vertex for DIMACS id {id}"
@@ -399,12 +409,7 @@ where
             graph.edge_count()
         )?;
         for edge in graph.edges() {
-            let source = graph
-                .edge_source(edge)
-                .ok_or_else(|| IoError::Export("edge has no source".into()))?;
-            let target = graph
-                .edge_target(edge)
-                .ok_or_else(|| IoError::Export("edge has no target".into()))?;
+            let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             let source = self.base.vertex_id(source)?;
             let target = self.base.vertex_id(target)?;
             write!(

@@ -26,8 +26,15 @@ pub trait GraphImporter<G: GraphMut> {
     ///
     /// # Errors
     ///
-    /// Returns an error when the document is malformed, the input cannot be read, or a requested
-    /// graph mutation is unsupported.
+    /// Returns an error when the document is malformed, the input cannot be read, a requested
+    /// graph mutation is unsupported, or a user callback (such as a vertex factory given to
+    /// `try_set_vertex_factory`) fails.
+    ///
+    /// # Partial results
+    ///
+    /// Importers add elements to `graph` as they read them and do not roll back. When this returns
+    /// an error, `graph` may already contain the vertices and edges read before the error. To get
+    /// all-or-nothing behavior, import into a fresh graph and discard it on error.
     fn import_graph<R: Read>(&mut self, graph: &mut G, input: R) -> Result<()>;
 
     /// Imports a graph from a UTF-8 string.

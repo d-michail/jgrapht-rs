@@ -405,7 +405,7 @@ impl Parser {
     }
 }
 
-type VertexFactory<V> = Box<dyn FnMut(&str) -> V>;
+type VertexFactory<V> = Box<dyn FnMut(&str) -> std::result::Result<V, crate::CallbackError>>;
 type VertexAttrsFactory<V> = Box<dyn FnMut(&str, &AttributeMap) -> V>;
 type EdgeAttrsFactory<E> = Box<dyn FnMut(&AttributeMap) -> E>;
 type GraphAttrConsumer = Box<dyn FnMut(&str, &Attribute) -> Result<()>>;
@@ -442,7 +442,18 @@ impl<V, E> DotImporter<V, E> {
     /// Sets a factory which creates vertices from DOT identifiers.
     ///
     /// Configuring this factory replaces any attributes-aware vertex factory.
-    pub fn set_vertex_factory(&mut self, f: impl FnMut(&str) -> V + 'static) {
+    pub fn set_vertex_factory(&mut self, mut f: impl FnMut(&str) -> V + 'static) {
+        self.vertex_factory = Some(Box::new(move |id| Ok(f(id))));
+        self.vertex_attrs_factory = None;
+    }
+
+    /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
+    /// example when it parses the identifier. Its error stops the import and is returned as
+    /// [`IoError::Callback`] with the factory's error as the source.
+    pub fn try_set_vertex_factory(
+        &mut self,
+        f: impl FnMut(&str) -> std::result::Result<V, crate::CallbackError> + 'static,
+    ) {
         self.vertex_factory = Some(Box::new(f));
         self.vertex_attrs_factory = None;
     }
@@ -525,7 +536,7 @@ where
             let vertex = if let Some(f) = self.vertex_attrs_factory.as_mut() {
                 f(id, attrs)
             } else if let Some(f) = self.vertex_factory.as_mut() {
-                f(id)
+                f(id).map_err(IoError::Callback)?
             } else {
                 graph.new_vertex()?
             };
@@ -840,18 +851,13 @@ where
     E: Clone + Eq + Hash,
     W: Write,
 {
-    let source = graph
-        .edge_source(edge)
-        .ok_or_else(|| IoError::Export("edge has no source".into()))?;
-    let target = graph
-        .edge_target(edge)
-        .ok_or_else(|| IoError::Export("edge has no target".into()))?;
+    let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
     writeln!(
         output,
         "{indent}{}{}{}{};",
-        ids[source],
+        ids.get(source).ok_or_else(crate::exporter::missing_endpoint)?,
         connector,
-        ids[target],
+        ids.get(target).ok_or_else(crate::exporter::missing_endpoint)?,
         base.edge_attributes(edge)
             .map(render_attributes)
             .unwrap_or_default()

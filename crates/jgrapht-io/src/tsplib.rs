@@ -195,8 +195,12 @@ impl<V> TsplibImporter<V> {
     ///
     /// The first two coordinates of each node are interpreted as geographical
     /// latitude and longitude in TSPLIB's degree-minute representation.
-    pub fn compute_2d_geographical_distance(a: &TsplibNode, b: &TsplibNode) -> i32 {
-        geographical_distance(a, b) as i32
+    ///
+    /// # Errors
+    ///
+    /// [`IoError::Import`] if a node has fewer than two coordinates.
+    pub fn compute_2d_geographical_distance(a: &TsplibNode, b: &TsplibNode) -> Result<i32> {
+        Ok(geographical_distance(a, b)? as i32)
     }
 }
 
@@ -416,7 +420,17 @@ fn nint(value: f64) -> f64 {
     (value + 0.5).floor()
 }
 
-fn geographical_distance(a: &TsplibNode, b: &TsplibNode) -> f64 {
+/// TSPLIB `GEO` distance; the first two coordinates of a node are its latitude and longitude.
+fn geographical_distance(a: &TsplibNode, b: &TsplibNode) -> Result<f64> {
+    let coordinates = |node: &TsplibNode| match node.coordinates[..] {
+        [latitude, longitude, ..] => Ok((latitude, longitude)),
+        _ => Err(IoError::Import(format!(
+            "GEO distance needs two coordinates per node, node {} has {}",
+            node.number,
+            node.coordinates.len()
+        ))),
+    };
+    let ((lat_a, lon_a), (lat_b, lon_b)) = (coordinates(a)?, coordinates(b)?);
     #[allow(clippy::approx_constant)] // Exact constant required by TSPLIB95.
     const PI: f64 = 3.141592;
     const RRR: f64 = 6378.388;
@@ -425,22 +439,22 @@ fn geographical_distance(a: &TsplibNode, b: &TsplibNode) -> f64 {
         let minutes = value - degrees;
         PI * (degrees + 5.0 * minutes / 3.0) / 180.0
     }
-    let (lat_a, lon_a) = (radians(a.coordinates[0]), radians(a.coordinates[1]));
-    let (lat_b, lon_b) = (radians(b.coordinates[0]), radians(b.coordinates[1]));
+    let (lat_a, lon_a) = (radians(lat_a), radians(lon_a));
+    let (lat_b, lon_b) = (radians(lat_b), radians(lon_b));
     let q1 = (lon_a - lon_b).cos();
     let q2 = (lat_a - lat_b).cos();
     let q3 = (lat_a + lat_b).cos();
-    (RRR * (0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)).acos() + 1.0).floor()
+    Ok((RRR * (0.5 * ((1.0 + q1) * q2 - (1.0 - q1) * q3)).acos() + 1.0).floor())
 }
 
-fn distance(kind: &str, a: &TsplibNode, b: &TsplibNode) -> f64 {
+fn distance(kind: &str, a: &TsplibNode, b: &TsplibNode) -> Result<f64> {
     let differences: Vec<_> = a
         .coordinates
         .iter()
         .zip(&b.coordinates)
         .map(|(a, b)| (a - b).abs())
         .collect();
-    match kind {
+    Ok(match kind {
         "EUC_2D" | "EUC_3D" => nint(
             differences
                 .iter()
@@ -456,7 +470,7 @@ fn distance(kind: &str, a: &TsplibNode, b: &TsplibNode) -> f64 {
             .sum::<f64>()
             .sqrt()
             .ceil(),
-        "GEO" => geographical_distance(a, b),
+        "GEO" => geographical_distance(a, b)?,
         "ATT" => {
             let raw = (differences.iter().map(|value| value * value).sum::<f64>() / 10.0).sqrt();
             let rounded = nint(raw);
@@ -466,8 +480,12 @@ fn distance(kind: &str, a: &TsplibNode, b: &TsplibNode) -> f64 {
                 rounded
             }
         }
-        _ => unreachable!(),
-    }
+        _ => {
+            return Err(IoError::Import(format!(
+                "Unsupported EDGE_WEIGHT_TYPE <{kind}>"
+            )));
+        }
+    })
 }
 
 fn number_mapping<V: Clone + Eq + Hash>(nodes: &IndexMap<V, TsplibNode>) -> HashMap<i32, V> {
@@ -502,7 +520,7 @@ fn distinct_neighbor_distances<G: IncidenceGraph>(graph: &G) -> Result<bool> {
     for vertex in graph.vertices() {
         let mut weights = HashSet::new();
         for edge in graph.edges_of(vertex) {
-            if !weights.insert(graph.edge_weight(edge).unwrap_or(1.0).to_bits()) {
+            if !weights.insert(crate::exporter::edge_weight(graph, edge)?.to_bits()) {
                 return Ok(false);
             }
         }
@@ -574,7 +592,7 @@ where
                                 })?;
                             graph.set_edge_weight(
                                 &edge,
-                                distance(kind, &parsed_nodes[source], &parsed_nodes[target]),
+                                distance(kind, &parsed_nodes[source], &parsed_nodes[target])?,
                             )?;
                         }
                     }
@@ -587,7 +605,7 @@ where
                             .ok_or_else(|| IoError::Import("graph rejected TSPLIB edge".into()))?;
                         graph.set_edge_weight(
                             &edge,
-                            distance(kind, &parsed_nodes[source], &parsed_nodes[target]),
+                            distance(kind, &parsed_nodes[source], &parsed_nodes[target])?,
                         )?;
                     }
                 }

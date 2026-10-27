@@ -226,7 +226,7 @@ type EdgeAttributeConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()
 /// the configured consumers; nested structures are represented as strings.
 /// Node identifiers are also reported as an `ID` vertex attribute.
 pub struct GmlImporter<V, E = DefaultEdge> {
-    vertex_factory: Option<Box<dyn FnMut(i64) -> V>>,
+    vertex_factory: Option<Box<dyn FnMut(i64) -> std::result::Result<V, crate::CallbackError>>>,
     vertex_attribute_consumer: Option<VertexAttributeConsumer<V>>,
     edge_attribute_consumer: Option<EdgeAttributeConsumer<E>>,
     edge: PhantomData<E>,
@@ -247,7 +247,17 @@ impl<V, E> GmlImporter<V, E> {
     ///
     /// The importer also invokes the factory for vertices referenced by edges
     /// but not explicitly declared by a `node` block.
-    pub fn set_vertex_factory(&mut self, factory: impl FnMut(i64) -> V + 'static) {
+    pub fn set_vertex_factory(&mut self, mut factory: impl FnMut(i64) -> V + 'static) {
+        self.vertex_factory = Some(Box::new(move |id| Ok(factory(id))));
+    }
+
+    /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
+    /// example when it parses the identifier. Its error stops the import and is returned as
+    /// [`IoError::Callback`] with the factory's error as the source.
+    pub fn try_set_vertex_factory(
+        &mut self,
+        factory: impl FnMut(i64) -> std::result::Result<V, crate::CallbackError> + 'static,
+    ) {
         self.vertex_factory = Some(Box::new(factory));
     }
 
@@ -328,7 +338,7 @@ where
                 return Err(IoError::Import(format!("duplicate GML node id {id}")));
             }
             let vertex = if let Some(factory) = self.vertex_factory.as_mut() {
-                let vertex = factory(id);
+                let vertex = factory(id).map_err(IoError::Callback)?;
                 if !graph.add_vertex(vertex.clone()) {
                     return Err(IoError::Import(
                         "GML vertex factory produced duplicate".into(),
@@ -364,7 +374,7 @@ where
                 continue;
             }
             let vertex = if let Some(factory) = self.vertex_factory.as_mut() {
-                let vertex = factory(id);
+                let vertex = factory(id).map_err(IoError::Callback)?;
                 if !graph.add_vertex(vertex.clone()) {
                     return Err(IoError::Import(
                         "GML vertex factory produced duplicate".into(),
@@ -586,12 +596,7 @@ where
             writeln!(output, "\t]")?;
         }
         for edge in graph.edges() {
-            let source = graph
-                .edge_source(edge)
-                .ok_or_else(|| IoError::Export("edge has no source".into()))?;
-            let target = graph
-                .edge_target(edge)
-                .ok_or_else(|| IoError::Export("edge has no target".into()))?;
+            let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             writeln!(output, "\tedge\n\t[")?;
             if let Some(id) = self.base.edge_id(edge) {
                 writeln!(output, "\t\tid {id}")?;
@@ -599,7 +604,8 @@ where
             writeln!(
                 output,
                 "\t\tsource {}\n\t\ttarget {}",
-                ids[source], ids[target]
+                ids.get(source).ok_or_else(crate::exporter::missing_endpoint)?,
+                ids.get(target).ok_or_else(crate::exporter::missing_endpoint)?
             )?;
             let edge_attributes = self.base.edge_attributes(edge).unwrap_or_default();
             if self.is_parameter(GmlParameter::ExportEdgeLabels) {
@@ -613,7 +619,7 @@ where
                 writeln!(
                     output,
                     "\t\tweight {}",
-                    format_f64(graph.edge_weight(edge).unwrap_or(1.0))
+                    format_f64(crate::exporter::edge_weight(graph, edge)?)
                 )?;
             }
             if self.is_parameter(GmlParameter::ExportCustomEdgeAttributes) {

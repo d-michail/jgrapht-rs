@@ -237,8 +237,22 @@ fn geographical_distance_cases() {
         let actual = TsplibImporter::<usize>::compute_2d_geographical_distance(
             &node(&first),
             &node(&second),
-        );
+        )
+        .unwrap();
         assert!((actual - expected).abs() <= 1, "{actual} != {expected}");
+    }
+}
+
+#[test]
+fn geographical_distance_needs_two_coordinates() {
+    let node = |coordinates: &[f64]| TsplibNode {
+        number: 7,
+        coordinates: coordinates.to_vec(),
+    };
+    for (a, b) in [(&[][..], &[1.0, 2.0][..]), (&[1.0][..], &[1.0, 2.0][..])] {
+        let error = TsplibImporter::<usize>::compute_2d_geographical_distance(&node(a), &node(b))
+            .unwrap_err();
+        assert!(matches!(error, IoError::Import(_)), "{error}");
     }
 }
 
