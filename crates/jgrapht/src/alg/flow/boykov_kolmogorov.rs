@@ -65,7 +65,7 @@ impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
                 "source is equal to sink",
             ],
         )?;
-        self.net.init(s, t);
+        self.net.init(s, t)?;
         self.data = vec![
             VertexData {
                 timestamp: 0,

@@ -4,9 +4,9 @@
 //! and a sorted vector. `UnsupportedOperationException` for graphs without incoming-edge support
 //! becomes `GraphError::Unsupported`.
 
-use jgrapht::graph::Graph;
 use jgrapht::GraphError;
 use jgrapht::graph::sparse::*;
+use jgrapht::graph::{Graph, GraphExt};
 
 fn sorted<'a>(it: impl Iterator<Item = &'a usize>) -> Vec<usize> {
     let mut v: Vec<usize> = it.copied().collect();
@@ -232,6 +232,12 @@ fn test_directed_lazy_no_incoming() {
         assert_eq!(g.out_degree_of(&v).unwrap(), row.2);
         assert_eq!(sorted(g.out_edges_of(&v).unwrap()), row.5);
     }
+    assert_eq!(
+        g.outgoing_of(&1)
+            .map(|(edge, target)| (*edge, *target))
+            .collect::<Vec<_>>(),
+        [(1, 0), (2, 4), (3, 5), (4, 6)]
+    );
     check_endpoints(&g, &DIRECTED);
     check_type(&g, true, false);
     check_directed_lookups(&g);
@@ -247,7 +253,10 @@ fn test_directed_lazy_no_incoming_fail() {
     .unwrap();
     for v in 0..8 {
         assert!(matches!(g.degree_of(&v), Err(GraphError::Unsupported(_))));
-        assert!(matches!(g.in_degree_of(&v), Err(GraphError::Unsupported(_))));
+        assert!(matches!(
+            g.in_degree_of(&v),
+            Err(GraphError::Unsupported(_))
+        ));
         assert!(matches!(g.edges_of(&v), Err(GraphError::Unsupported(_))));
         assert!(matches!(g.in_edges_of(&v), Err(GraphError::Unsupported(_))));
     }

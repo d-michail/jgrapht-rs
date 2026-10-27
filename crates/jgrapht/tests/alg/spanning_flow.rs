@@ -1,6 +1,6 @@
-use jgrapht::alg::stoer_wagner::StoerWagnerMinimumCut;
 use jgrapht::alg::flow::*;
 use jgrapht::alg::spanning::*;
+use jgrapht::alg::stoer_wagner::StoerWagnerMinimumCut;
 use jgrapht::generate::*;
 use jgrapht::*;
 use rand::{Rng, SeedableRng, rngs::StdRng};
@@ -95,9 +95,15 @@ fn clrs() -> DiGraph<u32> {
 fn max_flow_algorithms() {
     let g = clrs();
     let flows = [
-        EdmondsKarpMFImpl::new(&g).unwrap().maximum_flow(&0, &5).unwrap(),
+        EdmondsKarpMFImpl::new(&g)
+            .unwrap()
+            .maximum_flow(&0, &5)
+            .unwrap(),
         DinicMFImpl::new(&g).unwrap().maximum_flow(&0, &5).unwrap(),
-        PushRelabelMFImpl::new(&g).unwrap().maximum_flow(&0, &5).unwrap(),
+        PushRelabelMFImpl::new(&g)
+            .unwrap()
+            .maximum_flow(&0, &5)
+            .unwrap(),
     ];
     for f in flows {
         assert_eq!(f.value, 23.0);
@@ -129,6 +135,21 @@ fn max_flow_algorithms() {
             .sum::<f64>(),
         23.0
     );
+}
+
+#[test]
+fn flow_incidence_errors_are_returned() {
+    use jgrapht::graph::sparse::{IncomingEdgesSupport, SparseIntDirectedWeightedGraph};
+
+    let graph = SparseIntDirectedWeightedGraph::with_incoming_support(
+        2,
+        &[(0, 1, 1.0)],
+        IncomingEdgesSupport::NoIncomingEdges,
+    )
+    .unwrap();
+    let result = PushRelabelMFImpl::new(&graph).unwrap().maximum_flow(&0, &1);
+
+    assert!(matches!(result, Err(GraphError::Unsupported(_))));
 }
 
 #[test]
@@ -233,7 +254,8 @@ fn min_cost_flow_works() {
         .get_minimum_cost_flow(&problem)
         .unwrap();
     assert_eq!(
-        g.out_edges_of(&0).unwrap()
+        g.out_edges_of(&0)
+            .unwrap()
             .map(|edge| flow.flow(edge).unwrap())
             .sum::<f64>(),
         6.0

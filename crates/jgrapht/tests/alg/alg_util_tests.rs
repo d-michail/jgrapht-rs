@@ -177,6 +177,7 @@ mod union_find_test {
 
 mod neighbor_cache_test {
     use super::*;
+    use jgrapht::graph::sparse::{IncomingEdgesSupport, SparseIntDirectedGraph};
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -291,6 +292,27 @@ mod neighbor_cache_test {
 
         g.remove_vertex(&s(V2));
         assert_eq!(succs(&g, V1).len(), 0);
+    }
+
+    #[test]
+    fn unsupported_incidence_is_returned_as_an_error() {
+        let graph = SparseIntDirectedGraph::with_incoming_support(
+            2,
+            &[(0, 1)],
+            IncomingEdgesSupport::NoIncomingEdges,
+        )
+        .unwrap();
+        let mut cache = NeighborCache::new();
+
+        assert_eq!(cache.successors_of(&graph, &0).unwrap().list(), [1]);
+        assert!(matches!(
+            cache.predecessors_of(&graph, &1),
+            Err(GraphError::Unsupported(_))
+        ));
+        assert!(matches!(
+            cache.neighbors_of(&graph, &0),
+            Err(GraphError::Unsupported(_))
+        ));
     }
 
     fn abcd() -> (Listenable<UGraph<String>>, Cache) {

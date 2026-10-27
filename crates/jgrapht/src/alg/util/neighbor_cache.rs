@@ -107,32 +107,38 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
 
     pub fn predecessors_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
         Self::check(g, v)?;
-        Ok(self.predecessors.entry(v.clone()).or_insert_with(|| {
-            Neighbors::from_list(
-                g.in_edges_of(v).unwrap()
-                    .filter_map(|e| g.opposite_vertex(e, v).cloned())
-                    .collect::<Vec<_>>(),
-            )
-        }))
+        if !self.predecessors.contains_key(v) {
+            let neighbors = Neighbors::from_list(
+                g.in_edges_of(v)?
+                    .filter_map(|e| g.opposite_vertex(e, v).cloned()),
+            );
+            self.predecessors.insert(v.clone(), neighbors);
+        }
+        Ok(&self.predecessors[v])
     }
 
     pub fn successors_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
         Self::check(g, v)?;
-        Ok(self.successors.entry(v.clone()).or_insert_with(|| {
-            Neighbors::from_list(
-                g.out_edges_of(v).unwrap()
-                    .filter_map(|e| g.opposite_vertex(e, v).cloned())
-                    .collect::<Vec<_>>(),
-            )
-        }))
+        if !self.successors.contains_key(v) {
+            let neighbors = Neighbors::from_list(
+                g.out_edges_of(v)?
+                    .filter_map(|e| g.opposite_vertex(e, v).cloned()),
+            );
+            self.successors.insert(v.clone(), neighbors);
+        }
+        Ok(&self.successors[v])
     }
 
     pub fn neighbors_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
         Self::check(g, v)?;
-        Ok(self
-            .neighbors
-            .entry(v.clone())
-            .or_insert_with(|| Neighbors::from_list(g.neighbor_list_of(v))))
+        if !self.neighbors.contains_key(v) {
+            let neighbors = Neighbors::from_list(
+                g.edges_of(v)?
+                    .filter_map(|e| g.opposite_vertex(e, v).cloned()),
+            );
+            self.neighbors.insert(v.clone(), neighbors);
+        }
+        Ok(&self.neighbors[v])
     }
 
     /// Neighbours repeated once per parallel edge.

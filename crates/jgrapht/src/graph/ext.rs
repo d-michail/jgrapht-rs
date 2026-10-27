@@ -23,7 +23,8 @@ pub trait GraphExt: Graph {
 
     /// Adjacent vertices, ignoring direction. Parallel edges yield repeats.
     fn neighbors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.edges_of(v).unwrap()
+        self.edges_of(v)
+            .unwrap()
             .filter_map(move |e| self.opposite_vertex(e, v))
     }
 
@@ -33,10 +34,9 @@ pub trait GraphExt: Graph {
         &'a self,
         v: &'a Self::Vertex,
     ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)> {
-        let directed = self.graph_type().directed;
-        self.edges_of(v).unwrap().filter_map(move |e| {
+        self.out_edges_of(v).unwrap().filter_map(move |e| {
             let (s, t) = self.edge_endpoints(e)?;
-            if directed {
+            if self.is_edge_directed(e) {
                 (s == v).then_some((e, t))
             } else {
                 Some((e, if s == v { t } else { s }))
@@ -49,10 +49,9 @@ pub trait GraphExt: Graph {
         &'a self,
         v: &'a Self::Vertex,
     ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)> {
-        let directed = self.graph_type().directed;
-        self.edges_of(v).unwrap().filter_map(move |e| {
+        self.in_edges_of(v).unwrap().filter_map(move |e| {
             let (s, t) = self.edge_endpoints(e)?;
-            if directed {
+            if self.is_edge_directed(e) {
                 (t == v).then_some((e, s))
             } else {
                 Some((e, if s == v { t } else { s }))
@@ -97,7 +96,8 @@ impl<G: Graph + ?Sized> GraphExt for G {}
 
 pub trait DirectedExt: DirectedGraph {
     fn successors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.out_edges_of(v).unwrap()
+        self.out_edges_of(v)
+            .unwrap()
             .filter_map(move |e| self.edge_target(e))
     }
     fn successor_list_of(&self, v: &Self::Vertex) -> Vec<Self::Vertex> {
@@ -149,7 +149,9 @@ pub trait DirectedExt: DirectedGraph {
         &'a self,
         v: &'a Self::Vertex,
     ) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.in_edges_of(v).unwrap().filter_map(move |e| self.edge_source(e))
+        self.in_edges_of(v)
+            .unwrap()
+            .filter_map(move |e| self.edge_source(e))
     }
 }
 impl<G: DirectedGraph + ?Sized> DirectedExt for G {}

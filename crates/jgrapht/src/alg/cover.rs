@@ -234,7 +234,7 @@ fn ratio_cover<G: Graph>(
     let mut ids: HashMap<&G::Vertex, usize> = HashMap::new();
     let mut rv: Vec<RatioVertex<G::Vertex>> = Vec::new();
     for v in g.vertices() {
-        if g.degree_of(v).unwrap() > 0 {
+        if g.degree_of(v)? > 0 {
             ids.insert(v, rv.len());
             rv.push(RatioVertex {
                 v: v.clone(),
@@ -530,7 +530,7 @@ impl<G: Graph> VertexCoverAlgorithm<G::Vertex> for RecursiveExactVcImpl<'_, G> {
         let mut vertices: Vec<G::Vertex> = g.vertices().cloned().collect();
         let mut keyed: Vec<(f64, G::Vertex)> = Vec::new();
         for v in vertices.drain(..) {
-            let ratio = weight_of(&self.weights, &v)? / g.degree_of(&v).unwrap() as f64;
+            let ratio = weight_of(&self.weights, &v)? / g.degree_of(&v)? as f64;
             keyed.push((ratio, v));
         }
         keyed.sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -539,18 +539,18 @@ impl<G: Graph> VertexCoverAlgorithm<G::Vertex> for RecursiveExactVcImpl<'_, G> {
             vertices.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let neighbors: Vec<Vec<usize>> = vertices
             .iter()
-            .map(|v| {
+            .map(|v| -> Result<Vec<usize>> {
                 let mut seen = indexmap::IndexSet::new();
-                for e in g.edges_of(v).unwrap() {
+                for e in g.edges_of(v)? {
                     if let Some(w) = g.opposite_vertex(e, v) {
                         if w != v {
                             seen.insert(index[w]);
                         }
                     }
                 }
-                seen.into_iter().collect()
+                Ok(seen.into_iter().collect())
             })
-            .collect();
+            .collect::<Result<_>>()?;
         let weight: Vec<f64> = vertices
             .iter()
             .map(|v| weight_of(&self.weights, v))

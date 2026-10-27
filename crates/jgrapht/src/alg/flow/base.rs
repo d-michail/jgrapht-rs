@@ -156,7 +156,7 @@ impl<'g, G: Graph> FlowNet<'g, G> {
     }
 
     /// `init` + `buildInternal`: rebuilds the residual network for a new computation.
-    pub fn init(&mut self, source: usize, sink: usize) {
+    pub fn init(&mut self, source: usize, sink: usize) -> Result<()> {
         let n = self.vs.len();
         self.arcs = (0..self.es.len())
             .map(|_| Arc {
@@ -171,7 +171,7 @@ impl<'g, G: Graph> FlowNet<'g, G> {
         self.edge_arc = (0..self.es.len()).collect();
         self.outgoing = vec![Vec::new(); n];
         self.excess = vec![0.0; n];
-        self.build_internal();
+        self.build_internal()?;
         self.source = source;
         self.sink = sink;
         self.max_flow_value = 0.0;
@@ -179,13 +179,14 @@ impl<'g, G: Graph> FlowNet<'g, G> {
         self.source_partition = None;
         self.sink_partition = None;
         self.cut_edges = None;
+        Ok(())
     }
 
-    fn build_internal(&mut self) {
+    fn build_internal(&mut self) -> Result<()> {
         let g = self.graph;
         if self.directed {
             for u in 0..self.vs.len() {
-                for e in g.out_edges_of(self.vs[u]).unwrap() {
+                for e in g.out_edges_of(self.vs[u])? {
                     let ei = self.eindex[e];
                     let v = self.vindex[g.edge_target(e).unwrap()];
                     let forward = self.create_edge(u, v, ei);
@@ -207,6 +208,7 @@ impl<'g, G: Graph> FlowNet<'g, G> {
                 self.outgoing[v].push(backward);
             }
         }
+        Ok(())
     }
 
     fn create_edge(&mut self, source: usize, target: usize, e: usize) -> usize {

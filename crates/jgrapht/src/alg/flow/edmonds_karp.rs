@@ -48,7 +48,7 @@ impl<'g, G: Graph> EdmondsKarpMFImpl<'g, G> {
                 "source is equal to sink",
             ],
         )?;
-        self.net.init(s, t);
+        self.net.init(s, t)?;
         loop {
             self.breadth_first_search();
             if !self.visited[t] {

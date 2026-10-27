@@ -91,7 +91,7 @@ impl<'g, G: Graph> PushRelabelMFImpl<'g, G> {
                 "source is equal to sink",
             ],
         )?;
-        self.net.init(s, t);
+        self.net.init(s, t)?;
         self.count_height = vec![0; 2 * self.n + 1];
         self.initialize(s, t);
         while let Some(v) = self.active_vertices.pop_front() {
@@ -100,7 +100,7 @@ impl<'g, G: Graph> PushRelabelMFImpl<'g, G> {
         }
         let g = self.net.graph;
         let mut value = 0.0;
-        for e in g.edges_of(self.net.vs[t]).unwrap() {
+        for e in g.edges_of(self.net.vs[t])? {
             let a = self.net.arc_of_edge(e);
             let arc = &self.net.arcs[a];
             value += if self.net.directed {

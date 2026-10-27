@@ -43,7 +43,7 @@ impl<'g, G: Graph> DinicMFImpl<'g, G> {
                 "Source is equal to sink!",
             ],
         )?;
-        self.net.init(s, t);
+        self.net.init(s, t)?;
         self.dinic();
         Ok(self.net.max_flow_value)
     }

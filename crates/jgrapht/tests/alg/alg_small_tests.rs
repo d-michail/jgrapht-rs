@@ -19,6 +19,7 @@ use std::collections::HashSet;
 
 mod line_graph_converter_test {
     use super::*;
+    use jgrapht::graph::sparse::{IncomingEdgesSupport, SparseIntDirectedGraph};
 
     #[test]
     fn test_empty_graph() {
@@ -117,6 +118,22 @@ mod line_graph_converter_test {
     }
 
     #[test]
+    fn unsupported_incoming_edges_are_returned_as_an_error() {
+        let graph = SparseIntDirectedGraph::with_incoming_support(
+            2,
+            &[(0, 1)],
+            IncomingEdgesSupport::NoIncomingEdges,
+        )
+        .unwrap();
+        let mut target = DiGraph::<usize>::simple();
+
+        assert!(matches!(
+            line_graph_into(&graph, &mut target),
+            Err(GraphError::Unsupported(_))
+        ));
+    }
+
+    #[test]
     fn self_loop_test_undirected() {
         let mut g = UGraph::<i32>::pseudo();
         g.add_vertices([1, 2, 3]);
@@ -172,19 +189,35 @@ mod chordal_graph_independent_set_finder_test {
     #[test]
     fn test_get_maximum_independent_set_1() {
         let graph = UGraph::<i32>::simple();
-        assert_eq!(ChordalGraphIndependentSetFinder::new(&graph).independent_set().unwrap().len(), 0);
+        assert_eq!(
+            ChordalGraphIndependentSetFinder::new(&graph)
+                .independent_set()
+                .unwrap()
+                .len(),
+            0
+        );
     }
 
     #[test]
     fn test_get_maximum_independent_set_2() {
         let graph = undirected(&[&[1, 2], &[1, 3], &[1, 4], &[2, 3], &[2, 4], &[3, 4]]);
-        assert_eq!(ChordalGraphIndependentSetFinder::new(&graph).independent_set().unwrap().len(), 1);
+        assert_eq!(
+            ChordalGraphIndependentSetFinder::new(&graph)
+                .independent_set()
+                .unwrap()
+                .len(),
+            1
+        );
     }
 
     #[test]
     fn test_get_maximum_independent_set_3() {
         let graph = undirected(&[&[1, 2], &[1, 3], &[2, 4], &[3, 4]]);
-        assert!(ChordalGraphIndependentSetFinder::new(&graph).independent_set().is_none());
+        assert!(
+            ChordalGraphIndependentSetFinder::new(&graph)
+                .independent_set()
+                .is_none()
+        );
     }
 
     #[test]
