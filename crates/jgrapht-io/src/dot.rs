@@ -1,19 +1,19 @@
 //! Graphviz DOT import and export.
 
 use crate::{
-    AttributeMap, AttributeType, BaseExporter, GraphExporter, GraphImporter, IntegerIdProvider,
-    IoError, Result,
+    Attribute, AttributeMap, AttributeType, BaseExporter, GraphExporter, GraphImporter,
+    IntegerIdProvider, IoError, Result,
 };
-use indexmap::IndexSet;
-use jgrapht::{Graph, GraphMut};
-use std::collections::HashMap;
+use indexmap::{IndexMap, IndexSet};
+use jgrapht::{DefaultEdge, Graph, GraphMut};
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::io::{Read, Write};
 
 #[derive(Debug, Clone, PartialEq)]
 enum Token {
     Id(String),
-    Arrow(bool),
+    Arrow,
     LBrace,
     RBrace,
     LBracket,
@@ -29,7 +29,7 @@ fn lex(input: &str) -> Result<Vec<Token>> {
     let mut i = 0;
     while i < bytes.len() {
         match bytes[i] {
-            byte if byte.is_ascii_whitespace() => i += 1,
+            b if b.is_ascii_whitespace() => i += 1,
             b'#' => {
                 while i < bytes.len() && bytes[i] != b'\n' {
                     i += 1;
@@ -80,18 +80,18 @@ fn lex(input: &str) -> Result<Vec<Token>> {
                 i += 1;
             }
             b'-' if matches!(bytes.get(i + 1), Some(b'-' | b'>')) => {
-                tokens.push(Token::Arrow(bytes[i + 1] == b'>'));
+                tokens.push(Token::Arrow);
                 i += 2;
             }
             b'"' => {
                 i += 1;
-                let mut value = String::new();
+                let mut value = Vec::new();
                 while i < bytes.len() && bytes[i] != b'"' {
-                    if bytes[i] == b'\\' && i + 1 < bytes.len() && bytes[i + 1] == b'"' {
-                        value.push('"');
+                    if bytes[i] == b'\\' && bytes.get(i + 1) == Some(&b'"') {
+                        value.push(b'"');
                         i += 2;
                     } else {
-                        value.push(bytes[i] as char);
+                        value.push(bytes[i]);
                         i += 1;
                     }
                 }
@@ -99,38 +99,41 @@ fn lex(input: &str) -> Result<Vec<Token>> {
                     return Err(IoError::Import("unterminated DOT string".into()));
                 }
                 i += 1;
-                tokens.push(Token::Id(value));
+                tokens.push(Token::Id(String::from_utf8(value).map_err(|e| {
+                    IoError::Import(format!("invalid UTF-8 in DOT string: {e}"))
+                })?));
             }
             b'<' => {
                 let start = i;
                 let mut depth = 0isize;
+                let mut quoted = false;
                 while i < bytes.len() {
-                    if bytes[i] == b'<' {
-                        depth += 1;
-                    } else if bytes[i] == b'>' {
-                        depth -= 1;
-                        if depth == 0 {
-                            i += 1;
-                            break;
+                    match bytes[i] {
+                        b'"' => quoted = !quoted,
+                        b'<' if !quoted => depth += 1,
+                        b'>' if !quoted => {
+                            depth -= 1;
+                            if depth == 0 {
+                                i += 1;
+                                break;
+                            }
                         }
+                        _ => {}
                     }
                     i += 1;
                 }
-                if depth != 0 {
+                if depth != 0 || quoted {
                     return Err(IoError::Import("unterminated DOT HTML identifier".into()));
                 }
-                tokens.push(Token::Id(
-                    String::from_utf8_lossy(&bytes[start..i]).into_owned(),
-                ));
+                let raw = std::str::from_utf8(&bytes[start..i])
+                    .map_err(|e| IoError::Import(format!("invalid DOT UTF-8: {e}")))?;
+                tokens.push(Token::Id(raw[1..raw.len() - 1].to_owned()));
             }
             _ => {
                 let start = i;
                 while i < bytes.len() {
-                    let edge_operator =
-                        bytes[i] == b'-' && matches!(bytes.get(i + 1), Some(b'-' | b'>'));
-                    if bytes[i].is_ascii_whitespace()
-                        || b"{}[]=:;,".contains(&bytes[i])
-                        || edge_operator
+                    let edge = bytes[i] == b'-' && matches!(bytes.get(i + 1), Some(b'-' | b'>'));
+                    if bytes[i].is_ascii_whitespace() || b"{}[]=:;,<>\"".contains(&bytes[i]) || edge
                     {
                         break;
                     }
@@ -139,21 +142,33 @@ fn lex(input: &str) -> Result<Vec<Token>> {
                 if start == i {
                     return Err(IoError::Import(format!("unexpected DOT byte {}", bytes[i])));
                 }
-                tokens.push(Token::Id(
-                    String::from_utf8_lossy(&bytes[start..i]).into_owned(),
-                ));
+                let value = std::str::from_utf8(&bytes[start..i])
+                    .map_err(|e| IoError::Import(format!("invalid DOT UTF-8: {e}")))?;
+                if !is_valid_unquoted_id(value) {
+                    return Err(IoError::Import(format!("invalid DOT identifier {value:?}")));
+                }
+                tokens.push(Token::Id(value.to_owned()));
             }
         }
     }
     Ok(tokens)
 }
 
+#[derive(Debug, Clone, Default)]
+struct Scope {
+    graph: AttributeMap,
+    node: AttributeMap,
+    edge: AttributeMap,
+}
+
 #[derive(Debug)]
 struct Parsed {
     directed: bool,
     strict: bool,
-    nodes: IndexSet<String>,
-    edges: Vec<(String, String)>,
+    graph_id: Option<String>,
+    graph_attributes: AttributeMap,
+    nodes: IndexMap<String, AttributeMap>,
+    edges: Vec<(String, String, AttributeMap)>,
 }
 
 struct Parser {
@@ -161,50 +176,56 @@ struct Parser {
     position: usize,
     directed: bool,
     strict: bool,
-    nodes: IndexSet<String>,
-    edges: Vec<(String, String)>,
+    graph_id: Option<String>,
+    graph_attributes: AttributeMap,
+    nodes: IndexMap<String, AttributeMap>,
+    edges: Vec<(String, String, AttributeMap)>,
 }
 
 impl Parser {
     fn parse(input: &str) -> Result<Parsed> {
-        let mut parser = Self {
+        let mut p = Self {
             tokens: lex(input)?,
             position: 0,
             directed: false,
             strict: false,
-            nodes: IndexSet::new(),
+            graph_id: None,
+            graph_attributes: AttributeMap::new(),
+            nodes: IndexMap::new(),
             edges: Vec::new(),
         };
-        if parser.keyword("strict") {
-            parser.strict = true;
+        if p.keyword("strict") {
+            p.strict = true;
         }
-        if parser.keyword("digraph") {
-            parser.directed = true;
-        } else if !parser.keyword("graph") {
+        if p.keyword("digraph") {
+            p.directed = true;
+        } else if !p.keyword("graph") {
             return Err(IoError::Import(
                 "DOT input must start with graph or digraph".into(),
             ));
         }
-        if matches!(parser.peek(), Some(Token::Id(_))) {
-            parser.position += 1;
+        if matches!(p.peek(), Some(Token::Id(_))) {
+            p.graph_id = Some(p.id()?);
         }
-        parser.expect(Token::LBrace)?;
-        parser.block()?;
-        if parser.position != parser.tokens.len() {
+        p.expect(Token::LBrace)?;
+        p.block(Scope::default(), true)?;
+        if p.position != p.tokens.len() {
             return Err(IoError::Import("trailing DOT input".into()));
         }
         Ok(Parsed {
-            directed: parser.directed,
-            strict: parser.strict,
-            nodes: parser.nodes,
-            edges: parser.edges,
+            directed: p.directed,
+            strict: p.strict,
+            graph_id: p.graph_id,
+            graph_attributes: p.graph_attributes,
+            nodes: p.nodes,
+            edges: p.edges,
         })
     }
     fn peek(&self) -> Option<&Token> {
         self.tokens.get(self.position)
     }
-    fn keyword(&mut self, keyword: &str) -> bool {
-        if matches!(self.peek(), Some(Token::Id(value)) if value.eq_ignore_ascii_case(keyword)) {
+    fn keyword(&mut self, word: &str) -> bool {
+        if matches!(self.peek(), Some(Token::Id(v)) if v.eq_ignore_ascii_case(word)) {
             self.position += 1;
             true
         } else {
@@ -224,9 +245,9 @@ impl Parser {
     }
     fn id(&mut self) -> Result<String> {
         match self.tokens.get(self.position).cloned() {
-            Some(Token::Id(value)) => {
+            Some(Token::Id(v)) => {
                 self.position += 1;
-                Ok(value)
+                Ok(v)
             }
             _ => Err(IoError::Import(format!(
                 "DOT token {}: expected identifier",
@@ -234,41 +255,50 @@ impl Parser {
             ))),
         }
     }
-    fn attributes(&mut self) -> Result<()> {
+    fn attributes(&mut self) -> Result<AttributeMap> {
+        let mut attrs = AttributeMap::new();
         while self.peek() == Some(&Token::LBracket) {
             self.position += 1;
-            let mut depth = 1;
-            while depth > 0 {
-                match self.tokens.get(self.position) {
-                    Some(Token::LBracket) => depth += 1,
-                    Some(Token::RBracket) => depth -= 1,
-                    None => return Err(IoError::Import("unterminated DOT attribute list".into())),
-                    _ => {}
+            while self.peek() != Some(&Token::RBracket) {
+                if self.peek().is_none() {
+                    return Err(IoError::Import("unterminated DOT attribute list".into()));
                 }
-                self.position += 1;
+                if self.peek() == Some(&Token::Separator) {
+                    self.position += 1;
+                    continue;
+                }
+                let key = self.id()?;
+                self.expect(Token::Equal)?;
+                attrs.insert(key, Attribute::from(self.id()?));
+                if self.peek() == Some(&Token::Separator) {
+                    self.position += 1;
+                }
             }
+            self.position += 1;
         }
-        Ok(())
+        Ok(attrs)
     }
-    fn endpoint(&mut self) -> Result<Vec<String>> {
+    fn add_node(&mut self, id: String, defaults: &AttributeMap) {
+        self.nodes.entry(id).or_insert_with(|| defaults.clone());
+    }
+    fn endpoint(&mut self, scope: &Scope) -> Result<IndexSet<String>> {
         if self.keyword("subgraph") && matches!(self.peek(), Some(Token::Id(_))) {
             self.position += 1;
         }
         if self.peek() == Some(&Token::LBrace) {
             self.position += 1;
-            let before = self.nodes.len();
-            self.block()?;
-            return Ok(self.nodes.iter().skip(before).cloned().collect());
+            return self.block(scope.clone(), false);
         }
         let id = self.id()?;
         while self.peek() == Some(&Token::Colon) {
             self.position += 1;
             self.id()?;
         }
-        self.nodes.insert(id.clone());
-        Ok(vec![id])
+        self.add_node(id.clone(), &scope.node);
+        Ok(IndexSet::from([id]))
     }
-    fn block(&mut self) -> Result<()> {
+    fn block(&mut self, mut scope: Scope, top: bool) -> Result<IndexSet<String>> {
+        let mut members = IndexSet::new();
         while self.peek() != Some(&Token::RBrace) {
             if self.peek().is_none() {
                 return Err(IoError::Import("unterminated DOT graph".into()));
@@ -277,69 +307,157 @@ impl Parser {
                 self.position += 1;
                 continue;
             }
-            if matches!(self.peek(), Some(Token::Id(value)) if ["graph", "node", "edge"].iter().any(|keyword| value.eq_ignore_ascii_case(keyword)))
+            let kind = match self.peek() {
+                Some(Token::Id(v)) if v.eq_ignore_ascii_case("graph") => Some(0),
+                Some(Token::Id(v)) if v.eq_ignore_ascii_case("node") => Some(1),
+                Some(Token::Id(v)) if v.eq_ignore_ascii_case("edge") => Some(2),
+                _ => None,
+            };
+            if let Some(kind) = kind
                 && self.tokens.get(self.position + 1) == Some(&Token::LBracket)
             {
                 self.position += 1;
-                self.attributes()?;
+                let attrs = self.attributes()?;
+                match kind {
+                    0 => {
+                        scope.graph.extend(attrs.clone());
+                        if top {
+                            self.graph_attributes.extend(attrs);
+                        }
+                    }
+                    1 => scope.node.extend(attrs),
+                    _ => scope.edge.extend(attrs),
+                }
                 continue;
             }
-            let mut left = self.endpoint()?;
+            let left = self.endpoint(&scope)?;
+            members.extend(left.iter().cloned());
             if self.peek() == Some(&Token::Equal) {
-                self.position += 1;
-                self.id()?;
-                continue;
-            }
-            while let Some(Token::Arrow(directed)) = self.peek().cloned() {
-                if directed != self.directed {
-                    return Err(IoError::Import(
-                        "DOT edge operator does not match graph type".into(),
-                    ));
+                if left.len() != 1 {
+                    return Err(IoError::Import("invalid DOT graph attribute".into()));
                 }
                 self.position += 1;
-                let right = self.endpoint()?;
-                for source in &left {
-                    for target in &right {
-                        self.edges.push((source.clone(), target.clone()));
+                let value = self.id()?;
+                let key = left.first().expect("single endpoint").clone();
+                self.nodes.shift_remove(&key);
+                members.shift_remove(&key);
+                scope
+                    .graph
+                    .insert(key.clone(), Attribute::from(value.clone()));
+                if top {
+                    self.graph_attributes.insert(key, Attribute::from(value));
+                }
+                continue;
+            }
+            let mut groups = Vec::new();
+            let mut previous = left;
+            while self.peek() == Some(&Token::Arrow) {
+                self.position += 1;
+                let right = self.endpoint(&scope)?;
+                members.extend(right.iter().cloned());
+                groups.push((previous, right.clone()));
+                previous = right;
+            }
+            let attrs = self.attributes()?;
+            if groups.is_empty() {
+                for id in previous {
+                    if let Some(a) = self.nodes.get_mut(&id) {
+                        a.extend(attrs.clone());
                     }
                 }
-                left = right;
+            } else {
+                let mut all = scope.edge.clone();
+                all.extend(attrs);
+                for (sources, targets) in groups {
+                    for s in &sources {
+                        for t in &targets {
+                            self.edges.push((s.clone(), t.clone(), all.clone()));
+                        }
+                    }
+                }
             }
-            self.attributes()?;
             if self.peek() == Some(&Token::Separator) {
                 self.position += 1;
             }
         }
         self.position += 1;
-        Ok(())
+        Ok(members)
     }
 }
 
 type VertexFactory<V> = Box<dyn FnMut(&str) -> V>;
+type VertexAttrsFactory<V> = Box<dyn FnMut(&str, &AttributeMap) -> V>;
+type EdgeAttrsFactory<E> = Box<dyn FnMut(&AttributeMap) -> E>;
+type GraphAttrConsumer = Box<dyn FnMut(&str, &Attribute) -> Result<()>>;
+type VertexAttrConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
+type EdgeAttrConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()>>;
 
-pub struct DotImporter<V> {
+pub struct DotImporter<V, E = DefaultEdge> {
     vertex_factory: Option<VertexFactory<V>>,
+    vertex_attrs_factory: Option<VertexAttrsFactory<V>>,
+    edge_attrs_factory: Option<EdgeAttrsFactory<E>>,
+    graph_attr_consumer: Option<GraphAttrConsumer>,
+    vertex_attr_consumer: Option<VertexAttrConsumer<V>>,
+    edge_attr_consumer: Option<EdgeAttrConsumer<E>>,
 }
-impl<V> DotImporter<V> {
+impl<V, E> DotImporter<V, E> {
     pub fn new() -> Self {
         Self {
             vertex_factory: None,
+            vertex_attrs_factory: None,
+            edge_attrs_factory: None,
+            graph_attr_consumer: None,
+            vertex_attr_consumer: None,
+            edge_attr_consumer: None,
         }
     }
-    pub fn set_vertex_factory(&mut self, factory: impl FnMut(&str) -> V + 'static) {
-        self.vertex_factory = Some(Box::new(factory));
+    pub fn set_vertex_factory(&mut self, f: impl FnMut(&str) -> V + 'static) {
+        self.vertex_factory = Some(Box::new(f));
+        self.vertex_attrs_factory = None;
+    }
+    pub fn set_vertex_with_attributes_factory(
+        &mut self,
+        f: impl FnMut(&str, &AttributeMap) -> V + 'static,
+    ) {
+        self.vertex_attrs_factory = Some(Box::new(f));
+        self.vertex_factory = None;
+    }
+    pub fn set_edge_with_attributes_factory(
+        &mut self,
+        f: impl FnMut(&AttributeMap) -> E + 'static,
+    ) {
+        self.edge_attrs_factory = Some(Box::new(f));
+    }
+    pub fn set_graph_attribute_consumer(
+        &mut self,
+        f: impl FnMut(&str, &Attribute) -> Result<()> + 'static,
+    ) {
+        self.graph_attr_consumer = Some(Box::new(f));
+    }
+    pub fn set_vertex_attribute_consumer(
+        &mut self,
+        f: impl FnMut(&V, &str, &Attribute) -> Result<()> + 'static,
+    ) {
+        self.vertex_attr_consumer = Some(Box::new(f));
+    }
+    pub fn set_edge_attribute_consumer(
+        &mut self,
+        f: impl FnMut(&E, &str, &Attribute) -> Result<()> + 'static,
+    ) {
+        self.edge_attr_consumer = Some(Box::new(f));
     }
 }
-impl<V> Default for DotImporter<V> {
+impl<V, E> Default for DotImporter<V, E> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<V, G> GraphImporter<G> for DotImporter<V>
+impl<V, E, G> GraphImporter<G> for DotImporter<V, E>
 where
-    G: GraphMut<Vertex = V>,
+    G: GraphMut<Vertex = V, Edge = E>,
     V: Clone,
+    E: Clone,
 {
     fn import_graph<R: Read>(&mut self, graph: &mut G, mut input: R) -> Result<()> {
         let mut text = String::new();
@@ -350,69 +468,141 @@ where
                 "DOT graph direction does not match target graph".into(),
             ));
         }
-        if parsed.strict && graph.graph_type().multiple_edges { /* strict input remains valid in a multigraph target */
+        if let Some(consumer) = self.graph_attr_consumer.as_mut() {
+            if let Some(id) = &parsed.graph_id {
+                consumer("ID", &Attribute::from(id.clone()))?;
+            }
+            for (k, v) in &parsed.graph_attributes {
+                consumer(k, v)?;
+            }
         }
         let mut vertices = HashMap::new();
-        for id in parsed.nodes {
-            let vertex = if let Some(factory) = self.vertex_factory.as_mut() {
-                let vertex = factory(&id);
-                if !graph.add_vertex(vertex.clone()) {
-                    return Err(IoError::Import(
-                        "DOT vertex factory produced duplicate".into(),
-                    ));
-                }
-                vertex
+        for (id, attrs) in &parsed.nodes {
+            let vertex = if let Some(f) = self.vertex_attrs_factory.as_mut() {
+                f(id, attrs)
+            } else if let Some(f) = self.vertex_factory.as_mut() {
+                f(id)
             } else {
-                graph.add_new_vertex()?
+                graph.new_vertex()?
             };
-            vertices.insert(id, vertex);
+            if !graph.add_vertex(vertex.clone()) {
+                return Err(IoError::Import(
+                    "DOT vertex factory produced duplicate".into(),
+                ));
+            }
+            if let Some(c) = self.vertex_attr_consumer.as_mut() {
+                c(&vertex, "ID", &Attribute::from(id.clone()))?;
+                for (k, v) in attrs {
+                    c(&vertex, k, v)?;
+                }
+            }
+            vertices.insert(id.clone(), vertex);
         }
-        for (source, target) in parsed.edges {
-            let from = &vertices[&source];
-            let to = &vertices[&target];
-            if graph.add_edge(from, to)?.is_none() && !parsed.strict {
-                return Err(IoError::Import("graph rejected DOT edge".into()));
+        let mut seen = HashSet::new();
+        for (source, target, attrs) in parsed.edges {
+            let key = if parsed.directed || source <= target {
+                (source.clone(), target.clone())
+            } else {
+                (target.clone(), source.clone())
+            };
+            if parsed.strict && !seen.insert(key) {
+                continue;
+            }
+            let (from, to) = (&vertices[&source], &vertices[&target]);
+            let edge = if let Some(f) = self.edge_attrs_factory.as_mut() {
+                let e = f(&attrs);
+                graph.add_edge_with(from, to, e.clone())?.then_some(e)
+            } else {
+                graph.add_edge(from, to)?
+            }
+            .ok_or_else(|| IoError::Import("graph rejected DOT edge".into()))?;
+            if let Some(c) = self.edge_attr_consumer.as_mut() {
+                for (k, v) in &attrs {
+                    c(&edge, k, v)?;
+                }
             }
         }
         Ok(())
     }
 }
 
-pub fn is_valid_id(value: &str) -> bool {
-    if value.starts_with('"') && value.ends_with('"')
-        || value.starts_with('<') && value.ends_with('>')
-    {
-        return true;
+fn is_valid_unquoted_id(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    if bytes.is_empty() {
+        return false;
     }
-    if value.parse::<f64>().is_ok() {
+    let start = usize::from(bytes[0] == b'-');
+    if start == bytes.len() {
+        return false;
+    }
+    let number = &bytes[start..];
+    let numeric = if number[0] == b'.' {
+        number.len() > 1 && number[1..].iter().all(u8::is_ascii_digit)
+    } else if number[0].is_ascii_digit() {
+        let mut dot = false;
+        number.iter().all(|b| {
+            if *b == b'.' && !dot {
+                dot = true;
+                true
+            } else {
+                b.is_ascii_digit()
+            }
+        })
+    } else {
+        false
+    };
+    if numeric {
         return true;
     }
     let mut chars = value.chars();
-    matches!(chars.next(), Some(ch) if ch == '_' || ch.is_alphabetic())
-        && chars.all(|ch| ch == '_' || ch.is_alphanumeric())
+    matches!(chars.next(), Some(c) if c == '_' || c.is_alphabetic())
+        && chars.all(|c| c == '_' || c.is_alphanumeric())
 }
-
-fn render_attributes(attributes: AttributeMap) -> String {
-    if attributes.is_empty() {
+pub fn is_valid_id(value: &str) -> bool {
+    (value.len() >= 2 && value.starts_with('"') && value.ends_with('"'))
+        || (value.len() >= 2 && value.starts_with('<') && value.ends_with('>'))
+        || is_valid_unquoted_id(value)
+}
+fn render_attributes(attrs: AttributeMap) -> String {
+    if attrs.is_empty() {
         return String::new();
     }
-    let mut output = String::from(" [ ");
-    for (name, value) in attributes {
-        output.push_str(&name);
-        output.push('=');
+    let mut out = String::from(" [ ");
+    for (name, value) in attrs {
+        out.push_str(&name);
+        out.push('=');
         match value.attribute_type() {
-            AttributeType::Html => output.push_str(&format!("<{}>", value.value())),
-            AttributeType::Identifier => output.push_str(value.value()),
-            _ => output.push_str(&format!("\"{}\"", value.value().replace('"', "\\\""))),
+            AttributeType::Html => out.push_str(&format!("<{}>", value.value())),
+            AttributeType::Identifier => out.push_str(value.value()),
+            _ => out.push_str(&format!("\"{}\"", value.value().replace('"', "\\\""))),
         }
-        output.push(' ');
+        out.push(' ');
     }
-    output.push(']');
-    output
+    out.push(']');
+    out
 }
 
+#[derive(Debug, Clone)]
+pub struct DotSubgraph<V, E> {
+    pub vertices: Vec<V>,
+    pub edges: Vec<E>,
+    pub graph_attributes: AttributeMap,
+    pub cluster_attributes: AttributeMap,
+}
+impl<V, E> DotSubgraph<V, E> {
+    pub fn new(vertices: impl IntoIterator<Item = V>, edges: impl IntoIterator<Item = E>) -> Self {
+        Self {
+            vertices: vertices.into_iter().collect(),
+            edges: edges.into_iter().collect(),
+            graph_attributes: AttributeMap::new(),
+            cluster_attributes: AttributeMap::new(),
+        }
+    }
+}
+type SubgraphProvider<V, E> = Box<dyn Fn() -> IndexMap<String, DotSubgraph<V, E>>>;
 pub struct DotExporter<V, E> {
     base: BaseExporter<V, E>,
+    subgraph_provider: Option<SubgraphProvider<V, E>>,
 }
 impl<V, E> DotExporter<V, E>
 where
@@ -421,28 +611,33 @@ where
     pub fn new() -> Self {
         let mut ids = IntegerIdProvider::new();
         Self {
-            base: BaseExporter::new(move |vertex| ids.id(vertex)),
+            base: BaseExporter::new(move |v| ids.id(v)),
+            subgraph_provider: None,
         }
     }
-    pub fn with_vertex_id_provider(provider: impl FnMut(&V) -> String + 'static) -> Self {
+    pub fn with_vertex_id_provider(p: impl FnMut(&V) -> String + 'static) -> Self {
         Self {
-            base: BaseExporter::new(provider),
+            base: BaseExporter::new(p),
+            subgraph_provider: None,
         }
     }
-    pub fn set_graph_id_provider(&mut self, provider: impl FnMut() -> String + 'static) {
-        self.base.set_graph_id_provider(provider);
+    pub fn set_graph_id_provider(&mut self, p: impl FnMut() -> String + 'static) {
+        self.base.set_graph_id_provider(p);
     }
-    pub fn set_graph_attribute_provider(&mut self, provider: impl Fn() -> AttributeMap + 'static) {
-        self.base.set_graph_attribute_provider(provider);
+    pub fn set_graph_attribute_provider(&mut self, p: impl Fn() -> AttributeMap + 'static) {
+        self.base.set_graph_attribute_provider(p);
     }
-    pub fn set_vertex_attribute_provider(
+    pub fn set_vertex_attribute_provider(&mut self, p: impl Fn(&V) -> AttributeMap + 'static) {
+        self.base.set_vertex_attribute_provider(p);
+    }
+    pub fn set_edge_attribute_provider(&mut self, p: impl Fn(&E) -> AttributeMap + 'static) {
+        self.base.set_edge_attribute_provider(p);
+    }
+    pub fn set_subgraph_provider(
         &mut self,
-        provider: impl Fn(&V) -> AttributeMap + 'static,
+        p: impl Fn() -> IndexMap<String, DotSubgraph<V, E>> + 'static,
     ) {
-        self.base.set_vertex_attribute_provider(provider);
-    }
-    pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
-        self.base.set_edge_attribute_provider(provider);
+        self.subgraph_provider = Some(Box::new(p));
     }
 }
 impl<V, E> Default for DotExporter<V, E>
@@ -453,6 +648,7 @@ where
         Self::new()
     }
 }
+
 impl<V, E, G> GraphExporter<G> for DotExporter<V, E>
 where
     G: Graph<Vertex = V, Edge = E>,
@@ -481,9 +677,9 @@ where
             },
             graph_id
         )?;
-        if let Some(attributes) = self.base.graph_attributes() {
-            for (name, value) in attributes {
-                writeln!(output, "  {name}={};", value.value())?;
+        if let Some(attrs) = self.base.graph_attributes() {
+            for (k, v) in attrs {
+                writeln!(output, "  {k}={};", v.value())?;
             }
         }
         let mut ids = HashMap::new();
@@ -509,25 +705,81 @@ where
             " -- "
         };
         for edge in graph.edges() {
-            let source = graph
-                .edge_source(edge)
-                .ok_or_else(|| IoError::Export("edge has no source".into()))?;
-            let target = graph
-                .edge_target(edge)
-                .ok_or_else(|| IoError::Export("edge has no target".into()))?;
-            writeln!(
-                output,
-                "  {}{}{}{};",
-                ids[source],
-                connector,
-                ids[target],
-                self.base
-                    .edge_attributes(edge)
-                    .map(render_attributes)
-                    .unwrap_or_default()
-            )?;
+            write_edge(&mut output, graph, edge, &ids, connector, "  ", &self.base)?;
+        }
+        if let Some(provider) = &self.subgraph_provider {
+            for (name, subgraph) in provider() {
+                if !is_valid_id(&name) {
+                    return Err(IoError::Export(format!("invalid DOT subgraph id {name:?}")));
+                }
+                writeln!(output, "  subgraph {name} {{")?;
+                if !subgraph.cluster_attributes.is_empty() {
+                    writeln!(
+                        output,
+                        "    {name}{};",
+                        render_attributes(subgraph.cluster_attributes)
+                    )?;
+                }
+                for (k, v) in subgraph.graph_attributes {
+                    writeln!(output, "    {k}={};", v.value())?;
+                }
+                for vertex in &subgraph.vertices {
+                    writeln!(
+                        output,
+                        "    {};",
+                        ids.get(vertex).ok_or_else(|| IoError::Export(
+                            "DOT subgraph contains an unknown vertex".into()
+                        ))?
+                    )?;
+                }
+                for edge in &subgraph.edges {
+                    write_edge(
+                        &mut output,
+                        graph,
+                        edge,
+                        &ids,
+                        connector,
+                        "    ",
+                        &self.base,
+                    )?;
+                }
+                writeln!(output, "  }}")?;
+            }
         }
         writeln!(output, "}}")?;
         Ok(())
     }
+}
+fn write_edge<V, E, G, W>(
+    output: &mut W,
+    graph: &G,
+    edge: &E,
+    ids: &HashMap<V, String>,
+    connector: &str,
+    indent: &str,
+    base: &BaseExporter<V, E>,
+) -> Result<()>
+where
+    G: Graph<Vertex = V, Edge = E>,
+    V: Clone + Eq + Hash,
+    E: Clone + Eq + Hash,
+    W: Write,
+{
+    let source = graph
+        .edge_source(edge)
+        .ok_or_else(|| IoError::Export("edge has no source".into()))?;
+    let target = graph
+        .edge_target(edge)
+        .ok_or_else(|| IoError::Export("edge has no target".into()))?;
+    writeln!(
+        output,
+        "{indent}{}{}{}{};",
+        ids[source],
+        connector,
+        ids[target],
+        base.edge_attributes(edge)
+            .map(render_attributes)
+            .unwrap_or_default()
+    )?;
+    Ok(())
 }

@@ -14,11 +14,11 @@ the complete Java test matrix has not yet been brought across.
 | GML | done | all 33 upstream importer/exporter cases ported, including attributes and nested lists, singletons, implicit vertices, graphics sections, parameters and reserved-key validation |
 | Lemon | partial | base output, Java string escaping and edge weights |
 | Matrix | partial | sparse adjacency, Laplacian and normalized Laplacian exporters |
-| DOT | partial | hand-written lexer/parser for graph kind, IDs, comments, ports, chained edges, attribute skipping and basic subgraphs; scoped attribute parity remains |
+| DOT | done | all 52 upstream importer/exporter/utility cases ported, including scoped defaults, nested endpoint subgraphs, ports, strict graphs, HTML values, factories, consumers and subgraph export |
 | GraphML | partial | `quick-xml` streaming import, typed keys/defaults, configurable edge weights and deterministic basic export |
 | GEXF | partial | `quick-xml` node/edge/weight import and deterministic basic export; declared attributes and visualization parity remain |
 | TSPLIB | partial | coordinate instances, nine distance types, complete weighted graphs, metadata and embedded tours |
 
-Current Rust integration tests: 165, including injected reader/writer failures and importer reuse.
+Current Rust integration tests: 217, including injected reader/writer failures and importer reuse.
 The remaining work is to port the upstream tests format by
 format and close every behavior gap they expose.
