@@ -13,6 +13,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! DIMACS challenge graph formats.
+//!
+//! Several DIMACS implementation challenges defined closely related graph
+//! formats. All use a `p` problem header followed by `e` or `a` edge records;
+//! this module also accepts an optional floating-point edge weight.
+
+#![deny(missing_docs)]
 
 use crate::exporter::format_f64;
 use crate::{
@@ -25,14 +31,19 @@ use std::io::{BufRead, BufReader, Read, Write};
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+/// A supported DIMACS challenge dialect.
 pub enum DimacsFormat {
+    /// The shortest-path challenge format (`p sp`, with `a` arc records).
     ShortestPath,
+    /// The maximum-clique challenge format (`p edge`, with `e` edge records).
     #[default]
     MaxClique,
+    /// The coloring challenge format (`p col`, with `e` edge records).
     Coloring,
 }
 
 impl DimacsFormat {
+    /// Returns the problem token written in the `p` header.
     pub const fn problem(self) -> &'static str {
         match self {
             Self::ShortestPath => "sp",
@@ -41,6 +52,7 @@ impl DimacsFormat {
         }
     }
 
+    /// Returns the record token written before each edge or arc.
     pub const fn edge_descriptor(self) -> &'static str {
         match self {
             Self::ShortestPath => "a",
@@ -53,6 +65,12 @@ impl DimacsFormat {
 pub type DimacsEdge = (usize, usize, Option<f64>);
 
 #[derive(Debug, Clone)]
+/// Imports DIMACS records as counts and edge events.
+///
+/// The importer emits the declared vertex and edge counts, followed by one
+/// [`DimacsEdge`] event for each `e` or `a` record. Optional DIMACS descriptors
+/// are ignored. By default, identifiers encountered in edge records are
+/// renumbered consecutively from zero.
 pub struct DimacsEventDrivenImporter {
     zero_based_numbering: bool,
     renumber_vertices: bool,
@@ -68,15 +86,26 @@ impl Default for DimacsEventDrivenImporter {
 }
 
 impl DimacsEventDrivenImporter {
+    /// Creates an importer with consecutive zero-based renumbering enabled.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Sets whether emitted identifiers use zero-based numbering.
+    ///
+    /// DIMACS files conventionally number vertices from one. When renumbering
+    /// is enabled, this controls whether newly assigned identifiers begin at
+    /// zero or one. When renumbering is disabled, enabling this subtracts one
+    /// from the file identifiers.
     pub fn zero_based_numbering(mut self, enabled: bool) -> Self {
         self.zero_based_numbering = enabled;
         self
     }
 
+    /// Sets whether vertices are renumbered in first-encounter order.
+    ///
+    /// Disabling this option preserves the file identifiers, subject to the
+    /// configured zero-based-numbering conversion.
     pub fn renumber_vertices(mut self, enabled: bool) -> Self {
         self.renumber_vertices = enabled;
         self
@@ -190,6 +219,12 @@ impl EventDrivenImporter for DimacsEventDrivenImporter {
     }
 }
 
+/// Imports a DIMACS graph into a mutable graph.
+///
+/// Vertices are created for the one-based identifier range declared by the
+/// problem header. The destination graph must support all loops and parallel
+/// edges present in the input. For a weighted destination, omitted weights are
+/// replaced with the configured default weight.
 pub struct DimacsImporter<V> {
     default_weight: f64,
     vertex_factory: Option<Box<dyn FnMut(usize) -> V>>,
@@ -202,10 +237,12 @@ impl<V> Default for DimacsImporter<V> {
 }
 
 impl<V> DimacsImporter<V> {
+    /// Creates an importer whose default edge weight is `1.0`.
     pub fn new() -> Self {
         Self::with_default_weight(1.0)
     }
 
+    /// Creates an importer using `default_weight` for unweighted edge records.
     pub fn with_default_weight(default_weight: f64) -> Self {
         Self {
             default_weight,
@@ -213,6 +250,10 @@ impl<V> DimacsImporter<V> {
         }
     }
 
+    /// Sets a factory which creates vertices from one-based DIMACS identifiers.
+    ///
+    /// Without a custom factory, vertices are obtained from the destination
+    /// graph's vertex supplier.
     pub fn set_vertex_factory(&mut self, factory: impl FnMut(usize) -> V + 'static) {
         self.vertex_factory = Some(Box::new(factory));
     }
@@ -271,10 +312,16 @@ where
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Options which modify DIMACS export behavior.
 pub enum DimacsParameter {
+    /// Append each graph edge's weight to its DIMACS record.
     ExportEdgeWeights,
 }
 
+/// Exports a graph in one of the supported DIMACS challenge formats.
+///
+/// The maximum-clique dialect is used by default, and vertices receive
+/// sequential integer identifiers unless a provider is supplied.
 pub struct DimacsExporter<V, E> {
     base: BaseExporter<V, E>,
     format: DimacsFormat,
@@ -285,11 +332,13 @@ impl<V, E> DimacsExporter<V, E>
 where
     V: Clone + Eq + std::hash::Hash + 'static,
 {
+    /// Creates an exporter with sequential integer vertex identifiers.
     pub fn new() -> Self {
         let mut ids = IntegerIdProvider::new();
         Self::with_vertex_id_provider(move |vertex| ids.id(vertex))
     }
 
+    /// Creates an exporter using `provider` to generate vertex identifiers.
     pub fn with_vertex_id_provider(provider: impl FnMut(&V) -> String + 'static) -> Self {
         Self {
             base: BaseExporter::new(provider),
@@ -298,20 +347,24 @@ where
         }
     }
 
+    /// Returns the output DIMACS dialect.
     pub const fn format(&self) -> DimacsFormat {
         self.format
     }
 
+    /// Sets the output DIMACS dialect.
     pub fn set_format(&mut self, format: DimacsFormat) {
         self.format = format;
     }
 
+    /// Returns whether an export option is enabled.
     pub const fn is_parameter(&self, parameter: DimacsParameter) -> bool {
         match parameter {
             DimacsParameter::ExportEdgeWeights => self.export_edge_weights,
         }
     }
 
+    /// Enables or disables an export option.
     pub fn set_parameter(&mut self, parameter: DimacsParameter, enabled: bool) {
         match parameter {
             DimacsParameter::ExportEdgeWeights => self.export_edge_weights = enabled,
