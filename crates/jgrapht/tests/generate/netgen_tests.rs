@@ -6,7 +6,7 @@
 //! source per call; problems do not hold the graph.
 
 use jgrapht::alg::flow::{MaximumFlowAlgorithm, MinimumCostFlowProblem, PushRelabelMFImpl};
-use jgrapht::alg::matching::hopcroft_karp;
+use jgrapht::alg::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
 use jgrapht::generate::netgen::*;
 use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
@@ -556,8 +556,15 @@ mod network_generator_test {
         let (g2, p2) = gen_bipartite(config, seed);
         // feasibility: a perfect matching exists
         let undirected = AsUndirected(&g1);
-        let matching = hopcroft_karp(&undirected).unwrap();
-        assert_eq!(g1.vertex_count(), 2 * matching.edges.len());
+        let matching = HopcroftKarpMaximumCardinalityBipartiteMatching::new(
+            &undirected,
+            p1.partition1.iter().copied(),
+            p1.partition2.iter().copied(),
+        )
+        .unwrap()
+        .get_matching()
+        .unwrap();
+        assert!(matching.is_perfect());
         assert_graphs_equal(&g1, &g2);
         assert_eq!(p1.partition1, p2.partition1);
         assert_eq!(p1.partition2, p2.partition2);

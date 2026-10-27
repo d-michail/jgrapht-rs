@@ -1,6 +1,8 @@
 use jgrapht::alg::connectivity::block_cut_tree;
 use jgrapht::alg::matching::*;
-use jgrapht::alg::paths::*;
+use jgrapht::alg::shortestpath::{
+    AllDirectedPaths, BellmanFord, BhandariKDisjointShortestPaths, SuurballeKDisjointShortestPaths,
+};
 use jgrapht::alg::tour::*;
 use jgrapht::generate::*;
 use jgrapht::*;
@@ -16,6 +18,34 @@ fn dg(edges: &[(u32, u32, f64)]) -> DiGraph<u32> {
     g
 }
 
+fn matching_is_valid<G: Graph>(g: &G, matching: &Matching<G::Vertex, G::Edge>) -> bool {
+    let mut used = std::collections::HashSet::new();
+    matching
+        .edges()
+        .iter()
+        .all(|edge| match g.edge_endpoints(edge) {
+            Some((source, target)) => {
+                source != target && used.insert(source) && used.insert(target)
+            }
+            None => false,
+        })
+}
+
+fn exact_matching(edges: &[(usize, usize, f64)], used: u16, index: usize) -> (f64, usize) {
+    if index == edges.len() {
+        return (0.0, 0);
+    }
+    let skip = exact_matching(edges, used, index + 1);
+    let (source, target, weight) = edges[index];
+    if used & (1 << source) != 0 || used & (1 << target) != 0 {
+        return skip;
+    }
+    let (rest_weight, rest_len) =
+        exact_matching(edges, used | (1 << source) | (1 << target), index + 1);
+    let take = (weight + rest_weight, rest_len + 1);
+    if take.0 > skip.0 { take } else { skip }
+}
+
 #[test]
 fn simple_paths() {
     let g = dg(&[
@@ -25,20 +55,38 @@ fn simple_paths() {
         (3, 4, 1.0),
         (2, 3, 1.0),
     ]);
-    let ps = all_simple_paths(&g, &1, &4, None);
+    let algorithm = AllDirectedPaths::new(&g);
+    let ps = algorithm.get_all_paths(&1, &4, true, None).unwrap();
     assert_eq!(ps.len(), 3);
     assert!(ps.iter().all(|p| p.is_valid(&g)));
-    assert_eq!(all_simple_paths(&g, &1, &4, Some(2)).len(), 2);
-    assert!(all_simple_paths(&g, &4, &1, None).is_empty());
+    assert_eq!(
+        algorithm
+            .get_all_paths(&1, &4, true, Some(2))
+            .unwrap()
+            .len(),
+        2
+    );
+    assert!(
+        algorithm
+            .get_all_paths(&4, &1, true, None)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
 fn negative_cycles() {
     let g = dg(&[(1, 2, 1.0), (2, 3, -2.0), (3, 1, 0.5), (3, 4, 1.0)]);
-    let mut c = find_negative_cycle(&g).unwrap();
-    c.sort();
-    assert_eq!(c, [1, 2, 3]);
-    assert!(find_negative_cycle(&dg(&[(1, 2, -1.0), (2, 3, 1.0)])).is_none());
+    let error = BellmanFord::new(&g).get_paths(&1).unwrap_err();
+    let mut cycle = error.cycle().unwrap().vertices.clone();
+    cycle.pop();
+    cycle.sort();
+    assert_eq!(cycle, [1, 2, 3]);
+    assert!(
+        BellmanFord::new(&dg(&[(1, 2, -1.0), (2, 3, 1.0)]))
+            .get_paths(&1)
+            .is_ok()
+    );
 }
 
 #[test]
@@ -54,7 +102,9 @@ fn disjoint_paths() {
         (4, 5, 1.0),
         (0, 5, 10.0),
     ]);
-    let ep = edge_disjoint_shortest_paths(&g, &0, &5, 3).unwrap();
+    let ep = SuurballeKDisjointShortestPaths::new(&g)
+        .get_paths(&0, &5, 3)
+        .unwrap();
     assert_eq!(ep.len(), 3);
     assert!(ep.iter().all(|p| p.is_valid(&g)));
     let all_edges: Vec<_> = ep.iter().flat_map(|p| p.edges.clone()).collect();
@@ -62,10 +112,16 @@ fn disjoint_paths() {
     dedup.sort();
     dedup.dedup();
     assert_eq!(all_edges.len(), dedup.len());
-    let vp = vertex_disjoint_shortest_paths(&g, &0, &5, 3).unwrap();
-    assert_eq!(vp.len(), 2); // only the direct edge and one path through vertex 3
-    assert_eq!(vp.iter().map(|p| p.weight).sum::<f64>(), 3.0 + 10.0);
-    assert!(edge_disjoint_shortest_paths(&g, &0, &0, 1).is_err());
+    let bp = BhandariKDisjointShortestPaths::new(&g)
+        .get_paths(&0, &5, 3)
+        .unwrap();
+    assert_eq!(bp.len(), 3);
+    assert!(bp.iter().all(|path| path.is_valid(&g)));
+    assert!(
+        SuurballeKDisjointShortestPaths::new(&g)
+            .get_paths(&0, &0, 1)
+            .is_err()
+    );
 }
 
 #[test]
@@ -127,12 +183,28 @@ fn approximate_and_exact_weighted_matching() {
             g.set_edge_weight(&e, rng.random_range(1..10) as f64)
                 .unwrap();
         }
-        let exact = maximum_weight_matching_exact(&g).unwrap();
-        assert!(is_matching(&g, &exact.edges));
-        let pg = path_growing_matching(&g);
-        assert!(is_matching(&g, &pg.edges));
-        assert!(2.0 * pg.weight >= exact.weight - 1e-9 && pg.weight <= exact.weight + 1e-9);
-        assert!(exact.len() <= edmonds_blossom(&g).len());
+        let edges: Vec<_> = g
+            .edges()
+            .map(|edge| {
+                (
+                    *g.edge_source(edge).unwrap(),
+                    *g.edge_target(edge).unwrap(),
+                    g.edge_weight(edge).unwrap(),
+                )
+            })
+            .collect();
+        let (exact_weight, exact_len) = exact_matching(&edges, 0, 0);
+        let pg = PathGrowingWeightedMatching::new(&g)
+            .unwrap()
+            .get_matching()
+            .unwrap();
+        assert!(matching_is_valid(&g, &pg));
+        assert!(2.0 * pg.weight() >= exact_weight - 1e-9 && pg.weight() <= exact_weight + 1e-9);
+        let maximum_cardinality = DenseEdmondsMaximumCardinalityMatching::new(&g)
+            .unwrap()
+            .get_matching()
+            .unwrap();
+        assert!(exact_len <= maximum_cardinality.len());
     }
 }
 

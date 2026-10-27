@@ -8,7 +8,7 @@ use jgrapht::alg::connectivity::connected_component_of;
 use jgrapht::alg::decomposition::{
     DmDecomposition, DulmageMendelsohnDecomposition, HeavyPathDecomposition,
 };
-use jgrapht::alg::matching::hopcroft_karp_with_partitions;
+use jgrapht::alg::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
 use jgrapht::generate::*;
 use jgrapht::traverse::BreadthFirstIterator;
 use jgrapht::view::AsSubgraph;
@@ -53,9 +53,13 @@ mod dulmage_mendelsohn_decomposition_test {
             }
         }
         let sub = AsSubgraph::induced(graph, all_perfect.iter().copied());
-        let perfect = hopcroft_karp_with_partitions(&sub, &p1_perfect, &p2_perfect).unwrap();
+        let perfect =
+            HopcroftKarpMaximumCardinalityBipartiteMatching::new(&sub, p1_perfect, p2_perfect)
+                .unwrap()
+                .get_matching()
+                .unwrap();
         assert!(
-            perfect.is_perfect(&sub),
+            perfect.is_perfect(),
             "Core of decomposition must perfectly match"
         );
 

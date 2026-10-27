@@ -1,6 +1,7 @@
 use jgrapht::alg::clique::*;
 use jgrapht::alg::cover::*;
-use jgrapht::alg::matching::hopcroft_karp;
+use jgrapht::alg::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
+use jgrapht::alg::partition::bipartite_partition;
 use jgrapht::generate::*;
 use jgrapht::*;
 use rand::{Rng, SeedableRng, rngs::StdRng};
@@ -85,6 +86,12 @@ fn koenig_cover_equals_matching() {
         }
         let c = bipartite_vertex_cover(&g).unwrap();
         assert!(is_vertex_cover(&g, &c.vertices));
-        assert_eq!(c.vertices.len(), hopcroft_karp(&g).unwrap().len());
+        let (partition1, partition2) = bipartite_partition(&g).unwrap();
+        let matching =
+            HopcroftKarpMaximumCardinalityBipartiteMatching::new(&g, partition1, partition2)
+                .unwrap()
+                .get_matching()
+                .unwrap();
+        assert_eq!(c.vertices.len(), matching.len());
     }
 }

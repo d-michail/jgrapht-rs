@@ -1,6 +1,6 @@
 //! Vertex cover.
 
-use super::matching::hopcroft_karp_mates;
+use super::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
 use super::partition::two_color;
 use super::util::Indexed;
 use crate::graph::Graph;
@@ -141,7 +141,20 @@ pub fn bipartite_vertex_cover<G: Graph>(g: &G) -> Result<VertexCover<G::Vertex>>
         })
         .collect();
     let left: Vec<usize> = (0..ix.n()).filter(|&v| !side[v]).collect();
-    let mate = hopcroft_karp_mates(&adj, &left);
+    let partition1: Vec<G::Vertex> = left.iter().map(|&v| ix.vertex(v)).collect();
+    let partition2: Vec<G::Vertex> = (0..ix.n())
+        .filter(|&v| side[v])
+        .map(|v| ix.vertex(v))
+        .collect();
+    let matching = HopcroftKarpMaximumCardinalityBipartiteMatching::new(g, partition1, partition2)?
+        .get_matching()?;
+    let mut mate = vec![None; ix.n()];
+    for edge in matching.edges() {
+        let (source, target) = g.edge_endpoints(edge).expect("matching edge of the graph");
+        let (source, target) = (ix.idx[source], ix.idx[target]);
+        mate[source] = Some(target);
+        mate[target] = Some(source);
+    }
     // vertices reachable from unmatched left vertices by alternating paths
     let mut z = vec![false; ix.n()];
     let mut q: VecDeque<usize> = left

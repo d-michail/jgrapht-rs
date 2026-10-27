@@ -31,6 +31,19 @@ fn weighted_edges<G: Graph<Vertex = usize>>(g: &G) -> Vec<(usize, usize, f64)> {
         .collect()
 }
 
+fn matching_is_valid<G: Graph>(g: &G, matching: &Matching<G::Vertex, G::Edge>) -> bool {
+    let mut used = std::collections::HashSet::new();
+    matching
+        .edges()
+        .iter()
+        .all(|edge| match g.edge_endpoints(edge) {
+            Some((source, target)) => {
+                source != target && used.insert(source) && used.insert(target)
+            }
+            None => false,
+        })
+}
+
 #[test]
 fn bipartite_partition_works() {
     let mut g = UGraph::<usize>::simple();
@@ -56,17 +69,30 @@ fn matchings_against_brute_force() {
                 .unwrap();
         }
         let edges = weighted_edges(&g);
-        let m = edmonds_blossom(&g);
-        assert!(is_matching(&g, &m.edges));
+        let m = DenseEdmondsMaximumCardinalityMatching::new(&g)
+            .unwrap()
+            .get_matching()
+            .unwrap();
+        assert!(matching_is_valid(&g, &m));
         assert_eq!(m.len() as f64, brute_max_matching(&edges, 0, 0, false));
-        let greedy = greedy_matching(&g);
-        assert!(is_matching(&g, &greedy.edges));
-        assert!(2.0 * greedy.weight >= brute_max_matching(&edges, 0, 0, true) - 1e-9);
+        let greedy = GreedyWeightedMatching::new(&g, false)
+            .unwrap()
+            .get_matching()
+            .unwrap();
+        assert!(matching_is_valid(&g, &greedy));
+        assert!(2.0 * greedy.weight() >= brute_max_matching(&edges, 0, 0, true) - 1e-9);
     }
     // odd cycle forces a blossom
     let mut g = UGraph::<usize>::simple();
     Ring(7).generate_indexed(&mut g).unwrap();
-    assert_eq!(edmonds_blossom(&g).len(), 3);
+    assert_eq!(
+        DenseEdmondsMaximumCardinalityMatching::new(&g)
+            .unwrap()
+            .get_matching()
+            .unwrap()
+            .len(),
+        3
+    );
 }
 
 #[test]
@@ -89,16 +115,31 @@ fn bipartite_matchings() {
             }
         }
         let edges = weighted_edges(&g);
-        let hk = hopcroft_karp(&g).unwrap();
-        assert!(is_matching(&g, &hk.edges));
+        let (partition1, partition2) = bipartite_partition(&g).unwrap();
+        let hk = HopcroftKarpMaximumCardinalityBipartiteMatching::new(
+            &g,
+            partition1.clone(),
+            partition2.clone(),
+        )
+        .unwrap()
+        .get_matching()
+        .unwrap();
+        assert!(matching_is_valid(&g, &hk));
         assert_eq!(hk.len() as f64, brute_max_matching(&edges, 0, 0, false));
-        let hu = maximum_weight_bipartite_matching(&g).unwrap();
-        assert!(is_matching(&g, &hu.edges));
-        assert_eq!(hu.weight, brute_max_matching(&edges, 0, 0, true));
+        let hu = MaximumWeightBipartiteMatching::new(
+            &g,
+            partition1.into_iter().collect(),
+            partition2.into_iter().collect(),
+        )
+        .unwrap()
+        .get_matching()
+        .unwrap();
+        assert!(matching_is_valid(&g, &hu));
+        assert_eq!(hu.weight(), brute_max_matching(&edges, 0, 0, true));
     }
     let mut tri = UGraph::<usize>::simple();
     Ring(3).generate_indexed(&mut tri).unwrap();
-    assert!(hopcroft_karp(&tri).is_err());
+    assert!(bipartite_partition(&tri).is_none());
 }
 
 #[test]
