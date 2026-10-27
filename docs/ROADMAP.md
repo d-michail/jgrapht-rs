@@ -50,7 +50,7 @@ Guidance for the large items (blossom V, Boyer–Myrvold, CH, TNR, capacity scal
 
 Each step ends with: tests green, `cargo clippy --all-targets` clean, STATUS.md updated, commit, push.
 
-## Phase 2: parallel delta-stepping
+## Phase 2: parallel delta-stepping (done: `ParallelDeltaSteppingShortestPath`, std scoped threads, `tests/delta_stepping`)
 
 After the sequential `DeltaStepping` is verified by the Java `DeltaStepping` tests (inside step 1i):
 - `DeltaSteppingShortestPath` with a thread pool (`rayon` or scoped threads): parallel light/heavy relaxation per bucket, atomic distance array, same results as sequential.

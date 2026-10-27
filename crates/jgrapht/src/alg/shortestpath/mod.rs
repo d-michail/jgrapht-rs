@@ -13,6 +13,7 @@ mod closest_first;
 mod contraction_hierarchy;
 mod dag_all_paths;
 mod delta_stepping;
+mod delta_stepping_parallel;
 mod dijkstra;
 pub(crate) mod disjoint;
 mod eppstein;
@@ -45,6 +46,7 @@ pub use contraction_hierarchy::{
 };
 pub use dag_all_paths::DagAllPathsCounter;
 pub use delta_stepping::DeltaStepping;
+pub use delta_stepping_parallel::ParallelDeltaSteppingShortestPath;
 pub type DeltaSteppingShortestPath<'g, G> = DeltaStepping<'g, G>;
 pub use crate::alg::metrics::GraphMeasurer;
 pub use dijkstra::{Dijkstra, DijkstraShortestPath};

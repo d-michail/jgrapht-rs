@@ -9,7 +9,8 @@ use jgrapht::alg::matching::MatchingAlgorithm;
 use jgrapht::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
 use jgrapht::alg::shortestpath::{
     AllDirectedPaths, BoundedPrunedYenKShortestPath, DeltaStepping, Dijkstra,
-    EppsteinKShortestPath, ShortestPathAlgorithm, YenKShortestPath,
+    EppsteinKShortestPath, ParallelDeltaSteppingShortestPath, ShortestPathAlgorithm,
+    YenKShortestPath,
 };
 use jgrapht::alg::tour::{
     BacktrackingHamiltonianPath, HamiltonianPathAlgorithm, HeldKarpHamiltonianPath,
@@ -63,6 +64,15 @@ fn delta_stepping(c: &mut Criterion) {
     });
     group.bench_function("delta_stepping", |b| {
         b.iter(|| black_box(DeltaStepping::new(&g).single_source(&0).unwrap()))
+    });
+    group.bench_function("parallel_delta_stepping", |b| {
+        b.iter(|| {
+            black_box(
+                ParallelDeltaSteppingShortestPath::new(&g)
+                    .single_source(&0)
+                    .unwrap(),
+            )
+        })
     });
     group.finish();
 }
