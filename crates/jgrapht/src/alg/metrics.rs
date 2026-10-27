@@ -16,7 +16,7 @@
 //! center, periphery, girth, triangle counts. Distances are weighted shortest-path distances
 //! (all `1.0` for unweighted graphs).
 
-use super::shortestpath::floyd_warshall;
+use super::shortestpath::{FloydWarshallShortestPaths, ShortestPathAlgorithm};
 use super::util::Indexed;
 use crate::graph::Graph;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -47,16 +47,23 @@ impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
     /// Constructs a new instance of GraphMeasurer. `FloydWarshallShortestPaths` is used as the
     /// default shortest path algorithm.
     pub fn new<G: Graph<Vertex = V>>(g: &G) -> crate::Result<Self> {
-        let ap = floyd_warshall(g)?;
+        Self::with_algorithm(g, &FloydWarshallShortestPaths::new(g)?)
+    }
+
+    /// Constructs a new instance of GraphMeasurer which uses the provided shortest path algorithm
+    /// for all distance queries.
+    pub fn with_algorithm<G: Graph<Vertex = V>, A: ShortestPathAlgorithm<G>>(
+        g: &G,
+        algorithm: &A,
+    ) -> crate::Result<Self> {
         let vertices: Vec<V> = g.vertices().cloned().collect();
         let n = vertices.len();
-        let pair_weight: Vec<Vec<f64>> = (0..n)
-            .map(|i| {
-                (0..n)
-                    .map(|j| ap.weight(&vertices[i], &vertices[j]))
-                    .collect()
-            })
-            .collect();
+        let mut pair_weight = vec![vec![0.0; n]; n];
+        for (i, row) in pair_weight.iter_mut().enumerate() {
+            for (j, w) in row.iter_mut().enumerate() {
+                *w = algorithm.path_weight(&vertices[i], &vertices[j])?;
+            }
+        }
         let directed = g.graph_type().directed;
         let mut ecc = vec![0.0f64; n];
         for i in 0..n {

@@ -48,6 +48,8 @@ mod eppstein;
 mod floyd_warshall;
 #[path = "shortestpath/foundational_classes.rs"]
 mod foundational_classes;
+#[path = "shortestpath/graph_measurer.rs"]
+mod graph_measurer;
 #[path = "shortestpath/incidence_errors.rs"]
 mod incidence_errors;
 #[path = "shortestpath/int_vertex_dijkstra.rs"]
