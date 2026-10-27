@@ -84,31 +84,6 @@ fn bellman_ford_max_hops_can_disable_cycle_detection() {
 }
 
 #[test]
-fn suurballe_and_bhandari_find_two_disjoint_paths() {
-    let graph = weighted_di(&[
-        (1, 2, 1.0),
-        (2, 4, 1.0),
-        (1, 3, 2.0),
-        (3, 4, 2.0),
-        (2, 3, 10.0),
-    ]);
-    let suurballe = SuurballeKDisjointShortestPaths::new(&graph)
-        .get_paths(&1, &4, 3)
-        .unwrap();
-    assert_eq!(
-        suurballe.iter().map(|path| path.weight).collect::<Vec<_>>(),
-        [2.0, 4.0]
-    );
-    let bhandari = BhandariKDisjointShortestPaths::new(&graph)
-        .get_paths(&1, &4, 3)
-        .unwrap();
-    assert_eq!(
-        bhandari.iter().map(|path| path.weight).collect::<Vec<_>>(),
-        [2.0, 4.0]
-    );
-}
-
-#[test]
 fn yen_iterator_and_class_are_stably_sorted() {
     let graph = weighted_di(&[
         (1, 2, 1.0),

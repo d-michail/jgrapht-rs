@@ -12,6 +12,8 @@ mod all_directed_paths;
 mod basic_classes;
 #[path = "shortestpath/bounded_pruned_yen.rs"]
 mod bounded_pruned_yen;
+#[path = "shortestpath/disjoint_paths.rs"]
+mod disjoint_paths;
 #[path = "shortestpath/eppstein.rs"]
 mod eppstein;
 #[path = "shortestpath/ported_classes.rs"]

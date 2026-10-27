@@ -4,7 +4,7 @@ use crate::util::OrderedF64;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use std::cmp::Reverse;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashMap};
 
 #[derive(Clone)]
 struct ResidualArc {
@@ -195,6 +195,10 @@ fn get_paths<G: DirectedGraph>(
 
     let mut potential = vec![0.0; indexed.n()];
     let mut flow = 0;
+    // Java toggles the unordered endpoint pair of every edge in each intermediate path in a
+    // LinkedHashMap. Retain that insertion order for the final path decomposition.
+    let mut valid_edge_order: Vec<Option<((usize, usize), usize)>> = Vec::new();
+    let mut valid_edge_positions = HashMap::new();
     while flow < k {
         let predecessor = match kind {
             SearchKind::Suurballe => residual.dijkstra(s, t, &mut potential)?,
@@ -203,6 +207,32 @@ fn get_paths<G: DirectedGraph>(
         let Some(predecessor) = predecessor else {
             break;
         };
+        let mut path_arcs = Vec::new();
+        let mut vertex = t;
+        while vertex != s {
+            let arc = predecessor[vertex];
+            path_arcs.push(arc);
+            vertex = residual.arcs[arc].tail;
+        }
+        path_arcs.reverse();
+        for arc in path_arcs {
+            let arc = &residual.arcs[arc];
+            let key = if arc.tail < arc.head {
+                (arc.tail, arc.head)
+            } else {
+                (arc.head, arc.tail)
+            };
+            if let Some(position) = valid_edge_positions.remove(&key) {
+                valid_edge_order[position] = None;
+            } else {
+                let position = valid_edge_order.len();
+                let edge = arc
+                    .original_edge
+                    .expect("arc derived from an original edge");
+                valid_edge_order.push(Some((key, edge)));
+                valid_edge_positions.insert(key, position);
+            }
+        }
         residual.augment(s, t, &predecessor);
         flow += 1;
     }
@@ -218,8 +248,8 @@ fn get_paths<G: DirectedGraph>(
         }
     }
     let mut adjacency = vec![Vec::new(); indexed.n()];
-    for (edge, &enabled) in selected.iter().enumerate() {
-        if enabled {
+    for (_, edge) in valid_edge_order.into_iter().flatten() {
+        if selected[edge] {
             adjacency[indexed.ends[edge].0].push(edge);
         }
     }
