@@ -1,3 +1,4 @@
+use jgrapht::alg::stoer_wagner::StoerWagnerMinimumCut;
 use jgrapht::alg::flow::*;
 use jgrapht::alg::spanning::*;
 use jgrapht::generate::*;
@@ -171,11 +172,15 @@ fn gomory_hu_and_stoer_wagner() {
                 global = global.min(expect);
             }
         }
-        let sw = stoer_wagner(&g).unwrap();
-        assert_eq!(sw.weight, global);
+        let sw = StoerWagnerMinimumCut::new(&g).unwrap();
+        assert_eq!(sw.min_cut_weight(), global);
+        let side = sw.min_cut();
         assert_eq!(
-            sw.cut_edges
-                .iter()
+            g.edges()
+                .filter(|e| {
+                    let (u, v) = g.edge_endpoints(e).unwrap();
+                    side.contains(u) != side.contains(v)
+                })
                 .map(|e| g.edge_weight(e).unwrap())
                 .sum::<f64>(),
             global

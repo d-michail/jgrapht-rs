@@ -24,9 +24,9 @@ Items marked **[needs 1g]** or **[needs 1i]** wait for the matching or shortest-
 
 | # | Java class | Tests | Rust today |
 |---|---|---|---|
-| B1 | `StoerWagnerMinimumCut` (PriorityQueue version, `O(VE log E)`) | 10 | function `stoer_wagner` in `flow/legacy.rs` |
-| B2 | `TransitiveClosure` | 6 | function in `transitive.rs` |
-| B3 | `TransitiveReduction` (Hsu) | 8 | function in `transitive.rs` |
+| B1 | **done** `StoerWagnerMinimumCut` (PriorityQueue version, `O(VE log E)`) | 10 | function `stoer_wagner` in `flow/legacy.rs` |
+| B2 | **done** `TransitiveClosure` | 6 | function in `transitive.rs` |
+| B3 | **done** `TransitiveReduction` (Hsu) | 8 | function in `transitive.rs` |
 
 None of the three is in `STATUS.md` yet. Add rows, port classes and tests. The remaining `org.jgrapht.util` tests (`PrefetchIteratorTest`, `RadixSortTest`, `SupplierUtilTest`, `UnmodifiableUnionSetTest`, `VertexToIntegerMappingTest`) are listed in `STATUS.md` as ported or N/A, to be checked.
 
@@ -39,7 +39,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 | C1 | `isomorphism/legacy.rs` (backtracking) | VF2 / AHU / colour-refinement inspectors; delete the non-induced variants (no Java counterpart) | `generate_tests`, anything using `count_isomorphisms` |
 | C2 | `flow/legacy.rs`: `max_flow`, `edmonds_karp`, `dinic`, `push_relabel`, `minimum_st_cut`, `gomory_hu_tree` | the class implementations in `flow/` | `densest.rs`, `paths.rs`, `connectivity.rs`, netgen |
 | C3 | `flow/legacy.rs`: `min_cost_flow` (SPFA successive shortest paths) | `CapacityScalingMinimumCostFlow` (about 43 references) | same, plus tests |
-| C4 | `flow/legacy.rs`: `stoer_wagner` | B1 | |
+| C4 | **done** `flow/legacy.rs`: `stoer_wagner` (deleted, callers use B1) | B1 | |
 | C5 | `tour/legacy.rs` (nearest neighbour, insertion, double tree, 2-opt, Held–Karp) | the tour classes | |
 | C6 | `tour/legacy.rs`: `christofides_tour` **[needs 1g]** | `ChristofidesThreeHalvesApproxMetricTSP` on the Java matching | |
 | C7 | `cycle/legacy.rs` (`has_cycle`, `simple_cycles`, `cycle_basis`, `cycle_to_walk`) | `CycleDetector`, the simple-cycle classes, cycle-basis classes | |

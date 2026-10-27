@@ -32,6 +32,7 @@ pub mod shortestpath;
 pub mod similarity;
 pub mod spanner;
 pub mod spanning;
+pub mod stoer_wagner;
 pub mod steiner;
 pub mod tour;
 pub mod transform;

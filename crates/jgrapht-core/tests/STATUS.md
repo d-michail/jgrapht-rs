@@ -47,6 +47,9 @@ Note: `rheaps` 0.16.2 matches JHeaps' tie-breaking for insert/pop, decrease-key 
 | Java test | Rust module | State |
 |---|---|---|
 | `alg/util/*` (AliasMethodSampler, FixedSizeIntegerQueue, NeighborCache, Pair (+UnorderedPair), UnionFind, VertexDegreeComparator) | `alg_util_tests` | done (`NeighborCache` results are snapshots, not live views; `UnorderedPair` has one element type) |
+| `alg/StoerWagnerMinimumCutTest` | `alg_stoer_wagner_tests` | done (10 tests plus an invalid-input test; faithful: working graph of merged sets, `PriorityQueue` sift rules and linear `remove(Object)`) |
+| `alg/TransitiveClosureTest` | `alg_transitive_tests` | done (6 tests; repeated-squaring closure for simple digraphs and `O(nm)` closure for DAGs, as in Java) |
+| `alg/TransitiveReductionTest` | `alg_transitive_tests` | done (8 tests, `testReduceNull` n/a; Hsu's bit-matrix algorithm, works on cyclic graphs as in Java) |
 | `alg/transform/LineGraphConverterTest` | `alg_small_tests::line_graph_converter_test` | done |
 | `alg/independentset/ChordalGraphIndependentSetFinderTest` | `alg_small_tests::chordal_graph_independent_set_finder_test` | done |
 | `alg/steiner/KouMarkowskyBermanAlgorithmTest` | `alg_small_tests::kou_markowsky_berman_algorithm_test` | done |

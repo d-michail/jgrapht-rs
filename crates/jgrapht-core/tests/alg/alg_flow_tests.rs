@@ -707,7 +707,7 @@ mod push_relabel_cut_extras {
 
 mod gusfield {
     use super::*;
-    use jgrapht::alg::flow::stoer_wagner;
+    use jgrapht::alg::stoer_wagner::StoerWagnerMinimumCut;
     use jgrapht::generate::GnpRandomGraphGenerator;
     use jgrapht::graph::props::is_tree;
     use std::collections::VecDeque;
@@ -758,7 +758,7 @@ mod gusfield {
         let mut alg = GusfieldEquivalentFlowTree::new(net).unwrap();
         let tree = alg.equivalent_flow_tree().unwrap();
         assert!(is_tree(&tree));
-        assert_eq!(stoer_wagner(net).unwrap().weight, min_weight(&tree));
+        assert_eq!(StoerWagnerMinimumCut::new(net).unwrap().min_cut_weight(), min_weight(&tree));
         let mut st = PushRelabelMFImpl::new(net).unwrap();
         for i in net.vertices() {
             for j in net.vertices() {
@@ -790,7 +790,7 @@ mod gusfield {
         let mut alg = GusfieldGomoryHuCutTree::new(net).unwrap();
         let tree = alg.gomory_hu_tree().unwrap();
         assert!(is_tree(&tree));
-        let expected_min_cut = stoer_wagner(net).unwrap().weight;
+        let expected_min_cut = StoerWagnerMinimumCut::new(net).unwrap().min_cut_weight();
         assert_eq!(expected_min_cut, min_weight(&tree));
         assert_eq!(expected_min_cut, alg.calculate_global_min_cut().unwrap());
         let partition = alg.source_partition().clone();

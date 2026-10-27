@@ -1,4 +1,5 @@
-use jgrapht::alg::{chordal::*, connectivity::*, cycle::*, eulerian::*, lca::Lca, transitive::*};
+use jgrapht::alg::transitive::{TransitiveClosure, TransitiveReduction};
+use jgrapht::alg::{chordal::*, connectivity::*, cycle::*, eulerian::*, lca::Lca};
 use jgrapht::generate::*;
 use jgrapht::*;
 
@@ -107,12 +108,12 @@ fn chordal() {
 #[test]
 fn closure_reduction() {
     let mut g = dg(&[(1, 2), (2, 3), (3, 4)]);
-    transitive_closure(&mut g).unwrap();
+    TransitiveClosure::INSTANCE
+        .close_simple_directed_graph(&mut g)
+        .unwrap();
     assert_eq!(g.edge_count(), 6);
-    transitive_reduction(&mut g).unwrap();
+    TransitiveReduction::INSTANCE.reduce(&mut g).unwrap();
     assert_eq!(g.edge_count(), 3);
-    let mut c = dg(&[(1, 2), (2, 1)]);
-    assert!(transitive_reduction(&mut c).is_err());
 }
 
 #[test]
