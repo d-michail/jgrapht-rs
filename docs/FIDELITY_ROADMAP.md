@@ -17,7 +17,7 @@ Items marked **[needs 1g]** or **[needs 1i]** wait for the matching or shortest-
 | A1 (done) | `ColorRefinementAlgorithm` (`alg/color.rs`) | partition refinement, `O((n+m) log n)` | ported partition refinement, shared with the colour-refinement isomorphism inspector | Java tests were already ported; added a 10,000-vertex path scaling guard |
 | A2 (done) | `TreeDynamicConnectivity` (`alg/tree_connectivity.rs`) | Euler-tour tree on `AVLTree` (worst-case `O(log n)`) | ported Euler tours over private arena-backed implicit AVL sequences and intrusive arc rings | 24 internal invariant/behavior tests include a 100,000-node AVL height guard; connectivity public behavior preserved |
 | A3 (done) | `WeakChordalityInspector` buckets | `HashSet<Integer>`, expected `O(1)` operations and JDK table iteration order | private Rust bucket set reproducing JDK 21 integer hashing, resizing and iteration order | four JDK-generated golden-order unit tests; all weak-chordality certificates, including Clebsch, remain valid |
-| A4 | `ApBetweennessCentrality` | Apfloat arbitrary precision | exact `BigRational` | decide: keep as documented deviation (exact is a superset of the Apfloat behaviour but costs differ) or emulate Apfloat precision |
+| A4 (done) | `ApBetweennessCentrality` | configurable-precision decimal Apfloat | pure-Rust radix-10 `dashu-float` with matching precision, truncation and unlimited terminating-division behavior | added Java-golden finite-precision tests and retained the upstream large overflow test |
 | A5 | `FarthestInsertionHeuristicTSP` | keeps its default initial sub-tour across calls | recomputed | persist state as Java does |
 
 ## B. Classes in Java's root `org.jgrapht.alg` with no faithful port

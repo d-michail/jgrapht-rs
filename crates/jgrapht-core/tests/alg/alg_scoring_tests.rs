@@ -1640,10 +1640,9 @@ mod betweenness_centrality {
 
 mod ap_betweenness_centrality {
     use super::*;
-    use num_bigint::BigInt;
-    use num_rational::BigRational;
+    use std::str::FromStr;
 
-    // exact rational arithmetic on ~330-digit path counts takes about a minute
+    // The graph traversal itself takes about a minute in debug builds.
     #[test]
     #[ignore = "slow"]
     fn test_no_overflow() {
@@ -1655,11 +1654,52 @@ mod ap_betweenness_centrality {
             }
         }
         let bc = ApBetweennessCentrality::new(&g).unwrap();
-        let int = |x: i64| BigRational::from_integer(BigInt::from(x));
-        assert_eq!(bc.vertex_score(&9).unwrap(), &int(0));
-        assert_eq!(bc.vertex_score(&10).unwrap(), &int(3280));
-        assert_eq!(bc.vertex_score(&3289).unwrap(), &int(3280));
-        assert_eq!(bc.vertex_score(&3290).unwrap(), &int(0));
+        let int = |x: i64| ApFloat::from(x);
+        assert_eq!(bc.vertex_score(&9).unwrap(), int(0));
+        assert_eq!(bc.vertex_score(&10).unwrap(), int(3280));
+        assert_eq!(bc.vertex_score(&3289).unwrap(), int(3280));
+        assert_eq!(bc.vertex_score(&3290).unwrap(), int(0));
+    }
+
+    #[test]
+    fn test_configurable_decimal_precision() {
+        let mut g = DiGraph::<i32>::simple();
+        g.add_vertices(0..5);
+        for target in 1..=3 {
+            g.add_edge(&0, &target).unwrap();
+            g.add_edge(&target, &4).unwrap();
+        }
+
+        for (precision, expected) in [(1, "0.3"), (2, "0.33"), (3, "0.333")] {
+            let bc = ApBetweennessCentrality::with_precision(&g, false, precision).unwrap();
+            let expected = ApFloat::from_str(expected).unwrap();
+            assert_eq!(bc.vertex_score(&1).unwrap(), expected);
+            assert_eq!(bc.vertex_score(&2).unwrap(), expected);
+            assert_eq!(bc.vertex_score(&3).unwrap(), expected);
+        }
+
+        assert!(matches!(
+            ApBetweennessCentrality::with_precision(&g, false, 0),
+            Err(GraphError::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            ApBetweennessCentrality::new(&g),
+            Err(GraphError::InvalidArgument(_))
+        ));
+    }
+
+    #[test]
+    fn test_unlimited_precision_terminating_division() {
+        let mut g = DiGraph::<i32>::simple();
+        g.add_vertices(0..4);
+        for target in 1..=2 {
+            g.add_edge(&0, &target).unwrap();
+            g.add_edge(&target, &3).unwrap();
+        }
+        let bc = ApBetweennessCentrality::new(&g).unwrap();
+        let expected = ApFloat::from_str("0.5").unwrap();
+        assert_eq!(bc.vertex_score(&1).unwrap(), expected);
+        assert_eq!(bc.vertex_score(&2).unwrap(), expected);
     }
 }
 

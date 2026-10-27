@@ -609,14 +609,14 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
 }
 
 /// Scores of all vertices, available after construction (`VertexScoringAlgorithm`).
-pub trait VertexScoringAlgorithm<V, S: Copy = f64> {
+pub trait VertexScoringAlgorithm<V, S: Clone = f64> {
     fn scores(&self) -> &HashMap<V, S>;
 
     fn vertex_score(&self, v: &V) -> Result<S, GraphError>
     where
         V: Eq + std::hash::Hash,
     {
-        self.scores().get(v).copied().ok_or_else(|| {
+        self.scores().get(v).cloned().ok_or_else(|| {
             GraphError::InvalidArgument("Cannot return score of unknown vertex".into())
         })
     }
@@ -1211,11 +1211,96 @@ impl<V> VertexScoringAlgorithm<V> for BetweennessCentrality<V> {
     }
 }
 
-/// Betweenness centrality in exact arithmetic (`ApBetweennessCentrality`), for graphs whose
-/// number of shortest paths overflows a machine word. Scores are rationals, which is what
-/// Java's arbitrary precision floats give whenever the result is representable.
+/// Java-compatible arbitrary-precision betweenness centrality (`ApBetweennessCentrality`).
+///
+/// Scores use a pure-Rust [`dashu_float::FBig`] with radix 10 and rounding toward zero, matching
+/// Java Apfloat's arithmetic technique and significant-decimal-digit precision. The default is
+/// [`APFLOAT_INFINITE_PRECISION`]; as in Apfloat, that mode accepts exact terminating decimal
+/// divisions and rejects non-terminating expansions. Finite precision bounds number size and
+/// arithmetic cost, while unlimited precision can require representations larger than logarithmic
+/// in the graph size.
 pub struct ApBetweennessCentrality<V> {
-    scores: HashMap<V, num_rational::BigRational>,
+    scores: HashMap<V, ApFloat>,
+}
+
+/// Decimal arbitrary-precision value used by [`ApBetweennessCentrality`].
+pub type ApFloat = dashu_float::FBig<dashu_float::round::mode::Zero, 10>;
+
+/// Sentinel selecting Apfloat-compatible unlimited precision.
+pub const APFLOAT_INFINITE_PRECISION: usize = usize::MAX;
+
+fn ap_precision(precision: usize) -> Result<usize, GraphError> {
+    match precision {
+        0 => Err(invalid("Precision must be positive")),
+        APFLOAT_INFINITE_PRECISION => Ok(0),
+        finite => Ok(finite),
+    }
+}
+
+fn ap_integer(value: i64, precision: usize) -> ApFloat {
+    ApFloat::from(value).with_precision(precision).value()
+}
+
+fn gcd(mut a: dashu_int::UBig, mut b: dashu_int::UBig) -> dashu_int::UBig {
+    while b != dashu_int::UBig::ZERO {
+        let remainder = &a % &b;
+        a = b;
+        b = remainder;
+    }
+    a
+}
+
+/// Divide two non-negative decimal floats using Apfloat's unlimited-precision rule.
+fn ap_divide(lhs: &ApFloat, rhs: &ApFloat, precision: usize) -> Result<ApFloat, GraphError> {
+    if precision != 0 {
+        return Ok(lhs.clone() / rhs.clone());
+    }
+    if rhs.repr().significand() == &dashu_int::IBig::ZERO {
+        return Err(invalid("Division by zero"));
+    }
+    if lhs.repr().significand() == &dashu_int::IBig::ZERO {
+        return Ok(ap_integer(0, 0));
+    }
+
+    // Brandes path counts and dependencies are non-negative, so their significands convert
+    // directly to UBig. Reduce the fraction before testing whether its decimal expansion ends.
+    let mut numerator = dashu_int::UBig::try_from(lhs.repr().significand().clone())
+        .expect("betweenness operands are non-negative");
+    let mut denominator = dashu_int::UBig::try_from(rhs.repr().significand().clone())
+        .expect("betweenness operands are non-negative");
+    let common = gcd(numerator.clone(), denominator.clone());
+    numerator /= &common;
+    denominator /= common;
+
+    let mut twos = 0usize;
+    while &denominator % 2u8 == 0 {
+        denominator /= 2u8;
+        twos += 1;
+    }
+    let mut fives = 0usize;
+    while &denominator % 5u8 == 0 {
+        denominator /= 5u8;
+        fives += 1;
+    }
+    if denominator != dashu_int::UBig::ONE {
+        return Err(invalid(
+            "Non-terminating decimal expansion at infinite precision",
+        ));
+    }
+
+    let scale = twos.max(fives);
+    numerator *= dashu_int::UBig::from(2u8).pow(scale - twos);
+    numerator *= dashu_int::UBig::from(5u8).pow(scale - fives);
+    let exponent = lhs
+        .repr()
+        .exponent()
+        .checked_sub(rhs.repr().exponent())
+        .and_then(|e| e.checked_sub(scale as isize))
+        .ok_or_else(|| GraphError::Overflow("decimal exponent does not fit isize".into()))?;
+    Ok(ApFloat::from_repr(
+        dashu_float::Repr::new(numerator.into(), exponent),
+        dashu_float::Context::new(0),
+    ))
 }
 
 impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
@@ -1227,9 +1312,16 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
         g: &G,
         normalize: bool,
     ) -> Result<Self, GraphError> {
-        use num_bigint::BigInt;
-        use num_rational::BigRational;
-        use num_traits::{One, Zero};
+        Self::with_precision(g, normalize, APFLOAT_INFINITE_PRECISION)
+    }
+
+    /// Construct with an Apfloat-compatible number of significant decimal digits.
+    pub fn with_precision<G: Graph<Vertex = V>>(
+        g: &G,
+        normalize: bool,
+        precision: usize,
+    ) -> Result<Self, GraphError> {
+        let precision = ap_precision(precision)?;
 
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
@@ -1248,12 +1340,15 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
             })
             .collect();
         let weighted = g.graph_type().weighted;
-        let mut scores: Vec<BigRational> = vec![BigRational::zero(); n];
+        let zero = ap_integer(0, precision);
+        let one = ap_integer(1, precision);
+        let two = ap_integer(2, precision);
+        let mut scores = vec![zero.clone(); n];
         for s in 0..n {
             let mut stack: Vec<usize> = Vec::new();
             let mut predecessors: Vec<Vec<usize>> = vec![Vec::new(); n];
-            let mut sigma: Vec<BigInt> = vec![BigInt::zero(); n];
-            sigma[s] = BigInt::one();
+            let mut sigma = vec![zero.clone(); n];
+            sigma[s] = one.clone();
             let mut distance = vec![f64::INFINITY; n];
             distance[s] = 0.0;
             let mut fifo = VecDeque::from([s]);
@@ -1285,8 +1380,8 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
                         sigma[w] = sigma[v].clone();
                         predecessors[w].push(v);
                     } else if distance[w] == d {
-                        let add = sigma[v].clone();
-                        sigma[w] += add;
+                        let paths_via_v = sigma[v].clone();
+                        sigma[w] += paths_via_v;
                         predecessors[w].push(v);
                     } else if distance[w] > d {
                         if weighted {
@@ -1299,11 +1394,11 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
                     }
                 }
             }
-            let mut dependency: Vec<BigRational> = vec![BigRational::zero(); n];
+            let mut dependency = vec![zero.clone(); n];
             while let Some(w) = stack.pop() {
                 for &v in &predecessors[w] {
-                    let ratio = BigRational::new(sigma[v].clone(), sigma[w].clone());
-                    let add = ratio * (dependency[w].clone() + BigRational::one());
+                    let ratio = ap_divide(&sigma[v], &sigma[w], precision)?;
+                    let add = ratio * (dependency[w].clone() + one.clone());
                     dependency[v] += add;
                 }
                 if w != s {
@@ -1313,12 +1408,18 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
             }
         }
         if !g.graph_type().directed {
-            let two = BigRational::from_integer(BigInt::from(2));
-            scores.iter_mut().for_each(|x| *x = x.clone() / two.clone());
+            for score in &mut scores {
+                *score = ap_divide(score, &two, precision)?;
+            }
         }
         if normalize && n > 2 {
-            let nf = BigRational::from_integer(BigInt::from((n as i64 - 1) * (n as i64 - 2)));
-            scores.iter_mut().for_each(|x| *x = x.clone() / nf.clone());
+            let nf = (n as i64 - 1).checked_mul(n as i64 - 2).ok_or_else(|| {
+                GraphError::Overflow("normalization factor does not fit i64".into())
+            })?;
+            let nf = ap_integer(nf, precision);
+            for score in &mut scores {
+                *score = ap_divide(score, &nf, precision)?;
+            }
         }
         Ok(ApBetweennessCentrality {
             scores: vs.into_iter().cloned().zip(scores).collect(),
@@ -1327,13 +1428,19 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
 }
 
 impl<V: Eq + std::hash::Hash> ApBetweennessCentrality<V> {
-    pub fn exact_scores(&self) -> &HashMap<V, num_rational::BigRational> {
+    /// Scores computed using the configured decimal precision.
+    pub fn scores(&self) -> &HashMap<V, ApFloat> {
         &self.scores
     }
 
-    pub fn vertex_score(&self, v: &V) -> Result<&num_rational::BigRational, GraphError> {
-        self.scores
-            .get(v)
-            .ok_or_else(|| invalid("Cannot return score of unknown vertex"))
+    /// Backwards-compatible name retained from the former exact-rational implementation.
+    pub fn exact_scores(&self) -> &HashMap<V, ApFloat> {
+        self.scores()
+    }
+}
+
+impl<V> VertexScoringAlgorithm<V, ApFloat> for ApBetweennessCentrality<V> {
+    fn scores(&self) -> &HashMap<V, ApFloat> {
+        &self.scores
     }
 }
