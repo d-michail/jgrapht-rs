@@ -20,11 +20,14 @@
 
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::Graph;
+use crate::util::heap::JavaPairingHeap;
+use crate::util::java::{JavaRandom, RandomSource};
 use crate::util::OrderedF64;
+use indexmap::IndexSet;
+use rheaps::{AddressableHeap, DecreaseKeyHeap};
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
-use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 /// A vertex in a contraction hierarchy.
 #[derive(Debug, Clone)]
@@ -73,7 +76,7 @@ impl<'g, G: Graph> ContractionHierarchy<'g, G> {
         self.graph
     }
 
-    /// Vertices of the hierarchy, in input iteration order.
+    /// Vertices of the hierarchy; the position of a vertex is its `vertex_id`.
     pub fn vertices(&self) -> &[ContractionVertex<G::Vertex>] {
         &self.vertices
     }
@@ -103,37 +106,45 @@ impl<'g, G: Graph> ContractionHierarchy<'g, G> {
         &self.incoming[vertex_id]
     }
 
-    fn unpack_forward(
+    /// Unpacks `edge` by recursively going from target to source, prepending to the path.
+    pub fn unpack_backward(
         &self,
-        edge_id: usize,
-        vertices: &mut Vec<G::Vertex>,
-        edges: &mut Vec<G::Edge>,
+        edge: usize,
+        vertices: &mut VecDeque<G::Vertex>,
+        edges: &mut VecDeque<G::Edge>,
     ) {
-        let edge = &self.edges[edge_id];
-        if let Some((first, second)) = edge.bypassed_edges {
-            self.unpack_forward(first, vertices, edges);
-            self.unpack_forward(second, vertices, edges);
-        } else if let Some(original) = &edge.edge {
-            edges.push(original.clone());
-            vertices.push(self.vertices[edge.target].vertex.clone());
+        let e = &self.edges[edge];
+        match (&e.bypassed_edges, &e.edge) {
+            (Some((first, second)), _) => {
+                self.unpack_backward(*second, vertices, edges);
+                self.unpack_backward(*first, vertices, edges);
+            }
+            (None, Some(original)) => {
+                vertices.push_front(self.vertices[e.source].vertex.clone());
+                edges.push_front(original.clone());
+            }
+            (None, None) => {}
         }
     }
 
-    fn unpack_path(
+    /// Unpacks `edge` by recursively going from source to target, appending to the path.
+    pub fn unpack_forward(
         &self,
-        source: usize,
-        hierarchy_edges: &[usize],
-        weight: f64,
-    ) -> GraphWalk<G::Vertex, G::Edge> {
-        let mut vertices = vec![self.vertices[source].vertex.clone()];
-        let mut edges = Vec::new();
-        for &edge in hierarchy_edges {
-            self.unpack_forward(edge, &mut vertices, &mut edges);
-        }
-        GraphWalk {
-            vertices,
-            edges,
-            weight,
+        edge: usize,
+        vertices: &mut VecDeque<G::Vertex>,
+        edges: &mut VecDeque<G::Edge>,
+    ) {
+        let e = &self.edges[edge];
+        match (&e.bypassed_edges, &e.edge) {
+            (Some((first, second)), _) => {
+                self.unpack_forward(*first, vertices, edges);
+                self.unpack_forward(*second, vertices, edges);
+            }
+            (None, Some(original)) => {
+                vertices.push_back(self.vertices[e.target].vertex.clone());
+                edges.push_back(original.clone());
+            }
+            (None, None) => {}
         }
     }
 }
@@ -170,72 +181,164 @@ impl<'g, G: Graph> ContractionHierarchy<'g, G> {
 ///
 /// # Rust notes
 ///
-/// Sequential contraction-hierarchy preprocessing.
-///
-/// JGraphT parallelizes independent parts of this procedure.  The Rust implementation uses the
-/// same witness-search and shortcut rules sequentially, avoiding a mandatory thread-pool in the
-/// public API while preserving the algorithm and its query complexity.
+/// Java's `ThreadPoolExecutor` becomes a worker-thread count: every parallel phase splits its
+/// segment of vertices into the same `parallelism` chunks as Java and runs them on scoped threads.
+/// Each chunk reads shared state and returns its results, which are applied sequentially in segment
+/// order, so no locking is needed and the result does not depend on thread scheduling. As in
+/// Java, every worker owns one random generator (created by the supplier, in worker order) that
+/// supplies the tie-breaking values of the vertices in its chunk of the initial segment, so a
+/// seeded supplier such as `|| JavaRandom::new(seed)` reproduces JGraphT's hierarchy for the same
+/// `parallelism`. The set of vertices that a vertex shortcut candidate is checked against is
+/// iterated in insertion order (Java: `HashSet` order), which only changes the order in which the
+/// shortcut edges of one vertex are added to the hierarchy.
 pub struct ContractionHierarchyPrecomputation<'g, G: Graph> {
     graph: &'g G,
+    parallelism: usize,
+    random_supplier: RandomSupplier,
 }
+
+type RandomSupplier = Box<dyn Fn() -> Box<dyn RandomSource + Send>>;
 
 impl<'g, G: Graph> ContractionHierarchyPrecomputation<'g, G> {
-    /// Prepare a hierarchy computation for `graph`.
+    /// Constructs a new instance of the algorithm for a given `graph`. The number of workers is
+    /// the number of available processors and the tie-breaking random numbers are seeded from the
+    /// clock.
     pub fn new(graph: &'g G) -> Self {
-        Self { graph }
+        let parallelism = std::thread::available_parallelism().map_or(1, |p| p.get());
+        Self::with_parallelism(graph, parallelism)
     }
 
-    /// Build the hierarchy. Negative and NaN weights are rejected.
+    /// Constructs a new instance of the algorithm for a given `graph` which uses `parallelism`
+    /// worker threads (at least one).
+    pub fn with_parallelism(graph: &'g G, parallelism: usize) -> Self {
+        Self::with_random_supplier(graph, parallelism, JavaRandom::from_time)
+    }
+
+    /// Constructs a new instance of the algorithm for a given `graph`, `parallelism` and
+    /// `random_supplier`. The supplier is called once per worker and should return different
+    /// generators, because they are used by different threads.
+    pub fn with_random_supplier<R, F>(graph: &'g G, parallelism: usize, random_supplier: F) -> Self
+    where
+        R: RandomSource + Send + 'static,
+        F: Fn() -> R + 'static,
+    {
+        Self {
+            graph,
+            parallelism: parallelism.max(1),
+            random_supplier: Box::new(move || Box::new(random_supplier())),
+        }
+    }
+
+    /// Computes contraction hierarchy for `graph`. Negative and NaN weights are rejected.
     pub fn compute_contraction_hierarchy(&self) -> Result<ContractionHierarchy<'g, G>> {
-        Builder::new(self.graph)?.contract()
+        let (mut core, originals) = Core::fill(self.graph)?;
+        let mut randoms: Vec<_> = (0..self.parallelism)
+            .map(|_| (self.random_supplier)())
+            .collect();
+        core.contract_all(&mut randoms);
+        Ok(core.into_hierarchy(self.graph, originals))
     }
 }
 
-struct Builder<'g, G: Graph> {
-    graph: &'g G,
-    vertices: Vec<ContractionVertex<G::Vertex>>,
-    mapping: HashMap<G::Vertex, usize>,
-    edges: Vec<ContractionEdge<G::Edge>>,
+/// An edge of the contraction graph; `original` indexes the input edge of a non-shortcut.
+struct CoreEdge {
+    source: usize,
+    target: usize,
+    weight: f64,
+    original_edges: usize,
+    original: Option<usize>,
+    bypassed: Option<(usize, usize)>,
+}
+
+/// Contraction data of one vertex (Java: `VertexData`).
+#[derive(Clone, Default)]
+struct VertexData {
+    depth: usize,
+    random: i32,
+    priority: f64,
+    contracted: bool,
+    independent: bool,
+}
+
+#[derive(Default)]
+struct Statistics {
+    added_contraction_edges: usize,
+    removed_contraction_edges: usize,
+    added_original_edges: usize,
+    removed_original_edges: usize,
+}
+
+/// The contraction graph and the state of the contraction. Vertices are numbered in input
+/// order; `order` is Java's `vertices` array (the position of a vertex in it is its Java
+/// `vertexId`), partitioned into contracted and not yet contracted vertices.
+struct Core {
+    undirected: bool,
+    edges: Vec<CoreEdge>,
     outgoing: Vec<Vec<usize>>,
     incoming: Vec<Vec<usize>>,
     by_endpoints: HashMap<(usize, usize), usize>,
-    active: Vec<bool>,
-    depth: Vec<usize>,
+    data: Vec<VertexData>,
+    order: Vec<usize>,
+    position: Vec<usize>,
+    shortcuts: Vec<Vec<(usize, usize)>>,
+    level: Vec<usize>,
 }
 
-impl<'g, G: Graph> Builder<'g, G> {
-    fn new(graph: &'g G) -> Result<Self> {
-        let vertices: Vec<_> = graph
-            .vertices()
+/// Runs `work` on `parallelism` contiguous chunks of `[start, end)` and concatenates the results
+/// in chunk order. Chunk `i` is `[start + len * i / p, start + len * (i + 1) / p)`, as in Java.
+fn parallel_chunks<S: Send, T: Send>(
+    states: &mut [S],
+    start: usize,
+    end: usize,
+    work: impl Fn(&mut S, std::ops::Range<usize>) -> Vec<T> + Sync,
+) -> Vec<T> {
+    let p = states.len();
+    let len = end - start;
+    let range = |i: usize| start + len * i / p..start + len * (i + 1) / p;
+    if p == 1 {
+        return work(&mut states[0], range(0));
+    }
+    let work = &work;
+    std::thread::scope(|scope| {
+        let handles: Vec<_> = states
+            .iter_mut()
             .enumerate()
-            .map(|(vertex_id, vertex)| ContractionVertex {
-                vertex_id,
-                vertex: vertex.clone(),
-                contraction_level: usize::MAX,
+            .map(|(i, state)| {
+                let chunk = range(i);
+                scope.spawn(move || work(state, chunk))
             })
             .collect();
-        let mapping = vertices
-            .iter()
-            .map(|v| (v.vertex.clone(), v.vertex_id))
-            .collect::<HashMap<_, _>>();
-        let n = vertices.len();
-        let mut this = Self {
-            graph,
-            vertices,
-            mapping,
+        handles
+            .into_iter()
+            .flat_map(|h| h.join().expect("contraction worker panicked"))
+            .collect()
+    })
+}
+
+impl Core {
+    /// Fills the contraction graph. If there exist multiple edges between two vertices in the
+    /// original graph, the shortest is added. Self loops are ignored. If the original graph is
+    /// undirected, each edge becomes two directed edges.
+    fn fill<G: Graph>(graph: &G) -> Result<(Self, Vec<G::Edge>)> {
+        let ids: HashMap<&G::Vertex, usize> =
+            graph.vertices().enumerate().map(|(i, v)| (v, i)).collect();
+        let n = ids.len();
+        let mut core = Core {
+            undirected: !graph.graph_type().directed,
             edges: Vec::new(),
             outgoing: vec![Vec::new(); n],
             incoming: vec![Vec::new(); n],
             by_endpoints: HashMap::new(),
-            active: vec![true; n],
-            depth: vec![0; n],
+            data: vec![VertexData::default(); n],
+            order: (0..n).collect(),
+            position: (0..n).collect(),
+            shortcuts: vec![Vec::new(); n],
+            level: vec![0; n],
         };
-        let undirected = !graph.graph_type().directed;
+        let mut originals = Vec::new();
         for edge in graph.edges() {
-            let source = graph.edge_source(edge).ok_or(GraphError::EdgeNotFound)?;
-            let target = graph.edge_target(edge).ok_or(GraphError::EdgeNotFound)?;
-            let source = this.mapping[source];
-            let target = this.mapping[target];
+            let source = ids[graph.edge_source(edge).ok_or(GraphError::EdgeNotFound)?];
+            let target = ids[graph.edge_target(edge).ok_or(GraphError::EdgeNotFound)?];
             if source == target {
                 continue;
             }
@@ -245,226 +348,477 @@ impl<'g, G: Graph> Builder<'g, G> {
                     "negative or NaN edge weight".into(),
                 ));
             }
-            this.add_original(source, target, edge.clone(), weight);
-            if undirected {
-                this.add_original(target, source, edge.clone(), weight);
+            let index = originals.len();
+            originals.push(edge.clone());
+            core.add_original(source, target, index, weight);
+            if core.undirected {
+                core.add_original(target, source, index, weight);
             }
         }
-        Ok(this)
+        Ok((core, originals))
     }
 
-    fn add_original(&mut self, source: usize, target: usize, original: G::Edge, weight: f64) {
+    fn add_original(&mut self, source: usize, target: usize, original: usize, weight: f64) {
         if let Some(&id) = self.by_endpoints.get(&(source, target)) {
             if weight < self.edges[id].weight {
                 self.edges[id].weight = weight;
-                self.edges[id].edge = Some(original);
-                self.edges[id].bypassed_edges = None;
-                self.edges[id].original_edges = 1;
+                self.edges[id].original = Some(original);
             }
             return;
         }
-        let id = self.edges.len();
-        self.edges.push(ContractionEdge {
+        self.push_edge(CoreEdge {
             source,
             target,
-            edge: Some(original),
-            bypassed_edges: None,
-            is_upward: false,
+            weight,
             original_edges: 1,
-            weight,
+            original: Some(original),
+            bypassed: None,
         });
-        self.outgoing[source].push(id);
-        self.incoming[target].push(id);
-        self.by_endpoints.insert((source, target), id);
     }
 
-    fn add_shortcut(&mut self, source: usize, target: usize, first: usize, second: usize) {
-        let weight = self.edges[first].weight + self.edges[second].weight;
-        let original_edges = self.edges[first].original_edges + self.edges[second].original_edges;
-        if let Some(&id) = self.by_endpoints.get(&(source, target)) {
-            if weight < self.edges[id].weight {
-                self.edges[id].weight = weight;
-                self.edges[id].edge = None;
-                self.edges[id].bypassed_edges = Some((first, second));
-                self.edges[id].original_edges = original_edges;
-            }
-            return;
-        }
+    fn push_edge(&mut self, edge: CoreEdge) {
         let id = self.edges.len();
-        self.edges.push(ContractionEdge {
-            source,
-            target,
-            edge: None,
-            bypassed_edges: Some((first, second)),
-            is_upward: false,
-            original_edges,
-            weight,
+        self.outgoing[edge.source].push(id);
+        self.incoming[edge.target].push(id);
+        self.by_endpoints.insert((edge.source, edge.target), id);
+        self.edges.push(edge);
+    }
+
+    /// Performs the contraction of all vertices (Java: `computeContractionHierarchy`).
+    fn contract_all(&mut self, randoms: &mut [Box<dyn RandomSource + Send>]) {
+        let n = self.order.len();
+        // compute initial priorities in parallel
+        let initial = parallel_chunks(randoms, 0, n, |random, chunk| {
+            chunk
+                .map(|pos| {
+                    let vertex = self.order[pos];
+                    let mut data = VertexData {
+                        random: random.next_int(),
+                        ..VertexData::default()
+                    };
+                    data.priority = self.priority(vertex, data.depth);
+                    (vertex, data)
+                })
+                .collect()
         });
-        self.outgoing[source].push(id);
-        self.incoming[target].push(id);
-        self.by_endpoints.insert((source, target), id);
+        for (vertex, data) in initial {
+            self.data[vertex] = data;
+        }
+
+        let mut workers = vec![(); randoms.len()];
+        let mut level = 0;
+        let mut set_end = n;
+        while set_end != 0 {
+            // compute independent set in parallel
+            let flags = parallel_chunks(&mut workers, 0, set_end, |_, chunk| {
+                chunk
+                    .map(|pos| {
+                        let vertex = self.order[pos];
+                        (vertex, self.is_independent(vertex))
+                    })
+                    .collect()
+            });
+            for (vertex, independent) in flags {
+                self.data[vertex].independent = independent;
+            }
+            let set_start = self.partition_independent_set(set_end);
+
+            // compute shortcuts for independent vertices in parallel
+            let shortcuts = parallel_chunks(&mut workers, set_start, set_end, |_, chunk| {
+                chunk
+                    .map(|pos| {
+                        let vertex = self.order[pos];
+                        (vertex, self.get_shortcuts(vertex))
+                    })
+                    .collect()
+            });
+            for (vertex, found) in shortcuts {
+                self.shortcuts[vertex] = found;
+            }
+            for pos in set_start..set_end {
+                self.contract_vertex(self.order[pos], level);
+                level += 1;
+            }
+
+            // update neighbours priorities in parallel
+            let updates = parallel_chunks(&mut workers, set_start, set_end, |_, chunk| {
+                chunk
+                    .flat_map(|pos| self.updated_neighbours(self.order[pos]))
+                    .collect()
+            });
+            for (neighbour, depth, priority) in updates {
+                self.data[neighbour].depth = depth;
+                self.data[neighbour].priority = priority;
+            }
+            for pos in set_start..set_end {
+                self.data[self.order[pos]].contracted = true;
+            }
+            set_end = set_start;
+        }
     }
 
-    fn active_incoming(&self, vertex: usize) -> Vec<usize> {
-        self.incoming[vertex]
-            .iter()
-            .copied()
-            .filter(|&e| self.active[self.edges[e].source])
-            .collect()
+    fn visible(&self, vertex: usize) -> bool {
+        !self.data[vertex].contracted
     }
 
-    fn active_outgoing(&self, vertex: usize) -> Vec<usize> {
-        self.outgoing[vertex]
-            .iter()
-            .copied()
-            .filter(|&e| self.active[self.edges[e].target])
-            .collect()
+    /// Neighbours of `vertex` in the overlay graph (Java: `Graphs.neighborSetOf` on the masked
+    /// contraction graph).
+    fn neighbours(&self, vertex: usize) -> Vec<usize> {
+        let mut result: IndexSet<usize> = IndexSet::new();
+        for &e in &self.incoming[vertex] {
+            let other = self.edges[e].source;
+            if self.visible(other) {
+                result.insert(other);
+            }
+        }
+        for &e in &self.outgoing[vertex] {
+            let other = self.edges[e].target;
+            if self.visible(other) {
+                result.insert(other);
+            }
+        }
+        result.into_iter().collect()
     }
 
-    /// Shortcuts required when `vertex` is removed from the current overlay.
-    fn shortcuts(&self, vertex: usize) -> Vec<(usize, usize)> {
-        let incoming = self.active_incoming(vertex);
-        let outgoing = self.active_outgoing(vertex);
-        let mut result = Vec::new();
-        for &first in &incoming {
-            let source = self.edges[first].source;
-            for &second in &outgoing {
-                let target = self.edges[second].target;
-                if source == target {
-                    continue;
-                }
-                let candidate = self.edges[first].weight + self.edges[second].weight;
-                if self.witness_distance(source, target, vertex, candidate) > candidate {
-                    result.push((first, second));
+    /// Determines if a `vertex` is independent wrt the overlay graph.
+    fn is_independent(&self, vertex: usize) -> bool {
+        for first in self.neighbours(vertex) {
+            if self.is_greater(vertex, first) {
+                return false;
+            }
+            for second in self.neighbours(first) {
+                if second != vertex && self.is_greater(vertex, second) {
+                    return false;
                 }
             }
         }
+        true
+    }
+
+    /// Determines if the priority of `a` is greater than the priority of `b`. Ties are broken by
+    /// the random values and then by the current position, which guarantees that every round
+    /// has at least one independent vertex.
+    fn is_greater(&self, a: usize, b: usize) -> bool {
+        let (da, db) = (&self.data[a], &self.data[b]);
+        if da.priority != db.priority {
+            return da.priority > db.priority;
+        }
+        if da.random != db.random {
+            return da.random > db.random;
+        }
+        self.position[a] > self.position[b]
+    }
+
+    /// Partitions `order[..end]` into not independent and independent vertices and returns the
+    /// position of the first independent one.
+    fn partition_independent_set(&mut self, end: usize) -> usize {
+        let mut left = 0;
+        let mut right = end as isize - 1;
+        while left as isize <= right {
+            while left < end && !self.data[self.order[left]].independent {
+                left += 1;
+            }
+            while right >= 0 && self.data[self.order[right as usize]].independent {
+                right -= 1;
+            }
+            if left as isize <= right {
+                self.order.swap(left, right as usize);
+                self.position[self.order[left]] = left;
+                self.position[self.order[right as usize]] = right as usize;
+            }
+        }
+        left
+    }
+
+    /// Adds the shortcuts of `vertex` to the contraction graph and assigns its level.
+    fn contract_vertex(&mut self, vertex: usize, level: usize) {
+        for (first, second) in std::mem::take(&mut self.shortcuts[vertex]) {
+            let source = self.edges[first].source;
+            let target = self.edges[second].target;
+            let weight = self.edges[first].weight + self.edges[second].weight;
+            let original_edges = self.edges[first].original_edges + self.edges[second].original_edges;
+            if let Some(&id) = self.by_endpoints.get(&(source, target)) {
+                // update the already existing edge
+                let edge = &mut self.edges[id];
+                edge.original = None;
+                edge.bypassed = Some((first, second));
+                edge.original_edges = original_edges;
+                edge.weight = weight;
+            } else {
+                self.push_edge(CoreEdge {
+                    source,
+                    target,
+                    weight,
+                    original_edges,
+                    original: None,
+                    bypassed: Some((first, second)),
+                });
+            }
+        }
+        self.level[vertex] = level;
+    }
+
+    /// New depth and priority of every neighbour of the just contracted `vertex`.
+    fn updated_neighbours(&self, vertex: usize) -> Vec<(usize, usize, f64)> {
+        let depth = self.data[vertex].depth + 1;
+        self.neighbours(vertex)
+            .into_iter()
+            .map(|neighbour| {
+                let depth = self.data[neighbour].depth.max(depth);
+                (neighbour, depth, self.priority(neighbour, depth))
+            })
+            .collect()
+    }
+
+    /// Priority of `vertex`: edge quotient, complexity quotient and hierarchical depth.
+    fn priority(&self, vertex: usize, depth: usize) -> f64 {
+        let mut stats = Statistics::default();
+        self.iterate_shortcut_edges(vertex, &mut |first, second| {
+            stats.added_contraction_edges += 1;
+            stats.added_original_edges +=
+                self.edges[first].original_edges + self.edges[second].original_edges;
+        });
+        for &e in &self.incoming[vertex] {
+            if self.visible(self.edges[e].source) {
+                stats.removed_contraction_edges += 1;
+                stats.removed_original_edges += self.edges[e].original_edges;
+            }
+        }
+        for &e in &self.outgoing[vertex] {
+            if self.visible(self.edges[e].target) {
+                stats.removed_contraction_edges += 1;
+                stats.removed_original_edges += self.edges[e].original_edges;
+            }
+        }
+        if stats.removed_contraction_edges * stats.removed_original_edges == 0 {
+            depth as f64
+        } else {
+            4.0 * stats.added_contraction_edges as f64 / stats.removed_contraction_edges as f64
+                + 2.0 * stats.added_original_edges as f64 / stats.removed_original_edges as f64
+                + depth as f64
+        }
+    }
+
+    fn get_shortcuts(&self, vertex: usize) -> Vec<(usize, usize)> {
+        let mut result = Vec::new();
+        self.iterate_shortcut_edges(vertex, &mut |first, second| result.push((first, second)));
         result
     }
 
-    /// Bounded Dijkstra in the uncontracted overlay, excluding the vertex being considered.
-    fn witness_distance(&self, source: usize, target: usize, excluded: usize, radius: f64) -> f64 {
-        let mut dist = vec![f64::INFINITY; self.vertices.len()];
-        let mut heap = BinaryHeap::new();
-        dist[source] = 0.0;
-        heap.push(Reverse((OrderedF64(0.0), source)));
-        while let Some(Reverse((OrderedF64(distance), vertex))) = heap.pop() {
-            if distance != dist[vertex] {
+    fn in_overlay(&self, vertex: usize) -> bool {
+        self.visible(vertex) && !self.data[vertex].independent
+    }
+
+    /// Runs forward shortest-path searches in the current overlay graph to find the shortcuts of
+    /// `vertex`, ignoring `vertex` itself, and passes each found shortcut to `consumer`. To
+    /// prune the search, keeps track of the value $d(u, v) + max {c(v, w) : (v, w) \in E'}$. If
+    /// the original graph is undirected each predecessor of `vertex` is considered only once and
+    /// for each found shortcut in the forward direction another one in the backward direction is
+    /// generated.
+    fn iterate_shortcut_edges(&self, vertex: usize, consumer: &mut impl FnMut(usize, usize)) {
+        let mut successors: IndexSet<usize> = IndexSet::new();
+        let mut max_outgoing_edge_weight = f64::from_bits(1); // Double.MIN_VALUE
+        for &out_edge in &self.outgoing[vertex] {
+            let successor = self.edges[out_edge].target;
+            if !self.in_overlay(successor) {
                 continue;
             }
-            if distance > radius || vertex == target {
-                return distance;
+            successors.insert(successor);
+            max_outgoing_edge_weight = max_outgoing_edge_weight.max(self.edges[out_edge].weight);
+        }
+        for &in_edge in &self.incoming[vertex] {
+            let predecessor = self.edges[in_edge].source;
+            if !self.in_overlay(predecessor) {
+                continue;
             }
-            for &edge in &self.outgoing[vertex] {
-                let next = self.edges[edge].target;
-                if next == excluded || !self.active[next] {
+            let contained_predecessor = successors.shift_remove(&predecessor);
+            let in_weight = self.edges[in_edge].weight;
+            let distances = self.iterate_to_successors(
+                predecessor,
+                &successors,
+                vertex,
+                in_weight + max_outgoing_edge_weight,
+            );
+            for &successor in &successors {
+                let out_edge = self.by_endpoints[&(vertex, successor)];
+                let path_weight = in_weight + self.edges[out_edge].weight;
+                if distances.get(&successor).is_none_or(|&d| d > path_weight) {
+                    consumer(in_edge, out_edge);
+                    if self.undirected {
+                        consumer(
+                            self.by_endpoints[&(successor, vertex)],
+                            self.by_endpoints[&(vertex, predecessor)],
+                        );
+                    }
+                }
+            }
+            if contained_predecessor && !self.undirected {
+                successors.insert(predecessor); // restore predecessor if needed
+            }
+        }
+    }
+
+    /// Dijkstra search in the overlay graph from `source` ignoring `vertex_to_ignore`, limited by
+    /// `radius`. It proceeds until all `successors` are reached or no vertex is left. Returns the
+    /// computed distances of the reached vertices.
+    fn iterate_to_successors(
+        &self,
+        source: usize,
+        successors: &IndexSet<usize>,
+        vertex_to_ignore: usize,
+        radius: f64,
+    ) -> HashMap<usize, f64> {
+        let mut heap: JavaPairingHeap<OrderedF64, usize> = JavaPairingHeap::default();
+        let mut seen: HashMap<usize, (f64, <JavaPairingHeap<OrderedF64, usize> as AddressableHeap<OrderedF64, usize>>::Handle)> =
+            HashMap::new();
+        let handle = heap.insert(OrderedF64(0.0), source);
+        seen.insert(source, (0.0, handle));
+
+        let number_of_successors = successors.len();
+        let mut passed_successors = 0;
+        while let Some((OrderedF64(distance), vertex)) = heap.pop() {
+            if distance > radius {
+                break;
+            }
+            if successors.contains(&vertex) {
+                passed_successors += 1;
+                if passed_successors == number_of_successors {
+                    break;
+                }
+            }
+            // relax the outgoing edges, skipping vertices that are not in the overlay graph
+            for &e in &self.outgoing[vertex] {
+                let successor = self.edges[e].target;
+                if !self.visible(successor)
+                    || successor == vertex_to_ignore
+                    || self.data[successor].independent
+                {
                     continue;
                 }
-                let updated = distance + self.edges[edge].weight;
-                if updated < dist[next] && updated <= radius {
-                    dist[next] = updated;
-                    heap.push(Reverse((OrderedF64(updated), next)));
+                let updated = distance + self.edges[e].weight;
+                match seen.get_mut(&successor) {
+                    None => {
+                        let handle = heap.insert(OrderedF64(updated), successor);
+                        seen.insert(successor, (updated, handle));
+                    }
+                    Some((key, handle)) if updated < *key => {
+                        *key = updated;
+                        let _ = heap.decrease_key(*handle, OrderedF64(updated));
+                    }
+                    Some(_) => {}
                 }
             }
         }
-        dist[target]
+        seen.into_iter().map(|(v, (d, _))| (v, d)).collect()
     }
 
-    fn priority(&self, vertex: usize) -> (usize, usize, usize) {
-        let removed = self.active_incoming(vertex).len() + self.active_outgoing(vertex).len();
-        // Edge difference and hierarchy depth are the dominant terms in JGraphT's priority.
-        let shortcuts = self.shortcuts(vertex).len();
-        (
-            shortcuts.saturating_mul(4).saturating_sub(removed),
-            self.depth[vertex],
-            vertex,
-        )
-    }
-
-    fn contract(mut self) -> Result<ContractionHierarchy<'g, G>> {
-        for level in 0..self.vertices.len() {
-            let vertex = (0..self.vertices.len())
-                .filter(|&v| self.active[v])
-                .min_by_key(|&v| self.priority(v))
-                .expect("one active vertex per contraction level");
-            let shortcuts = self.shortcuts(vertex);
-            for (first, second) in shortcuts {
-                let source = self.edges[first].source;
-                let target = self.edges[second].target;
-                self.add_shortcut(source, target, first, second);
-            }
-            self.vertices[vertex].contraction_level = level;
-            self.active[vertex] = false;
-
-            let next_depth = self.depth[vertex] + 1;
-            let neighbors: HashSet<_> = self.incoming[vertex]
-                .iter()
-                .map(|&e| self.edges[e].source)
-                .chain(self.outgoing[vertex].iter().map(|&e| self.edges[e].target))
-                .filter(|&v| self.active[v])
-                .collect();
-            for neighbor in neighbors {
-                self.depth[neighbor] = self.depth[neighbor].max(next_depth);
-            }
+    /// Converts the contraction into a hierarchy whose vertex ids are the final positions in the
+    /// vertex array (Java: `vertexId`).
+    fn into_hierarchy<'g, G: Graph>(
+        self,
+        graph: &'g G,
+        originals: Vec<G::Edge>,
+    ) -> ContractionHierarchy<'g, G> {
+        let input: Vec<&G::Vertex> = graph.vertices().collect();
+        let vertices: Vec<ContractionVertex<G::Vertex>> = self
+            .order
+            .iter()
+            .enumerate()
+            .map(|(vertex_id, &v)| ContractionVertex {
+                vertex_id,
+                vertex: input[v].clone(),
+                contraction_level: self.level[v],
+            })
+            .collect();
+        let mapping = vertices
+            .iter()
+            .map(|v| (v.vertex.clone(), v.vertex_id))
+            .collect();
+        // mark upward edges
+        let edges = self
+            .edges
+            .iter()
+            .map(|e| {
+                let (source, target) = (self.position[e.source], self.position[e.target]);
+                ContractionEdge {
+                    source,
+                    target,
+                    edge: e.original.map(|o| originals[o].clone()),
+                    bypassed_edges: e.bypassed,
+                    is_upward: vertices[source].contraction_level
+                        < vertices[target].contraction_level,
+                    original_edges: e.original_edges,
+                    weight: e.weight,
+                }
+            })
+            .collect();
+        let outgoing = self.order.iter().map(|&v| self.outgoing[v].clone()).collect();
+        let incoming = self.order.iter().map(|&v| self.incoming[v].clone()).collect();
+        ContractionHierarchy {
+            graph,
+            vertices,
+            mapping,
+            edges,
+            outgoing,
+            incoming,
         }
-        for edge in &mut self.edges {
-            edge.is_upward = self.vertices[edge.source].contraction_level
-                < self.vertices[edge.target].contraction_level;
-        }
-        Ok(ContractionHierarchy {
-            graph: self.graph,
-            vertices: self.vertices,
-            mapping: self.mapping,
-            edges: self.edges,
-            outgoing: self.outgoing,
-            incoming: self.incoming,
-        })
     }
 }
 
+/// A search frontier of the hierarchical query (Java: `DijkstraSearchFrontier`).
 struct Frontier {
-    dist: Vec<f64>,
-    pred: Vec<Option<(usize, usize)>>,
-    settled: Vec<bool>,
-    heap: BinaryHeap<Reverse<(OrderedF64, usize)>>,
+    heap: JavaPairingHeap<OrderedF64, usize>,
+    seen: HashMap<usize, FrontierNode>,
+    finished: bool,
+}
+
+struct FrontierNode {
+    distance: f64,
+    handle: <JavaPairingHeap<OrderedF64, usize> as AddressableHeap<OrderedF64, usize>>::Handle,
+    tree_edge: Option<usize>,
 }
 
 impl Frontier {
-    fn new(size: usize, start: usize) -> Self {
-        let mut dist = vec![f64::INFINITY; size];
-        dist[start] = 0.0;
-        Self {
-            dist,
-            pred: vec![None; size],
-            settled: vec![false; size],
-            heap: BinaryHeap::from([Reverse((OrderedF64(0.0), start))]),
+    fn new() -> Self {
+        Frontier {
+            heap: JavaPairingHeap::default(),
+            seen: HashMap::new(),
+            finished: false,
         }
     }
 
-    fn peek(&mut self) -> f64 {
-        while let Some(&Reverse((OrderedF64(distance), vertex))) = self.heap.peek() {
-            if self.settled[vertex] || distance != self.dist[vertex] {
-                self.heap.pop();
-            } else {
-                return distance;
+    fn update_distance(&mut self, vertex: usize, edge: Option<usize>, distance: f64) {
+        match self.seen.get_mut(&vertex) {
+            None => {
+                let handle = self.heap.insert(OrderedF64(distance), vertex);
+                self.seen.insert(
+                    vertex,
+                    FrontierNode {
+                        distance,
+                        handle,
+                        tree_edge: edge,
+                    },
+                );
             }
+            Some(node) if distance < node.distance => {
+                node.distance = distance;
+                node.tree_edge = edge;
+                let _ = self.heap.decrease_key(node.handle, OrderedF64(distance));
+            }
+            Some(_) => {}
         }
-        f64::INFINITY
     }
 
-    fn pop(&mut self) -> Option<(f64, usize)> {
-        self.peek();
-        let Reverse((OrderedF64(distance), vertex)) = self.heap.pop()?;
-        self.settled[vertex] = true;
-        Some((distance, vertex))
+    fn distance(&self, vertex: usize) -> f64 {
+        self.seen.get(&vertex).map_or(f64::INFINITY, |n| n.distance)
     }
 
-    fn relax(&mut self, vertex: usize, distance: f64, edge: usize, parent: usize) {
-        if distance < self.dist[vertex] {
-            self.dist[vertex] = distance;
-            self.pred[vertex] = Some((edge, parent));
-            self.heap.push(Reverse((OrderedF64(distance), vertex)));
-        }
+    fn tree_edge(&self, vertex: usize) -> Option<usize> {
+        self.seen.get(&vertex).and_then(|n| n.tree_edge)
+    }
+
+    fn min_key(&self) -> Option<f64> {
+        self.heap.peek().map(|(_, key, _)| key.0)
     }
 }
 
@@ -511,14 +865,14 @@ impl Frontier {
 ///
 /// # Rust notes
 ///
-/// Bidirectional Dijkstra restricted to the upward and downward hierarchy graphs.
+/// The two frontiers alternate and use the pairing heap of JHeaps, as in Java.
 pub struct ContractionHierarchyBidirectionalDijkstra<'h, 'g, G: Graph> {
     hierarchy: &'h ContractionHierarchy<'g, G>,
     radius: f64,
 }
 
 impl<'h, 'g, G: Graph> ContractionHierarchyBidirectionalDijkstra<'h, 'g, G> {
-    /// Query an already-computed hierarchy.
+    /// Constructs a new instance of the algorithm for a given contraction hierarchy.
     pub fn new(hierarchy: &'h ContractionHierarchy<'g, G>) -> Self {
         Self {
             hierarchy,
@@ -532,101 +886,110 @@ impl<'h, 'g, G: Graph> ContractionHierarchyBidirectionalDijkstra<'h, 'g, G> {
         self
     }
 
-    /// Find an unpacked path in the input graph.
+    /// Computes a shortest path between `source` and `sink` using the hierarchy.
     pub fn path(
         &self,
         source: &G::Vertex,
         sink: &G::Vertex,
     ) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
         let h = self.hierarchy;
-        let &source = h.mapping.get(source).ok_or(GraphError::VertexNotFound)?;
-        let &sink = h.mapping.get(sink).ok_or(GraphError::VertexNotFound)?;
+        if !h.graph.contains_vertex(source) || !h.graph.contains_vertex(sink) {
+            return Err(GraphError::VertexNotFound);
+        }
+        // handle special case if source equals target
         if source == sink {
-            return Ok(Some(GraphWalk::single(h.vertices[source].vertex.clone())));
+            return Ok(Some(GraphWalk::single(source.clone())));
         }
+        let (source, sink) = (h.mapping[source], h.mapping[sink]);
 
-        let n = h.vertices.len();
-        let mut forward = Frontier::new(n, source);
-        let mut backward = Frontier::new(n, sink);
-        let mut best = f64::INFINITY;
-        let mut meeting = None;
+        let mut forward = Frontier::new();
+        let mut backward = Frontier::new();
+        forward.update_distance(source, None, 0.0);
+        backward.update_distance(sink, None, 0.0);
 
+        let mut best_path = f64::INFINITY;
+        let mut common_vertex = None;
+        let mut forward_is_current = true;
         loop {
-            let f_min = forward.peek();
-            let b_min = backward.peek();
-            if f_min.is_infinite() && b_min.is_infinite() {
-                break;
-            }
-            if f_min.min(b_min) >= best {
-                break;
-            }
-            let use_forward = f_min <= b_min;
-            if use_forward {
-                let Some((distance, vertex)) = forward.pop() else {
-                    continue;
-                };
-                if backward.dist[vertex].is_finite() && distance + backward.dist[vertex] < best {
-                    best = distance + backward.dist[vertex];
-                    meeting = Some(vertex);
-                }
-                for &edge in &h.outgoing[vertex] {
-                    let e = &h.edges[edge];
-                    if !e.is_upward {
-                        continue;
-                    }
-                    let updated = distance + e.weight;
-                    forward.relax(e.target, updated, edge, vertex);
-                    if backward.dist[e.target].is_finite()
-                        && updated + backward.dist[e.target] < best
-                    {
-                        best = updated + backward.dist[e.target];
-                        meeting = Some(e.target);
-                    }
-                }
+            let (frontier, other) = if forward_is_current {
+                (&mut forward, &mut backward)
             } else {
-                let Some((distance, vertex)) = backward.pop() else {
-                    continue;
-                };
-                if forward.dist[vertex].is_finite() && distance + forward.dist[vertex] < best {
-                    best = distance + forward.dist[vertex];
-                    meeting = Some(vertex);
-                }
-                // Reverse traversal of original downward edges climbs the hierarchy.
-                for &edge in &h.incoming[vertex] {
-                    let e = &h.edges[edge];
-                    if e.is_upward {
-                        continue;
+                (&mut backward, &mut forward)
+            };
+            if frontier.heap.is_empty() {
+                frontier.finished = true;
+            }
+            if other.heap.is_empty() {
+                other.finished = true;
+            }
+            // stopping condition for search
+            if frontier.finished && other.finished {
+                break;
+            }
+            // stopping condition for current frontier
+            match frontier.min_key() {
+                Some(min) if min < best_path => {
+                    // frontier scan
+                    let (OrderedF64(distance), v) = frontier.heap.pop().expect("non-empty heap");
+                    if forward_is_current {
+                        for &e in &h.outgoing[v] {
+                            let edge = &h.edges[e];
+                            if !edge.is_upward {
+                                continue;
+                            }
+                            frontier.update_distance(edge.target, Some(e), distance + edge.weight);
+                            let path_distance = distance + edge.weight + other.distance(edge.target);
+                            if path_distance < best_path {
+                                best_path = path_distance;
+                                common_vertex = Some(edge.target);
+                            }
+                        }
+                    } else {
+                        for &e in &h.incoming[v] {
+                            let edge = &h.edges[e];
+                            if edge.is_upward {
+                                continue;
+                            }
+                            frontier.update_distance(edge.source, Some(e), distance + edge.weight);
+                            let path_distance = distance + edge.weight + other.distance(edge.source);
+                            if path_distance < best_path {
+                                best_path = path_distance;
+                                common_vertex = Some(edge.source);
+                            }
+                        }
                     }
-                    let updated = distance + e.weight;
-                    backward.relax(e.source, updated, edge, vertex);
-                    if forward.dist[e.source].is_finite() && updated + forward.dist[e.source] < best
-                    {
-                        best = updated + forward.dist[e.source];
-                        meeting = Some(e.source);
-                    }
                 }
+                _ => frontier.finished = true,
+            }
+            // swap frontiers only if the other frontier is not yet finished
+            if !other.finished {
+                forward_is_current = !forward_is_current;
             }
         }
-        let Some(meeting) = meeting else {
-            return Ok(None);
+        // create path if found
+        let common_vertex = match common_vertex {
+            Some(v) if best_path.is_finite() && best_path <= self.radius => v,
+            _ => return Ok(None),
         };
-        if best > self.radius {
-            return Ok(None);
+        let mut vertices = VecDeque::from([h.vertices[common_vertex].vertex.clone()]);
+        let mut edges = VecDeque::new();
+        // traverse forward path
+        let mut v = common_vertex;
+        while let Some(e) = forward.tree_edge(v) {
+            h.unpack_backward(e, &mut vertices, &mut edges);
+            v = h.edges[e].source;
         }
-        let mut first = Vec::new();
-        let mut vertex = meeting;
-        while let Some((edge, parent)) = forward.pred[vertex] {
-            first.push(edge);
-            vertex = parent;
+        // traverse reverse path
+        v = common_vertex;
+        while let Some(e) = backward.tree_edge(v) {
+            h.unpack_forward(e, &mut vertices, &mut edges);
+            v = h.edges[e].target;
         }
-        first.reverse();
-        let mut hierarchy_edges = first;
-        vertex = meeting;
-        while let Some((edge, next)) = backward.pred[vertex] {
-            hierarchy_edges.push(edge);
-            vertex = next;
-        }
-        Ok(Some(h.unpack_path(source, &hierarchy_edges, best)))
+        Ok(Some(GraphWalk {
+            vertices: vertices.into(),
+            edges: edges.into(),
+            weight: best_path,
+        }))
     }
 }
 

@@ -100,6 +100,8 @@ impl JavaRandom {
 
 /// Source of randomness for algorithms that need to match JGraphT draw for draw.
 pub trait RandomSource {
+    /// Uniform over all `i32` values (`Random.nextInt()`).
+    fn next_int(&mut self) -> i32;
     /// Uniform in `[0, bound)`.
     fn next_int_bound(&mut self, bound: usize) -> usize;
     /// Uniform in `[0, 1)`.
@@ -110,6 +112,9 @@ pub trait RandomSource {
 }
 
 impl RandomSource for JavaRandom {
+    fn next_int(&mut self) -> i32 {
+        JavaRandom::next_int(self)
+    }
     fn next_int_bound(&mut self, bound: usize) -> usize {
         JavaRandom::next_int_bound(self, bound as i32) as usize
     }
@@ -125,6 +130,9 @@ impl RandomSource for JavaRandom {
 }
 
 impl<R: rand::RngCore> RandomSource for R {
+    fn next_int(&mut self) -> i32 {
+        rand::RngCore::next_u32(self) as i32
+    }
     fn next_int_bound(&mut self, bound: usize) -> usize {
         rand::Rng::random_range(self, 0..bound)
     }

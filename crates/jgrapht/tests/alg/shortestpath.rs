@@ -34,6 +34,8 @@ mod bidirectional_astar;
 mod bidirectional_dijkstra;
 #[path = "shortestpath/bounded_pruned_yen.rs"]
 mod bounded_pruned_yen;
+#[path = "shortestpath/contraction_hierarchy.rs"]
+mod contraction_hierarchy;
 #[path = "shortestpath/dag_all_paths_counter.rs"]
 mod dag_all_paths_counter;
 #[path = "shortestpath/dijkstra.rs"]
