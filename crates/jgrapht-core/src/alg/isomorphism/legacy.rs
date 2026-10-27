@@ -1,6 +1,6 @@
 //! Graph and subgraph isomorphism (backtracking with degree and adjacency pruning, VF2 style).
 
-use super::util::Indexed;
+use crate::alg::util::Indexed;
 use crate::graph::Graph;
 use crate::walk::GraphMapping;
 use std::collections::HashMap;

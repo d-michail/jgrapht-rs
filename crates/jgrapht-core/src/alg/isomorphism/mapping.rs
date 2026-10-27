@@ -1,0 +1,231 @@
+use super::ordering::GraphOrdering;
+use crate::graph::Graph;
+use indexmap::IndexMap;
+use std::collections::BTreeMap;
+use std::fmt;
+
+/// Marks an unmatched vertex in the `core` arrays handed to [`IsomorphicGraphMapping::from_cores`].
+pub const NULL_NODE: usize = usize::MAX;
+
+/// `IsomorphicGraphMapping`: a vertex mapping between two graphs of the same type, in both
+/// directions, with the induced edge correspondence.
+pub struct IsomorphicGraphMapping<'g, G: Graph> {
+    forward: IndexMap<G::Vertex, G::Vertex>,
+    backward: IndexMap<G::Vertex, G::Vertex>,
+    graph1: &'g G,
+    graph2: &'g G,
+}
+
+impl<'g, G: Graph> Clone for IsomorphicGraphMapping<'g, G> {
+    fn clone(&self) -> Self {
+        IsomorphicGraphMapping {
+            forward: self.forward.clone(),
+            backward: self.backward.clone(),
+            graph1: self.graph1,
+            graph2: self.graph2,
+        }
+    }
+}
+
+impl<'g, G: Graph> IsomorphicGraphMapping<'g, G> {
+    /// Builds the mapping from the vertex numbers matched in `core1` / `core2`
+    /// ([`NULL_NODE`] marks unmatched vertices).
+    pub fn from_cores(
+        g1: &GraphOrdering<'g, G>,
+        g2: &GraphOrdering<'g, G>,
+        core1: &[usize],
+        core2: &[usize],
+    ) -> Self {
+        let (graph1, graph2) = (g1.graph(), g2.graph());
+        let mut forward = IndexMap::with_capacity(graph1.vertex_count());
+        let mut backward = IndexMap::with_capacity(graph1.vertex_count());
+        for v in graph1.vertices() {
+            let u = core1[g1.vertex_number(v)];
+            if u != NULL_NODE {
+                forward.insert(v.clone(), g2.vertex(u).clone());
+            }
+        }
+        for v in graph2.vertices() {
+            let u = core2[g2.vertex_number(v)];
+            if u != NULL_NODE {
+                backward.insert(v.clone(), g1.vertex(u).clone());
+            }
+        }
+        IsomorphicGraphMapping {
+            forward,
+            backward,
+            graph1,
+            graph2,
+        }
+    }
+
+    pub fn from_maps(
+        forward: IndexMap<G::Vertex, G::Vertex>,
+        backward: IndexMap<G::Vertex, G::Vertex>,
+        graph1: &'g G,
+        graph2: &'g G,
+    ) -> Self {
+        IsomorphicGraphMapping {
+            forward,
+            backward,
+            graph1,
+            graph2,
+        }
+    }
+
+    pub fn vertex_correspondence(&self, v: &G::Vertex, forward: bool) -> Option<&G::Vertex> {
+        if forward {
+            self.forward.get(v)
+        } else {
+            self.backward.get(v)
+        }
+    }
+
+    pub fn edge_correspondence(&self, e: &G::Edge, forward: bool) -> Option<&G::Edge> {
+        let (from, to) = if forward {
+            (self.graph1, self.graph2)
+        } else {
+            (self.graph2, self.graph1)
+        };
+        let u = self.vertex_correspondence(from.edge_source(e)?, forward)?;
+        let v = self.vertex_correspondence(from.edge_target(e)?, forward)?;
+        to.get_edge(u, v)
+    }
+
+    pub fn forward_mapping(&self) -> &IndexMap<G::Vertex, G::Vertex> {
+        &self.forward
+    }
+
+    pub fn backward_mapping(&self) -> &IndexMap<G::Vertex, G::Vertex> {
+        &self.backward
+    }
+
+    /// Vertices of the first graph that are mapped.
+    pub fn mapping_domain(&self) -> impl Iterator<Item = &G::Vertex> {
+        self.forward.keys()
+    }
+
+    /// Vertices of the second graph that are mapped.
+    pub fn mapping_range(&self) -> impl Iterator<Item = &G::Vertex> {
+        self.backward.keys()
+    }
+
+    pub fn has_vertex_correspondence(&self, v: &G::Vertex) -> bool {
+        self.forward.contains_key(v)
+    }
+
+    pub fn has_edge_correspondence(&self, e: &G::Edge) -> bool {
+        self.edge_correspondence(e, true).is_some()
+    }
+
+    pub fn graph1(&self) -> &'g G {
+        self.graph1
+    }
+
+    pub fn graph2(&self) -> &'g G {
+        self.graph2
+    }
+
+    /// Whether this is a bijection that maps edges onto edges in both directions.
+    pub fn is_valid_isomorphism(&self) -> bool {
+        let (g1, g2) = (self.graph1, self.graph2);
+        if !g1
+            .vertices()
+            .all(|v| self.forward.get(v).is_some_and(|u| g2.contains_vertex(u)))
+        {
+            return false;
+        }
+        if !g2
+            .vertices()
+            .all(|v| self.backward.get(v).is_some_and(|u| g1.contains_vertex(u)))
+        {
+            return false;
+        }
+        g1.edges()
+            .all(|e| self.edge_correspondence(e, true).is_some())
+            && g2
+                .edges()
+                .all(|e| self.edge_correspondence(e, false).is_some())
+    }
+
+    /// Whether `other` agrees with this mapping on every vertex of the second graph.
+    pub fn is_equal_mapping(&self, other: &Self) -> bool {
+        self.graph2
+            .vertices()
+            .all(|v| self.backward.get(v) == other.backward.get(v))
+    }
+
+    /// The mapping `self` followed by `other`, from `self`'s first graph to `other`'s second.
+    pub fn compose(&self, other: &Self) -> Self {
+        let mut forward = IndexMap::with_capacity(self.forward.len());
+        let mut backward = IndexMap::with_capacity(self.forward.len());
+        for v in self.graph1.vertices() {
+            let u = self
+                .forward
+                .get(v)
+                .and_then(|m| other.vertex_correspondence(m, true));
+            if let Some(u) = u {
+                forward.insert(v.clone(), u.clone());
+                backward.insert(u.clone(), v.clone());
+            }
+        }
+        IsomorphicGraphMapping {
+            forward,
+            backward,
+            graph1: self.graph1,
+            graph2: other.graph2,
+        }
+    }
+
+    pub fn identity(graph: &'g G) -> Self {
+        let map: IndexMap<_, _> = graph.vertices().map(|v| (v.clone(), v.clone())).collect();
+        IsomorphicGraphMapping {
+            forward: map.clone(),
+            backward: map,
+            graph1: graph,
+            graph2: graph,
+        }
+    }
+}
+
+impl<'g, G: Graph> PartialEq for IsomorphicGraphMapping<'g, G> {
+    fn eq(&self, other: &Self) -> bool {
+        self.forward == other.forward
+            && self.backward == other.backward
+            && std::ptr::eq(self.graph1, other.graph1)
+            && std::ptr::eq(self.graph2, other.graph2)
+    }
+}
+
+impl<'g, G: Graph> fmt::Debug for IsomorphicGraphMapping<'g, G>
+where
+    G::Vertex: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("IsomorphicGraphMapping")
+            .field("forward", &self.forward)
+            .finish()
+    }
+}
+
+/// `[a=x b=y c=~~]`, the vertices of the first graph sorted by their text.
+impl<'g, G: Graph> fmt::Display for IsomorphicGraphMapping<'g, G>
+where
+    G::Vertex: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let sorted: BTreeMap<String, &G::Vertex> =
+            self.graph1.vertices().map(|v| (v.to_string(), v)).collect();
+        write!(f, "[")?;
+        for (i, (name, v)) in sorted.iter().enumerate() {
+            if i > 0 {
+                write!(f, " ")?;
+            }
+            match self.forward.get(*v) {
+                Some(u) => write!(f, "{name}={u}")?,
+                None => write!(f, "{name}=~~")?,
+            }
+        }
+        write!(f, "]")
+    }
+}

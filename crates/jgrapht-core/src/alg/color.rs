@@ -645,6 +645,38 @@ impl<'g, G: Graph> ChordalGraphColoring<'g, G> {
     }
 }
 
+/// Colour refinement on successor lists: repeatedly splits colour classes by the sorted multiset
+/// of successor colours until stable. Returns the colours and the number of classes.
+pub(crate) fn refine_colors(succ: &[Vec<usize>], initial: Vec<usize>) -> (Vec<usize>, usize) {
+    let mut color = initial;
+    let n = color.len();
+    let mut classes = color.iter().collect::<HashSet<_>>().len();
+    loop {
+        let sigs: Vec<(usize, Vec<usize>)> = (0..n)
+            .map(|v| {
+                let mut s: Vec<usize> = succ[v].iter().map(|&u| color[u]).collect();
+                s.sort_unstable();
+                (color[v], s)
+            })
+            .collect();
+        let mut ids: HashMap<&(usize, Vec<usize>), usize> = HashMap::new();
+        let next: Vec<usize> = sigs
+            .iter()
+            .map(|s| {
+                let l = ids.len();
+                *ids.entry(s).or_insert(l)
+            })
+            .collect();
+        let new_classes = ids.len();
+        color = next;
+        if new_classes == classes {
+            break;
+        }
+        classes = new_classes;
+    }
+    (color, classes)
+}
+
 /// Colour refinement (`ColorRefinementAlgorithm`): the coarsest equitable partition refining
 /// `alpha`, where a vertex's signature is the multiset of its *successors'* colours (for directed
 /// graphs only outgoing edges count, as in JGraphT; parallel edges count once).
@@ -696,34 +728,11 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlgorithm<'
                     .collect()
             })
             .collect();
-        let mut color: Vec<usize> = match &self.alpha {
+        let initial: Vec<usize> = match &self.alpha {
             None => vec![0; vs.len()],
             Some(a) => vs.iter().map(|v| a.colors[*v]).collect(),
         };
-        let mut classes = color.iter().collect::<HashSet<_>>().len();
-        loop {
-            let sigs: Vec<(usize, Vec<usize>)> = (0..vs.len())
-                .map(|v| {
-                    let mut s: Vec<usize> = succ[v].iter().map(|&u| color[u]).collect();
-                    s.sort_unstable();
-                    (color[v], s)
-                })
-                .collect();
-            let mut ids: HashMap<&(usize, Vec<usize>), usize> = HashMap::new();
-            let next: Vec<usize> = sigs
-                .iter()
-                .map(|s| {
-                    let l = ids.len();
-                    *ids.entry(s).or_insert(l)
-                })
-                .collect();
-            let new_classes = ids.len();
-            color = next;
-            if new_classes == classes {
-                break;
-            }
-            classes = new_classes;
-        }
+        let (color, classes) = refine_colors(&succ, initial);
         Ok(Coloring {
             colors: vs
                 .iter()
