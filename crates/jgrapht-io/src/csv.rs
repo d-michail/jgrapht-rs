@@ -27,7 +27,7 @@ use crate::{
     BaseExporter, EventDrivenImporter, GraphExporter, GraphImporter, ImportEvent,
     IntegerIdProvider, IoError, Result,
 };
-use jgrapht::{Graph, GraphMut};
+use jgrapht::{Graph, GraphMut, OutgoingGraph};
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::io::{Read, Write};
@@ -615,7 +615,7 @@ where
 
 impl<V, E, G> GraphExporter<G> for CsvExporter<V, E>
 where
-    G: Graph<Vertex = V, Edge = E>,
+    G: OutgoingGraph<Vertex = V, Edge = E>,
     V: Clone + Eq + Hash + 'static,
     E: Clone + Eq + Hash,
 {
@@ -655,7 +655,7 @@ where
                 for vertex in &vertices {
                     let id = self.base.vertex_id(vertex)?;
                     write!(output, "{}", escape_field(&id, self.delimiter))?;
-                    for edge in graph.out_edges_of(vertex).unwrap() {
+                    for edge in graph.out_edges_of(vertex) {
                         let source = graph.edge_source(edge).expect("graph edge source");
                         let target = graph.edge_target(edge).expect("graph edge target");
                         let opposite = if source == vertex { target } else { source };

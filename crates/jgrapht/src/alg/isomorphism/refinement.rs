@@ -12,12 +12,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use super::mapping::IsomorphicGraphMapping;
 use super::vf2::check_types;
 use crate::alg::color::refine_colors;
 use crate::error::Result;
 use crate::graph::props::is_forest;
-use crate::graph::{Graph, GraphExt};
+use crate::graph::{GraphExt};
 use indexmap::IndexMap;
 use std::collections::{HashMap, HashSet};
 use thiserror::Error;
@@ -40,7 +42,7 @@ pub struct IsomorphismUndecidable;
 /// `ColorRefinementIsomorphismInspector`: refines the colours of the disjoint union of both
 /// graphs. It decides isomorphism when the colouring is discrete or both graphs are forests, and
 /// otherwise reports the question as undecidable (unless the colour classes already differ).
-pub struct ColorRefinementIsomorphismInspector<'g, G: Graph> {
+pub struct ColorRefinementIsomorphismInspector<'g, G: IncidenceGraph> {
     graph1: &'g G,
     graph2: &'g G,
     mapping: Option<IsomorphicGraphMapping<'g, G>>,
@@ -51,7 +53,7 @@ pub struct ColorRefinementIsomorphismInspector<'g, G: Graph> {
 }
 
 /// Distinct successors of every vertex, over the disjoint union of `g1` and `g2`.
-fn union_successors<G: Graph>(g1: &G, g2: &G) -> Vec<Vec<usize>> {
+fn union_successors<G: OutgoingGraph>(g1: &G, g2: &G) -> Vec<Vec<usize>> {
     let mut succ = Vec::new();
     let mut offset = 0;
     for g in [g1, g2] {
@@ -61,7 +63,6 @@ fn union_successors<G: Graph>(g1: &G, g2: &G) -> Vec<Vec<usize>> {
             let mut seen = HashSet::new();
             succ.push(
                 g.out_edges_of(v)
-                    .unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .map(|w| index[w] + offset)
                     .filter(|w| seen.insert(*w))
@@ -73,7 +74,7 @@ fn union_successors<G: Graph>(g1: &G, g2: &G) -> Vec<Vec<usize>> {
     succ
 }
 
-impl<'g, G: Graph> ColorRefinementIsomorphismInspector<'g, G> {
+impl<'g, G: OutgoingGraph + IncidenceGraph> ColorRefinementIsomorphismInspector<'g, G> {
     /// Fails for multigraphs, mixed graphs and a directed/undirected pair.
     pub fn new(graph1: &'g G, graph2: &'g G) -> Result<Self> {
         check_types(graph1, graph2)?;

@@ -14,10 +14,11 @@
 
 //! Vertex orderings that ignore edge direction.
 
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use std::collections::{HashMap, HashSet};
 
-fn neighbor_set<'g, G: Graph>(g: &'g G, v: &'g G::Vertex) -> HashSet<&'g G::Vertex> {
+fn neighbor_set<'g, G: IncidenceGraph>(g: &'g G, v: &'g G::Vertex) -> HashSet<&'g G::Vertex> {
     g.neighbors_of(v).filter(|n| *n != v).collect()
 }
 
@@ -37,7 +38,7 @@ impl<'g, G: Graph> LexBfs<'g, G> {
     }
 }
 
-impl<'g, G: Graph> Iterator for LexBfs<'g, G> {
+impl<'g, G: IncidenceGraph> Iterator for LexBfs<'g, G> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         let first = self.parts.iter_mut().find(|p| !p.is_empty())?;
@@ -74,7 +75,7 @@ impl<'g, G: Graph> MaximumCardinality<'g, G> {
     }
 }
 
-impl<'g, G: Graph> Iterator for MaximumCardinality<'g, G> {
+impl<'g, G: IncidenceGraph> Iterator for MaximumCardinality<'g, G> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         // first maximum wins, keeping the order deterministic
@@ -101,7 +102,7 @@ pub struct DegeneracyOrdering<'g, G: Graph> {
     degeneracy: usize,
 }
 
-impl<'g, G: Graph> DegeneracyOrdering<'g, G> {
+impl<'g, G: IncidenceGraph> DegeneracyOrdering<'g, G> {
     pub fn new(g: &'g G) -> Self {
         DegeneracyOrdering {
             g,
@@ -119,7 +120,7 @@ impl<'g, G: Graph> DegeneracyOrdering<'g, G> {
     }
 }
 
-impl<'g, G: Graph> Iterator for DegeneracyOrdering<'g, G> {
+impl<'g, G: IncidenceGraph> Iterator for DegeneracyOrdering<'g, G> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         let idx = (0..self.remaining.len()).min_by_key(|&i| self.degree[self.remaining[i]])?;

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::chordality::{ChordalityInspector, IterationOrder};
 use crate::graph::{GraphExt, UndirectedGraph};
 use indexmap::IndexMap;
@@ -63,7 +64,7 @@ pub struct ChordalGraphMinimalVertexSeparatorFinder<'g, G: UndirectedGraph> {
     minimal_separators_with_multiplicities: Option<IndexMap<Vec<G::Vertex>, usize>>,
 }
 
-impl<'g, G: UndirectedGraph> ChordalGraphMinimalVertexSeparatorFinder<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphMinimalVertexSeparatorFinder<'g, G> {
     /// Creates new `ChordalGraphMinimalVertexSeparatorFinder` instance. The
     /// `ChordalityInspector` used in this implementation uses the
     /// `org.jgrapht.traverse.MaximumCardinalityIterator` iterator
@@ -128,7 +129,7 @@ impl<'g, G: UndirectedGraph> ChordalGraphMinimalVertexSeparatorFinder<'g, G> {
     ) -> Vec<G::Vertex> {
         let position = vertex_in_order[vertex];
         let mut predecessors: Vec<(usize, G::Vertex)> = Vec::new();
-        for edge in self.graph.edges_of(vertex).unwrap() {
+        for edge in self.graph.edges_of(vertex) {
             let opposite = self
                 .graph
                 .opposite_vertex(edge, vertex)

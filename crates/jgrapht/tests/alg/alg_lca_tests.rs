@@ -28,19 +28,19 @@ use std::collections::HashSet;
 
 type Boxed<'a, V> = Box<dyn LowestCommonAncestorAlgorithm<V> + 'a>;
 
-fn binary_lifting<G: Graph>(g: &G, roots: &[G::Vertex]) -> Result<Boxed<'static, G::Vertex>>
+fn binary_lifting<G: OutgoingGraph>(g: &G, roots: &[G::Vertex]) -> Result<Boxed<'static, G::Vertex>>
 where
     G::Vertex: 'static,
 {
     Ok(Box::new(BinaryLiftingLcaFinder::with_roots(g, roots)?))
 }
-fn euler_tour<G: Graph>(g: &G, roots: &[G::Vertex]) -> Result<Boxed<'static, G::Vertex>>
+fn euler_tour<G: OutgoingGraph>(g: &G, roots: &[G::Vertex]) -> Result<Boxed<'static, G::Vertex>>
 where
     G::Vertex: 'static,
 {
     Ok(Box::new(EulerTourRmqLcaFinder::with_roots(g, roots)?))
 }
-fn heavy_path<G: Graph>(g: &G, roots: &[G::Vertex]) -> Result<Boxed<'static, G::Vertex>>
+fn heavy_path<G: IncidenceGraph>(g: &G, roots: &[G::Vertex]) -> Result<Boxed<'static, G::Vertex>>
 where
     G::Vertex: 'static,
 {
@@ -49,7 +49,7 @@ where
         roots.iter().cloned(),
     )?))
 }
-fn tarjan<'g, G: Graph>(g: &'g G, roots: &[G::Vertex]) -> Result<Boxed<'g, G::Vertex>> {
+fn tarjan<'g, G: IncidenceGraph>(g: &'g G, roots: &[G::Vertex]) -> Result<Boxed<'g, G::Vertex>> {
     Ok(Box::new(TarjanLcaFinder::with_roots(g, roots.to_vec())?))
 }
 
@@ -108,7 +108,7 @@ macro_rules! lca_tree_tests {
             use super::*;
 
             /// A solver of another kind, to compare answers with.
-            fn other<G: Graph>(g: &G, roots: &[G::Vertex]) -> Result<Boxed<'static, G::Vertex>>
+            fn other<G: IncidenceGraph>(g: &G, roots: &[G::Vertex]) -> Result<Boxed<'static, G::Vertex>>
             where
                 G::Vertex: 'static,
             {
@@ -468,7 +468,7 @@ mod naive_lca_finder_test {
         g
     }
 
-    fn check_lcas<G: jgrapht::DirectedGraph<Vertex = String>>(
+    fn check_lcas<G: jgrapht::DirectedGraph<Vertex = String> + IncidenceGraph>(
         finder: &NaiveLcaFinder<G>,
         a: &str,
         b: &str,

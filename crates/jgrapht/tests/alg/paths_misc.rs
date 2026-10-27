@@ -142,7 +142,7 @@ fn disjoint_paths() {
 fn hamiltonian() {
     // Java has no exact Hamiltonian cycle search for general graphs (see `alg_tour_tests`), so
     // this only checks the path search.
-    fn path<G: Graph>(g: &G) -> Option<GraphWalk<G::Vertex, G::Edge>> {
+    fn path<G: IncidenceGraph>(g: &G) -> Option<GraphWalk<G::Vertex, G::Edge>> {
         BacktrackingHamiltonianPath::new()
             .get_path(g)
             .unwrap()

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
@@ -76,12 +77,23 @@ pub struct BidirectionalDijkstra<'g, G>(pub &'g G);
 ///
 /// Java-style bidirectional Dijkstra class, including its optional search
 /// radius.
+///
+/// The backward search needs incoming edges, so a graph without an incoming index is rejected at
+/// compile time:
+///
+/// ```compile_fail,E0277
+/// use jgrapht::alg::shortestpath::{BidirectionalDijkstraShortestPath, ShortestPathAlgorithm};
+/// use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph};
+///
+/// let g = SparseIntDirectedGraph::<NoIncoming>::from_edges(2, &[(0, 1)]).unwrap();
+/// let _ = BidirectionalDijkstraShortestPath::new(&g).path_weight(&0, &1);
+/// ```
 pub struct BidirectionalDijkstraShortestPath<'g, G> {
     graph: &'g G,
     radius: f64,
 }
 
-impl<'g, G: Graph> BidirectionalDijkstraShortestPath<'g, G> {
+impl<'g, G: IncidenceGraph> BidirectionalDijkstraShortestPath<'g, G> {
     /// Constructs a new instance for a specified graph.
     pub fn new(graph: &'g G) -> Self {
         Self {
@@ -100,7 +112,7 @@ impl<'g, G: Graph> BidirectionalDijkstraShortestPath<'g, G> {
     }
 }
 
-impl<G: Graph> ShortestPathAlgorithm<G> for BidirectionalDijkstraShortestPath<'_, G> {
+impl<G: IncidenceGraph> ShortestPathAlgorithm<G> for BidirectionalDijkstraShortestPath<'_, G> {
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         materialize_single_source(self.graph, source, |target| self.path(source, target))
     }
@@ -146,13 +158,13 @@ pub struct BidirectionalAStarShortestPath<'g, G, F> {
     heuristic: F,
 }
 
-impl<'g, G: Graph, F: Fn(&G::Vertex, &G::Vertex) -> f64> BidirectionalAStarShortestPath<'g, G, F> {
+impl<'g, G: IncidenceGraph, F: Fn(&G::Vertex, &G::Vertex) -> f64> BidirectionalAStarShortestPath<'g, G, F> {
     pub fn new(graph: &'g G, heuristic: F) -> Self {
         Self { graph, heuristic }
     }
 }
 
-impl<G: Graph, F: Fn(&G::Vertex, &G::Vertex) -> f64> ShortestPathAlgorithm<G>
+impl<G: IncidenceGraph, F: Fn(&G::Vertex, &G::Vertex) -> f64> ShortestPathAlgorithm<G>
     for BidirectionalAStarShortestPath<'_, G, F>
 {
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
@@ -178,7 +190,7 @@ struct AStarSide<'g, G: Graph> {
     heap: BinaryHeap<Reverse<(OrderedF64, usize)>>,
 }
 
-impl<'g, G: Graph> AStarSide<'g, G> {
+impl<'g, G: IncidenceGraph> AStarSide<'g, G> {
     fn new(start: &'g G::Vertex, estimate: f64) -> Self {
         Self {
             score: HashMap::from([(start, 0.0)]),
@@ -247,7 +259,7 @@ fn bidirectional_astar<G, F>(
     heuristic: &F,
 ) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>>
 where
-    G: Graph,
+    G: IncidenceGraph,
     F: Fn(&G::Vertex, &G::Vertex) -> f64,
 {
     let source = graph
@@ -287,9 +299,9 @@ where
             break;
         };
         let adjacent: Vec<_> = if scan_forward {
-            graph.try_outgoing_of(vertex)?.collect()
+            graph.outgoing_of(vertex).collect()
         } else {
-            graph.try_incoming_of(vertex)?.collect()
+            graph.incoming_of(vertex).collect()
         };
         for (edge, successor) in adjacent {
             if successor == vertex {
@@ -362,7 +374,7 @@ struct Side<'g, G: Graph> {
     seen: Vec<(f64, JavaHandle, Option<(&'g G::Edge, &'g G::Vertex)>)>,
 }
 
-impl<'g, G: Graph> Side<'g, G> {
+impl<'g, G: IncidenceGraph> Side<'g, G> {
     fn new(start: &'g G::Vertex) -> Self {
         let mut side = Side {
             heap: JavaPairingHeap::default(),
@@ -414,7 +426,7 @@ impl<'g, G: Graph> Side<'g, G> {
     }
 }
 
-impl<G: Graph> BidirectionalDijkstra<'_, G> {
+impl<G: IncidenceGraph> BidirectionalDijkstra<'_, G> {
     /// Java's bidirectional Dijkstra: the frontiers are scanned alternately, the best path is
     /// updated whenever an edge reaches a vertex seen by the other frontier, and the search stops
     /// when the sum of the two minimum keys reaches the best path.
@@ -452,9 +464,9 @@ impl<G: Graph> BidirectionalDijkstra<'_, G> {
             let (OrderedF64(distance), id) = sides[current].heap.pop().expect("non-empty heap");
             let v = sides[current].nodes[id];
             let edges: Vec<_> = if current == 0 {
-                g.try_outgoing_of(v)?.collect()
+                g.outgoing_of(v).collect()
             } else {
-                g.try_incoming_of(v)?.collect()
+                g.incoming_of(v).collect()
             };
             for (e, u) in edges {
                 let weight = g.edge_weight(e).unwrap_or(1.0);

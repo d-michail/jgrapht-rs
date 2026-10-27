@@ -283,7 +283,7 @@ fn assert_proven_absent<V, E>(result: &HamiltonianPathSearchResult<V, E>) {
     assert!(result.path().is_none());
 }
 
-fn bt<G: Graph>(graph: &G) -> HamiltonianPathSearchResult<G::Vertex, G::Edge> {
+fn bt<G: IncidenceGraph>(graph: &G) -> HamiltonianPathSearchResult<G::Vertex, G::Edge> {
     BacktrackingHamiltonianPath::new().get_path(graph).unwrap()
 }
 
@@ -322,7 +322,7 @@ fn random_directed(n: i32, p: f64, rnd: &mut StdRng) -> Dg {
 mod dag_hamiltonian_path_test {
     use super::*;
 
-    fn dag<G: Graph>(graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
+    fn dag<G: IncidenceGraph>(graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         DagHamiltonianPath::new().get_path(graph)
     }
 
@@ -423,11 +423,11 @@ mod dag_hamiltonian_path_test {
 mod held_karp_hamiltonian_path_test {
     use super::*;
 
-    fn dp<G: Graph>(graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
+    fn dp<G: IncidenceGraph>(graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         HeldKarpHamiltonianPath::new().get_path(graph)
     }
 
-    fn cross_check<G: Graph>(graph: &G)
+    fn cross_check<G: IncidenceGraph>(graph: &G)
     where
         G::Vertex: std::fmt::Debug,
     {
@@ -867,7 +867,7 @@ mod backtracking_hamiltonian_path_test {
         vertices.len() == 1 || permute(graph, &mut vertices, 0)
     }
 
-    fn run_one<G: Graph<Vertex = i32>>(graph: &G) {
+    fn run_one<G: Graph<Vertex = i32> + IncidenceGraph>(graph: &G) {
         let oracle = brute_force_exists(graph);
         let result = bt(graph);
         assert_eq!(oracle, result.path().is_some());
@@ -1346,7 +1346,7 @@ mod palmer_hamiltonian_cycle_test {
                 for j in i + 1..vertex_list.len() {
                     let (u, v) = (vertex_list[i], vertex_list[j]);
                     if !graph.contains_edge_between(&u, &v)
-                        && (graph.degree_of(&u).unwrap() + graph.degree_of(&v).unwrap()) < n as usize
+                        && (graph.degree_of(&u) + graph.degree_of(&v)) < n as usize
                     {
                         graph.add_edge(&u, &v).unwrap();
                         break 'search;
@@ -1382,7 +1382,7 @@ mod palmer_hamiltonian_cycle_test {
                 let mut changed = false;
                 java_shuffle(&mut vertex_list, &mut random);
                 'search: for &v in &vertex_list {
-                    if graph.degree_of(&v).unwrap() < ((n + 1) / 2) as usize {
+                    if graph.degree_of(&v) < ((n + 1) / 2) as usize {
                         for &u in &vertex_list {
                             if u != v && !graph.contains_edge_between(&u, &v) {
                                 graph.add_edge(&u, &v).unwrap();

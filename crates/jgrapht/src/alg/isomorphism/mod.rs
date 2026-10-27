@@ -16,6 +16,8 @@
 //!
 //! The JGraphT inspectors (`VF2GraphIsomorphismInspector`, the AHU tree inspectors, ...).
 
+use crate::graph::IncidenceGraph;
+
 mod ahu;
 mod mapping;
 mod ordering;
@@ -39,7 +41,7 @@ pub use vf2::{
 /// # Rust notes
 ///
 /// `IsomorphismInspector`: enumerates mappings from the first graph to the second.
-pub trait IsomorphismInspector<'g, G: crate::graph::Graph + 'g> {
+pub trait IsomorphismInspector<'g, G: crate::graph::Graph + 'g + IncidenceGraph> {
     /// All mappings found (lazily for VF2, at most one for the other inspectors).
     fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_>;
     /// Whether at least one mapping exists.

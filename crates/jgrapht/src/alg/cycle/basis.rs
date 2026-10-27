@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::detector::simple_cycle_to_graph_path;
 use crate::error::{GraphError, Result};
 use crate::graph::props::{has_multiple_edges, require_undirected};
@@ -172,7 +173,7 @@ macro_rules! fundamental_basis {
             graph: &'g G,
         }
 
-        impl<'g, G: Graph> $name<'g, G> {
+        impl<'g, G: $crate::graph::IncidenceGraph> $name<'g, G> {
             /// Fails for mixed graphs.
             pub fn new(graph: &'g G) -> Result<Self> {
                 require_directed_or_undirected(graph)?;
@@ -190,7 +191,7 @@ macro_rules! fundamental_basis {
                     pred.insert(s.clone(), None);
                     queue.$push(s.clone());
                     while let Some(v) = queue.$pop() {
-                        for e in graph.edges_of(&v)? {
+                        for e in graph.edges_of(&v) {
                             let u = graph.opposite_vertex(e, &v).expect("edge of the graph");
                             if !pred.contains_key(u) {
                                 pred.insert(u.clone(), Some(e.clone()));
@@ -203,7 +204,7 @@ macro_rules! fundamental_basis {
             }
         }
 
-        impl<'g, G: Graph> CycleBasisAlgorithm<G::Edge> for $name<'g, G> {
+        impl<'g, G: IncidenceGraph> CycleBasisAlgorithm<G::Edge> for $name<'g, G> {
             fn get_cycle_basis(&mut self) -> Result<CycleBasis<G::Edge>> {
                 let forest = self.compute_spanning_forest()?;
                 Ok(fundamental_cycle_basis(self.graph, &forest))
@@ -246,7 +247,7 @@ pub struct PatonCycleBase<'g, G: Graph> {
     graph: &'g G,
 }
 
-impl<'g, G: Graph> PatonCycleBase<'g, G> {
+impl<'g, G: IncidenceGraph> PatonCycleBase<'g, G> {
     /// Fails for directed graphs.
     pub fn new(graph: &'g G) -> Result<Self> {
         require_undirected(graph)?;
@@ -254,7 +255,7 @@ impl<'g, G: Graph> PatonCycleBase<'g, G> {
     }
 }
 
-impl<'g, G: Graph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, G> {
+impl<'g, G: IncidenceGraph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, G> {
     /// Return an undirected cycle basis of a graph. Works only for undirected graphs which do not
     /// have multiple (parallel) edges.
     fn get_cycle_basis(&mut self) -> Result<CycleBasis<G::Edge>> {
@@ -280,7 +281,7 @@ impl<'g, G: Graph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, G> {
             used.insert(root.clone(), IndexMap::new());
             stack.push(root.clone());
             while let Some(current) = stack.pop() {
-                for e in graph.edges_of(&current)? {
+                for e in graph.edges_of(&current) {
                     let neighbor = graph
                         .opposite_vertex(e, &current)
                         .expect("edge of the graph");

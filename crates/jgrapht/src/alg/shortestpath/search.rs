@@ -14,8 +14,9 @@
 
 //! Heap-driven best-first search shared by Dijkstra, A* and Johnson.
 
+use crate::graph::OutgoingGraph;
 use super::SingleSourcePaths;
-use crate::graph::{Graph, GraphExt};
+use crate::graph::{GraphExt};
 use crate::util::OrderedF64;
 use crate::{GraphError, Result};
 use rheaps::DecreaseKeyHeap;
@@ -33,7 +34,7 @@ pub(crate) fn search<G, H>(
     radius: f64,
 ) -> Result<SingleSourcePaths<G::Vertex, G::Edge>>
 where
-    G: Graph,
+    G: OutgoingGraph,
     H: DecreaseKeyHeap<OrderedF64, usize> + Default,
 {
     if !g.contains_vertex(source) {

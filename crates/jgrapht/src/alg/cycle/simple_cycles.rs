@@ -12,9 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use crate::error::{GraphError, Result};
 use crate::graph::props::has_multiple_edges;
-use crate::graph::{DirectedGraph, Graph};
+use crate::graph::{DirectedGraph};
 use indexmap::IndexSet;
 use std::collections::HashSet;
 
@@ -38,7 +39,7 @@ pub trait DirectedSimpleCycles<V> {
 
 /// Vertices in graph order and the targets of every vertex's outgoing edges (parallel edges give
 /// repeated targets).
-fn index_graph<G: Graph>(g: &G) -> (Vec<G::Vertex>, Vec<Vec<usize>>) {
+fn index_graph<G: OutgoingGraph>(g: &G) -> (Vec<G::Vertex>, Vec<Vec<usize>>) {
     let vs: Vec<G::Vertex> = g.vertices().cloned().collect();
     let index: std::collections::HashMap<&G::Vertex, usize> =
         vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
@@ -46,7 +47,6 @@ fn index_graph<G: Graph>(g: &G) -> (Vec<G::Vertex>, Vec<Vec<usize>>) {
         .iter()
         .map(|v| {
             g.out_edges_of(v)
-                .unwrap()
                 .map(|e| index[g.edge_target(e).expect("edge of the graph")])
                 .collect()
         })
@@ -87,7 +87,7 @@ macro_rules! cycles_algorithm {
             }
         }
 
-        impl<'g, G: DirectedGraph> DirectedSimpleCycles<G::Vertex> for $name<'g, G> {
+        impl<'g, G: $crate::graph::OutgoingGraph + DirectedGraph> DirectedSimpleCycles<G::Vertex> for $name<'g, G> {
             fn find_simple_cycles_with(
                 &mut self,
                 consumer: &mut dyn FnMut(Vec<G::Vertex>),
@@ -337,7 +337,7 @@ pub struct JohnsonSimpleCycles<'g, G: DirectedGraph> {
     graph: &'g G,
 }
 
-impl<'g, G: DirectedGraph> JohnsonSimpleCycles<'g, G> {
+impl<'g, G: DirectedGraph + OutgoingGraph> JohnsonSimpleCycles<'g, G> {
     /// Fails when the graph has parallel edges.
     pub fn new(graph: &'g G) -> Result<Self> {
         if has_multiple_edges(graph) {
@@ -397,7 +397,7 @@ impl JohnsonState<'_> {
     }
 }
 
-impl<'g, G: DirectedGraph> DirectedSimpleCycles<G::Vertex> for JohnsonSimpleCycles<'g, G> {
+impl<'g, G: DirectedGraph + OutgoingGraph> DirectedSimpleCycles<G::Vertex> for JohnsonSimpleCycles<'g, G> {
     fn find_simple_cycles_with(&mut self, consumer: &mut dyn FnMut(Vec<G::Vertex>)) -> Result<()> {
         let (vs, out) = index_graph(self.graph);
         let size = vs.len();
@@ -662,7 +662,7 @@ impl HawickJamesState<'_> {
     }
 }
 
-impl<'g, G: DirectedGraph> HawickJamesSimpleCycles<'g, G> {
+impl<'g, G: DirectedGraph + OutgoingGraph> HawickJamesSimpleCycles<'g, G> {
     /// Create a simple cycle finder with an unspecified graph.
     pub fn new() -> Self {
         Self::default()
@@ -730,7 +730,7 @@ impl<'g, G: DirectedGraph> HawickJamesSimpleCycles<'g, G> {
     }
 }
 
-impl<'g, G: DirectedGraph> DirectedSimpleCycles<G::Vertex> for HawickJamesSimpleCycles<'g, G> {
+impl<'g, G: DirectedGraph + OutgoingGraph> DirectedSimpleCycles<G::Vertex> for HawickJamesSimpleCycles<'g, G> {
     fn find_simple_cycles_with(&mut self, consumer: &mut dyn FnMut(Vec<G::Vertex>)) -> Result<()> {
         let Some(graph) = self.graph else {
             return no_graph();

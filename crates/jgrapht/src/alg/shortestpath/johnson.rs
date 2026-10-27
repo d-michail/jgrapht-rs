@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use super::bellman_ford::relax_all;
 use super::search::search;
 use super::{AllPairsPaths, ShortestPathAlgorithm, SingleSourcePaths};
@@ -25,7 +26,7 @@ use std::collections::HashMap;
 /// Johnson's all-pairs algorithm: Bellman–Ford potentials, then Dijkstra from every vertex on
 /// reweighted edges. Good for sparse graphs with negative weights; `Err(NegativeCycle)` if the
 /// graph has a negative cycle.
-pub fn johnson<G: Graph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
+pub fn johnson<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
     // a virtual source reaching every vertex at cost 0 == all potentials start at 0
     let mut h: HashMap<&G::Vertex, f64> = g.vertices().map(|v| (v, 0.0)).collect();
     relax_all(g, &mut h, &mut HashMap::new())?;
@@ -79,7 +80,7 @@ pub struct JohnsonShortestPaths<'g, G: Graph> {
     paths: AllPairsPaths<G::Vertex, G::Edge>,
 }
 
-impl<'g, G: Graph> JohnsonShortestPaths<'g, G> {
+impl<'g, G: OutgoingGraph> JohnsonShortestPaths<'g, G> {
     /// Construct a new instance.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(Self {

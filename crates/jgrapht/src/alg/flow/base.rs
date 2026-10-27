@@ -12,8 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use crate::error::{GraphError, Result};
-use crate::graph::Graph;
 use crate::util::ToleranceDoubleComparator;
 use indexmap::IndexSet;
 use std::collections::{HashMap, VecDeque};
@@ -100,7 +101,7 @@ pub(crate) struct Arc {
 
 /// `MaximumFlowAlgorithmBase`: the residual network built from the input graph, plus the cut and
 /// flow-map queries that all algorithms share. Vertices and arcs are addressed by index.
-pub(crate) struct FlowNet<'g, G: Graph> {
+pub(crate) struct FlowNet<'g, G: IncidenceGraph> {
     pub graph: &'g G,
     pub directed: bool,
     pub comparator: ToleranceDoubleComparator,
@@ -124,7 +125,7 @@ pub(crate) struct FlowNet<'g, G: Graph> {
     cut_edges: Option<IndexSet<G::Edge>>,
 }
 
-impl<'g, G: Graph> FlowNet<'g, G> {
+impl<'g, G: OutgoingGraph + IncidenceGraph> FlowNet<'g, G> {
     pub fn new(graph: &'g G, epsilon: f64) -> Result<Self> {
         let vs: Vec<&G::Vertex> = graph.vertices().collect();
         let es: Vec<&G::Edge> = graph.edges().collect();
@@ -220,7 +221,7 @@ impl<'g, G: Graph> FlowNet<'g, G> {
         let g = self.graph;
         if self.directed {
             for u in 0..self.vs.len() {
-                for e in g.out_edges_of(self.vs[u])? {
+                for e in g.out_edges_of(self.vs[u]) {
                     let ei = self.eindex[e];
                     let v = self.vindex[g.edge_target(e).unwrap()];
                     let forward = self.create_edge(u, v, ei);
@@ -403,7 +404,7 @@ impl<'g, G: Graph> FlowNet<'g, G> {
             let mut cut = IndexSet::new();
             if self.directed {
                 for v in &p1 {
-                    for e in g.out_edges_of(v).unwrap() {
+                    for e in g.out_edges_of(v) {
                         if !p1.contains(g.edge_target(e).unwrap()) {
                             cut.insert(e.clone());
                         }
@@ -428,7 +429,7 @@ impl<'g, G: Graph> FlowNet<'g, G> {
 /// `net: FlowNet` field and a `calculate(&mut self, &V, &V) -> Result<f64>` method.
 macro_rules! flow_algorithm_api {
     ($name:ident) => {
-        impl<'g, G: Graph> $name<'g, G> {
+        impl<'g, G: $crate::graph::IncidenceGraph> $name<'g, G> {
             /// The source of the last computation.
             pub fn current_source(&self) -> Option<&G::Vertex> {
                 (self.net.max_flow_value >= 0.0).then(|| self.net.vs[self.net.source])
@@ -445,7 +446,7 @@ macro_rules! flow_algorithm_api {
             }
         }
 
-        impl<'g, G: Graph> $crate::alg::flow::MaximumFlowAlgorithm<G::Vertex, G::Edge>
+        impl<'g, G: $crate::graph::IncidenceGraph> $crate::alg::flow::MaximumFlowAlgorithm<G::Vertex, G::Edge>
             for $name<'g, G>
         {
             fn maximum_flow(
@@ -473,7 +474,7 @@ macro_rules! flow_algorithm_api {
             }
         }
 
-        impl<'g, G: Graph> $crate::alg::flow::MinimumSTCutAlgorithm<G::Vertex, G::Edge>
+        impl<'g, G: $crate::graph::IncidenceGraph> $crate::alg::flow::MinimumSTCutAlgorithm<G::Vertex, G::Edge>
             for $name<'g, G>
         {
             fn calculate_min_cut(

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use crate::graph::{GraphExt, UndirectedGraph};
 use crate::traverse::{LexBreadthFirstIterator, MaximumCardinalityIterator};
 use crate::walk::GraphWalk;
@@ -65,7 +66,7 @@ pub struct ChordalityInspector<'g, G: UndirectedGraph> {
     hole: Option<GraphWalk<G::Vertex, G::Edge>>,
 }
 
-impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalityInspector<'g, G> {
     /// Creates a chordality inspector for `graph`, which uses
     /// `MaximumCardinalityIterator` as a default iterator.
     pub fn new(graph: &'g G) -> Self {
@@ -192,7 +193,7 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
         let graph = self.graph;
         let vertex_position = vertex_in_order[vertex];
         let mut predecessors: Vec<&G::Vertex> = Vec::new();
-        for edge in graph.edges_of(vertex).unwrap() {
+        for edge in graph.edges_of(vertex) {
             let opposite = graph
                 .opposite_vertex(edge, vertex)
                 .expect("edge of the graph");
@@ -231,7 +232,7 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
     ) {
         visited.insert(current.clone(), true);
         let graph = self.graph;
-        for edge in graph.edges_of(current).unwrap() {
+        for edge in graph.edges_of(current) {
             let opposite = graph
                 .opposite_vertex(edge, current)
                 .expect("edge of the graph");
@@ -262,7 +263,7 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
             minimized.push(vertex.clone());
             cycle_vertices.remove(vertex);
             let mut forward: Vec<&G::Vertex> = Vec::new();
-            for edge in graph.edges_of(vertex).unwrap() {
+            for edge in graph.edges_of(vertex) {
                 let opposite = graph
                     .opposite_vertex(edge, vertex)
                     .expect("edge of the graph");

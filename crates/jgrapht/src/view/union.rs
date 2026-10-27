@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use crate::graph::{DirectedGraph, Graph, UndirectedGraph};
-use crate::{GraphType, Result};
+use crate::GraphType;
 
 /// How to merge the weights of an edge present in both graphs of a union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -125,12 +125,6 @@ where
         } else {
             self.b.is_edge_directed(e)
         }
-    }
-    fn edges_of(&self, v: &A::Vertex) -> Result<impl Iterator<Item = &A::Edge>> {
-        Ok(self
-            .a
-            .edges_of(v)?
-            .chain(self.b.edges_of(v)?.filter(|e| !self.a.contains_edge(e))))
     }
     fn edges_between<'x>(
         &'x self,

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use super::greedy::GreedyMaximumCardinalityMatching;
 use crate::alg::connectivity::ConnectivityInspector;
@@ -189,7 +190,7 @@ pub struct DenseEdmondsMaximumCardinalityMatching<'g, G: Graph> {
     w_ancestors: HashSet<usize>,
 }
 
-impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
+impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> DenseEdmondsMaximumCardinalityMatching<'g, G> {
     /// Uses `GreedyMaximumCardinalityMatching` (unsorted) as the initializer. Fails if the graph is
     /// not undirected.
     pub fn new(graph: &'g G) -> Result<Self> {
@@ -468,7 +469,7 @@ impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
     }
 }
 
-impl<'g, G: Graph + 'g> MatchingAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: IncidenceGraph + 'g> MatchingAlgorithm<G::Vertex, G::Edge>
     for DenseEdmondsMaximumCardinalityMatching<'g, G>
 {
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {

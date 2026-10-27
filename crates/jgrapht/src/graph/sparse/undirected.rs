@@ -110,12 +110,6 @@ macro_rules! undirected_graph_impl {
                 ($weight)(self, *e)
             }
 
-            /// Incident edges in increasing id order; a self-loop appears once (its two
-            /// incidence entries are adjacent).
-            fn edges_of(&self, v: &usize) -> Result<impl Iterator<Item = &usize>> {
-                Ok(IncidenceGraph::edges_of(self, v))
-            }
-
             fn edges_between<'a>(
                 &'a self,
                 u: &'a usize,
@@ -132,10 +126,6 @@ macro_rules! undirected_graph_impl {
                     let matches = (s == *u && t == *v) || (s == *v && t == *u);
                     (matches && (i == 0 || row[i - 1] != *e)).then_some(e)
                 })
-            }
-
-            fn degree_of(&self, v: &usize) -> Result<usize> {
-                Ok(self.core.row(*v).len())
             }
         }
 

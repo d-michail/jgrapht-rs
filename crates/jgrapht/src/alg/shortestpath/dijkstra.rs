@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use super::search::search;
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::Result;
-use crate::graph::Graph;
 use crate::util::OrderedF64;
 use crate::walk::GraphWalk;
 use rheaps::DecreaseKeyHeap;
@@ -38,7 +38,7 @@ pub struct Dijkstra<'g, G, H = PairingHeap<OrderedF64, usize>> {
 /// Java-compatible class name for [`Dijkstra`].
 pub type DijkstraShortestPath<'g, G, H = PairingHeap<OrderedF64, usize>> = Dijkstra<'g, G, H>;
 
-impl<'g, G: Graph> Dijkstra<'g, G> {
+impl<'g, G: OutgoingGraph> Dijkstra<'g, G> {
     /// Constructs a new instance of the algorithm for a given graph. The constructed algorithm will
     /// use pairing heap as a default heap implementation.
     pub fn new(g: &'g G) -> Self {
@@ -46,7 +46,7 @@ impl<'g, G: Graph> Dijkstra<'g, G> {
     }
 }
 
-impl<'g, G: Graph, H: DecreaseKeyHeap<OrderedF64, usize> + Default> Dijkstra<'g, G, H> {
+impl<'g, G: OutgoingGraph, H: DecreaseKeyHeap<OrderedF64, usize> + Default> Dijkstra<'g, G, H> {
     /// Choose the heap explicitly, e.g. `Dijkstra::<_, FibonacciHeap<_, _>>::with_heap(&g)`.
     pub fn with_heap(g: &'g G) -> Self {
         Dijkstra {
@@ -62,7 +62,7 @@ impl<'g, G: Graph, H: DecreaseKeyHeap<OrderedF64, usize> + Default> Dijkstra<'g,
     }
 }
 
-impl<G: Graph, H: DecreaseKeyHeap<OrderedF64, usize> + Default> ShortestPathAlgorithm<G>
+impl<G: OutgoingGraph, H: DecreaseKeyHeap<OrderedF64, usize> + Default> ShortestPathAlgorithm<G>
     for Dijkstra<'_, G, H>
 {
     fn single_source(&self, s: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {

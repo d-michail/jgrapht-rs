@@ -12,12 +12,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::graph::OutgoingGraph;
 use jgrapht::alg::shortestpath::{IntVertexDijkstraShortestPath, ShortestPathAlgorithm};
 use jgrapht::{DefaultEdge, DiGraph, GraphMutExt, UGraph};
 
 fn assert_weights<G>(graph: &G, expected: &[(i32, &[f64])])
 where
-    G: jgrapht::Graph<Vertex = i32, Edge = DefaultEdge>,
+    G: jgrapht::Graph<Vertex = i32, Edge = DefaultEdge> + OutgoingGraph,
 {
     let algorithm = IntVertexDijkstraShortestPath::new(graph);
     for &(source, weights) in expected {

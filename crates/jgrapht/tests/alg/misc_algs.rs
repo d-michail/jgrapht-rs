@@ -20,7 +20,7 @@ use jgrapht::generate::*;
 use jgrapht::*;
 use rand::{SeedableRng, rngs::StdRng};
 
-fn build<G: GraphMut<Vertex = usize>>(mut g: G, mut f: impl GraphGenerator) -> G {
+fn build<G: GraphMut<Vertex = usize> + IncidenceGraph>(mut g: G, mut f: impl GraphGenerator) -> G {
     f.generate_indexed(&mut g).unwrap();
     g
 }

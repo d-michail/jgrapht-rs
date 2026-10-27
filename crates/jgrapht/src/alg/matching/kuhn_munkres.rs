@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
 use crate::graph::{Graph, props};
@@ -63,7 +64,7 @@ impl<'g, G: Graph> KuhnMunkresMinimalWeightBipartitePerfectMatching<'g, G> {
     }
 }
 
-impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge>
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     for KuhnMunkresMinimalWeightBipartitePerfectMatching<'_, G>
 {
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {

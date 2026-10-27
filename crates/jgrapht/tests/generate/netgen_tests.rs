@@ -403,12 +403,12 @@ mod network_generator_test {
         assert!(
             info.pure_sources()
                 .iter()
-                .all(|v| g.in_edges_of(v).unwrap().next().is_none())
+                .all(|v| g.in_edges_of(v).next().is_none())
         );
         assert!(
             info.pure_sinks()
                 .iter()
-                .all(|v| g.out_edges_of(v).unwrap().next().is_none())
+                .all(|v| g.out_edges_of(v).next().is_none())
         );
     }
 

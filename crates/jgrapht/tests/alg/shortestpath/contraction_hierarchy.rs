@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::graph::OutgoingGraph;
 use jgrapht::alg::shortestpath::{
     ContractionHierarchy, ContractionHierarchyBidirectionalDijkstra,
     ContractionHierarchyPrecomputation, Dijkstra, ShortestPathAlgorithm,
@@ -411,7 +412,7 @@ mod bidirectional_dijkstra {
         }
     }
 
-    fn check_against_dijkstra<G: Graph>(graph: &G, source: G::Vertex)
+    fn check_against_dijkstra<G: OutgoingGraph>(graph: &G, source: G::Vertex)
     where
         G::Vertex: std::fmt::Debug,
         G::Edge: std::fmt::Debug,

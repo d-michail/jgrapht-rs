@@ -3,6 +3,18 @@
 Status: proposed on 2026-10-27. This roadmap must be completed before the public API is declared
 stable. It expands `ISSUES.md` I-6 and I-8 into concrete work packages.
 
+## Progress
+
+| Execution step | Status |
+|---|---|
+| 1. R0 inventory, audit script, fixtures | done (`scripts/api_audit.py`, `docs/API_INVENTORY.md`, `tests/common/fixtures.rs`) |
+| 2. Capability traits | done (`graph::capability`; `OutgoingGraph` is a separate trait from `Graph`) |
+| 3. `BaseGraph` and map graphs | done |
+| 4. Sparse directed type-state | done (`NoIncoming`/`LazyIncoming`/`FullIncoming`) |
+| 5. Sparse undirected graphs and views | done |
+| 6. Final `Graph` surface | done: fallible incidence methods removed, callers moved to capability bounds (many still wider than needed, see R4); notes in `MIGRATION.md` |
+| 7 onwards | open |
+
 ## Goal
 
 Keep JGraphT's algorithms and observable algorithmic behavior while exposing a Rust-native API.

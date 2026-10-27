@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::graph::IncidenceGraph;
 use jgrapht::alg::shortestpath::{YenKShortestPath, YenShortestPathIterator};
 use jgrapht::util::java::JavaRandom;
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, GraphWalk, UGraph};
@@ -155,7 +156,7 @@ where
     }
 }
 
-fn collect_loopless<G: Graph<Vertex = u32, Edge = DefaultEdge>>(
+fn collect_loopless<G: Graph<Vertex = u32, Edge = DefaultEdge> + IncidenceGraph>(
     graph: &G,
     source: u32,
     target: u32,

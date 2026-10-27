@@ -12,6 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use super::{AllowAllPaths, Dijkstra, PathValidator, ShortestPathAlgorithm};
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
@@ -66,7 +68,7 @@ pub struct YenShortestPathIterator<'g, G: Graph, P = AllowAllPaths> {
     failure: Option<GraphError>,
 }
 
-impl<'g, G: Graph> YenShortestPathIterator<'g, G, AllowAllPaths> {
+impl<'g, G: IncidenceGraph> YenShortestPathIterator<'g, G, AllowAllPaths> {
     /// Constructs an instance of the algorithm for given `graph`, `source` and
     /// `sink`.
     pub fn new(graph: &'g G, source: &G::Vertex, sink: &G::Vertex) -> Result<Self> {
@@ -74,7 +76,7 @@ impl<'g, G: Graph> YenShortestPathIterator<'g, G, AllowAllPaths> {
     }
 }
 
-impl<'g, G: Graph, P: PathValidator<G>> YenShortestPathIterator<'g, G, P> {
+impl<'g, G: IncidenceGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, P> {
     pub fn with_validator(
         graph: &'g G,
         source: &G::Vertex,
@@ -214,7 +216,7 @@ impl<'g, G: Graph, P: PathValidator<G>> YenShortestPathIterator<'g, G, P> {
     }
 }
 
-impl<G: Graph, P: PathValidator<G>> Iterator for YenShortestPathIterator<'_, G, P> {
+impl<G: IncidenceGraph, P: PathValidator<G>> Iterator for YenShortestPathIterator<'_, G, P> {
     type Item = GraphWalk<G::Vertex, G::Edge>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -248,7 +250,7 @@ pub struct YenKShortestPath<'g, G: Graph, P = AllowAllPaths> {
     validator: P,
 }
 
-impl<'g, G: Graph> YenKShortestPath<'g, G, AllowAllPaths> {
+impl<'g, G: IncidenceGraph> YenKShortestPath<'g, G, AllowAllPaths> {
     /// Constructs an instance of the algorithm for the given `graph`.
     pub fn new(graph: &'g G) -> Self {
         Self {
@@ -258,7 +260,7 @@ impl<'g, G: Graph> YenKShortestPath<'g, G, AllowAllPaths> {
     }
 }
 
-impl<'g, G: Graph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, P> {
+impl<'g, G: IncidenceGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, P> {
     pub fn with_validator(graph: &'g G, validator: P) -> Self {
         Self { graph, validator }
     }
@@ -290,7 +292,7 @@ impl<'g, G: Graph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, P> {
 }
 
 /// Compatibility function retained for the pre-class API.
-pub fn yen_k_shortest_paths<G: Graph>(
+pub fn yen_k_shortest_paths<G: IncidenceGraph>(
     graph: &G,
     source: &G::Vertex,
     sink: &G::Vertex,
@@ -484,7 +486,7 @@ pub struct BoundedPrunedYenKShortestPath<'g, G: Graph> {
     stats: RefCell<BoundedPrunedYenStats>,
 }
 
-impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
+impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
     /// Default constructor using `DijkstraSpurEngine` as the spur shortest-path back-end.
     /// This default mirrors the spur step of the existing `YenKShortestPath` for
     /// principle-of-least-surprise. Pass an `AStarSpurEngine` via
@@ -662,7 +664,7 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
         }
     }
 
-    fn astar_spur<M: Graph<Vertex = G::Vertex, Edge = G::Edge>>(
+    fn astar_spur<M: Graph<Vertex = G::Vertex, Edge = G::Edge> + OutgoingGraph>(
         graph: &M,
         source: &G::Vertex,
         sink: &G::Vertex,
@@ -699,7 +701,7 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
                 break;
             }
             let outgoing = graph
-                .try_outgoing_of(&vertex)?
+                .outgoing_of(&vertex)
                 .map(|(edge, target)| (edge.clone(), target.clone()))
                 .collect::<Vec<_>>();
             for (edge, target) in outgoing {
@@ -758,7 +760,7 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
             if value > distance[vertex] {
                 continue;
             }
-            for (edge, predecessor) in self.graph.try_incoming_of(vertex)? {
+            for (edge, predecessor) in self.graph.incoming_of(vertex) {
                 let weight = self.graph.edge_weight(edge).unwrap_or(1.0);
                 if weight.is_nan() || weight < 0.0 {
                     return Err(GraphError::InvalidArgument(
@@ -903,7 +905,7 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
         banned_vertices: &HashSet<G::Vertex>,
         banned_edges: &HashSet<G::Edge>,
     ) -> Result<bool> {
-        Ok(self.graph.try_outgoing_of(spur)?.any(|(edge, target)| {
+        Ok(self.graph.outgoing_of(spur).any(|(edge, target)| {
             !banned_edges.contains(edge) && !banned_vertices.contains(target)
         }))
     }

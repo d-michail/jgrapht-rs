@@ -15,33 +15,25 @@
 //! Adversarial `Graph` implementations for the Rust API hardening work (`docs/RUST_API_ROADMAP.md`,
 //! R0). They exist only in tests and are shared by the graph, algorithm and I/O suites.
 //!
-//! * [`Profile::OutgoingOnly`]: no incoming index; `edges_of`/`in_edges_of` fail with
-//!   `Unsupported`, like `SparseIntDirectedGraph` with `NoIncomingEdges`.
-//! * [`Profile::FullIncidence`]: a well-formed reference with every capability.
-//! * [`Profile::Inconsistent`]: violates the `Graph` integrity contract on purpose: one edge has
-//!   an endpoint that is not a vertex, one has no source, and one has no weight.
+//! * [`OutgoingFixture`]: a well-formed graph that is only an `OutgoingGraph`.
+//! * [`FullFixture`]: a well-formed reference with every incidence capability.
+//! * [`FixtureGraph::inconsistent`]: violates the `Graph` integrity contract on purpose: one edge
+//!   has an endpoint that is not a vertex, one has no source, and one has no weight. It has no
+//!   incidence capability, so it is only exercised through `Graph` queries and exporters.
 //!
 //! [`weight_failure_cases`] lists the weights that weight-sensitive algorithms must reject.
 #![allow(dead_code)]
 
 use jgrapht::graph::Graph;
 use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
-use jgrapht::{GraphError, GraphType, Result};
+use jgrapht::GraphType;
 
-/// Which `Graph` contract a [`FixtureGraph`] honors.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Profile {
-    OutgoingOnly,
-    FullIncidence,
-    Inconsistent,
-}
 
 /// A small directed multigraph over `u32` vertices and `u32` edge ids.
 ///
 /// Edge `i` of the list given to [`FixtureGraph::new`] gets id `i`.
 #[derive(Debug, Clone)]
 pub struct FixtureGraph {
-    profile: Profile,
     vertices: Vec<u32>,
     /// `(source, target, weight)`; `None` models a broken endpoint or weight lookup.
     edges: Vec<(Option<u32>, Option<u32>, Option<f64>)>,
@@ -49,14 +41,13 @@ pub struct FixtureGraph {
 }
 
 impl FixtureGraph {
-    pub fn new(profile: Profile, vertices: &[u32], edges: &[(u32, u32, f64)]) -> Self {
+    pub fn new(vertices: &[u32], edges: &[(u32, u32, f64)]) -> Self {
         let edges: Vec<_> = edges
             .iter()
             .map(|&(s, t, w)| (Some(s), Some(t), Some(w)))
             .collect();
         let edge_ids = (0..edges.len() as u32).collect();
         Self {
-            profile,
             vertices: vertices.to_vec(),
             edges,
             edge_ids,
@@ -64,9 +55,8 @@ impl FixtureGraph {
     }
 
     /// `0 -> 1 -> 2 -> 3` plus the shortcut `0 -> 2`; weights `1, 2, 3, 10`.
-    pub fn diamond(profile: Profile) -> Self {
+    pub fn diamond() -> Self {
         Self::new(
-            profile,
             &[0, 1, 2, 3],
             &[(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0), (0, 2, 10.0)],
         )
@@ -76,7 +66,6 @@ impl FixtureGraph {
     /// edge 0 targets vertex 99 (not a vertex), edge 1 has no source, edge 2 has no weight.
     pub fn inconsistent() -> Self {
         let mut g = Self::new(
-            Profile::Inconsistent,
             &[0, 1, 2],
             &[(0, 99, 1.0), (0, 1, 1.0), (1, 2, 1.0)],
         );
@@ -86,30 +75,12 @@ impl FixtureGraph {
     }
 
     /// A well-formed graph whose single edge carries `weight`, e.g. NaN or a negative value.
-    pub fn with_weight(profile: Profile, weight: f64) -> Self {
-        Self::new(profile, &[0, 1], &[(0, 1, weight)])
-    }
-
-    pub fn profile(&self) -> Profile {
-        self.profile
+    pub fn with_weight(weight: f64) -> Self {
+        Self::new(&[0, 1], &[(0, 1, weight)])
     }
 
     fn edge(&self, e: u32) -> Option<&(Option<u32>, Option<u32>, Option<f64>)> {
         self.edges.get(e as usize)
-    }
-
-    fn has_incoming(&self) -> bool {
-        self.profile != Profile::OutgoingOnly
-    }
-
-    fn require_incoming(&self) -> Result<()> {
-        if self.has_incoming() {
-            Ok(())
-        } else {
-            Err(GraphError::Unsupported(
-                "this graph does not support incoming edges".into(),
-            ))
-        }
     }
 
     fn outgoing(&self, v: u32) -> impl Iterator<Item = &u32> {
@@ -163,33 +134,11 @@ impl Graph for FixtureGraph {
         self.edge(*e)?.2
     }
 
-    fn edges_of(&self, v: &u32) -> Result<impl Iterator<Item = &u32>> {
-        self.require_incoming()?;
-        let v = *v;
-        Ok(self.edge_ids.iter().filter(move |&&e| {
-            let (s, t, _) = self.edges[e as usize];
-            s == Some(v) || t == Some(v)
-        }))
-    }
-
     fn edges_between<'a>(&'a self, u: &'a u32, v: &'a u32) -> impl Iterator<Item = &'a u32> {
         self.edge_ids.iter().filter(move |&&e| {
             let (s, t, _) = self.edges[e as usize];
             s == Some(*u) && t == Some(*v)
         })
-    }
-
-    fn in_edges_of(&self, v: &u32) -> Result<impl Iterator<Item = &u32>> {
-        self.require_incoming()?;
-        let v = *v;
-        Ok(self
-            .edge_ids
-            .iter()
-            .filter(move |&&e| self.edges[e as usize].1 == Some(v)))
-    }
-
-    fn out_edges_of(&self, v: &u32) -> Result<impl Iterator<Item = &u32>> {
-        Ok(self.outgoing(*v))
     }
 }
 
@@ -242,21 +191,12 @@ macro_rules! delegate_graph {
             fn edge_weight(&self, e: &u32) -> Option<f64> {
                 self.0.edge_weight(e)
             }
-            fn edges_of(&self, v: &u32) -> Result<impl Iterator<Item = &u32>> {
-                self.0.edges_of(v)
-            }
             fn edges_between<'a>(
                 &'a self,
                 u: &'a u32,
                 v: &'a u32,
             ) -> impl Iterator<Item = &'a u32> {
                 self.0.edges_between(u, v)
-            }
-            fn in_edges_of(&self, v: &u32) -> Result<impl Iterator<Item = &u32>> {
-                self.0.in_edges_of(v)
-            }
-            fn out_edges_of(&self, v: &u32) -> Result<impl Iterator<Item = &u32>> {
-                self.0.out_edges_of(v)
             }
         }
     };
@@ -274,13 +214,13 @@ delegate_graph!(FullFixture);
 
 impl OutgoingFixture {
     pub fn new(vertices: &[u32], edges: &[(u32, u32, f64)]) -> Self {
-        Self(FixtureGraph::new(Profile::OutgoingOnly, vertices, edges))
+        Self(FixtureGraph::new(vertices, edges))
     }
 }
 
 impl FullFixture {
     pub fn new(vertices: &[u32], edges: &[(u32, u32, f64)]) -> Self {
-        Self(FixtureGraph::new(Profile::FullIncidence, vertices, edges))
+        Self(FixtureGraph::new(vertices, edges))
     }
 }
 

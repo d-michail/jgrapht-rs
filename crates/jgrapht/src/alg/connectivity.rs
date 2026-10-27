@@ -14,6 +14,7 @@
 
 //! Connected components, strong connectivity, biconnectivity and condensation.
 
+use crate::graph::{IncidenceGraph, OutgoingGraph};
 use super::flow::MaximumFlowAlgorithm;
 use super::interfaces::StrongConnectivityAlgorithm;
 use super::util::Indexed;
@@ -123,7 +124,7 @@ pub fn strongly_connected_components<G: DirectedGraph>(g: &G) -> Vec<Vec<G::Vert
 }
 
 /// Strongly connected components via Kosaraju–Sharir (two DFS passes).
-pub fn strongly_connected_components_kosaraju<G: DirectedGraph>(g: &G) -> Vec<Vec<G::Vertex>> {
+pub fn strongly_connected_components_kosaraju<G: DirectedGraph + IncidenceGraph>(g: &G) -> Vec<Vec<G::Vertex>> {
     let order: Vec<_> = DfsPostOrder::all(g).collect();
     let rev = EdgeReversed(g);
     let mut seen: HashSet<&G::Vertex> = HashSet::new();
@@ -137,7 +138,7 @@ pub fn strongly_connected_components_kosaraju<G: DirectedGraph>(g: &G) -> Vec<Ve
         seen.insert(root);
         while let Some(v) = stack.pop() {
             comp.push(v.clone());
-            for e in rev.edges_of(v).unwrap() {
+            for e in rev.edges_of(v) {
                 let n = if rev.edge_source(e) == Some(v) {
                     rev.edge_target(e)
                 } else {
@@ -271,7 +272,7 @@ pub fn biconnectivity<G: Graph>(g: &G) -> Biconnectivity<G::Vertex, G::Edge> {
 }
 
 /// No articulation points and connected (and at least 3 vertices, or a single edge).
-pub fn is_biconnected<G: Graph>(g: &G) -> bool {
+pub fn is_biconnected<G: IncidenceGraph>(g: &G) -> bool {
     crate::graph::props::is_connected(g) && biconnectivity(g).articulation_points.is_empty()
 }
 
@@ -286,7 +287,7 @@ pub struct BlockCutTree<V> {
     pub edges: Vec<(usize, usize)>,
 }
 
-pub fn block_cut_tree<G: Graph>(g: &G) -> BlockCutTree<G::Vertex> {
+pub fn block_cut_tree<G: IncidenceGraph>(g: &G) -> BlockCutTree<G::Vertex> {
     let bc = biconnectivity(g);
     let mut blocks: Vec<Vec<G::Vertex>> = Vec::new();
     for b in &bc.blocks {
@@ -302,7 +303,7 @@ pub fn block_cut_tree<G: Graph>(g: &G) -> BlockCutTree<G::Vertex> {
     }
     // isolated vertices form singleton blocks
     for v in g.vertices() {
-        if g.edges_of(v).unwrap().next().is_none() {
+        if g.edges_of(v).next().is_none() {
             blocks.push(vec![v.clone()]);
         }
     }
@@ -383,7 +384,7 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
         self.partial.clear();
     }
 
-    fn lazy_find<G: Graph<Vertex = V>>(&mut self, g: &G) -> &Vec<Option<HashSet<V>>> {
+    fn lazy_find<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G) -> &Vec<Option<HashSet<V>>> {
         if self.connected_sets.is_none() {
             let mut sets: Vec<Option<HashSet<V>>> = Vec::new();
             self.vertex_to_set.clear();
@@ -410,12 +411,12 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
     /// inspected graph is a *directed* graph, this method returns true if and only if the
     /// inspected graph is *weakly* connected. An empty graph is *not* considered
     /// connected.
-    pub fn is_connected<G: Graph<Vertex = V>>(&mut self, g: &G) -> bool {
+    pub fn is_connected<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G) -> bool {
         self.lazy_find(g).iter().flatten().count() == 1
     }
 
     /// The connected set containing `v`.
-    pub fn connected_set_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<HashSet<V>> {
+    pub fn connected_set_of<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G, v: &V) -> Result<HashSet<V>> {
         if !g.contains_vertex(v) {
             return Err(GraphError::VertexNotFound);
         }
@@ -434,13 +435,13 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
     /// maximally connected component. All graph vertices occur in exactly one set. For more on
     /// maximally connected component, see
     /// [http://www.nist.gov/dads/HTML/maximallyConnectedComponent.html](http://www.nist.gov/dads/HTML/maximallyConnectedComponent.html).
-    pub fn connected_sets<G: Graph<Vertex = V>>(&mut self, g: &G) -> Vec<HashSet<V>> {
+    pub fn connected_sets<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G) -> Vec<HashSet<V>> {
         self.lazy_find(g).iter().flatten().cloned().collect()
     }
 
     /// Tests whether two vertices lay respectively in the same connected component (undirected
     /// graph), or in the same weakly connected component (directed graph).
-    pub fn path_exists<G: Graph<Vertex = V>>(&mut self, g: &G, s: &V, t: &V) -> Result<bool> {
+    pub fn path_exists<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G, s: &V, t: &V) -> Result<bool> {
         Ok(self.connected_set_of(g, s)?.contains(t))
     }
 
@@ -502,14 +503,14 @@ impl<V: Eq + Hash + Clone, E> GraphListener<V, E> for Rc<RefCell<ConnectivityIns
 }
 
 /// Breadth-first search from `start` ignoring edge directions.
-fn bfs_undirected<G: Graph>(g: &G, start: &G::Vertex) -> Vec<G::Vertex> {
+fn bfs_undirected<G: IncidenceGraph>(g: &G, start: &G::Vertex) -> Vec<G::Vertex> {
     let mut seen: HashSet<&G::Vertex> = HashSet::from([start]);
     let mut order = vec![start];
     let mut head = 0;
     while head < order.len() {
         let v = order[head];
         head += 1;
-        for e in g.edges_of(v).unwrap() {
+        for e in g.edges_of(v) {
             if let Some(u) = g.opposite_vertex(e, v) {
                 if seen.insert(u) {
                     order.push(u);
@@ -729,7 +730,7 @@ pub struct BiconnectivityInspector<'g, G: Graph> {
     vertex_to_component: HashMap<G::Vertex, usize>,
 }
 
-impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
+impl<'g, G: IncidenceGraph> BiconnectivityInspector<'g, G> {
     /// Constructs a new BiconnectivityInspector
     pub fn new(graph: &'g G) -> Self {
         let vs: Vec<G::Vertex> = graph.vertices().cloned().collect();
@@ -740,7 +741,6 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
             .map(|v| {
                 graph
                     .edges_of(v)
-                    .unwrap()
                     .map(|e| {
                         let nv = graph.opposite_vertex(e, v).unwrap();
                         (e.clone(), idx[nv])
@@ -989,7 +989,7 @@ pub struct BlockCutpointGraph<V: Eq + Hash> {
 
 impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
     /// Constructs a Block-Cutpoint graph
-    pub fn new<G: Graph<Vertex = V>>(graph: &G) -> Self {
+    pub fn new<G: Graph<Vertex = V> + IncidenceGraph>(graph: &G) -> Self {
         let bi = BiconnectivityInspector::new(graph);
         let block_count = bi.blocks().len();
         let mut nodes: Vec<HashSet<V>> = bi.blocks().to_vec();
@@ -1104,7 +1104,7 @@ pub struct KConnectivityFlowAlgorithm<'g, G: Graph> {
     edge_connectivity: Option<usize>,
 }
 
-impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
+impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
     /// Constructs a k-connectivity algorithm for the given graph. This
     pub fn new(graph: &'g G) -> Self {
         Self::with_flow(
@@ -1145,7 +1145,7 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
         let mut min_degree = usize::MAX;
         let mut min_degree_vertex = None;
         for v in graph.vertices() {
-            let d = graph.degree_of(v).unwrap();
+            let d = graph.degree_of(v);
             if d < min_degree {
                 min_degree = d;
                 min_degree_vertex = Some(v.clone());
@@ -1284,9 +1284,8 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
 }
 
 /// Successors in a directed graph, neighbours in an undirected one (`Graphs.successorListOf`).
-fn successor_list<G: Graph>(g: &G, v: &G::Vertex) -> Vec<G::Vertex> {
+fn successor_list<G: OutgoingGraph>(g: &G, v: &G::Vertex) -> Vec<G::Vertex> {
     g.out_edges_of(v)
-        .unwrap()
         .filter_map(|e| g.opposite_vertex(e, v).cloned())
         .collect()
 }

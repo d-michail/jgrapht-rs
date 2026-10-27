@@ -12,7 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::{Graph, GraphExt};
+use crate::graph::OutgoingGraph;
+use crate::graph::{GraphExt};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -25,7 +26,7 @@ pub struct TreeMeasurer<'g, G> {
     graph: &'g G,
 }
 
-impl<'g, G: Graph> TreeMeasurer<'g, G> {
+impl<'g, G: OutgoingGraph> TreeMeasurer<'g, G> {
     /// Constructs a new instance of TreeMeasurer.
     pub fn new(graph: &'g G) -> Self {
         Self { graph }
@@ -62,7 +63,7 @@ impl<'g, G: Graph> TreeMeasurer<'g, G> {
     }
 }
 
-fn farthest<'g, G: Graph>(
+fn farthest<'g, G: OutgoingGraph>(
     graph: &'g G,
     root: &'g G::Vertex,
 ) -> (&'g G::Vertex, HashMap<&'g G::Vertex, &'g G::Vertex>) {

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::base::{MaximumFlow, MaximumFlowAlgorithm, MinimumSTCutAlgorithm};
 use super::{DEFAULT_EPSILON, PushRelabelMFImpl};
 use crate::error::{GraphError, Result};
@@ -88,7 +89,7 @@ pub struct GusfieldEquivalentFlowTree<'g, G: Graph> {
     flow_matrix: Vec<Vec<f64>>,
 }
 
-impl<'g, G: Graph + 'g> GusfieldEquivalentFlowTree<'g, G> {
+impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> GusfieldEquivalentFlowTree<'g, G> {
     /// Constructs a new GusfieldEquivalentFlowTree instance.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
@@ -172,7 +173,7 @@ impl<'g, G: Graph + 'g> GusfieldEquivalentFlowTree<'g, G> {
     }
 }
 
-impl<'g, G: Graph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: IncidenceGraph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
     for GusfieldEquivalentFlowTree<'g, G>
 {
     fn maximum_flow(
@@ -254,7 +255,7 @@ pub struct GusfieldGomoryHuCutTree<'g, G: Graph> {
     cut_cache: Option<IndexSet<G::Edge>>,
 }
 
-impl<'g, G: Graph + 'g> GusfieldGomoryHuCutTree<'g, G> {
+impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> GusfieldGomoryHuCutTree<'g, G> {
     /// Constructs a new GusfieldEquivalentFlowTree instance.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
@@ -406,7 +407,7 @@ impl<'g, G: Graph + 'g> GusfieldGomoryHuCutTree<'g, G> {
     }
 }
 
-impl<'g, G: Graph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: IncidenceGraph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
     for GusfieldGomoryHuCutTree<'g, G>
 {
     fn maximum_flow(
@@ -441,7 +442,7 @@ impl<'g, G: Graph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
     }
 }
 
-impl<'g, G: Graph + 'g> MinimumSTCutAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: IncidenceGraph + 'g> MinimumSTCutAlgorithm<G::Vertex, G::Edge>
     for GusfieldGomoryHuCutTree<'g, G>
 {
     fn calculate_min_cut(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {

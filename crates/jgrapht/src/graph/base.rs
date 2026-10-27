@@ -299,21 +299,6 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> Graph for Base
             .get(e)
             .map(|r| if self.ty.weighted { r.weight } else { 1.0 })
     }
-    fn edges_of(&self, v: &V) -> Result<impl Iterator<Item = &E>> {
-        Ok(IncidenceGraph::edges_of(self, v))
-    }
-    fn in_edges_of(&self, v: &V) -> Result<impl Iterator<Item = &E>> {
-        Ok(IncomingGraph::in_edges_of(self, v))
-    }
-    fn out_edges_of(&self, v: &V) -> Result<impl Iterator<Item = &E>> {
-        Ok(self.out_edges(v))
-    }
-    fn in_degree_of(&self, v: &V) -> Result<usize> {
-        Ok(IncomingGraph::in_degree_of(self, v))
-    }
-    fn out_degree_of(&self, v: &V) -> Result<usize> {
-        Ok(OutgoingGraph::out_degree_of(self, v))
-    }
     fn edges_between<'a>(&'a self, u: &'a V, v: &'a V) -> impl Iterator<Item = &'a E> {
         if let Some(index) = &self.endpoint_index {
             Box::new(
@@ -345,7 +330,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> OutgoingGraph
         match self.vertices.get(v) {
             None => 0,
             Some(a) if D::DIRECTED => a.out.len(),
-            Some(_) => IncidenceGraph::degree_of(self, v),
+            Some(_) => self.degree_of(v),
         }
     }
 }
@@ -369,7 +354,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> IncomingGraph
         match self.vertices.get(v) {
             None => 0,
             Some(a) if D::DIRECTED => a.inc.len(),
-            Some(_) => IncidenceGraph::degree_of(self, v),
+            Some(_) => self.degree_of(v),
         }
     }
 }
@@ -411,7 +396,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> GraphMut
         if !self.vertices.contains_key(v) {
             return false;
         }
-        let incident: Vec<E> = Graph::edges_of(self, v).unwrap().cloned().collect();
+        let incident: Vec<E> = self.edges_of(v).cloned().collect();
         for e in &incident {
             self.remove_edge(e);
         }

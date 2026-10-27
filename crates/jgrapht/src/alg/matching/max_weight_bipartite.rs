@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
 use crate::graph::{Graph, GraphExt, props};
@@ -76,7 +77,7 @@ pub struct MaximumWeightBipartiteMatching<'g, G: Graph> {
     matching_weight: DBig,
 }
 
-impl<'g, G: Graph> MaximumWeightBipartiteMatching<'g, G> {
+impl<'g, G: IncidenceGraph> MaximumWeightBipartiteMatching<'g, G> {
     /// Fails if the graph is not undirected.
     pub fn new(
         graph: &'g G,
@@ -121,7 +122,7 @@ impl<'g, G: Graph> MaximumWeightBipartiteMatching<'g, G> {
     /// Relaxes all edges out of `a1`.
     fn relax_edges_out_of(&mut self, a1: &G::Vertex, reached_b: &mut Vec<G::Vertex>) -> Result<()> {
         let graph = self.graph;
-        for e1 in graph.edges_of(a1)? {
+        for e1 in graph.edges_of(a1) {
             if !self.matching.contains(e1) {
                 let b1 = graph.opposite_vertex(e1, a1).expect("incident edge");
                 let db1 = &(&(&self.dist[a1] + self.pot(a1)) + self.pot(b1)) - &self.weight(e1)?;
@@ -271,7 +272,7 @@ impl<'g, G: Graph> MaximumWeightBipartiteMatching<'g, G> {
         for v in &partition1 {
             let mut max_edge: Option<&G::Edge> = None;
             let mut max_weight = zero();
-            for e in graph.edges_of(v)? {
+            for e in graph.edges_of(v) {
                 let w = self.weight(e)?;
                 if w > max_weight {
                     max_weight = w;
@@ -295,7 +296,7 @@ impl<'g, G: Graph> MaximumWeightBipartiteMatching<'g, G> {
         Ok(())
     }
 }
-impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for MaximumWeightBipartiteMatching<'_, G> {
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for MaximumWeightBipartiteMatching<'_, G> {
     /// Compute a matching for a given graph.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;

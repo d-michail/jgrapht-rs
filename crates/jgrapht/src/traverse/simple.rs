@@ -15,6 +15,8 @@
 //! Lightweight traversal iterators (no listeners; neighbours are visited in a simple
 //! first-neighbour-first order). See the sibling modules for the JGraphT-faithful iterators.
 
+use crate::graph::IncidenceGraph;
+use crate::graph::{OutgoingGraph};
 use crate::graph::{DirectedGraph, Graph, GraphExt};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::vec::IntoIter;
@@ -28,7 +30,7 @@ pub struct Bfs<'g, G: Graph> {
     rest: IntoIter<&'g G::Vertex>,
 }
 
-impl<'g, G: Graph> Bfs<'g, G> {
+impl<'g, G: OutgoingGraph> Bfs<'g, G> {
     pub fn new(g: &'g G, start: &'g G::Vertex) -> Self {
         let mut b = Bfs {
             g,
@@ -61,7 +63,7 @@ impl<'g, G: Graph> Bfs<'g, G> {
     }
 }
 
-impl<'g, G: Graph> Iterator for Bfs<'g, G> {
+impl<'g, G: OutgoingGraph> Iterator for Bfs<'g, G> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -90,7 +92,7 @@ pub struct Dfs<'g, G: Graph> {
     rest: IntoIter<&'g G::Vertex>,
 }
 
-impl<'g, G: Graph> Dfs<'g, G> {
+impl<'g, G: OutgoingGraph> Dfs<'g, G> {
     pub fn new(g: &'g G, start: &'g G::Vertex) -> Self {
         Dfs {
             g,
@@ -109,7 +111,7 @@ impl<'g, G: Graph> Dfs<'g, G> {
     }
 }
 
-impl<'g, G: Graph> Iterator for Dfs<'g, G> {
+impl<'g, G: OutgoingGraph> Iterator for Dfs<'g, G> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -139,7 +141,7 @@ pub struct DfsPostOrder<'g, G: Graph> {
     rest: IntoIter<&'g G::Vertex>,
 }
 
-impl<'g, G: Graph> DfsPostOrder<'g, G> {
+impl<'g, G: OutgoingGraph> DfsPostOrder<'g, G> {
     pub fn new(g: &'g G, start: &'g G::Vertex) -> Self {
         let mut s = Self {
             g,
@@ -166,7 +168,7 @@ impl<'g, G: Graph> DfsPostOrder<'g, G> {
     }
 }
 
-impl<'g, G: Graph> Iterator for DfsPostOrder<'g, G> {
+impl<'g, G: OutgoingGraph> Iterator for DfsPostOrder<'g, G> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -189,6 +191,17 @@ impl<'g, G: Graph> Iterator for DfsPostOrder<'g, G> {
 
 /// Topological order (Kahn). If the graph has a cycle the iterator ends early;
 /// check with [`TopologicalOrder::is_complete`] once exhausted.
+///
+/// Kahn's algorithm counts incoming edges, so a graph without an incoming index is rejected at
+/// compile time:
+///
+/// ```compile_fail,E0277
+/// use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph};
+/// use jgrapht::traverse::TopologicalOrder;
+///
+/// let g = SparseIntDirectedGraph::<NoIncoming>::from_edges(2, &[(0, 1)]).unwrap();
+/// let _ = TopologicalOrder::new(&g);
+/// ```
 pub struct TopologicalOrder<'g, G: DirectedGraph> {
     g: &'g G,
     queue: VecDeque<&'g G::Vertex>,
@@ -196,11 +209,11 @@ pub struct TopologicalOrder<'g, G: DirectedGraph> {
     yielded: usize,
 }
 
-impl<'g, G: DirectedGraph> TopologicalOrder<'g, G> {
+impl<'g, G: DirectedGraph + IncidenceGraph> TopologicalOrder<'g, G> {
     pub fn new(g: &'g G) -> Self {
         let indeg: HashMap<_, _> = g
             .vertices()
-            .map(|v| (v, g.in_degree_of(v).unwrap()))
+            .map(|v| (v, g.in_degree_of(v)))
             .collect();
         let queue = g.vertices().filter(|v| indeg[v] == 0).collect();
         TopologicalOrder {
@@ -216,7 +229,7 @@ impl<'g, G: DirectedGraph> TopologicalOrder<'g, G> {
     }
 }
 
-impl<'g, G: DirectedGraph> Iterator for TopologicalOrder<'g, G> {
+impl<'g, G: DirectedGraph + IncidenceGraph> Iterator for TopologicalOrder<'g, G> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         let v = self.queue.pop_front()?;
@@ -234,7 +247,7 @@ impl<'g, G: DirectedGraph> Iterator for TopologicalOrder<'g, G> {
 }
 
 /// A topological ordering of `g`, or `None` if it contains a cycle.
-pub fn topological_sort<G: DirectedGraph>(g: &G) -> Option<Vec<&G::Vertex>> {
+pub fn topological_sort<G: DirectedGraph + IncidenceGraph>(g: &G) -> Option<Vec<&G::Vertex>> {
     let mut it = TopologicalOrder::new(g);
     let order: Vec<_> = it.by_ref().collect();
     it.is_complete().then_some(order)

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
@@ -63,7 +64,7 @@ where
     graph: &'g G,
 }
 
-impl<'g, G: Graph> IntVertexDijkstraShortestPath<'g, G>
+impl<'g, G: OutgoingGraph> IntVertexDijkstraShortestPath<'g, G>
 where
     G::Vertex: IntVertex,
 {
@@ -164,7 +165,7 @@ where
     }
 }
 
-impl<G: Graph> ShortestPathAlgorithm<G> for IntVertexDijkstraShortestPath<'_, G>
+impl<G: OutgoingGraph> ShortestPathAlgorithm<G> for IntVertexDijkstraShortestPath<'_, G>
 where
     G::Vertex: IntVertex,
 {

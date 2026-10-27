@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::event::GraphListener;
 use crate::graph::{Graph, GraphExt};
 use crate::{GraphError, Result};
@@ -132,11 +133,11 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
 
     /// Returns the unique predecessors of the given vertex if it exists in the cache, otherwise it
     /// is initialized.
-    pub fn predecessors_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
+    pub fn predecessors_of<G: Graph<Vertex = V> + IncomingGraph>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
         Self::check(g, v)?;
         if !self.predecessors.contains_key(v) {
             let neighbors = Neighbors::from_list(
-                g.in_edges_of(v)?
+                g.in_edges_of(v)
                     .filter_map(|e| g.opposite_vertex(e, v).cloned()),
             );
             self.predecessors.insert(v.clone(), neighbors);
@@ -146,11 +147,11 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
 
     /// Returns the unique successors of the given vertex if it exists in the cache, otherwise it is
     /// initialized.
-    pub fn successors_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
+    pub fn successors_of<G: Graph<Vertex = V> + OutgoingGraph>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
         Self::check(g, v)?;
         if !self.successors.contains_key(v) {
             let neighbors = Neighbors::from_list(
-                g.out_edges_of(v)?
+                g.out_edges_of(v)
                     .filter_map(|e| g.opposite_vertex(e, v).cloned()),
             );
             self.successors.insert(v.clone(), neighbors);
@@ -160,11 +161,11 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
 
     /// Returns the unique neighbors of the given vertex if it exists in the cache, otherwise it is
     /// initialized.
-    pub fn neighbors_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
+    pub fn neighbors_of<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
         Self::check(g, v)?;
         if !self.neighbors.contains_key(v) {
             let neighbors = Neighbors::from_list(
-                g.edges_of(v)?
+                g.edges_of(v)
                     .filter_map(|e| g.opposite_vertex(e, v).cloned()),
             );
             self.neighbors.insert(v.clone(), neighbors);
@@ -173,7 +174,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
     }
 
     /// Neighbours repeated once per parallel edge.
-    pub fn neighbor_list_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<Vec<V>> {
+    pub fn neighbor_list_of<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G, v: &V) -> Result<Vec<V>> {
         Ok(self.neighbors_of(g, v)?.list())
     }
 

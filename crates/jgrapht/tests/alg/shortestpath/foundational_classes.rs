@@ -134,7 +134,7 @@ fn assert_same_weight(expected: f64, actual: f64) {
     );
 }
 
-fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge>>(graph: &G, random: &mut StdRng) {
+fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(graph: &G, random: &mut StdRng) {
     let mut landmarks = HashSet::new();
     while landmarks.len() < 2 {
         landmarks.insert(random.random_range(0..30));
@@ -171,7 +171,7 @@ fn alt_admissible_heuristic_test_random() {
     }
 }
 
-fn check_alt_admissibility<G: Graph<Vertex = i32, Edge = DefaultEdge>>(graph: &G) {
+fn check_alt_admissibility<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(graph: &G) {
     for landmark in graph.vertices() {
         let heuristic = ALTAdmissibleHeuristic::new(graph, [*landmark]).unwrap();
         for source in graph.vertices() {

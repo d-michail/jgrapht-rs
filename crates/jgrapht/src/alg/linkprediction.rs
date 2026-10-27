@@ -14,6 +14,7 @@
 
 //! Neighbourhood-based vertex similarity and link prediction scores (direction ignored).
 
+use crate::graph::OutgoingGraph;
 use super::interfaces::LinkPredictionAlgorithm;
 use super::util::Indexed;
 use crate::graph::{Graph, GraphExt};
@@ -137,20 +138,20 @@ fn not_well_defined<T>(msg: &str) -> Result<T> {
     Err(GraphError::IndexNotWellDefined(msg.to_string()))
 }
 
-fn common_successors<G: Graph>(g: &G, u: &G::Vertex, v: &G::Vertex) -> Result<Vec<G::Vertex>> {
+fn common_successors<G: OutgoingGraph>(g: &G, u: &G::Vertex, v: &G::Vertex) -> Result<Vec<G::Vertex>> {
     let gu: HashSet<G::Vertex> = g
-        .out_edges_of(u)?
+        .out_edges_of(u)
         .filter_map(|e| g.opposite_vertex(e, u).cloned())
         .collect();
     let gv: HashSet<G::Vertex> = g
-        .out_edges_of(v)?
+        .out_edges_of(v)
         .filter_map(|e| g.opposite_vertex(e, v).cloned())
         .collect();
     Ok(gu.intersection(&gv).cloned().collect())
 }
 
-fn successor_set<G: Graph>(g: &G, u: &G::Vertex) -> Result<HashSet<G::Vertex>> {
-    Ok(g.out_edges_of(u)?
+fn successor_set<G: OutgoingGraph>(g: &G, u: &G::Vertex) -> Result<HashSet<G::Vertex>> {
+    Ok(g.out_edges_of(u)
         .filter_map(|e| g.opposite_vertex(e, u).cloned())
         .collect())
 }
@@ -168,7 +169,7 @@ macro_rules! link_prediction {
             }
         }
 
-        impl<G: Graph> LinkPredictionAlgorithm<G::Vertex> for $name<'_, G> {
+        impl<G: $crate::graph::OutgoingGraph> LinkPredictionAlgorithm<G::Vertex> for $name<'_, G> {
             fn predict(&self, $u: &G::Vertex, $v: &G::Vertex) -> Result<f64> {
                 let $g = self.graph;
                 $body
@@ -197,7 +198,7 @@ link_prediction!(
     AdamicAdarIndexLinkPrediction, |g, u, v| {
         let mut result = 0.0;
         for z in common_successors(g, u, v)? {
-            let dz = g.out_degree_of(&z)?;
+            let dz = g.out_degree_of(&z);
             if dz < 2 {
                 return not_well_defined("Vertex has less than 2 degree");
             }
@@ -217,7 +218,7 @@ link_prediction!(
 link_prediction!(
     /// `|N(u) ∩ N(v)| / max(deg u, deg v)`.
     HubDepressedIndexLinkPrediction, |g, u, v| {
-        let (du, dv) = (g.out_degree_of(u)?, g.out_degree_of(v)?);
+        let (du, dv) = (g.out_degree_of(u), g.out_degree_of(v));
         if du == 0 && dv == 0 {
             return not_well_defined("Both vertices have zero neighbors");
         }
@@ -228,7 +229,7 @@ link_prediction!(
 link_prediction!(
     /// `|N(u) ∩ N(v)| / min(deg u, deg v)`.
     HubPromotedIndexLinkPrediction, |g, u, v| {
-        let (du, dv) = (g.out_degree_of(u)?, g.out_degree_of(v)?);
+        let (du, dv) = (g.out_degree_of(u), g.out_degree_of(v));
         if du == 0 || dv == 0 {
             return not_well_defined("Query vertex with zero neighbors");
         }
@@ -240,7 +241,7 @@ link_prediction!(
     /// JGraphT computes `|N(u) ∩ N(v)| / deg u * deg v` (a product, not the textbook quotient);
     /// this port keeps that behaviour.
     LeichtHolmeNewmanIndexLinkPrediction, |g, u, v| {
-        let (du, dv) = (g.out_degree_of(u)?, g.out_degree_of(v)?);
+        let (du, dv) = (g.out_degree_of(u), g.out_degree_of(v));
         if du == 0 || dv == 0 {
             return not_well_defined("Query vertex with zero neighbors");
         }
@@ -251,7 +252,7 @@ link_prediction!(
 link_prediction!(
     /// `deg u * deg v`.
     PreferentialAttachmentLinkPrediction, |g, u, v| {
-        Ok((g.out_degree_of(u)? * g.out_degree_of(v)?) as f64)
+        Ok((g.out_degree_of(u) * g.out_degree_of(v)) as f64)
     }
 );
 
@@ -260,7 +261,7 @@ link_prediction!(
     ResourceAllocationIndexLinkPrediction, |g, u, v| {
         let mut result = 0.0;
         for z in common_successors(g, u, v)? {
-            let dz = g.out_degree_of(&z)?;
+            let dz = g.out_degree_of(&z);
             if dz == 0 {
                 return not_well_defined("Index not well defined");
             }
@@ -273,7 +274,7 @@ link_prediction!(
 link_prediction!(
     /// `|N(u) ∩ N(v)| / sqrt(deg u * deg v)`.
     SaltonIndexLinkPrediction, |g, u, v| {
-        let (du, dv) = (g.out_degree_of(u)?, g.out_degree_of(v)?);
+        let (du, dv) = (g.out_degree_of(u), g.out_degree_of(v));
         if du == 0 || dv == 0 {
             return not_well_defined("Query vertex with zero neighbors");
         }
@@ -284,7 +285,7 @@ link_prediction!(
 link_prediction!(
     /// `2 |N(u) ∩ N(v)| / (deg u + deg v)`.
     SorensenIndexLinkPrediction, |g, u, v| {
-        let (du, dv) = (g.out_degree_of(u)?, g.out_degree_of(v)?);
+        let (du, dv) = (g.out_degree_of(u), g.out_degree_of(v));
         if du + dv == 0 {
             return not_well_defined("Both vertices have zero neighbors");
         }

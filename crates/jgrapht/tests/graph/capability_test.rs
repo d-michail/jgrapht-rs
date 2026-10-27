@@ -14,8 +14,6 @@
 
 //! Contract tests for the incidence capability traits (API roadmap R1).
 //!
-//! The capability methods share names with the fallible `Graph` ones until those are removed, so
-//! the calls are qualified.
 use crate::common::fixtures::{FullFixture, OutgoingFixture};
 use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 
@@ -87,69 +85,51 @@ fn parallel_edges_are_each_yielded() {
 
 mod base_graph_parity {
     use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
-    use jgrapht::graph::{DiGraph, FastutilMapGraph, Graph, GraphMut, UGraph};
+    use jgrapht::graph::{DiGraph, FastutilMapGraph, GraphMut, UGraph};
     use jgrapht::graph::{Directed, Undirected};
 
-    /// The capability traits must agree with the fallible `Graph` methods, element by element and
-    /// in the same order, for every vertex including absent ones.
+    /// The capability traits must agree with the definition of incidence computed from the edge
+    /// endpoints, for every vertex including absent ones. Undirected edges count as both leaving
+    /// and entering, an undirected self-loop is yielded once and counts twice towards a degree.
     pub(crate) fn check<G>(g: &G, absent: G::Vertex)
     where
         G: IncidenceGraph,
         G::Edge: std::fmt::Debug + Ord,
     {
-        check_with(g, absent, true)
-    }
-
-    /// Like [`check`], but compares incident edges as sorted lists. For views whose `Graph`
-    /// impl derives in/out edges from `edges_of`, the old order differs incidentally.
-    pub(crate) fn check_unordered<G>(g: &G, absent: G::Vertex)
-    where
-        G: IncidenceGraph,
-        G::Edge: std::fmt::Debug + Ord,
-    {
-        check_with(g, absent, false)
-    }
-
-    fn check_with<G>(g: &G, absent: G::Vertex, ordered: bool)
-    where
-        G: IncidenceGraph,
-        G::Edge: std::fmt::Debug + Ord,
-    {
-        let same = |mut new: Vec<G::Edge>, mut old: Vec<G::Edge>| {
-            if !ordered {
-                new.sort();
-                old.sort();
-            }
-            assert_eq!(new, old);
+        let sorted = |it: Vec<G::Edge>| {
+            let mut v = it;
+            v.sort();
+            v
         };
         let vs: Vec<_> = g.vertices().cloned().chain([absent]).collect();
         for v in &vs {
-            let old_all: Vec<_> = Graph::edges_of(g, v).unwrap().cloned().collect();
-            let old_in: Vec<_> = Graph::in_edges_of(g, v).unwrap().cloned().collect();
-            let old_out: Vec<_> = Graph::out_edges_of(g, v).unwrap().cloned().collect();
-            same(
-                IncidenceGraph::edges_of(g, v).cloned().collect(),
-                old_all.clone(),
-            );
-            same(IncomingGraph::in_edges_of(g, v).cloned().collect(), old_in);
-            same(
-                OutgoingGraph::out_edges_of(g, v).cloned().collect(),
-                old_out,
-            );
-            assert_eq!(
-                IncidenceGraph::degree_of(g, v),
-                Graph::degree_of(g, v).unwrap()
-            );
-            assert_eq!(
-                IncomingGraph::in_degree_of(g, v),
-                Graph::in_degree_of(g, v).unwrap()
-            );
-            assert_eq!(
-                OutgoingGraph::out_degree_of(g, v),
-                Graph::out_degree_of(g, v).unwrap()
-            );
+            let (mut all, mut ins, mut outs) = (vec![], vec![], vec![]);
+            let (mut degree, mut in_degree, mut out_degree) = (0, 0, 0);
+            for e in g.edges() {
+                let (s, t) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
+                let directed = g.is_edge_directed(e);
+                let weight = if !directed && s == t { 2 } else { 1 };
+                if s == v || t == v {
+                    all.push(e.clone());
+                    degree += if s == t { 2 } else { 1 };
+                }
+                if t == v || (!directed && s == v) {
+                    ins.push(e.clone());
+                    in_degree += weight;
+                }
+                if s == v || (!directed && t == v) {
+                    outs.push(e.clone());
+                    out_degree += weight;
+                }
+            }
+            assert_eq!(sorted(IncidenceGraph::edges_of(g, v).cloned().collect()), sorted(all));
+            assert_eq!(sorted(IncomingGraph::in_edges_of(g, v).cloned().collect()), sorted(ins));
+            assert_eq!(sorted(OutgoingGraph::out_edges_of(g, v).cloned().collect()), sorted(outs));
+            assert_eq!(IncidenceGraph::degree_of(g, v), degree);
+            assert_eq!(IncomingGraph::in_degree_of(g, v), in_degree);
+            assert_eq!(OutgoingGraph::out_degree_of(g, v), out_degree);
             if !g.contains_vertex(v) {
-                assert!(old_all.is_empty() && IncidenceGraph::degree_of(g, v) == 0);
+                assert_eq!(degree, 0);
             }
         }
     }
@@ -211,7 +191,7 @@ mod sparse_type_state {
     use super::{reachable, total_degree};
     use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
     use jgrapht::graph::sparse::{
-        FullIncoming, LazyIncoming, NoIncoming, SparseIntDirectedGraph,
+        LazyIncoming, NoIncoming, SparseIntDirectedGraph,
         SparseIntDirectedWeightedGraph,
     };
 
@@ -274,7 +254,7 @@ mod sparse_type_state {
 }
 
 mod view_parity {
-    use super::base_graph_parity::{check, check_unordered, populate};
+    use super::base_graph_parity::{check, populate};
     use jgrapht::event::Listenable;
     use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
     use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph, SparseIntUndirectedGraph};
@@ -337,9 +317,9 @@ mod view_parity {
     #[test]
     fn subgraphs_filter_incidence() {
         for g in [directed()] {
-            check_unordered(&AsSubgraph::induced(&g, [0, 1, 2]), 99);
-            check_unordered(&AsSubgraph::all(&g), 99);
-            check_unordered(&MaskSubgraph::new(&g, |v: &i32| *v == 1, |_| false), 99);
+            check(&AsSubgraph::induced(&g, [0, 1, 2]), 99);
+            check(&AsSubgraph::all(&g), 99);
+            check(&MaskSubgraph::new(&g, |v: &i32| *v == 1, |_| false), 99);
             let s = AsSubgraph::induced(&g, [0, 1]);
             assert!(IncidenceGraph::edges_of(&s, &2).next().is_none());
             assert!(
@@ -347,15 +327,15 @@ mod view_parity {
             );
         }
         let u = undirected();
-        check_unordered(&AsSubgraph::induced(&u, [3, 4]), 99);
-        check_unordered(&MaskSubgraph::new(&u, |v: &i32| *v == 0, |_| false), 99);
+        check(&AsSubgraph::induced(&u, [3, 4]), 99);
+        check(&MaskSubgraph::new(&u, |v: &i32| *v == 0, |_| false), 99);
     }
 
     #[test]
     fn union_deduplicates_shared_edges() {
         let g = directed();
         let union = GraphUnion::new(&g, &g);
-        check_unordered(&union, 99);
+        check(&union, 99);
         assert_eq!(
             IncidenceGraph::edges_of(&union, &2).count(),
             IncidenceGraph::edges_of(&g, &2).count()

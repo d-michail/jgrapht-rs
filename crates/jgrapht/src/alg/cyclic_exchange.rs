@@ -16,6 +16,7 @@
 //! (`AhujaOrlinSharmaCyclicExchangeLocalAugmentation`): finds a negative cost cycle of bounded
 //! length in a labelled directed improvement graph that visits every label at most once.
 
+use crate::graph::OutgoingGraph;
 use crate::graph::DirectedGraph;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
@@ -78,7 +79,7 @@ pub struct AhujaOrlinSharmaCyclicExchangeLocalAugmentation<'g, G: DirectedGraph>
     best_improvement: bool,
 }
 
-impl<'g, G: DirectedGraph> AhujaOrlinSharmaCyclicExchangeLocalAugmentation<'g, G>
+impl<'g, G: DirectedGraph + OutgoingGraph> AhujaOrlinSharmaCyclicExchangeLocalAugmentation<'g, G>
 where
     G::Vertex: Eq + Hash,
 {
@@ -173,7 +174,7 @@ where
                         best_cycle = cycle;
                     }
                 }
-                for e in g.out_edges_of(tail).unwrap() {
+                for e in g.out_edges_of(tail) {
                     let current_vertex = g.edge_target(e).unwrap();
                     let edge_weight = weight(e);
                     let current_label = label(current_vertex);

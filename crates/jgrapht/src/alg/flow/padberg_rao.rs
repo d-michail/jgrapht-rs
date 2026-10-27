@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::base::MinimumSTCutAlgorithm;
 use super::{DEFAULT_EPSILON, GusfieldGomoryHuCutTree, PushRelabelMFImpl};
 use crate::alg::connectivity::ConnectivityInspector;
@@ -54,7 +55,7 @@ pub struct PadbergRaoOddMinimumCutset<'g, G: Graph> {
     source_partition_minimum_cut: Option<IndexSet<G::Vertex>>,
 }
 
-impl<'g, G: Graph + 'g> PadbergRaoOddMinimumCutset<'g, G> {
+impl<'g, G: Graph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g, G> {
     /// Creates a new instance of the PadbergRaoOddMinimumCutset algorithm.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)

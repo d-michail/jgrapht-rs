@@ -14,6 +14,7 @@
 
 //! Graph change notification (JGraphT's `ListenableGraph`).
 
+use crate::graph::IncidenceGraph;
 use crate::graph::{DirectedGraph, Graph, GraphExt, GraphMut, UndirectedGraph};
 use crate::{GraphType, Result};
 
@@ -99,24 +100,6 @@ impl<G: Graph> Graph for Listenable<G> {
     fn edge_weight(&self, e: &G::Edge) -> Option<f64> {
         self.graph.edge_weight(e)
     }
-    fn edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
-        self.graph.edges_of(v)
-    }
-    fn in_edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
-        self.graph.in_edges_of(v)
-    }
-    fn out_edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
-        self.graph.out_edges_of(v)
-    }
-    fn in_degree_of(&self, v: &G::Vertex) -> Result<usize> {
-        self.graph.in_degree_of(v)
-    }
-    fn out_degree_of(&self, v: &G::Vertex) -> Result<usize> {
-        self.graph.out_degree_of(v)
-    }
-    fn degree_of(&self, v: &G::Vertex) -> Result<usize> {
-        self.graph.degree_of(v)
-    }
     fn edges_between<'a>(
         &'a self,
         u: &'a G::Vertex,
@@ -129,7 +112,7 @@ crate::view::forward_incidence!([G: Graph] Listenable<G>, G, self => self.graph)
 impl<G: DirectedGraph> DirectedGraph for Listenable<G> {}
 impl<G: UndirectedGraph> UndirectedGraph for Listenable<G> {}
 
-impl<G: GraphMut> GraphMut for Listenable<G> {
+impl<G: GraphMut + IncidenceGraph> GraphMut for Listenable<G> {
     fn add_vertex(&mut self, v: G::Vertex) -> bool {
         let added = self.graph.add_vertex(v.clone());
         if added {
@@ -144,7 +127,7 @@ impl<G: GraphMut> GraphMut for Listenable<G> {
         if !self.graph.contains_vertex(v) {
             return false;
         }
-        let incident: Vec<_> = self.graph.edges_of(v).unwrap().cloned().collect();
+        let incident: Vec<_> = self.graph.edges_of(v).cloned().collect();
         for e in &incident {
             self.remove_edge(e);
         }

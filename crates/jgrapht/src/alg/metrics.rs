@@ -16,6 +16,7 @@
 //! center, periphery, girth, triangle counts. Distances are weighted shortest-path distances
 //! (all `1.0` for unweighted graphs).
 
+use crate::graph::OutgoingGraph;
 use super::shortestpath::{FloydWarshallShortestPaths, ShortestPathAlgorithm};
 use super::util::Indexed;
 use crate::graph::Graph;
@@ -46,7 +47,7 @@ pub struct GraphMeasurer<V> {
 impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
     /// Constructs a new instance of GraphMeasurer. `FloydWarshallShortestPaths` is used as the
     /// default shortest path algorithm.
-    pub fn new<G: Graph<Vertex = V>>(g: &G) -> crate::Result<Self> {
+    pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> crate::Result<Self> {
         Self::with_algorithm(g, &FloydWarshallShortestPaths::new(g)?)
     }
 
@@ -141,29 +142,29 @@ impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
 }
 
 /// Eccentricities (`INFINITY` if some vertex is unreachable).
-pub fn eccentricities<G: Graph>(g: &G) -> HashMap<G::Vertex, f64> {
+pub fn eccentricities<G: OutgoingGraph>(g: &G) -> HashMap<G::Vertex, f64> {
     GraphMeasurer::new(g)
         .map(|m| m.vertex_eccentricity_map().into_iter().collect())
         .unwrap_or_default()
 }
 
 /// Largest eccentricity; `0.0` for the empty graph.
-pub fn diameter<G: Graph>(g: &G) -> f64 {
+pub fn diameter<G: OutgoingGraph>(g: &G) -> f64 {
     GraphMeasurer::new(g).map_or(f64::NEG_INFINITY, |m| m.diameter())
 }
 
 /// Smallest eccentricity; `0.0` for the empty graph.
-pub fn radius<G: Graph>(g: &G) -> f64 {
+pub fn radius<G: OutgoingGraph>(g: &G) -> f64 {
     GraphMeasurer::new(g).map_or(f64::NEG_INFINITY, |m| m.radius())
 }
 
-pub fn center<G: Graph>(g: &G) -> Vec<G::Vertex> {
+pub fn center<G: OutgoingGraph>(g: &G) -> Vec<G::Vertex> {
     GraphMeasurer::new(g)
         .map(|m| m.graph_center())
         .unwrap_or_default()
 }
 
-pub fn periphery<G: Graph>(g: &G) -> Vec<G::Vertex> {
+pub fn periphery<G: OutgoingGraph>(g: &G) -> Vec<G::Vertex> {
     GraphMeasurer::new(g)
         .map(|m| m.graph_periphery())
         .unwrap_or_default()

@@ -148,7 +148,7 @@ mod heavy_path_decomposition_test {
         n.checked_ilog2().unwrap_or(0) as usize
     }
 
-    fn count_max_path<Gr: Graph>(graph: &Gr, d: &HeavyPathDecomposition<Gr>) -> usize {
+    fn count_max_path<Gr: IncidenceGraph>(graph: &Gr, d: &HeavyPathDecomposition<Gr>) -> usize {
         let paths = d.path_decomposition().unwrap();
         let in_path: HashSet<&Gr::Vertex> = paths
             .paths()
@@ -172,7 +172,7 @@ mod heavy_path_decomposition_test {
         maxim
     }
 
-    fn is_valid_decomposition<Gr: Graph>(
+    fn is_valid_decomposition<Gr: IncidenceGraph>(
         graph: &Gr,
         roots: &[Gr::Vertex],
         d: &HeavyPathDecomposition<Gr>,
@@ -213,14 +213,14 @@ mod heavy_path_decomposition_test {
             let mut size_subtree: HashMap<&Gr::Vertex, usize> = HashMap::new();
             for v in order {
                 size_subtree.insert(v, 1);
-                for edge in graph.edges_of(v).unwrap() {
+                for edge in graph.edges_of(v) {
                     let u = graph.opposite_vertex(edge, v).unwrap();
                     if Some(u) != bfs.parent(v) {
                         let size_u = size_subtree[u];
                         *size_subtree.get_mut(v).unwrap() += size_u;
                     }
                 }
-                for edge in graph.edges_of(v).unwrap() {
+                for edge in graph.edges_of(v) {
                     let u = graph.opposite_vertex(edge, v).unwrap();
                     if Some(u) == bfs.parent(v) {
                         continue;

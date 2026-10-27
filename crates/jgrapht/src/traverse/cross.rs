@@ -15,6 +15,7 @@
 //! The cross-component traversal engine and the BFS / DFS / closest-first strategies on top of
 //! it (JGraphT's `CrossComponentIterator` family).
 
+use crate::graph::OutgoingGraph;
 use super::events::{TraversalListener, TraversalListeners};
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
@@ -25,20 +26,20 @@ use std::collections::{HashMap, VecDeque};
 use std::vec::IntoIter;
 
 /// State shared between the engine and its strategy.
-pub struct Core<'g, G: Graph + 'g, D> {
+pub struct Core<'g, G: OutgoingGraph + 'g, D> {
     pub g: &'g G,
     pub seen: HashMap<&'g G::Vertex, D>,
     pub listeners: TraversalListeners<'g, G::Vertex, G::Edge>,
 }
 
-impl<'g, G: Graph + 'g, D> Core<'g, G, D> {
+impl<'g, G: OutgoingGraph + 'g, D> Core<'g, G, D> {
     pub fn finish_vertex(&mut self, v: &'g G::Vertex) {
         self.listeners.vertex_finished(v);
     }
 }
 
 /// How a concrete traversal orders vertices (the abstract methods of `CrossComponentIterator`).
-pub trait Strategy<'g, G: Graph + 'g>: Sized {
+pub trait Strategy<'g, G: OutgoingGraph + 'g>: Sized {
     type Data;
     /// True if the current component has nothing left to visit (may fire finish events).
     fn is_exhausted(&mut self, c: &mut Core<'g, G, Self::Data>) -> bool;
@@ -70,7 +71,7 @@ enum State {
 /// Traverses a graph component by component. With cross-component traversal on (the default when
 /// no start vertex is given) it restarts at every unseen vertex of the graph; otherwise only at
 /// the given start vertices.
-pub struct CrossComponentIterator<'g, G: Graph + 'g, S: Strategy<'g, G>> {
+pub struct CrossComponentIterator<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> {
     core: Core<'g, G, S::Data>,
     strategy: S,
     cross: bool,
@@ -81,7 +82,7 @@ pub struct CrossComponentIterator<'g, G: Graph + 'g, S: Strategy<'g, G>> {
     selector: Option<EdgeSelector<'g, G>>,
 }
 
-impl<'g, G: Graph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
+impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
     /// `starts == None` means "whole graph" (cross-component traversal).
     pub fn with_strategy(
         g: &'g G,
@@ -203,7 +204,7 @@ impl<'g, G: Graph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
         let g = self.core.g;
         let edges: Vec<&'g G::Edge> = match &self.selector {
             Some(f) => f(g, v),
-            None => g.out_edges_of(v).unwrap().collect(),
+            None => g.out_edges_of(v).collect(),
         };
         for e in edges {
             self.core.listeners.edge_traversed(e);
@@ -219,7 +220,7 @@ impl<'g, G: Graph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
     }
 }
 
-impl<'g, G: Graph + 'g, S: Strategy<'g, G>> Iterator for CrossComponentIterator<'g, G, S> {
+impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> Iterator for CrossComponentIterator<'g, G, S> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<&'g G::Vertex> {
         self.encounter_start_vertex();
@@ -246,11 +247,11 @@ pub struct BfsData<'g, E> {
     pub depth: usize,
 }
 
-pub struct BfsStrategy<'g, G: Graph + 'g> {
+pub struct BfsStrategy<'g, G: OutgoingGraph + 'g> {
     queue: VecDeque<&'g G::Vertex>,
 }
 
-impl<'g, G: Graph + 'g> Strategy<'g, G> for BfsStrategy<'g, G> {
+impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for BfsStrategy<'g, G> {
     type Data = BfsData<'g, G::Edge>;
     fn is_exhausted(&mut self, _: &mut Core<'g, G, Self::Data>) -> bool {
         self.queue.is_empty()
@@ -282,7 +283,7 @@ impl<'g, G: Graph + 'g> Strategy<'g, G> for BfsStrategy<'g, G> {
 
 pub type BreadthFirstIterator<'g, G> = CrossComponentIterator<'g, G, BfsStrategy<'g, G>>;
 
-impl<'g, G: Graph + 'g> BreadthFirstIterator<'g, G> {
+impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
     /// Visits the whole graph, component by component.
     pub fn new(g: &'g G) -> Self {
         Self::with_strategy(
@@ -335,11 +336,11 @@ enum StackEntry<'g, V> {
     Sentinel,
 }
 
-pub struct DfsStrategy<'g, G: Graph + 'g> {
+pub struct DfsStrategy<'g, G: OutgoingGraph + 'g> {
     stack: VecDeque<StackEntry<'g, G::Vertex>>,
 }
 
-impl<'g, G: Graph + 'g> DfsStrategy<'g, G> {
+impl<'g, G: OutgoingGraph + 'g> DfsStrategy<'g, G> {
     pub fn new() -> Self {
         DfsStrategy {
             stack: VecDeque::new(),
@@ -354,13 +355,13 @@ impl<'g, G: Graph + 'g> DfsStrategy<'g, G> {
     }
 }
 
-impl<'g, G: Graph + 'g> Default for DfsStrategy<'g, G> {
+impl<'g, G: OutgoingGraph + 'g> Default for DfsStrategy<'g, G> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'g, G: Graph + 'g> Strategy<'g, G> for DfsStrategy<'g, G> {
+impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for DfsStrategy<'g, G> {
     type Data = VisitColor;
     fn is_exhausted(&mut self, c: &mut Core<'g, G, VisitColor>) -> bool {
         loop {
@@ -418,7 +419,7 @@ impl<'g, G: Graph + 'g> Strategy<'g, G> for DfsStrategy<'g, G> {
 
 pub type DepthFirstIterator<'g, G> = CrossComponentIterator<'g, G, DfsStrategy<'g, G>>;
 
-impl<'g, G: Graph + 'g> DepthFirstIterator<'g, G> {
+impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
     pub fn new(g: &'g G) -> Self {
         Self::with_strategy(
             g,
@@ -448,14 +449,14 @@ impl<'g, G: Graph + 'g> DepthFirstIterator<'g, G> {
 
 // ---------------------------------------------------------------------------- closest-first
 
-pub struct CfData<'g, G: Graph + 'g, Hd> {
+pub struct CfData<'g, G: OutgoingGraph + 'g, Hd> {
     handle: Option<Hd>,
     key: f64,
     edge: Option<&'g G::Edge>,
     frozen: bool,
 }
 
-pub struct ClosestFirstStrategy<'g, G: Graph + 'g, H> {
+pub struct ClosestFirstStrategy<'g, G: OutgoingGraph + 'g, H> {
     heap: H,
     radius: f64,
     _g: std::marker::PhantomData<&'g G>,
@@ -463,7 +464,7 @@ pub struct ClosestFirstStrategy<'g, G: Graph + 'g, H> {
 
 impl<'g, G, H> ClosestFirstStrategy<'g, G, H>
 where
-    G: Graph + 'g,
+    G: OutgoingGraph + 'g,
     H: AddressableHeap<OrderedF64, &'g G::Vertex>,
 {
     fn path_length(
@@ -480,7 +481,7 @@ where
 
 impl<'g, G, H> Strategy<'g, G> for ClosestFirstStrategy<'g, G, H>
 where
-    G: Graph + 'g,
+    G: OutgoingGraph + 'g,
     H: DecreaseKeyHeap<OrderedF64, &'g G::Vertex>,
 {
     type Data = CfData<'g, G, H::Handle>;
@@ -547,7 +548,7 @@ where
 pub type ClosestFirstIterator<'g, G, H = PairingHeap<OrderedF64, &'g <G as Graph>::Vertex>> =
     CrossComponentIterator<'g, G, ClosestFirstStrategy<'g, G, H>>;
 
-impl<'g, G: Graph + 'g> ClosestFirstIterator<'g, G> {
+impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
     pub fn new(g: &'g G) -> Self {
         Self::build(g, None, f64::INFINITY, PairingHeap::new())
             .expect("no radius with cross-component traversal")
@@ -582,7 +583,7 @@ impl<'g, G: Graph + 'g> ClosestFirstIterator<'g, G> {
 
 impl<'g, G, H> ClosestFirstIterator<'g, G, H>
 where
-    G: Graph + 'g,
+    G: OutgoingGraph + 'g + OutgoingGraph,
     H: DecreaseKeyHeap<OrderedF64, &'g G::Vertex>,
 {
     /// Full constructor with an explicit heap. A finite radius is incompatible with

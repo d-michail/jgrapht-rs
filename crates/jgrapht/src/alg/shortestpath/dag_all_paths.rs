@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use crate::graph::DirectedGraph;
 use crate::{GraphError, Result};
 use dashu_int::UBig;
@@ -44,7 +45,7 @@ impl DagAllPathsCounter {
     /// 1.
     /// - If there is no path from `source` to `target`, returns
     /// `BigInteger#ZERO`.
-    pub fn count_all_paths<G: DirectedGraph>(
+    pub fn count_all_paths<G: DirectedGraph + IncidenceGraph>(
         graph: &G,
         source: &G::Vertex,
         target: &G::Vertex,
@@ -54,7 +55,7 @@ impl DagAllPathsCounter {
         }
         let mut in_degree: HashMap<_, _> = graph
             .vertices()
-            .map(|vertex| Ok((vertex, graph.in_degree_of(vertex)?)))
+            .map(|vertex| Ok((vertex, graph.in_degree_of(vertex))))
             .collect::<Result<_>>()?;
         let mut queue: VecDeque<_> = graph
             .vertices()
@@ -63,7 +64,7 @@ impl DagAllPathsCounter {
         let mut vertices = Vec::with_capacity(graph.vertex_count());
         while let Some(vertex) = queue.pop_front() {
             vertices.push(vertex);
-            for edge in graph.out_edges_of(vertex)? {
+            for edge in graph.out_edges_of(vertex) {
                 let target = graph.edge_target(edge).expect("edge in graph");
                 let degree = in_degree.get_mut(target).expect("vertex in graph");
                 *degree -= 1;
@@ -94,7 +95,7 @@ impl DagAllPathsCounter {
             if count == UBig::ZERO {
                 continue;
             }
-            for edge in graph.out_edges_of(vertices[index])? {
+            for edge in graph.out_edges_of(vertices[index]) {
                 let child = graph.edge_target(edge).expect("edge in graph");
                 ways[positions[child]] += &count;
             }

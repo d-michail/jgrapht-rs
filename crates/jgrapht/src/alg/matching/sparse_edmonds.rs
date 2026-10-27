@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use super::greedy::GreedyMaximumCardinalityMatching;
 use crate::alg::util::FixedSizeIntegerQueue;
@@ -117,7 +118,7 @@ struct Algorithm<'a, G: Graph> {
     labeled_nodes: Vec<usize>,
 }
 
-impl<'a, G: Graph> Algorithm<'a, G> {
+impl<'a, G: IncidenceGraph> Algorithm<'a, G> {
     fn new(graph: &'a G) -> Self {
         let nodes = graph.vertex_count();
         let vertex_map: Vec<G::Vertex> = graph.vertices().cloned().collect();
@@ -131,7 +132,6 @@ impl<'a, G: Graph> Algorithm<'a, G> {
             .map(|v| {
                 graph
                     .edges_of(v)
-                    .unwrap()
                     .map(|e| vertex_index_map[graph.opposite_vertex(e, v).expect("incident edge")])
                     .collect()
             })
@@ -408,7 +408,7 @@ pub struct SparseEdmondsMaximumCardinalityMatching<'g, G: Graph> {
     odd_set_cover: Option<HashMap<G::Vertex, i64>>,
 }
 
-impl<'g, G: Graph + 'g> SparseEdmondsMaximumCardinalityMatching<'g, G> {
+impl<'g, G: Graph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinalityMatching<'g, G> {
     /// Uses `GreedyMaximumCardinalityMatching` (unsorted) as the initializer. Fails if the graph is
     /// not undirected.
     pub fn new(graph: &'g G) -> Result<Self> {
@@ -481,7 +481,7 @@ impl<'g, G: Graph + 'g> SparseEdmondsMaximumCardinalityMatching<'g, G> {
     }
 }
 
-impl<'g, G: Graph + 'g> MatchingAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: Graph + 'g + IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     for SparseEdmondsMaximumCardinalityMatching<'g, G>
 {
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {

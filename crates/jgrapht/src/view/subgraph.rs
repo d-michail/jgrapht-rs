@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::forward_graph;
 use crate::graph::{DirectedGraph, Graph, GraphMut, UndirectedGraph};
 use crate::{GraphError, GraphType, Result};
@@ -86,13 +87,6 @@ impl<G: Graph, FV: Fn(&G::Vertex) -> bool, FE: Fn(&G::Edge) -> bool> Graph
     }
     fn is_edge_directed(&self, e: &G::Edge) -> bool {
         self.graph.is_edge_directed(e)
-    }
-    fn edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
-        let ok = self.vertex_ok(v);
-        Ok(self
-            .graph
-            .edges_of(v)?
-            .filter(move |e| ok && self.edge_ok(e)))
     }
     fn edges_between<'a>(
         &'a self,
@@ -263,13 +257,6 @@ impl<G: Graph> Graph for AsSubgraph<G> {
             .then(|| self.base.edge_target(e))
             .flatten()
     }
-    fn edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
-        let ok = self.vertices.contains(v);
-        Ok(self
-            .base
-            .edges_of(v)?
-            .filter(move |e| ok && self.edges.contains(*e)))
-    }
     fn edges_between<'a>(
         &'a self,
         u: &'a G::Vertex,
@@ -284,14 +271,14 @@ impl<G: Graph> Graph for AsSubgraph<G> {
 impl<G: DirectedGraph> DirectedGraph for AsSubgraph<G> {}
 impl<G: UndirectedGraph> UndirectedGraph for AsSubgraph<G> {}
 
-impl<G: Graph> GraphMut for AsSubgraph<G> {
+impl<G: IncidenceGraph> GraphMut for AsSubgraph<G> {
     fn add_vertex(&mut self, v: G::Vertex) -> bool {
         // JGraphT throws for vertices outside the base; here they are silently refused
         self.base.contains_vertex(&v) && self.vertices.insert(v)
     }
     fn remove_vertex(&mut self, v: &G::Vertex) -> bool {
         if self.vertices.contains(v) {
-            let incident: Vec<G::Edge> = self.edges_of(v).unwrap().cloned().collect();
+            let incident: Vec<G::Edge> = self.edges_of(v).cloned().collect();
             for e in incident {
                 self.edges.shift_remove(&e);
             }

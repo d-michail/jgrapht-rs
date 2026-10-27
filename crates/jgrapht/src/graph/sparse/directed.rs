@@ -19,8 +19,6 @@ use crate::{GraphError, GraphType, Result};
 use std::marker::PhantomData;
 use std::sync::OnceLock;
 
-const NO_INCOMING: &str = "this graph does not support incoming edges";
-
 mod sealed {
     pub trait Sealed {}
 }
@@ -39,8 +37,7 @@ pub trait IncomingMode: sealed::Sealed + std::fmt::Debug + Send + Sync + 'static
 pub trait HasIncoming: IncomingMode {}
 
 /// No incoming-edge index: the graph is [`OutgoingGraph`] only, and passing it to an algorithm that
-/// needs incoming edges is a compile error. (The still-present fallible `Graph` incidence methods
-/// return `Unsupported`.)
+/// needs incoming edges is a compile error.
 #[derive(Debug, Clone, Copy)]
 pub enum NoIncoming {}
 /// The incoming index is built on first use.
@@ -189,21 +186,6 @@ macro_rules! directed_graph_impl {
                 ($weight)(self, *e)
             }
 
-            /// Outgoing edges followed by incoming ones; a self-loop appears once.
-            ///
-            /// Fails for [`NoIncoming`].
-            fn edges_of(&self, v: &usize) -> Result<impl Iterator<Item = &usize>> {
-                if !I::SUPPORTED {
-                    return Err(GraphError::Unsupported(NO_INCOMING.into()));
-                }
-                let core = &self.core;
-                Ok(core.out_edges(*v).iter().chain(
-                    core.in_edges(*v)
-                        .iter()
-                        .filter(move |&&e| core.source[e] != core.target[e]),
-                ))
-            }
-
             fn edges_between<'a>(
                 &'a self,
                 u: &'a usize,
@@ -220,36 +202,6 @@ macro_rules! directed_graph_impl {
 
             fn is_edge_directed(&self, _e: &usize) -> bool {
                 true
-            }
-
-            fn in_edges_of(&self, v: &usize) -> Result<impl Iterator<Item = &usize>> {
-                if !I::SUPPORTED {
-                    return Err(GraphError::Unsupported(NO_INCOMING.into()));
-                }
-                Ok(self.core.in_edges(*v).iter())
-            }
-
-            fn out_edges_of(&self, v: &usize) -> Result<impl Iterator<Item = &usize>> {
-                Ok(self.core.out_edges(*v).iter())
-            }
-
-            fn in_degree_of(&self, v: &usize) -> Result<usize> {
-                if !I::SUPPORTED {
-                    return Err(GraphError::Unsupported(NO_INCOMING.into()));
-                }
-                Ok(self.core.in_edges(*v).len())
-            }
-
-            fn out_degree_of(&self, v: &usize) -> Result<usize> {
-                Ok(self.core.out_edges(*v).len())
-            }
-
-            /// Fails for [`NoIncoming`].
-            fn degree_of(&self, v: &usize) -> Result<usize> {
-                if !I::SUPPORTED {
-                    return Err(GraphError::Unsupported(NO_INCOMING.into()));
-                }
-                Ok(self.core.in_edges(*v).len() + self.core.out_edges(*v).len())
             }
         }
 

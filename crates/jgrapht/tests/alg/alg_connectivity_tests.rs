@@ -713,7 +713,7 @@ mod biconnectivity_inspector {
 mod block_cutpoint_graph {
     use super::*;
 
-    fn validate<G: Graph<Vertex = i32>>(graph: &G) {
+    fn validate<G: Graph<Vertex = i32> + IncidenceGraph>(graph: &G) {
         let bc = BlockCutpointGraph::new(graph);
         assert!(props::is_bipartite(bc.graph()));
         assert!(props::is_forest(bc.graph()));
@@ -741,7 +741,7 @@ mod block_cutpoint_graph {
         // every block is adjacent to exactly its cutpoints
         for b in bc.block_nodes() {
             let in_block = bc.node(b).iter().filter(|v| cutpoints.contains(*v)).count();
-            assert_eq!(in_block, bc.graph().degree_of(&b).unwrap());
+            assert_eq!(in_block, bc.graph().degree_of(&b));
         }
     }
 

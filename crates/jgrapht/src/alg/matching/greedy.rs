@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::base::{DEFAULT_EPSILON, Matching, MatchingAlgorithm};
 use crate::error::Result;
 use crate::graph::{Graph, GraphExt, props};
@@ -53,7 +54,7 @@ impl<'g, G: Graph> GreedyMaximumCardinalityMatching<'g, G> {
     }
 }
 
-impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumCardinalityMatching<'_, G> {
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumCardinalityMatching<'_, G> {
     /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum cardinality matching.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
@@ -64,7 +65,7 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumCardinalit
             // sort edges in increasing order of the total degree of their endpoints
             let degrees: HashMap<&G::Vertex, usize> = graph
                 .vertices()
-                .map(|v| Ok((v, graph.degree_of(v)?)))
+                .map(|v| Ok((v, graph.degree_of(v))))
                 .collect::<Result<_>>()?;
             let degree = |e: &G::Edge| {
                 let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
@@ -86,7 +87,7 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumCardinalit
                 if matched.contains(v) {
                     continue;
                 }
-                for e in graph.edges_of(v)? {
+                for e in graph.edges_of(v) {
                     let w = graph.opposite_vertex(e, v).expect("incident edge");
                     if v != w && !matched.contains(w) {
                         edges.insert(e.clone());
@@ -156,7 +157,7 @@ impl<'g, G: Graph> GreedyWeightedMatching<'g, G> {
     }
 }
 
-impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeightedMatching<'_, G> {
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeightedMatching<'_, G> {
     /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum weighted matching.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
@@ -166,7 +167,7 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeightedMatching<
         if self.normalize_edge_costs {
             let degrees: HashMap<&G::Vertex, usize> = graph
                 .vertices()
-                .map(|v| Ok((v, graph.degree_of(v)?)))
+                .map(|v| Ok((v, graph.degree_of(v))))
                 .collect::<Result<_>>()?;
             let degree = |e: &G::Edge| {
                 let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");

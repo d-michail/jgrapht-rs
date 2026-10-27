@@ -14,6 +14,7 @@
 
 //! Vertex colouring heuristics.
 
+use crate::graph::{IncidenceGraph, OutgoingGraph};
 use super::cycle::{ChordalityInspector, IterationOrder};
 use super::util::Indexed;
 use crate::graph::{Graph, GraphExt, UndirectedGraph};
@@ -187,12 +188,12 @@ const SELF_LOOPS_NOT_ALLOWED: &str = "Self-loops not allowed";
 
 /// Colours the vertices in `order` with the smallest colour not used by an already coloured
 /// neighbour (`GreedyColoring.getColoring`).
-fn color_in_order<G: Graph>(g: &G, order: &[G::Vertex]) -> Result<Coloring<G::Vertex>> {
+fn color_in_order<G: IncidenceGraph>(g: &G, order: &[G::Vertex]) -> Result<Coloring<G::Vertex>> {
     let mut colors: HashMap<G::Vertex, usize> = HashMap::new();
     let mut max_color: i64 = -1;
     let mut used: HashSet<usize> = HashSet::new();
     for v in order {
-        for e in g.edges_of(v).unwrap() {
+        for e in g.edges_of(v) {
             let u = g.opposite_vertex(e, v).unwrap();
             if v == u {
                 return Err(GraphError::InvalidArgument(SELF_LOOPS_NOT_ALLOWED.into()));
@@ -215,9 +216,9 @@ fn color_in_order<G: Graph>(g: &G, order: &[G::Vertex]) -> Result<Coloring<G::Ve
     })
 }
 
-fn degrees<G: Graph>(g: &G) -> (Vec<&G::Vertex>, Vec<usize>, usize) {
+fn degrees<G: IncidenceGraph>(g: &G) -> (Vec<&G::Vertex>, Vec<usize>, usize) {
     let vs: Vec<&G::Vertex> = g.vertices().collect();
-    let degree: Vec<usize> = vs.iter().map(|v| g.edges_of(v).unwrap().count()).collect();
+    let degree: Vec<usize> = vs.iter().map(|v| g.edges_of(v).count()).collect();
     let max = degree.iter().copied().max().unwrap_or(0);
     (vs, degree, max)
 }
@@ -241,7 +242,7 @@ impl<'g, G: Graph> GreedyColoring<'g, G> {
     }
 }
 
-impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for GreedyColoring<'_, G> {
+impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for GreedyColoring<'_, G> {
     /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let order: Vec<G::Vertex> = self.graph.vertices().cloned().collect();
@@ -272,7 +273,7 @@ impl<'g, G: Graph> LargestDegreeFirstColoring<'g, G> {
     }
 }
 
-impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for LargestDegreeFirstColoring<'_, G> {
+impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for LargestDegreeFirstColoring<'_, G> {
     /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let (vs, degree, max_degree) = degrees(self.graph);
@@ -322,7 +323,7 @@ impl<'g, G: Graph> SmallestDegreeLastColoring<'g, G> {
     }
 }
 
-impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for SmallestDegreeLastColoring<'_, G> {
+impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for SmallestDegreeLastColoring<'_, G> {
     /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let g = self.graph;
@@ -342,7 +343,7 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for SmallestDegreeLastColoring
                 buckets[i].remove(&v);
                 order.push_front(vs[v].clone());
                 degree.remove(&v);
-                for e in g.edges_of(vs[v]).unwrap() {
+                for e in g.edges_of(vs[v]) {
                     let u = g.opposite_vertex(e, vs[v]).unwrap();
                     if vs[v] == u {
                         return Err(GraphError::InvalidArgument(SELF_LOOPS_NOT_ALLOWED.into()));
@@ -387,7 +388,7 @@ impl<'g, G: Graph, R: RandomSource> RandomGreedyColoring<'g, G, R> {
     }
 }
 
-impl<G: Graph, R: RandomSource> VertexColoringAlgorithm<G::Vertex>
+impl<G: IncidenceGraph, R: RandomSource> VertexColoringAlgorithm<G::Vertex>
     for RandomGreedyColoring<'_, G, R>
 {
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
@@ -528,7 +529,7 @@ impl DSaturHeap {
     }
 }
 
-impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for SaturationDegreeColoring<'_, G> {
+impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for SaturationDegreeColoring<'_, G> {
     /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let g = self.graph;
@@ -550,7 +551,7 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for SaturationDegreeColoring<'
             max_color = max_color.max(c as i64);
             colors.insert(vs[v].clone(), c);
             colored[v] = true;
-            for e in g.edges_of(vs[v]).unwrap() {
+            for e in g.edges_of(vs[v]) {
                 let u = index[g.opposite_vertex(e, vs[v]).unwrap()];
                 if !colored[u] {
                     if adj_colors[u].contains(&c) {
@@ -635,7 +636,7 @@ impl BrownState<'_> {
 
 impl<V: Clone + Eq + Hash> BrownBacktrackColoring<V> {
     /// Construct a new Brown backtracking algorithm.
-    pub fn new<G: Graph<Vertex = V>>(graph: &G) -> Self {
+    pub fn new<G: Graph<Vertex = V> + IncidenceGraph>(graph: &G) -> Self {
         let vertex_list: Vec<V> = graph.vertices().cloned().collect();
         let index: HashMap<&V, usize> = vertex_list
             .iter()
@@ -647,7 +648,6 @@ impl<V: Clone + Eq + Hash> BrownBacktrackColoring<V> {
             .map(|v| {
                 graph
                     .edges_of(v)
-                    .unwrap()
                     .map(|e| index[graph.opposite_vertex(e, v).unwrap()])
                     .collect()
             })
@@ -734,7 +734,7 @@ pub struct ChordalGraphColoring<'g, G: UndirectedGraph> {
     coloring: Option<Coloring<G::Vertex>>,
 }
 
-impl<'g, G: UndirectedGraph> ChordalGraphColoring<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphColoring<'g, G> {
     /// Creates a new ChordalGraphColoring instance. The `ChordalityInspector` used in this
     /// implementation uses the default `MaximumCardinalityIterator` iterator.
     pub fn new(graph: &'g G) -> Self {
@@ -803,14 +803,14 @@ pub(crate) fn vertex_in_order<V: Clone + Eq + Hash>(vertex_order: &[V]) -> HashM
 }
 
 /// The neighbours of `vertex` that come before it in the order.
-pub(crate) fn predecessors<G: Graph>(
+pub(crate) fn predecessors<G: IncidenceGraph>(
     graph: &G,
     vertex_in_order: &HashMap<G::Vertex, usize>,
     vertex: &G::Vertex,
 ) -> HashSet<G::Vertex> {
     let mut predecessors = HashSet::new();
     let vertex_position = vertex_in_order[vertex];
-    for edge in graph.edges_of(vertex).unwrap() {
+    for edge in graph.edges_of(vertex) {
         let opposite_vertex = graph.opposite_vertex(edge, vertex).expect("incident edge");
         if vertex_in_order[opposite_vertex] < vertex_position {
             predecessors.insert(opposite_vertex.clone());
@@ -1029,7 +1029,7 @@ impl<'g, G: Graph> ColorRefinementAlgorithm<'g, G> {
     }
 }
 
-impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlgorithm<'_, G> {
+impl<G: OutgoingGraph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlgorithm<'_, G> {
     /// Calculates a canonical surjective k-coloring of the given graph such that the classes of the
     /// coloring form the coarsest stable partition that refines alpha.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
@@ -1042,7 +1042,6 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlgorithm<'
             .map(|v| {
                 let mut seen = HashSet::new();
                 g.out_edges_of(v)
-                    .unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .map(|w| index[w])
                     .filter(|w| seen.insert(*w))

@@ -14,6 +14,8 @@
 
 //! `TransitiveClosure` and `TransitiveReduction` (JGraphT `org.jgrapht.alg`).
 
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use crate::error::{GraphError, Result};
 use crate::graph::{DirectedExt, DirectedGraph, Graph, GraphExt, GraphMut, props};
 use crate::traverse::TopologicalOrderIterator;
@@ -39,7 +41,7 @@ impl TransitiveClosure {
     /// nothing changes. Fails if the graph is not directed or allows loops or multiple edges.
     pub fn close_simple_directed_graph<G>(&self, graph: &mut G) -> Result<()>
     where
-        G: DirectedGraph + GraphMut,
+        G: DirectedGraph + GraphMut + OutgoingGraph,
     {
         props::require_directed(graph)?;
         let t = graph.graph_type();
@@ -59,9 +61,9 @@ impl TransitiveClosure {
             for v1 in &vertex_set {
                 new_edge_targets.clear();
 
-                for v1_out_edge in graph.out_edges_of(v1)? {
+                for v1_out_edge in graph.out_edges_of(v1) {
                     let v2 = graph.edge_target(v1_out_edge).expect("edge target");
-                    for v2_out_edge in graph.out_edges_of(v2)? {
+                    for v2_out_edge in graph.out_edges_of(v2) {
                         let v3 = graph.edge_target(v2_out_edge).expect("edge target");
 
                         if v1 == v3 {
@@ -89,7 +91,7 @@ impl TransitiveClosure {
     /// Computes the transitive closure of a directed acyclic graph in `O(nm)`, in place.
     pub fn close_directed_acyclic_graph<G>(&self, graph: &mut G) -> Result<()>
     where
-        G: DirectedGraph + GraphMut,
+        G: DirectedGraph + GraphMut + IncidenceGraph,
     {
         let mut ordered_vertices: VecDeque<G::Vertex> =
             VecDeque::with_capacity(graph.vertex_count());
@@ -98,8 +100,8 @@ impl TransitiveClosure {
         }
 
         for vertex in &ordered_vertices {
-            for successor in graph.try_successor_list_of(vertex)? {
-                for closure_vertex in graph.try_successor_list_of(&successor)? {
+            for successor in graph.successor_list_of(vertex) {
+                for closure_vertex in graph.successor_list_of(&successor) {
                     graph.add_edge(vertex, &closure_vertex)?;
                 }
             }

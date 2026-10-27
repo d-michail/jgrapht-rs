@@ -22,6 +22,7 @@
 
 #![deny(missing_docs)]
 
+use jgrapht::graph::IncidenceGraph;
 use crate::{GraphImporter, IoError, Result};
 use indexmap::IndexMap;
 use jgrapht::{Graph, GraphMut};
@@ -497,10 +498,10 @@ fn distinct_locations<V>(nodes: &IndexMap<V, TsplibNode>) -> bool {
     })
 }
 
-fn distinct_neighbor_distances<G: Graph>(graph: &G) -> Result<bool> {
+fn distinct_neighbor_distances<G: IncidenceGraph>(graph: &G) -> Result<bool> {
     for vertex in graph.vertices() {
         let mut weights = HashSet::new();
-        for edge in graph.edges_of(vertex)? {
+        for edge in graph.edges_of(vertex) {
             if !weights.insert(graph.edge_weight(edge).unwrap_or(1.0).to_bits()) {
                 return Ok(false);
             }
@@ -538,7 +539,7 @@ fn metadata_from_parts<V>(
 
 impl<V, G> GraphImporter<G> for TsplibImporter<V>
 where
-    G: GraphMut<Vertex = V>,
+    G: GraphMut<Vertex = V> + IncidenceGraph,
     V: Clone + Eq + Hash,
 {
     fn import_graph<R: Read>(&mut self, graph: &mut G, mut input: R) -> Result<()> {

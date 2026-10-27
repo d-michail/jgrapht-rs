@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use crate::alg::util::Indexed;
 use crate::graph::{DirectedGraph, props};
 use crate::util::OrderedF64;
@@ -160,7 +161,7 @@ enum SearchKind {
     Bhandari,
 }
 
-fn validate<G: DirectedGraph>(
+fn validate<G: DirectedGraph + OutgoingGraph>(
     graph: &G,
     source: &G::Vertex,
     sink: &G::Vertex,
@@ -185,7 +186,7 @@ fn validate<G: DirectedGraph>(
     Ok(())
 }
 
-fn get_paths<G: DirectedGraph>(
+fn get_paths<G: DirectedGraph + OutgoingGraph>(
     graph: &G,
     source: &G::Vertex,
     sink: &G::Vertex,
@@ -355,7 +356,7 @@ pub struct SuurballeKDisjointShortestPaths<'g, G> {
     graph: &'g G,
 }
 
-impl<'g, G: DirectedGraph> SuurballeKDisjointShortestPaths<'g, G> {
+impl<'g, G: DirectedGraph + OutgoingGraph> SuurballeKDisjointShortestPaths<'g, G> {
     /// Creates a new instance of the algorithm.
     pub fn new(graph: &'g G) -> Self {
         Self { graph }
@@ -392,7 +393,7 @@ pub struct BhandariKDisjointShortestPaths<'g, G> {
     graph: &'g G,
 }
 
-impl<'g, G: DirectedGraph> BhandariKDisjointShortestPaths<'g, G> {
+impl<'g, G: DirectedGraph + OutgoingGraph> BhandariKDisjointShortestPaths<'g, G> {
     /// Creates a new instance of the algorithm.
     pub fn new(graph: &'g G) -> Self {
         Self { graph }

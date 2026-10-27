@@ -17,24 +17,24 @@ use jgrapht::generate::*;
 use jgrapht::*;
 use rand::{Rng, SeedableRng, rngs::StdRng};
 
-fn build<G: GraphMut<Vertex = usize>>(mut g: G, mut f: impl GraphGenerator) -> G {
+fn build<G: GraphMut<Vertex = usize> + IncidenceGraph>(mut g: G, mut f: impl GraphGenerator) -> G {
     f.generate_indexed(&mut g).unwrap();
     g
 }
-fn count_isomorphisms<G: Graph>(g1: &G, g2: &G) -> usize {
+fn count_isomorphisms<G: IncidenceGraph>(g1: &G, g2: &G) -> usize {
     VF2GraphIsomorphismInspector::new(g1, g2)
         .unwrap()
         .iter()
         .count()
 }
-fn is_isomorphic<G: Graph>(g1: &G, g2: &G) -> bool {
+fn is_isomorphic<G: IncidenceGraph>(g1: &G, g2: &G) -> bool {
     VF2GraphIsomorphismInspector::new(g1, g2)
         .unwrap()
         .iter()
         .next()
         .is_some()
 }
-fn count_induced_subgraphs<G: Graph>(pattern: &G, target: &G) -> usize {
+fn count_induced_subgraphs<G: IncidenceGraph>(pattern: &G, target: &G) -> usize {
     VF2SubgraphIsomorphismInspector::new(target, pattern)
         .unwrap()
         .iter()

@@ -14,6 +14,7 @@
 
 //! Vertex and edge scoring: centralities, PageRank, coreness, clustering coefficients.
 
+use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use super::util::Indexed;
 use crate::graph::Graph;
 use crate::util::OrderedF64;
@@ -28,11 +29,11 @@ fn scores<G: Graph>(ix: &Indexed<'_, G>, s: Vec<f64>) -> HashMap<G::Vertex, f64>
 }
 
 /// Degree of each vertex, optionally divided by `n - 1`.
-pub fn degree_centrality<G: Graph>(g: &G, normalize: bool) -> HashMap<G::Vertex, f64> {
+pub fn degree_centrality<G: IncidenceGraph>(g: &G, normalize: bool) -> HashMap<G::Vertex, f64> {
     let ix = Indexed::new(g);
     let d = (ix.n().max(2) - 1) as f64;
     let s = (0..ix.n())
-        .map(|v| g.degree_of(ix.vs[v]).unwrap() as f64 / if normalize { d } else { 1.0 })
+        .map(|v| g.degree_of(ix.vs[v]) as f64 / if normalize { d } else { 1.0 })
         .collect();
     scores(&ix, s)
 }
@@ -445,7 +446,7 @@ pub struct EdgeBetweennessCentrality<'g, G: Graph> {
     scores: Option<IndexMap<G::Edge, f64>>,
 }
 
-impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
+impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
     /// Construct a new instance.
     pub fn new(graph: &'g G) -> Result<Self, GraphError> {
         Self::with_options(graph, OverflowStrategy::IgnoreOverflow, None)
@@ -557,7 +558,7 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
         while let Some(v) = queue.pop_front() {
             stack.push(v.clone());
             let v_distance = dist[&v];
-            for e in g.out_edges_of(&v)? {
+            for e in g.out_edges_of(&v) {
                 let w = g.opposite_vertex(e, &v).unwrap();
                 if *w == v {
                     continue;
@@ -592,7 +593,7 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
         while let Some((OrderedF64(v_distance), v)) = heap.pop() {
             final_dist.insert(v.clone(), v_distance);
             stack.push(v.clone());
-            for e in g.out_edges_of(&v)? {
+            for e in g.out_edges_of(&v) {
                 let w = g.opposite_vertex(e, &v).unwrap();
                 if *w == v {
                     continue;
@@ -660,8 +661,8 @@ pub trait VertexScoringAlgorithm<V, S: Clone = f64> {
 
 /// Shortest-path distances from every vertex, along outgoing or (with `incoming`) incoming edges.
 /// Dijkstra is used unless some weight is negative, then Floyd–Warshall.
-fn all_distances<G: Graph>(g: &G, incoming: bool) -> Vec<Vec<f64>> {
-    fn run<H: Graph>(h: &H) -> Vec<Vec<f64>> {
+fn all_distances<G: OutgoingGraph>(g: &G, incoming: bool) -> Vec<Vec<f64>> {
+    fn run<H: OutgoingGraph>(h: &H) -> Vec<Vec<f64>> {
         let ix = Indexed::new(h);
         let n = ix.n();
         if ix.w.iter().all(|&w| w >= 0.0) {
@@ -724,11 +725,11 @@ pub struct ClosenessCentrality<V> {
 impl<V: Eq + std::hash::Hash + Clone> ClosenessCentrality<V> {
     /// Construct a new instance. By default the centrality is normalized and computed using outgoing
     /// paths.
-    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
+    pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Self {
         Self::with_options(g, false, true)
     }
 
-    pub fn with_options<G: Graph<Vertex = V>>(g: &G, incoming: bool, normalize: bool) -> Self {
+    pub fn with_options<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, incoming: bool, normalize: bool) -> Self {
         let d = all_distances(g, incoming);
         let n = d.len();
         let ix_vertices: Vec<&V> = g.vertices().collect();
@@ -789,11 +790,11 @@ pub struct HarmonicCentrality<V> {
 impl<V: Eq + std::hash::Hash + Clone> HarmonicCentrality<V> {
     /// Construct a new instance. By default the centrality is normalized and computed using outgoing
     /// paths.
-    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
+    pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Self {
         Self::with_options(g, false, true)
     }
 
-    pub fn with_options<G: Graph<Vertex = V>>(g: &G, incoming: bool, normalize: bool) -> Self {
+    pub fn with_options<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, incoming: bool, normalize: bool) -> Self {
         let d = all_distances(g, incoming);
         let n = d.len();
         let vs: Vec<&V> = g.vertices().collect();
@@ -851,7 +852,7 @@ pub struct Coreness<V> {
 
 impl<V: Eq + std::hash::Hash + Clone> Coreness<V> {
     /// Constructor
-    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
+    pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
         crate::graph::props::require_undirected(g)?;
         if !crate::graph::props::is_simple(g) {
             return Err(GraphError::InvalidArgument("Graph must be simple".into()));
@@ -914,7 +915,7 @@ pub struct ClusteringCoefficient<'g, G: Graph> {
     scores: HashMap<G::Vertex, f64>,
 }
 
-impl<'g, G: Graph> ClusteringCoefficient<'g, G> {
+impl<'g, G: IncidenceGraph> ClusteringCoefficient<'g, G> {
     /// Construct a new instance
     pub fn new(graph: &'g G) -> Self {
         let scores = graph
@@ -927,7 +928,6 @@ impl<'g, G: Graph> ClusteringCoefficient<'g, G> {
     fn local(g: &G, v: &G::Vertex) -> f64 {
         let hood: indexmap::IndexSet<&G::Vertex> = g
             .edges_of(v)
-            .unwrap()
             .filter_map(|e| g.opposite_vertex(e, v))
             .collect();
         let k = hood.len() as f64;
@@ -959,17 +959,15 @@ impl<'g, G: Graph> ClusteringCoefficient<'g, G> {
         let mut triplets = 0.0;
         for v in g.vertices() {
             if !g.graph_type().directed {
-                let d = g.degree_of(v).unwrap() as f64;
+                let d = g.degree_of(v) as f64;
                 triplets += d * (d - 1.0) / 2.0;
             } else {
                 let preds: std::collections::HashSet<_> = g
                     .in_edges_of(v)
-                    .unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .collect();
                 let succs: std::collections::HashSet<_> = g
                     .out_edges_of(v)
-                    .unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .collect();
                 triplets += preds.len() as f64 * succs.len() as f64;
@@ -994,14 +992,14 @@ fn invalid(msg: &str) -> GraphError {
 }
 
 /// Weighted incoming neighbours of every vertex as indices, in the graph's iteration order.
-fn incoming_lists<G: Graph>(
+fn incoming_lists<G: IncomingGraph>(
     g: &G,
     vs: &[&G::Vertex],
 ) -> Result<Vec<Vec<(usize, f64)>>, GraphError> {
     let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
     vs.iter()
         .map(|v| {
-            Ok(g.in_edges_of(v)?
+            Ok(g.in_edges_of(v)
                 .map(|e| {
                     (
                         idx[g.opposite_vertex(e, v).unwrap()],
@@ -1040,11 +1038,11 @@ pub struct EigenvectorCentrality<V> {
 
 impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
     /// Create and execute an instance of EigenvectorCentrality
-    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
+    pub fn new<G: Graph<Vertex = V> + IncomingGraph>(g: &G) -> Self {
         Self::with_options(g, MAX_ITERATIONS_DEFAULT, TOLERANCE_DEFAULT).expect("default options")
     }
 
-    pub fn with_options<G: Graph<Vertex = V>>(
+    pub fn with_options<G: Graph<Vertex = V> + IncomingGraph>(
         g: &G,
         max_iterations: usize,
         tolerance: f64,
@@ -1127,11 +1125,11 @@ pub struct KatzCentrality<V> {
 
 impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
     /// Create and execute an instance of KatzCentrality.
-    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
+    pub fn new<G: Graph<Vertex = V> + IncomingGraph>(g: &G) -> Self {
         Self::with_damping(g, 0.01).expect("default options")
     }
 
-    pub fn with_damping<G: Graph<Vertex = V>>(
+    pub fn with_damping<G: Graph<Vertex = V> + IncomingGraph>(
         g: &G,
         damping_factor: f64,
     ) -> Result<Self, GraphError> {
@@ -1144,7 +1142,7 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
         )
     }
 
-    pub fn with_options<G: Graph<Vertex = V>>(
+    pub fn with_options<G: Graph<Vertex = V> + IncomingGraph>(
         g: &G,
         damping_factor: f64,
         exogenous_factor: impl Fn(&V) -> f64,
@@ -1224,12 +1222,12 @@ pub struct PageRank<V> {
 
 impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
     /// Create and execute an instance of PageRank.
-    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
+    pub fn new<G: Graph<Vertex = V> + OutgoingGraph + IncomingGraph>(g: &G) -> Self {
         Self::with_options(g, 0.85, MAX_ITERATIONS_DEFAULT, TOLERANCE_DEFAULT)
             .expect("default options")
     }
 
-    pub fn with_options<G: Graph<Vertex = V>>(
+    pub fn with_options<G: Graph<Vertex = V> + OutgoingGraph + IncomingGraph>(
         g: &G,
         damping_factor: f64,
         max_iterations: usize,
@@ -1250,7 +1248,7 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
         let out_degree: Vec<usize> = vs
             .iter()
             .map(|v| g.out_degree_of(v))
-            .collect::<Result<_, _>>()?;
+            .collect();
         let incoming = incoming_lists(g, &vs)?;
         let mut weight_sum = vec![0.0; n];
         if weighted {
@@ -1339,15 +1337,15 @@ pub struct BetweennessCentrality<V> {
 
 impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
     /// Construct a new instance.
-    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
+    pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
         Self::with_options(g, false, OverflowStrategy::IgnoreOverflow)
     }
 
-    pub fn normalized<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
+    pub fn normalized<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
         Self::with_options(g, true, OverflowStrategy::IgnoreOverflow)
     }
 
-    pub fn with_options<G: Graph<Vertex = V>>(
+    pub fn with_options<G: Graph<Vertex = V> + OutgoingGraph>(
         g: &G,
         normalize: bool,
         overflow: OverflowStrategy,
@@ -1358,7 +1356,7 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
         let out: Vec<Vec<(usize, f64)>> = vs
             .iter()
             .map(|v| {
-                Ok(g.out_edges_of(v)?
+                Ok(g.out_edges_of(v)
                     .map(|e| {
                         (
                             idx[g.opposite_vertex(e, v).unwrap()],
@@ -1596,11 +1594,11 @@ fn ap_divide(lhs: &ApFloat, rhs: &ApFloat, precision: usize) -> Result<ApFloat, 
 
 impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
     /// Construct a new instance.
-    pub fn new<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
+    pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
         Self::with_normalize(g, false)
     }
 
-    pub fn with_normalize<G: Graph<Vertex = V>>(
+    pub fn with_normalize<G: Graph<Vertex = V> + OutgoingGraph>(
         g: &G,
         normalize: bool,
     ) -> Result<Self, GraphError> {
@@ -1608,7 +1606,7 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
     }
 
     /// Construct with an Apfloat-compatible number of significant decimal digits.
-    pub fn with_precision<G: Graph<Vertex = V>>(
+    pub fn with_precision<G: Graph<Vertex = V> + OutgoingGraph>(
         g: &G,
         normalize: bool,
         precision: usize,
@@ -1621,7 +1619,7 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
         let out: Vec<Vec<(usize, f64)>> = vs
             .iter()
             .map(|v| {
-                Ok(g.out_edges_of(v)?
+                Ok(g.out_edges_of(v)
                     .map(|e| {
                         (
                             idx[g.opposite_vertex(e, v).unwrap()],

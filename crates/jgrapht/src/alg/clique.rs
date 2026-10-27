@@ -14,6 +14,7 @@
 
 //! Cliques and independent sets.
 
+use crate::graph::IncidenceGraph;
 use super::color::ChordalGraphColoring;
 use super::cycle::IterationOrder;
 use super::util::Indexed;
@@ -171,7 +172,7 @@ struct BronKerboschBase<'g, G: Graph> {
     cliques: Option<Vec<HashSet<G::Vertex>>>,
 }
 
-impl<'g, G: Graph> BronKerboschBase<'g, G> {
+impl<'g, G: IncidenceGraph> BronKerboschBase<'g, G> {
     fn new(graph: &'g G, timeout: Option<Duration>) -> Self {
         BronKerboschBase {
             graph,
@@ -196,7 +197,6 @@ impl<'g, G: Graph> BronKerboschBase<'g, G> {
     fn neighbors(&self, v: &G::Vertex) -> HashSet<G::Vertex> {
         self.graph
             .edges_of(v)
-            .unwrap()
             .filter_map(|e| self.graph.opposite_vertex(e, v).cloned())
             .collect()
     }
@@ -223,7 +223,7 @@ pub struct BronKerboschCliqueFinder<'g, G: Graph> {
     base: BronKerboschBase<'g, G>,
 }
 
-impl<'g, G: Graph> BronKerboschCliqueFinder<'g, G> {
+impl<'g, G: IncidenceGraph> BronKerboschCliqueFinder<'g, G> {
     /// Constructs a new clique finder.
     pub fn new(graph: &'g G) -> Self {
         BronKerboschCliqueFinder {
@@ -296,7 +296,7 @@ impl<'g, G: Graph> BronKerboschCliqueFinder<'g, G> {
     }
 }
 
-impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex> for BronKerboschCliqueFinder<'_, G> {
+impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex> for BronKerboschCliqueFinder<'_, G> {
     fn cliques(&mut self) -> Result<&[HashSet<G::Vertex>]> {
         if self.base.cliques.is_none() {
             self.base.check_simple()?;
@@ -330,7 +330,7 @@ pub struct PivotBronKerboschCliqueFinder<'g, G: Graph> {
     base: BronKerboschBase<'g, G>,
 }
 
-impl<'g, G: Graph> PivotBronKerboschCliqueFinder<'g, G> {
+impl<'g, G: IncidenceGraph> PivotBronKerboschCliqueFinder<'g, G> {
     /// Constructs a new clique finder.
     pub fn new(graph: &'g G) -> Self {
         PivotBronKerboschCliqueFinder {
@@ -358,7 +358,6 @@ impl<'g, G: Graph> PivotBronKerboschCliqueFinder<'g, G> {
         for u in p.iter().chain(x.iter()) {
             let count = g
                 .edges_of(u)
-                .unwrap()
                 .filter(|e| g.opposite_vertex(e, u).is_some_and(|w| p.contains(w)))
                 .count();
             if best.is_none_or(|(c, _)| count > c) {
@@ -418,7 +417,7 @@ impl<'g, G: Graph> PivotBronKerboschCliqueFinder<'g, G> {
     }
 }
 
-impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
+impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
     for PivotBronKerboschCliqueFinder<'_, G>
 {
     fn cliques(&mut self) -> Result<&[HashSet<G::Vertex>]> {
@@ -459,7 +458,7 @@ pub struct DegeneracyBronKerboschCliqueFinder<'g, G: Graph> {
     inner: PivotBronKerboschCliqueFinder<'g, G>,
 }
 
-impl<'g, G: Graph> DegeneracyBronKerboschCliqueFinder<'g, G> {
+impl<'g, G: IncidenceGraph> DegeneracyBronKerboschCliqueFinder<'g, G> {
     /// Constructs a new clique finder.
     pub fn new(graph: &'g G) -> Self {
         DegeneracyBronKerboschCliqueFinder {
@@ -478,7 +477,7 @@ impl<'g, G: Graph> DegeneracyBronKerboschCliqueFinder<'g, G> {
     }
 }
 
-impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
+impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
     for DegeneracyBronKerboschCliqueFinder<'_, G>
 {
     fn cliques(&mut self) -> Result<&[HashSet<G::Vertex>]> {
@@ -536,7 +535,7 @@ pub struct ChordalGraphMaxCliqueFinder<'g, G: UndirectedGraph> {
     is_chordal: bool,
 }
 
-impl<'g, G: UndirectedGraph> ChordalGraphMaxCliqueFinder<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphMaxCliqueFinder<'g, G> {
     /// Creates a new ChordalGraphMaxCliqueFinder instance. The `ChordalityInspector` used in
     /// this implementation uses the default `MaximumCardinalityIterator` iterator.
     pub fn new(graph: &'g G) -> Self {
@@ -616,7 +615,7 @@ pub struct CliqueMinimalSeparatorDecomposition<'g, G: Graph> {
     full_component_count: HashMap<HashableSet<G::Vertex>, usize>,
 }
 
-impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
+impl<'g, G: IncidenceGraph> CliqueMinimalSeparatorDecomposition<'g, G> {
     /// Setup a clique minimal separator decomposition on undirected graph `g`. Loops and
     /// multiple (parallel) edges are removed, i.e. the graph is transformed to a simple graph.
     pub fn new(graph: &'g G) -> Result<Self> {

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::structured::Complete;
 use super::{GeneratorResult, GraphGenerator, add_edge, invalid};
 use crate::graph::Graph;
@@ -224,7 +225,7 @@ impl<R: RandomSource> BarabasiAlbertGraphGenerator<R> {
     }
 }
 impl<R: RandomSource> GraphGenerator for BarabasiAlbertGraphGenerator<R> {
-    fn generate_graph<G: GraphMut>(
+    fn generate_graph<G: GraphMut + IncidenceGraph>(
         &mut self,
         target: &mut G,
         result: Option<&mut GeneratorResult<G::Vertex>>,
@@ -415,7 +416,7 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
     }
 }
 impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
-    fn pick<G: GraphMut>(
+    fn pick<G: GraphMut + IncidenceGraph>(
         &mut self,
         target: &G,
         nodes: &IndexSet<G::Vertex>,
@@ -435,9 +436,9 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
         let mut ret = None;
         for v in nodes {
             let degree = if incoming {
-                target.in_degree_of(v)?
+                target.in_degree_of(v)
             } else {
-                target.out_degree_of(v)?
+                target.out_degree_of(v)
             };
             acc += degree as f32 + bias;
             ret = Some(v.clone());
@@ -449,7 +450,7 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
     }
 }
 impl<R: RandomSource> GraphGenerator for DirectedScaleFreeGraphGenerator<R> {
-    fn generate_graph<G: GraphMut>(
+    fn generate_graph<G: GraphMut + IncidenceGraph>(
         &mut self,
         target: &mut G,
         _: Option<&mut GeneratorResult<G::Vertex>>,
@@ -819,7 +820,7 @@ impl<R: RandomSource> RandomRegularGraphGenerator<R> {
     }
 }
 impl<R: RandomSource> GraphGenerator for RandomRegularGraphGenerator<R> {
-    fn generate_graph<G: GraphMut>(
+    fn generate_graph<G: GraphMut + IncidenceGraph>(
         &mut self,
         target: &mut G,
         _: Option<&mut GeneratorResult<G::Vertex>>,

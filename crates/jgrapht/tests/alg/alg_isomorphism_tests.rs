@@ -161,7 +161,7 @@ fn sorted(v: impl IntoIterator<Item = usize>) -> Vec<usize> {
 mod graph_ordering_test {
     use super::*;
 
-    fn check<G: Graph<Vertex = &'static str>>(
+    fn check<G: Graph<Vertex = &'static str> + IncidenceGraph>(
         g: &G,
         outs: [&[&'static str]; 5],
         ins: [&[&'static str]; 5],
@@ -1003,7 +1003,7 @@ use rand::{Rng, SeedableRng};
 
     pub type G = DiGraph<i32>;
 
-    pub fn is_correct_matching<H: Graph<Vertex = i32>>(
+    pub fn is_correct_matching<H: Graph<Vertex = i32> + IncidenceGraph>(
         rel: &IsomorphicGraphMapping<'_, H>,
         g1: &H,
         g2: &H,
@@ -1027,7 +1027,7 @@ use rand::{Rng, SeedableRng};
         true
     }
 
-    pub fn all_matchings_correct<H: Graph<Vertex = i32>>(
+    pub fn all_matchings_correct<H: Graph<Vertex = i32> + IncidenceGraph>(
         vf2: &VF2SubgraphIsomorphismInspector<'_, H>,
         g1: &H,
         g2: &H,
@@ -1080,7 +1080,7 @@ use rand::{Rng, SeedableRng};
 
     /// Every injective, edge-consistent mapping of `g2`'s vertices into `g1`, built by brute
     /// force (`getMatchings`), compared with what the inspector found.
-    pub fn contains_all_matchings<'g, H: Graph<Vertex = i32>>(
+    pub fn contains_all_matchings<'g, H: Graph<Vertex = i32> + IncidenceGraph>(
         vf2: &VF2SubgraphIsomorphismInspector<'g, H>,
         g1: &'g H,
         g2: &'g H,
@@ -1260,7 +1260,7 @@ use rand::{Rng, SeedableRng};
     }
 
     /// Asserts the iterator yields exactly the `expected` mappings, in any order.
-    fn assert_mappings<'a, 'g, G: Graph + 'g>(
+    fn assert_mappings<'a, 'g, G: Graph + 'g + IncidenceGraph>(
         mut iter: VF2MappingIterator<'a, 'g, G>,
         expected: &[&str],
     ) where
@@ -1278,7 +1278,7 @@ use rand::{Rng, SeedableRng};
         assert!(!iter.has_next());
     }
 
-    fn first<G: Graph>(vf2: &VF2SubgraphIsomorphismInspector<'_, G>) -> String
+    fn first<G: IncidenceGraph>(vf2: &VF2SubgraphIsomorphismInspector<'_, G>) -> String
     where
         G::Vertex: std::fmt::Display,
     {

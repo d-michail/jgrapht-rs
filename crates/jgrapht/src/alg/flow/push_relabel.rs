@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::DEFAULT_EPSILON;
 use super::base::{FlowNet, flow_algorithm_api};
 use crate::error::Result;
-use crate::graph::Graph;
 use crate::util::ToleranceDoubleComparator;
 use std::collections::VecDeque;
 
@@ -40,7 +40,7 @@ use std::collections::VecDeque;
 ///
 /// `PushRelabelMFImpl`: FIFO push-relabel with the global-relabelling and gap heuristics,
 /// `O(V³)`.
-pub struct PushRelabelMFImpl<'g, G: Graph> {
+pub struct PushRelabelMFImpl<'g, G: IncidenceGraph> {
     net: FlowNet<'g, G>,
     n: usize,
     count_height: Vec<usize>,
@@ -54,7 +54,7 @@ pub struct PushRelabelMFImpl<'g, G: Graph> {
     comparator: ToleranceDoubleComparator,
 }
 
-impl<'g, G: Graph> PushRelabelMFImpl<'g, G> {
+impl<'g, G: IncidenceGraph> PushRelabelMFImpl<'g, G> {
     /// Construct a new push-relabel algorithm.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
@@ -135,7 +135,7 @@ impl<'g, G: Graph> PushRelabelMFImpl<'g, G> {
         }
         let g = self.net.graph;
         let mut value = 0.0;
-        for e in g.edges_of(self.net.vs[t])? {
+        for e in g.edges_of(self.net.vs[t]) {
             let a = self.net.arc_of_edge(e);
             let arc = &self.net.arcs[a];
             value += if self.net.directed {

@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::ordering::GraphOrdering;
-use crate::graph::Graph;
 use indexmap::IndexMap;
 use std::collections::BTreeMap;
 use std::fmt;
@@ -28,14 +28,14 @@ pub const NULL_NODE: usize = usize::MAX;
 ///
 /// `IsomorphicGraphMapping`: a vertex mapping between two graphs of the same type, in both
 /// directions, with the induced edge correspondence.
-pub struct IsomorphicGraphMapping<'g, G: Graph> {
+pub struct IsomorphicGraphMapping<'g, G: IncidenceGraph> {
     forward: IndexMap<G::Vertex, G::Vertex>,
     backward: IndexMap<G::Vertex, G::Vertex>,
     graph1: &'g G,
     graph2: &'g G,
 }
 
-impl<'g, G: Graph> Clone for IsomorphicGraphMapping<'g, G> {
+impl<'g, G: IncidenceGraph> Clone for IsomorphicGraphMapping<'g, G> {
     fn clone(&self) -> Self {
         IsomorphicGraphMapping {
             forward: self.forward.clone(),
@@ -46,7 +46,7 @@ impl<'g, G: Graph> Clone for IsomorphicGraphMapping<'g, G> {
     }
 }
 
-impl<'g, G: Graph> IsomorphicGraphMapping<'g, G> {
+impl<'g, G: IncidenceGraph> IsomorphicGraphMapping<'g, G> {
     /// Builds the mapping from the vertex numbers matched in `core1` / `core2`
     /// ([`NULL_NODE`] marks unmatched vertices).
     pub fn from_cores(
@@ -215,7 +215,7 @@ impl<'g, G: Graph> IsomorphicGraphMapping<'g, G> {
     }
 }
 
-impl<'g, G: Graph> PartialEq for IsomorphicGraphMapping<'g, G> {
+impl<'g, G: IncidenceGraph> PartialEq for IsomorphicGraphMapping<'g, G> {
     fn eq(&self, other: &Self) -> bool {
         self.forward == other.forward
             && self.backward == other.backward
@@ -224,7 +224,7 @@ impl<'g, G: Graph> PartialEq for IsomorphicGraphMapping<'g, G> {
     }
 }
 
-impl<'g, G: Graph> fmt::Debug for IsomorphicGraphMapping<'g, G>
+impl<'g, G: IncidenceGraph> fmt::Debug for IsomorphicGraphMapping<'g, G>
 where
     G::Vertex: fmt::Debug,
 {
@@ -236,7 +236,7 @@ where
 }
 
 /// `[a=x b=y c=~~]`, the vertices of the first graph sorted by their text.
-impl<'g, G: Graph> fmt::Display for IsomorphicGraphMapping<'g, G>
+impl<'g, G: IncidenceGraph> fmt::Display for IsomorphicGraphMapping<'g, G>
 where
     G::Vertex: fmt::Display,
 {

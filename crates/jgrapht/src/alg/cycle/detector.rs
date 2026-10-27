@@ -12,6 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use crate::alg::connectivity::KosarajuStrongConnectivityInspector;
 use crate::alg::interfaces::StrongConnectivityAlgorithm;
 use crate::error::{GraphError, Result};
@@ -33,7 +35,7 @@ pub struct CycleDetector<'g, G: DirectedGraph> {
 
 /// The depth-first traversal of `ProbeIterator`: keeps the current path and reports every
 /// back-reference that closes a cycle.
-struct ProbeStrategy<'g, G: Graph + 'g> {
+struct ProbeStrategy<'g, G: Graph + 'g + IncidenceGraph> {
     inner: DfsStrategy<'g, G>,
     path: Vec<&'g G::Vertex>,
     cycle_set: Option<IndexSet<G::Vertex>>,
@@ -41,7 +43,7 @@ struct ProbeStrategy<'g, G: Graph + 'g> {
     detected: bool,
 }
 
-impl<'g, G: Graph + 'g> Strategy<'g, G> for ProbeStrategy<'g, G> {
+impl<'g, G: Graph + 'g + IncidenceGraph> Strategy<'g, G> for ProbeStrategy<'g, G> {
     type Data = <DfsStrategy<'g, G> as Strategy<'g, G>>::Data;
 
     fn is_exhausted(&mut self, c: &mut Core<'g, G, Self::Data>) -> bool {
@@ -100,7 +102,7 @@ impl<'g, G: Graph + 'g> Strategy<'g, G> for ProbeStrategy<'g, G> {
     }
 }
 
-impl<'g, G: DirectedGraph + 'g> CycleDetector<'g, G> {
+impl<'g, G: DirectedGraph + 'g + OutgoingGraph + IncidenceGraph> CycleDetector<'g, G> {
     /// Creates a cycle detector for the specified graph. Currently only directed graphs are
     /// supported.
     pub fn new(graph: &'g G) -> Self {

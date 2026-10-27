@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::{GraphError, Result};
@@ -60,7 +61,7 @@ pub struct ALTAdmissibleHeuristic<'g, G: Graph> {
     directed: bool,
 }
 
-impl<'g, G: Graph> ALTAdmissibleHeuristic<'g, G> {
+impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
     /// Constructs a new `AStarAdmissibleHeuristic` using a set of landmarks.
     pub fn new<I>(graph: &'g G, landmarks: I) -> Result<Self>
     where
@@ -158,7 +159,7 @@ impl<'g, G: Graph> ALTAdmissibleHeuristic<'g, G> {
     }
 }
 
-fn distances<G: Graph>(
+fn distances<G: IncidenceGraph>(
     graph: &G,
     source: &G::Vertex,
     reverse: bool,
@@ -179,9 +180,9 @@ fn distances<G: Graph>(
         }
         settled.insert(vertex);
         let adjacent: Vec<_> = if reverse {
-            graph.try_incoming_of(vertex)?.collect()
+            graph.incoming_of(vertex).collect()
         } else {
-            graph.try_outgoing_of(vertex)?.collect()
+            graph.outgoing_of(vertex).collect()
         };
         for (edge, target) in adjacent {
             let candidate = value + graph.edge_weight(edge).unwrap_or(1.0);

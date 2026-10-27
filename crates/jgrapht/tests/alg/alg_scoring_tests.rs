@@ -1761,7 +1761,7 @@ mod edge_betweenness_centrality {
         g
     }
 
-    fn check<G: Graph<Vertex = i32, Edge = DefaultEdge>>(
+    fn check<G: IncidenceGraph<Vertex = i32, Edge = DefaultEdge>>(
         g: &G,
         ebc: &mut EdgeBetweennessCentrality<'_, G>,
         expected: [(i32, i32, f64); 4],

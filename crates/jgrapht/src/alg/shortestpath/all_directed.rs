@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::{IncomingGraph, OutgoingGraph};
 use crate::graph::{DirectedGraph, Graph, GraphExt};
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
@@ -101,7 +102,7 @@ impl<'g, G: DirectedGraph> AllDirectedPaths<'g, G, AllowAllPaths> {
     }
 }
 
-impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
+impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
     /// Configure whether the preprocessing step applies the forward-pruning optimisation.
     ///
     /// When forward pruning is enabled (the default), `getAllPaths` first runs a forward
@@ -200,7 +201,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
             if max_path_length.is_some_and(|bound| d >= bound) {
                 continue;
             }
-            for (_, child) in self.graph.try_outgoing_of(vertex)? {
+            for (_, child) in self.graph.outgoing_of(vertex) {
                 if !distance.contains_key(child) {
                     distance.insert(child, d + 1);
                     queue.push_back(child);
@@ -231,7 +232,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
         }
         while let Some(vertex) = queue.pop_front() {
             let child_distance = vertex_distance[vertex] + 1;
-            for edge in self.graph.in_edges_of(vertex)? {
+            for edge in self.graph.in_edges_of(vertex) {
                 let source = self.graph.edge_source(edge).expect("edge in graph");
                 if let Some(forward) = forward {
                     let Some(&source_distance) = forward.get(source) else {
@@ -279,7 +280,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
             if max_path_length == Some(0) {
                 continue;
             }
-            for (edge, target) in self.graph.try_outgoing_of(source)? {
+            for (edge, target) in self.graph.outgoing_of(source) {
                 let partial = GraphWalk::empty();
                 if !self.path_validator.is_valid_path(&partial, edge) {
                     continue;
@@ -308,7 +309,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
             } else {
                 HashSet::new()
             };
-            for (edge, child) in self.graph.try_outgoing_of(leaf)? {
+            for (edge, child) in self.graph.outgoing_of(leaf) {
                 let Some(&remaining) = edge_to_target.get(edge) else {
                     continue;
                 };

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use super::base::{
     HamiltonianCycleAlgorithm, HamiltonianCycleImprovementAlgorithm, check_graph,
     closed_vertex_list_to_tour, singleton_tour,
@@ -61,7 +62,7 @@ struct State<V> {
     rev_index: Vec<V>,
 }
 
-impl<'a, G: Graph + 'a> TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: OutgoingGraph + 'a + OutgoingGraph> TwoOptHeuristicTSP<'a, G> {
     /// One pass from a random tour.
     pub fn new() -> Self {
         Self::with_passes(1)
@@ -203,13 +204,13 @@ impl<'a, G: Graph + 'a> TwoOptHeuristicTSP<'a, G> {
     }
 }
 
-impl<'a, G: Graph + 'a> Default for TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: OutgoingGraph + 'a> Default for TwoOptHeuristicTSP<'a, G> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, G: Graph + 'a> HamiltonianCycleAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: OutgoingGraph + 'a + OutgoingGraph> HamiltonianCycleAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
     /// Computes a 2-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -230,7 +231,7 @@ impl<'a, G: Graph + 'a> HamiltonianCycleAlgorithm<G> for TwoOptHeuristicTSP<'a, 
     }
 }
 
-impl<'a, G: Graph + 'a> HamiltonianCycleImprovementAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: OutgoingGraph + 'a> HamiltonianCycleImprovementAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
     /// Try to improve a tour by running the 2-opt heuristic.
     fn improve_tour(
         &mut self,

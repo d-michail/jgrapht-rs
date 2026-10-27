@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::java::RandomSource;
 use crate::{GraphError, Result};
@@ -29,7 +30,7 @@ pub struct RandomWalkVertexIterator<'g, G: Graph + 'g, R> {
     rng: R,
 }
 
-impl<'g, G: Graph + 'g, R: RandomSource> RandomWalkVertexIterator<'g, G, R> {
+impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource> RandomWalkVertexIterator<'g, G, R> {
     pub fn new(
         g: &'g G,
         start: &'g G::Vertex,
@@ -61,21 +62,20 @@ impl<'g, G: Graph + 'g, R: RandomSource> RandomWalkVertexIterator<'g, G, R> {
         }
         self.hops += 1;
         let g = self.g;
-        if g.out_degree_of(cur).unwrap() == 0 {
+        if g.out_degree_of(cur) == 0 {
             self.next_vertex = None;
             return;
         }
         let edge = if self.weighted {
             let total = *self.out_weight.entry(cur).or_insert_with(|| {
                 g.out_edges_of(cur)
-                    .unwrap()
                     .map(|e| g.edge_weight(e).unwrap_or(1.0))
                     .sum()
             });
             let p = total * self.rng.next_double();
             let mut cumulative = 0.0;
             let mut picked = None;
-            for e in g.out_edges_of(cur).unwrap() {
+            for e in g.out_edges_of(cur) {
                 cumulative += g.edge_weight(e).unwrap_or(1.0);
                 if p <= cumulative {
                     picked = Some(e);
@@ -84,14 +84,14 @@ impl<'g, G: Graph + 'g, R: RandomSource> RandomWalkVertexIterator<'g, G, R> {
             }
             picked
         } else {
-            let edges: Vec<_> = g.out_edges_of(cur).unwrap().collect();
+            let edges: Vec<_> = g.out_edges_of(cur).collect();
             Some(edges[self.rng.next_int_bound(edges.len())])
         };
         self.next_vertex = edge.and_then(|e| g.opposite_vertex(e, cur));
     }
 }
 
-impl<'g, G: Graph + 'g, R: RandomSource> Iterator for RandomWalkVertexIterator<'g, G, R> {
+impl<'g, G: OutgoingGraph + 'g, R: RandomSource> Iterator for RandomWalkVertexIterator<'g, G, R> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<&'g G::Vertex> {
         let v = self.next_vertex?;

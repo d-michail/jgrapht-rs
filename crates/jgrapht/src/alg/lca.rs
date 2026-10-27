@@ -14,6 +14,8 @@
 
 //! Lowest common ancestors in rooted trees/forests (binary lifting).
 
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use std::collections::{HashMap, VecDeque};
 use std::hash::Hash;
@@ -28,7 +30,7 @@ pub struct Lca<V> {
 }
 
 impl<V: Clone + Eq + Hash> Lca<V> {
-    pub fn new<G: Graph<Vertex = V>>(g: &G, root: &V) -> Option<Self> {
+    pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, root: &V) -> Option<Self> {
         let root = g.vertices().find(|v| *v == root)?;
         let mut index = HashMap::from([(root.clone(), 0)]);
         let mut vertices = vec![root.clone()];
@@ -119,7 +121,7 @@ struct Forest<V> {
 }
 
 impl<V: Clone + Eq + Hash> Forest<V> {
-    fn new<G: Graph<Vertex = V>>(g: &G, roots: &[V]) -> Result<Self> {
+    fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, roots: &[V]) -> Result<Self> {
         if roots.is_empty() {
             return invalid("roots cannot be empty");
         }
@@ -156,11 +158,10 @@ impl<V: Clone + Eq + Hash> Forest<V> {
         Ok(f)
     }
 
-    fn dfs<G: Graph<Vertex = V>>(&mut self, g: &G, root: usize, comp: usize, clock: &mut i64) {
+    fn dfs<G: Graph<Vertex = V> + OutgoingGraph>(&mut self, g: &G, root: usize, comp: usize, clock: &mut i64) {
         let children_of = |f: &Self, u: usize| -> Vec<usize> {
             let vu = &f.vertices[u];
             g.out_edges_of(vu)
-                .unwrap()
                 .filter_map(|e| g.opposite_vertex(e, vu))
                 .map(|w| f.index[w])
                 .collect()
@@ -219,11 +220,11 @@ pub struct BinaryLiftingLcaFinder<V> {
 }
 
 impl<V: Clone + Eq + Hash> BinaryLiftingLcaFinder<V> {
-    pub fn new<G: Graph<Vertex = V>>(g: &G, root: V) -> Result<Self> {
+    pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, root: V) -> Result<Self> {
         Self::with_roots(g, &[root])
     }
 
-    pub fn with_roots<G: Graph<Vertex = V>>(g: &G, roots: &[V]) -> Result<Self> {
+    pub fn with_roots<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, roots: &[V]) -> Result<Self> {
         let forest = Forest::new(g, roots)?;
         let n = forest.vertices.len();
         let levels = ((usize::BITS - n.max(1).leading_zeros()) as usize).max(1);
@@ -282,11 +283,11 @@ pub struct EulerTourRmqLcaFinder<V> {
 }
 
 impl<V: Clone + Eq + Hash> EulerTourRmqLcaFinder<V> {
-    pub fn new<G: Graph<Vertex = V>>(g: &G, root: V) -> Result<Self> {
+    pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, root: V) -> Result<Self> {
         Self::with_roots(g, &[root])
     }
 
-    pub fn with_roots<G: Graph<Vertex = V>>(g: &G, roots: &[V]) -> Result<Self> {
+    pub fn with_roots<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, roots: &[V]) -> Result<Self> {
         let forest = Forest::new(g, roots)?;
         let size = forest.tour.len();
         let mut representative = vec![usize::MAX; forest.vertices.len()];
@@ -356,11 +357,11 @@ pub struct HeavyPathLcaFinder<V: Eq + Hash + Clone> {
 }
 
 impl<V: Clone + Eq + Hash> HeavyPathLcaFinder<V> {
-    pub fn new<G: Graph<Vertex = V>>(g: &G, root: V) -> Result<Self> {
+    pub fn new<G: Graph<Vertex = V> + IncidenceGraph>(g: &G, root: V) -> Result<Self> {
         Self::with_roots(g, [root])
     }
 
-    pub fn with_roots<G: Graph<Vertex = V>>(
+    pub fn with_roots<G: Graph<Vertex = V> + IncidenceGraph>(
         g: &G,
         roots: impl IntoIterator<Item = V>,
     ) -> Result<Self> {
@@ -423,7 +424,7 @@ pub struct TarjanLcaFinder<'g, G: Graph> {
     roots: Vec<G::Vertex>,
 }
 
-impl<'g, G: Graph> TarjanLcaFinder<'g, G> {
+impl<'g, G: OutgoingGraph> TarjanLcaFinder<'g, G> {
     pub fn new(graph: &'g G, root: G::Vertex) -> Result<Self> {
         Self::with_roots(graph, vec![root])
     }
@@ -468,7 +469,6 @@ impl<'g, G: Graph> TarjanLcaFinder<'g, G> {
             ancestors.insert(root.clone(), root.clone());
             let nbrs = |u: &G::Vertex| -> Vec<G::Vertex> {
                 g.out_edges_of(u)
-                    .unwrap()
                     .filter_map(|e| g.opposite_vertex(e, u).cloned())
                     .collect()
             };
@@ -512,7 +512,7 @@ impl<'g, G: Graph> TarjanLcaFinder<'g, G> {
     }
 }
 
-impl<G: Graph> LowestCommonAncestorAlgorithm<G::Vertex> for TarjanLcaFinder<'_, G> {
+impl<G: IncidenceGraph> LowestCommonAncestorAlgorithm<G::Vertex> for TarjanLcaFinder<'_, G> {
     fn lca(&self, a: &G::Vertex, b: &G::Vertex) -> Result<Option<G::Vertex>> {
         Ok(self.compute(&[(a.clone(), b.clone())])?.remove(0))
     }
@@ -526,7 +526,7 @@ pub struct NaiveLcaFinder<'g, G: DirectedGraph> {
     graph: &'g G,
 }
 
-impl<'g, G: DirectedGraph> NaiveLcaFinder<'g, G> {
+impl<'g, G: DirectedGraph + IncidenceGraph> NaiveLcaFinder<'g, G> {
     pub fn new(graph: &'g G) -> Result<Self> {
         crate::graph::props::require_directed(graph)?;
         Ok(NaiveLcaFinder { graph })
@@ -546,7 +546,7 @@ impl<'g, G: DirectedGraph> NaiveLcaFinder<'g, G> {
         let mut queue = std::collections::VecDeque::from([start.clone()]);
         while let Some(v) = queue.pop_front() {
             let next: Vec<G::Vertex> = reversed
-                .out_edges_of(&v)?
+                .out_edges_of(&v)
                 .filter_map(|e| reversed.edge_target(e).cloned())
                 .collect();
             for w in next {
@@ -559,7 +559,7 @@ impl<'g, G: DirectedGraph> NaiveLcaFinder<'g, G> {
     }
 }
 
-impl<G: DirectedGraph> LowestCommonAncestorAlgorithm<G::Vertex> for NaiveLcaFinder<'_, G> {
+impl<G: DirectedGraph + IncidenceGraph> LowestCommonAncestorAlgorithm<G::Vertex> for NaiveLcaFinder<'_, G> {
     fn lca(&self, a: &G::Vertex, b: &G::Vertex) -> Result<Option<G::Vertex>> {
         self.check(a, b)?;
         let set = self.lca_set_ordered(a, b)?;
@@ -572,7 +572,7 @@ impl<G: DirectedGraph> LowestCommonAncestorAlgorithm<G::Vertex> for NaiveLcaFind
     }
 }
 
-impl<G: DirectedGraph> NaiveLcaFinder<'_, G> {
+impl<G: DirectedGraph + IncidenceGraph> NaiveLcaFinder<'_, G> {
     fn lca_set_ordered(&self, a: &G::Vertex, b: &G::Vertex) -> Result<Vec<G::Vertex>> {
         let (a_anc, b_anc) = (self.ancestors(a)?, self.ancestors(b)?);
         let common: indexmap::IndexSet<G::Vertex> = a_anc
@@ -582,7 +582,7 @@ impl<G: DirectedGraph> NaiveLcaFinder<'_, G> {
             .collect();
         let mut lowest = Vec::new();
         for ancestor in &common {
-            let has_common_child = self.graph.out_edges_of(ancestor)?.any(|edge| {
+            let has_common_child = self.graph.out_edges_of(ancestor).any(|edge| {
                 self.graph
                     .edge_target(edge)
                     .is_some_and(|target| common.contains(target))

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::graph::{IncidenceGraph, OutgoingGraph};
 use jgrapht::alg::shortestpath::{
     CHManyToManyShortestPaths, ContractionHierarchyPrecomputation, DefaultManyToManyShortestPaths,
     Dijkstra, DijkstraManyToManyShortestPaths, DijkstraShortestPath, ManyToManyPaths,
@@ -38,7 +39,7 @@ fn compute<G>(
     targets: impl IntoIterator<Item = usize>,
 ) -> Result<ManyToManyPaths<usize, DefaultEdge>>
 where
-    G: Graph<Vertex = usize, Edge = DefaultEdge>,
+    G: Graph<Vertex = usize, Edge = DefaultEdge> + IncidenceGraph,
 {
     let sources = sources.into_iter().collect::<Vec<_>>();
     let targets = targets.into_iter().collect::<Vec<_>>();
@@ -244,7 +245,7 @@ fn random_vertices(n: usize, count: usize, random: &mut JavaRandom) -> HashSet<u
     vertices
 }
 
-fn assert_correct_paths<G: Graph<Vertex = usize, Edge = DefaultEdge>>(
+fn assert_correct_paths<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph>(
     graph: &G,
     paths: &ManyToManyPaths<usize, DefaultEdge>,
     sources: &HashSet<usize>,
@@ -301,7 +302,7 @@ fn random_graphs(
     }
 }
 
-fn assert_single_source<G: Graph<Vertex = usize, Edge = DefaultEdge>>(
+fn assert_single_source<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph>(
     graph: &G,
     actual: &SingleSourcePaths<usize, DefaultEdge>,
     source: usize,
@@ -359,7 +360,7 @@ mod default_many_to_many {
         calls: Rc<Cell<usize>>,
     }
 
-    impl<G: Graph> ShortestPathAlgorithm<G> for CountingDijkstra<'_, G> {
+    impl<G: OutgoingGraph> ShortestPathAlgorithm<G> for CountingDijkstra<'_, G> {
         fn single_source(
             &self,
             source: &G::Vertex,

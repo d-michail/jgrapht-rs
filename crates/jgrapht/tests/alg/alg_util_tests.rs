@@ -98,7 +98,7 @@ mod vertex_degree_comparator_test {
             let mut vertices: Vec<i32> = graph.vertices().copied().collect();
             vertices.sort_by(vertex_degree_comparator(&graph));
             for w in vertices.windows(2) {
-                assert!(graph.degree_of(&w[0]).unwrap() <= graph.degree_of(&w[1]).unwrap());
+                assert!(graph.degree_of(&w[0]) <= graph.degree_of(&w[1]));
             }
         }
     }
@@ -193,7 +193,7 @@ mod union_find_test {
 
 mod neighbor_cache_test {
     use super::*;
-    use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph};
+    
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -221,7 +221,7 @@ mod neighbor_cache_test {
         g.remove_edge(&e);
     }
 
-    fn neighbors(cache: &Cache, g: &impl Graph<Vertex = String>, v: &str) -> HashSet<String> {
+    fn neighbors(cache: &Cache, g: &impl IncidenceGraph<Vertex = String>, v: &str) -> HashSet<String> {
         cache
             .borrow_mut()
             .neighbors_of(g, &s(v))
@@ -310,22 +310,6 @@ mod neighbor_cache_test {
         assert_eq!(succs(&g, V1).len(), 0);
     }
 
-    #[test]
-    fn unsupported_incidence_is_returned_as_an_error() {
-        let graph = SparseIntDirectedGraph::<NoIncoming>::from_edges(2, &[(0, 1)])
-        .unwrap();
-        let mut cache = NeighborCache::new();
-
-        assert_eq!(cache.successors_of(&graph, &0).unwrap().list(), [1]);
-        assert!(matches!(
-            cache.predecessors_of(&graph, &1),
-            Err(GraphError::Unsupported(_))
-        ));
-        assert!(matches!(
-            cache.neighbors_of(&graph, &0),
-            Err(GraphError::Unsupported(_))
-        ));
-    }
 
     fn abcd() -> (Listenable<UGraph<String>>, Cache) {
         let (mut g, cache) = setup(UGraph::<String>::simple());

@@ -18,8 +18,9 @@
 //! The original works on a web of linked objects; here nodes and edges live in two arenas and
 //! refer to each other by index. Directions of edges are ignored.
 
+use crate::graph::IncidenceGraph;
 use super::interfaces::Embedding;
-use crate::graph::{Graph, GraphExt};
+use crate::graph::{GraphExt};
 use crate::view::AsSubgraph;
 use crate::{GraphError, Result};
 use indexmap::IndexMap;
@@ -256,7 +257,7 @@ enum Finish {
 /// # Rust notes
 ///
 /// Planarity test, planar embedding and Kuratowski subdivision of a graph.
-pub struct BoyerMyrvoldPlanarityInspector<'g, G: Graph> {
+pub struct BoyerMyrvoldPlanarityInspector<'g, G: IncidenceGraph> {
     graph: &'g G,
     n: usize,
     arena: Vec<PNode<G::Vertex>>,
@@ -274,7 +275,7 @@ pub struct BoyerMyrvoldPlanarityInspector<'g, G: Graph> {
     kuratowski: Option<(Vec<G::Vertex>, Vec<G::Edge>)>,
 }
 
-impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
+impl<'g, G: IncidenceGraph> BoyerMyrvoldPlanarityInspector<'g, G> {
     /// Creates new instance of the planarity testing algorithm for the `graph`. The input
     /// graph can't be null.
     pub fn new(graph: &'g G) -> Self {
@@ -474,7 +475,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
                     current_dfs_index,
                 );
                 current_dfs_index += 1;
-                for e in graph.edges_of(&info.current).unwrap() {
+                for e in graph.edges_of(&info.current) {
                     let opposite = graph.opposite_vertex(e, &info.current).unwrap();
                     if let Some(&opposite_node) = vertex_map.get(opposite) {
                         if info.parent.as_ref() == Some(opposite) {
@@ -1087,7 +1088,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
 
 type EdgeSet = HashSet<EdgeId>;
 
-impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
+impl<'g, G: IncidenceGraph> BoyerMyrvoldPlanarityInspector<'g, G> {
     fn add_path_edges_from_edge(&self, edges: &mut EdgeSet, start_edge: EdgeId, stop: NodeId) {
         edges.insert(start_edge);
         let mut current = self.edges[start_edge].source;

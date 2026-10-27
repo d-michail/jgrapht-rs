@@ -38,16 +38,11 @@
 //! * Implementations must be consistent with [`Graph::edge_source`], [`Graph::edge_target`] and
 //!   [`Graph::is_edge_directed`]: every yielded edge exists, and has `v` as the required endpoint.
 //!
-//! # Migration status
-//!
-//! These traits are added alongside the fallible methods of [`Graph`] (roadmap R1). Until those
-//! are removed, the method names overlap, so code bounded by both must use the qualified form
-//! `OutgoingGraph::out_edges_of(&g, v)`. The traits are therefore intentionally not re-exported
-//! from the crate root.
+//! The traits are re-exported from [`crate::graph`] and the crate root.
 //!
 //! ```compile_fail,E0277
 //! # use jgrapht::graph::{Graph, capability::IncomingGraph};
-//! # use jgrapht::{GraphType, Result};
+//! # use jgrapht::GraphType;
 //! // A graph that implements only `Graph` cannot be used where incoming edges are required.
 //! struct Empty;
 //! # impl Graph for Empty {
@@ -63,7 +58,6 @@
 //! #     fn edge_source(&self, _: &u32) -> Option<&u32> { None }
 //! #     fn edge_target(&self, _: &u32) -> Option<&u32> { None }
 //! #     fn edge_weight(&self, _: &u32) -> Option<f64> { None }
-//! #     fn edges_of(&self, _: &u32) -> Result<impl Iterator<Item = &u32>> { Ok([].iter()) }
 //! #     fn edges_between<'a>(&'a self, _: &'a u32, _: &'a u32) -> impl Iterator<Item = &'a u32> { [].iter() }
 //! # }
 //! fn needs_incoming<G: IncomingGraph>(_: &G) {}
@@ -71,6 +65,15 @@
 //! ```
 
 use super::Graph;
+
+/// Degree contribution of an edge: an undirected self-loop counts twice, every other edge once.
+fn mixed_weight<G: Graph + ?Sized>(g: &G, e: &G::Edge) -> usize {
+    if !g.is_edge_directed(e) && g.edge_source(e) == g.edge_target(e) {
+        2
+    } else {
+        1
+    }
+}
 
 /// A graph that can enumerate the edges leaving a vertex.
 pub trait OutgoingGraph: Graph {
@@ -80,7 +83,7 @@ pub trait OutgoingGraph: Graph {
     /// Number of edges leaving `v`; an undirected self-loop counts twice. `0` if `v` is absent.
     fn out_degree_of(&self, v: &Self::Vertex) -> usize {
         OutgoingGraph::out_edges_of(self, v)
-            .map(|e| self.mixed_weight(e))
+            .map(|e| mixed_weight(self, e))
             .sum()
     }
 }
@@ -93,7 +96,7 @@ pub trait IncomingGraph: Graph {
     /// Number of edges entering `v`; an undirected self-loop counts twice. `0` if `v` is absent.
     fn in_degree_of(&self, v: &Self::Vertex) -> usize {
         IncomingGraph::in_edges_of(self, v)
-            .map(|e| self.mixed_weight(e))
+            .map(|e| mixed_weight(self, e))
             .sum()
     }
 }
@@ -105,7 +108,7 @@ pub trait IncidenceGraph: OutgoingGraph + IncomingGraph {
 
     /// Degree of `v`; a self-loop counts twice. `0` if `v` is absent.
     fn degree_of(&self, v: &Self::Vertex) -> usize {
-        IncidenceGraph::edges_of(self, v)
+        self.edges_of(v)
             .map(|e| {
                 if self.edge_source(e) == self.edge_target(e) {
                     2

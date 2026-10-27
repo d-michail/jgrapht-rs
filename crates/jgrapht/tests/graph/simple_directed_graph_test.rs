@@ -201,8 +201,8 @@ fn test_edge_set() {
 #[test]
 fn test_edges_of() {
     let f = setup();
-    assert_eq!(f.g4.edges_of(&V1).unwrap().count(), 2);
-    assert_eq!(f.g3.edges_of(&V1).unwrap().count(), 4);
+    assert_eq!(f.g4.edges_of(&V1).count(), 2);
+    assert_eq!(f.g3.edges_of(&V1).count(), 4);
 }
 
 #[test]
@@ -253,32 +253,32 @@ fn test_get_vertex_supplier() {
 #[test]
 fn test_in_degree_of() {
     let f = setup();
-    assert_eq!(f.g1.in_degree_of(&V1).unwrap(), 0);
+    assert_eq!(f.g1.in_degree_of(&V1), 0);
     assert_eq!(
         [
-            f.g2.in_degree_of(&V1).unwrap(),
-            f.g2.in_degree_of(&V2).unwrap()
+            f.g2.in_degree_of(&V1),
+            f.g2.in_degree_of(&V2)
         ],
         [1, 1]
     );
     assert_eq!(
-        [V1, V2, V3].map(|v| f.g3.in_degree_of(&v).unwrap()),
+        [V1, V2, V3].map(|v| f.g3.in_degree_of(&v)),
         [2, 2, 2]
     );
     assert_eq!(
-        [V1, V2, V3, V4].map(|v| f.g4.in_degree_of(&v).unwrap()),
+        [V1, V2, V3, V4].map(|v| f.g4.in_degree_of(&v)),
         [1, 1, 1, 1]
     );
     // unknown vertex: JGraphT throws IllegalArgumentException, here the degree is simply zero
-    assert_eq!(f.g3.in_degree_of(&"").unwrap(), 0);
+    assert_eq!(f.g3.in_degree_of(&""), 0);
 }
 
 #[test]
 fn test_incoming_outgoing_edges_of() {
     let f = setup();
     assert_eq!(
-        set(f.g2.out_edges_of(&V1).unwrap().copied()),
-        set(f.g2.in_edges_of(&V2).unwrap().copied())
+        set(f.g2.out_edges_of(&V1).copied()),
+        set(f.g2.in_edges_of(&V2).copied())
     );
 }
 
@@ -287,17 +287,17 @@ fn test_out_degree_of() {
     let f = setup();
     assert_eq!(
         [
-            f.g2.out_degree_of(&V1).unwrap(),
-            f.g2.out_degree_of(&V2).unwrap()
+            f.g2.out_degree_of(&V1),
+            f.g2.out_degree_of(&V2)
         ],
         [1, 1]
     );
     assert_eq!(
-        [V1, V2, V3].map(|v| f.g3.out_degree_of(&v).unwrap()),
+        [V1, V2, V3].map(|v| f.g3.out_degree_of(&v)),
         [2, 2, 2]
     );
     assert_eq!(
-        [V1, V2, V3, V4].map(|v| f.g4.out_degree_of(&v).unwrap()),
+        [V1, V2, V3, V4].map(|v| f.g4.out_degree_of(&v)),
         [1, 1, 1, 1]
     );
 }
@@ -305,41 +305,41 @@ fn test_out_degree_of() {
 #[test]
 fn test_outgoing_edges_of() {
     let f = setup();
-    assert_eq!(f.g1.out_edges_of(&V1).unwrap().count(), 0);
+    assert_eq!(f.g1.out_edges_of(&V1).count(), 0);
     assert_eq!(
-        set(f.g2.out_edges_of(&V1).unwrap().copied()),
+        set(f.g2.out_edges_of(&V1).copied()),
         set([f.e12_1])
     );
     assert_eq!(
-        set(f.g2.out_edges_of(&V2).unwrap().copied()),
+        set(f.g2.out_edges_of(&V2).copied()),
         set([f.e21_1])
     );
     assert_eq!(
-        set(f.g3.out_edges_of(&V1).unwrap().copied()),
+        set(f.g3.out_edges_of(&V1).copied()),
         set([f.e12_2, f.e13_1])
     );
     assert_eq!(
-        set(f.g3.out_edges_of(&V2).unwrap().copied()),
+        set(f.g3.out_edges_of(&V2).copied()),
         set([f.e23_1, f.e21_2])
     );
     assert_eq!(
-        set(f.g3.out_edges_of(&V3).unwrap().copied()),
+        set(f.g3.out_edges_of(&V3).copied()),
         set([f.e31_1, f.e32_1])
     );
     assert_eq!(
-        set(f.g4.out_edges_of(&V1).unwrap().copied()),
+        set(f.g4.out_edges_of(&V1).copied()),
         set([f.e12_3])
     );
     assert_eq!(
-        set(f.g4.out_edges_of(&V2).unwrap().copied()),
+        set(f.g4.out_edges_of(&V2).copied()),
         set([f.e23_2])
     );
     assert_eq!(
-        set(f.g4.out_edges_of(&V3).unwrap().copied()),
+        set(f.g4.out_edges_of(&V3).copied()),
         set([f.e34_1])
     );
     assert_eq!(
-        set(f.g4.out_edges_of(&V4).unwrap().copied()),
+        set(f.g4.out_edges_of(&V4).copied()),
         set([f.e41_1])
     );
 }
@@ -423,21 +423,21 @@ fn test_reversed_view() {
         assert_eq!(r.edges_between(&V2, &V1).copied().collect::<Vec<_>>(), [e]);
         assert_eq!(
             [
-                r.in_degree_of(&V1).unwrap(),
-                r.in_degree_of(&V2).unwrap(),
-                r.out_degree_of(&V1).unwrap(),
-                r.out_degree_of(&V2).unwrap()
+                r.in_degree_of(&V1),
+                r.in_degree_of(&V2),
+                r.out_degree_of(&V1),
+                r.out_degree_of(&V2)
             ],
             [1, 0, 0, 1]
         );
         assert_eq!(
-            set(r.in_edges_of(&V1).unwrap().copied()),
+            set(r.in_edges_of(&V1).copied()),
             set(g.edges().copied())
         );
-        assert_eq!(r.out_edges_of(&V1).unwrap().count(), 0);
-        assert_eq!(r.in_edges_of(&V2).unwrap().count(), 0);
+        assert_eq!(r.out_edges_of(&V1).count(), 0);
+        assert_eq!(r.in_edges_of(&V2).count(), 0);
         assert_eq!(
-            set(r.out_edges_of(&V2).unwrap().copied()),
+            set(r.out_edges_of(&V2).copied()),
             set(g.edges().copied())
         );
         assert_eq!(r.edge_source(&e), Some(&V2));
@@ -448,11 +448,11 @@ fn test_reversed_view() {
     assert_eq!(r.edge_count(), 0);
     for v in [V1, V2] {
         assert_eq!(
-            (r.in_degree_of(&v).unwrap(), r.out_degree_of(&v).unwrap()),
+            (r.in_degree_of(&v), r.out_degree_of(&v)),
             (0, 0)
         );
         assert_eq!(
-            r.in_edges_of(&v).unwrap().count() + r.out_edges_of(&v).unwrap().count(),
+            r.in_edges_of(&v).count() + r.out_edges_of(&v).count(),
             0
         );
     }

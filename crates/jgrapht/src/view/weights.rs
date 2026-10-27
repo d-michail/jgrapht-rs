@@ -106,8 +106,7 @@ impl<G: Graph> Graph for AsWeighted<'_, G> {
         self.graph.graph_type().as_weighted()
     }
     forward_graph!(self => self.graph; vertices, edges, vertex_count, edge_count, contains_vertex, contains_edge,
-        edge_source, edge_target, is_edge_directed, edges_of, in_edges_of, out_edges_of, in_degree_of, out_degree_of,
-        degree_of, edges_between);
+        edge_source, edge_target, is_edge_directed, edges_between);
     fn edge_weight(&self, e: &G::Edge) -> Option<f64> {
         if !self.graph.contains_edge(e) {
             return None;
@@ -151,8 +150,7 @@ impl<G: Graph> Graph for AsUnweighted<G> {
         self.0.graph_type().as_unweighted()
     }
     forward_graph!(self => self.0; vertices, edges, vertex_count, edge_count, contains_vertex, contains_edge,
-        edge_source, edge_target, is_edge_directed, edges_of, in_edges_of, out_edges_of, in_degree_of, out_degree_of,
-        degree_of, edges_between);
+        edge_source, edge_target, is_edge_directed, edges_between);
     fn edge_weight(&self, e: &G::Edge) -> Option<f64> {
         self.0.contains_edge(e).then_some(1.0)
     }

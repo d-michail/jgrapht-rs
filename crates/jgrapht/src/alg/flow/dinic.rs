@@ -12,10 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use super::DEFAULT_EPSILON;
 use super::base::{FlowNet, flow_algorithm_api};
 use crate::error::{GraphError, Result};
-use crate::graph::Graph;
 use std::collections::VecDeque;
 
 /// Implementation of [Dinic algorithm](https://en.wikipedia.org/wiki/Dinic%27s_algorithm) with scaling for [maximum flow problem](https://en.wikipedia.org/wiki/Maximum_flow_problem).
@@ -37,7 +38,7 @@ use std::collections::VecDeque;
 /// # Rust notes
 ///
 /// `DinicMFImpl`: blocking flows on level graphs, `O(V² E)`.
-pub struct DinicMFImpl<'g, G: Graph> {
+pub struct DinicMFImpl<'g, G: IncidenceGraph> {
     net: FlowNet<'g, G>,
     /// current-arc pointer per vertex
     index: Vec<usize>,
@@ -45,7 +46,7 @@ pub struct DinicMFImpl<'g, G: Graph> {
     level: Vec<i64>,
 }
 
-impl<'g, G: Graph> DinicMFImpl<'g, G> {
+impl<'g, G: OutgoingGraph + IncidenceGraph> DinicMFImpl<'g, G> {
     /// Constructor. Constructs a new network on which we will calculate the maximum flow, using
     /// Dinic algorithm.
     pub fn new(network: &'g G) -> Result<Self> {

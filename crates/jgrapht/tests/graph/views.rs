@@ -36,7 +36,7 @@ fn reversed_and_undirected() {
     assert_eq!(r.successors_of(&3).collect::<Vec<_>>(), [&2]);
     let u = AsUndirected(&g);
     assert!(u.contains_edge_between(&2, &1) && u.contains_edge_between(&1, &2));
-    assert_eq!(u.degree_of(&2).unwrap(), 2);
+    assert_eq!(u.degree_of(&2), 2);
     assert!(!u.graph_type().directed);
 }
 
@@ -46,7 +46,7 @@ fn subgraphs() {
     let s = AsSubgraph::induced(&g, [1, 2, 3, 99]);
     assert_eq!((s.vertex_count(), s.edge_count()), (3, 2));
     assert!(!s.contains_vertex(&4));
-    assert_eq!(s.out_edges_of(&3).unwrap().count(), 0);
+    assert_eq!(s.out_edges_of(&3).count(), 0);
     let m = MaskSubgraph::new(&g, |v: &u32| !v.is_multiple_of(2), |_: &DefaultEdge| false);
     assert_eq!((m.vertex_count(), m.edge_count()), (2, 0));
 }

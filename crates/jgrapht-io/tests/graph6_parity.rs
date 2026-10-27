@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::graph::IncidenceGraph;
 use jgrapht::generate::named;
 use jgrapht::{DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use jgrapht_io::graph6::{Graph6Exporter, Graph6Format, Graph6Importer};
@@ -25,8 +26,8 @@ fn import_undirected(encoded: &str) -> UGraph<usize> {
     graph
 }
 
-fn signature<G: Graph>(graph: &G) -> (usize, usize, Vec<usize>) {
-    let mut degrees: Vec<_> = graph.vertices().map(|v| graph.degree_of(v).unwrap()).collect();
+fn signature<G: IncidenceGraph>(graph: &G) -> (usize, usize, Vec<usize>) {
+    let mut degrees: Vec<_> = graph.vertices().map(|v| graph.degree_of(v)).collect();
     degrees.sort_unstable();
     (graph.vertex_count(), graph.edge_count(), degrees)
 }

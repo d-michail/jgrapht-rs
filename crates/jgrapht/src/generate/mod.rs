@@ -40,6 +40,7 @@ pub use structured::{
     Wheel, Windmill, WindmillMode,
 };
 
+use crate::graph::IncidenceGraph;
 use crate::graph::Graph;
 use crate::view::forward_graph;
 use crate::{GraphError, GraphMut, GraphType, Result};
@@ -71,19 +72,19 @@ pub(crate) fn add_edge<G: GraphMut>(
 pub trait GraphGenerator {
     /// Generates into `target`, creating vertices with the target's vertex factory. Named vertices
     /// are stored in `result` when given.
-    fn generate_graph<G: GraphMut>(
+    fn generate_graph<G: GraphMut + IncidenceGraph>(
         &mut self,
         target: &mut G,
         result: Option<&mut GeneratorResult<G::Vertex>>,
     ) -> Result<()>;
 
     /// [`GraphGenerator::generate_graph`] without a result map.
-    fn generate_default<G: GraphMut>(&mut self, target: &mut G) -> Result<()> {
+    fn generate_default<G: GraphMut + IncidenceGraph>(&mut self, target: &mut G) -> Result<()> {
         self.generate_graph(target, None)
     }
 
     /// Generates with vertices produced by `vertex(0)`, `vertex(1)`, ... instead of the target's factory.
-    fn generate<G: GraphMut>(
+    fn generate<G: GraphMut + IncidenceGraph>(
         &mut self,
         target: &mut G,
         vertex: impl FnMut(usize) -> G::Vertex,
@@ -97,7 +98,7 @@ pub trait GraphGenerator {
     }
 
     /// Generates into a graph whose vertices are `usize` indices `0, 1, ...`.
-    fn generate_indexed<G: GraphMut<Vertex = usize>>(&mut self, target: &mut G) -> Result<()> {
+    fn generate_indexed<G: GraphMut<Vertex = usize> + IncidenceGraph>(&mut self, target: &mut G) -> Result<()> {
         self.generate(target, |i| i)
     }
 }
@@ -113,8 +114,7 @@ impl<G: Graph, F> Graph for WithVertexFactory<'_, G, F> {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
     forward_graph!(self => self.g; graph_type, vertices, edges, vertex_count, edge_count, contains_vertex, contains_edge,
-        edge_source, edge_target, edge_weight, is_edge_directed, edges_of, in_edges_of, out_edges_of, in_degree_of,
-        out_degree_of, degree_of, edges_between);
+        edge_source, edge_target, edge_weight, is_edge_directed, edges_between);
 }
 
 crate::view::forward_incidence!([G: Graph, F] WithVertexFactory<'_, G, F>, G, self => *self.g);

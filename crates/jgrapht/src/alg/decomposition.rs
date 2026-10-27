@@ -14,6 +14,8 @@
 
 //! Tree decompositions via elimination-ordering heuristics.
 
+use crate::graph::IncidenceGraph;
+use crate::graph::capability::OutgoingGraph;
 use super::util::Indexed;
 use crate::graph::{Graph, GraphExt};
 use std::collections::{HashMap, HashSet};
@@ -182,7 +184,7 @@ pub struct HeavyPathDecomposition<'g, G: Graph> {
     light_edges: HashSet<G::Edge>,
 }
 
-impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
+impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
     /// Create an instance with a reference to the tree that we will decompose and to the root of the
     /// tree.
     ///
@@ -239,7 +241,7 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
                 self.size_subtree[u] = 1;
                 let vertex_u = self.index_list[u].clone();
                 let edges: Vec<G::Edge> =
-                    self.graph.edges_of(&vertex_u).unwrap().cloned().collect();
+                    self.graph.edges_of(&vertex_u).cloned().collect();
                 for edge in &edges {
                     let child = self.opposite(edge, u);
                     if !explored[child] {
@@ -253,7 +255,7 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
                 let mut path_edge: Option<G::Edge> = None;
                 let vertex_u = self.index_list[u].clone();
                 let edges: Vec<G::Edge> =
-                    self.graph.edges_of(&vertex_u).unwrap().cloned().collect();
+                    self.graph.edges_of(&vertex_u).cloned().collect();
                 for edge in &edges {
                     let child = self.opposite(edge, u);
                     if Some(child) != self.parent[u] {
@@ -480,7 +482,7 @@ pub struct DulmageMendelsohnDecomposition<'g, G: Graph> {
     partition2: HashSet<G::Vertex>,
 }
 
-impl<'g, G: Graph> DulmageMendelsohnDecomposition<'g, G>
+impl<'g, G: IncidenceGraph> DulmageMendelsohnDecomposition<'g, G>
 where
     G::Vertex: Eq + Hash,
 {
@@ -542,7 +544,6 @@ where
         };
         let forward = |v: &G::Vertex| {
             dg.out_edges_of(v)
-                .unwrap()
                 .map(|e| dg.edge_target(e).unwrap().clone())
                 .collect()
         };
@@ -550,7 +551,6 @@ where
         let rev = EdgeReversed(&dg);
         let backward = |v: &G::Vertex| {
             rev.out_edges_of(v)
-                .unwrap()
                 .map(|e| rev.edge_target(e).unwrap().clone())
                 .collect()
         };
@@ -638,7 +638,6 @@ where
                 } else {
                     let find = |v: &G::Vertex| {
                         g.edges_of(v)
-                            .unwrap()
                             .find(|o| matched.contains(*o))
                             .cloned()
                     };

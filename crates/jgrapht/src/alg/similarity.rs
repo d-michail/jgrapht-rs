@@ -14,6 +14,8 @@
 
 //! Tree similarity: Zhang–Shasha tree edit distance.
 
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt, props};
 use crate::{GraphError, Result};
 use std::hash::Hash;
@@ -55,7 +57,7 @@ struct TreeOrdering<V> {
 }
 
 impl<V: Clone + PartialEq> TreeOrdering<V> {
-    fn new<G: Graph<Vertex = V>>(tree: &G, root: &V) -> Self {
+    fn new<G: Graph<Vertex = V> + OutgoingGraph>(tree: &G, root: &V) -> Self {
         let n = tree.vertex_count();
         let mut ordering = TreeOrdering {
             keyroots: Vec::new(),
@@ -67,7 +69,7 @@ impl<V: Clone + PartialEq> TreeOrdering<V> {
     }
 
     /// The iterative post-order traversal of JGraphT, state machine included.
-    fn compute<G: Graph<Vertex = V>>(&mut self, tree: &G, root: &V) {
+    fn compute<G: Graph<Vertex = V> + OutgoingGraph>(&mut self, tree: &G, root: &V) {
         struct Entry<V> {
             v: V,
             is_keyroot: bool,
@@ -80,7 +82,6 @@ impl<V: Clone + PartialEq> TreeOrdering<V> {
         }
         let successors = |v: &V| -> Vec<V> {
             tree.out_edges_of(v)
-                .unwrap()
                 .filter_map(|e| tree.opposite_vertex(e, v).cloned())
                 .collect()
         };
@@ -204,7 +205,7 @@ pub struct ZhangShashaTreeEditDistance<'a, G: Graph> {
     executed: bool,
 }
 
-impl<'a, G: Graph> ZhangShashaTreeEditDistance<'a, G>
+impl<'a, G: OutgoingGraph + IncidenceGraph> ZhangShashaTreeEditDistance<'a, G>
 where
     G::Vertex: Eq + Hash,
 {

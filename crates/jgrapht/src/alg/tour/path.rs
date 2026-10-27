@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::base::require_not_empty;
 use crate::alg::connectivity::{BiconnectivityInspector, ConnectivityInspector};
 use crate::error::{GraphError, Result};
@@ -163,7 +164,7 @@ fn vertex_list_to_path<G: Graph>(
 }
 
 /// Distinct neighbours (loops dropped) in first-seen order.
-fn build_adjacency<G: Graph>(
+fn build_adjacency<G: IncidenceGraph>(
     graph: &G,
     index_list: &[G::Vertex],
     vertex_map: &HashMap<G::Vertex, usize>,
@@ -176,13 +177,11 @@ fn build_adjacency<G: Graph>(
             let others: Vec<&G::Vertex> = if directed {
                 graph
                     .out_edges_of(u_vertex)
-                    .unwrap()
                     .map(|e| graph.edge_target(e).expect("edge of the graph"))
                     .collect()
             } else {
                 graph
                     .edges_of(u_vertex)
-                    .unwrap()
                     .map(|e| {
                         graph
                             .opposite_vertex(e, u_vertex)
@@ -241,7 +240,7 @@ impl DagHamiltonianPath {
     }
 }
 
-impl<G: Graph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
+impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
     /// Computes a Hamiltonian path in the given graph and returns a tri-state
     /// `HamiltonianPathSearchResult`.
     ///
@@ -280,12 +279,12 @@ impl<G: Graph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
         let mut in_degree: Vec<usize> = index_list
             .iter()
             .map(|v| graph.in_degree_of(v))
-            .collect::<Result<_>>()?;
+            .collect();
         let mut queue: VecDeque<usize> = (0..n).filter(|&i| in_degree[i] == 0).collect();
         let mut topo = Vec::with_capacity(n);
         while let Some(u) = queue.pop_front() {
             topo.push(u);
-            for e in graph.out_edges_of(&index_list[u])? {
+            for e in graph.out_edges_of(&index_list[u]) {
                 let v = vertex_map[graph.edge_target(e).expect("edge of the graph")];
                 in_degree[v] -= 1;
                 if in_degree[v] == 0 {
@@ -310,7 +309,7 @@ impl<G: Graph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
         let mut best_length = 1;
         for i in 0..n {
             let v = &index_list[topo[i]];
-            for e in graph.in_edges_of(v)? {
+            for e in graph.in_edges_of(v) {
                 let u = position[vertex_map[graph.edge_source(e).expect("edge of the graph")]];
                 if longest[u] + 1 > longest[i] {
                     longest[i] = longest[u] + 1;
@@ -432,7 +431,7 @@ impl Default for HeldKarpHamiltonianPath {
     }
 }
 
-impl<G: Graph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath {
+impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath {
     /// Computes a Hamiltonian path in the given graph and returns a tri-state
     /// `HamiltonianPathSearchResult`.
     ///
@@ -624,7 +623,7 @@ impl BacktrackingHamiltonianPath {
 
     /// Like [`get_path`](HamiltonianPathAlgorithm::get_path) but gives up after `max_states`
     /// states with an `Aborted` result.
-    pub fn search_with_state_limit<G: Graph>(
+    pub fn search_with_state_limit<G: IncidenceGraph>(
         &mut self,
         graph: &G,
         max_states: u64,
@@ -637,7 +636,7 @@ impl BacktrackingHamiltonianPath {
         self.search(graph, max_states)
     }
 
-    fn search<G: Graph>(
+    fn search<G: IncidenceGraph>(
         &mut self,
         graph: &G,
         max_states: u64,
@@ -697,7 +696,7 @@ impl BacktrackingHamiltonianPath {
     /// Cheap necessary conditions for the existence of a Hamiltonian path in an undirected graph.
     /// Returns `false` if the graph trivially has no Hamiltonian path, `true`
     /// otherwise. A `true` result does not guarantee a path exists.
-    fn cheap_undirected_prechecks<G: Graph>(graph: &G) -> bool {
+    fn cheap_undirected_prechecks<G: IncidenceGraph>(graph: &G) -> bool {
         if !ConnectivityInspector::new().is_connected(graph) {
             return false;
         }
@@ -720,7 +719,7 @@ impl BacktrackingHamiltonianPath {
     /// disconnects the graph into more than two components on removal, but a Hamiltonian path
     /// uses at most two edges at any internal vertex, so it cannot weave through more than two
     /// such components.
-    fn cut_vertex_block_degree_within_path_budget<G: Graph>(
+    fn cut_vertex_block_degree_within_path_budget<G: IncidenceGraph>(
         bcc: &BiconnectivityInspector<'_, G>,
     ) -> bool {
         bcc.cutpoints()
@@ -734,7 +733,7 @@ impl BacktrackingHamiltonianPath {
     /// it can use at most two of the component's incident bridges. This prune catches some
     /// graphs the cut-vertex check misses, in particular those where each bridge attaches to a
     /// different vertex inside a single component.
-    fn bridge_tree_degree_within_path_budget<G: Graph>(
+    fn bridge_tree_degree_within_path_budget<G: IncidenceGraph>(
         graph: &G,
         bcc: &BiconnectivityInspector<'_, G>,
     ) -> bool {
@@ -808,10 +807,9 @@ impl BacktrackingHamiltonianPath {
 
     /// Degree of `v` in an undirected graph, ignoring self-loops since they cannot
     /// participate in a simple path.
-    fn effective_undirected_degree<G: Graph>(graph: &G, v: &G::Vertex) -> usize {
+    fn effective_undirected_degree<G: IncidenceGraph>(graph: &G, v: &G::Vertex) -> usize {
         graph
             .edges_of(v)
-            .unwrap()
             .filter(|e| graph.opposite_vertex(e, v).is_some_and(|o| o != v))
             .count()
     }
@@ -926,7 +924,7 @@ impl BacktrackingHamiltonianPath {
     }
 }
 
-impl<G: Graph> HamiltonianPathAlgorithm<G> for BacktrackingHamiltonianPath {
+impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for BacktrackingHamiltonianPath {
     /// Computes a Hamiltonian path in the given graph and returns a tri-state
     /// `HamiltonianPathSearchResult`.
     ///

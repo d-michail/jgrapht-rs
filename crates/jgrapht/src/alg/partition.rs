@@ -14,6 +14,7 @@
 
 //! Bipartiteness.
 
+use crate::graph::IncidenceGraph;
 use super::interfaces::{Partitioning, PartitioningAlgorithm};
 use super::util::Indexed;
 use crate::graph::{Graph, GraphExt, props};
@@ -78,7 +79,7 @@ pub struct BipartitePartitioning<'g, G: Graph> {
     cached: Option<Partitioning<G::Vertex>>,
 }
 
-impl<'g, G: Graph> BipartitePartitioning<'g, G> {
+impl<'g, G: IncidenceGraph> BipartitePartitioning<'g, G> {
     /// Constructs a new bipartite partitioning.
     pub fn new(graph: &'g G) -> Self {
         BipartitePartitioning {
@@ -104,7 +105,7 @@ impl<'g, G: Graph> BipartitePartitioning<'g, G> {
     }
 }
 
-impl<G: Graph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G> {
+impl<G: IncidenceGraph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G> {
     /// Computes a vertex partitioning.
     fn partitioning(&mut self) -> Option<&Partitioning<G::Vertex>> {
         if self.computed {
@@ -120,7 +121,7 @@ impl<G: Graph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G> {
             }
             let v = queue.pop_front().unwrap();
             unknown.shift_remove(&v);
-            for e in g.edges_of(&v).unwrap() {
+            for e in g.edges_of(&v) {
                 let n = g.opposite_vertex(e, &v).unwrap().clone();
                 if unknown.contains(&n) {
                     queue.push_back(n.clone());
@@ -163,7 +164,7 @@ impl<G: Graph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G> {
             } else {
                 return false;
             };
-            for e in g.edges_of(v).unwrap() {
+            for e in g.edges_of(v) {
                 if !other.contains(g.opposite_vertex(e, v).unwrap()) {
                     return false;
                 }

@@ -14,7 +14,7 @@
 
 //! Convenience methods derived from the core traits (JGraphT's `Graphs` utility class).
 
-use super::{DirectedGraph, Graph, GraphMut};
+use super::{DirectedGraph, Graph, GraphMut, IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::Result;
 
 pub trait GraphExt: Graph {
@@ -36,122 +36,76 @@ pub trait GraphExt: Graph {
     }
 
     /// Adjacent vertices, ignoring direction. Parallel edges yield repeats.
-    fn try_neighbors_of<'a>(
-        &'a self,
-        v: &'a Self::Vertex,
-    ) -> Result<impl Iterator<Item = &'a Self::Vertex>> {
-        Ok(self
-            .edges_of(v)?
-            .filter_map(move |e| self.opposite_vertex(e, v)))
-    }
-
-    /// Adjacent vertices, ignoring direction. Parallel edges yield repeats.
-    ///
-    /// Prefer [`GraphExt::try_neighbors_of`] in fallible APIs. This compatibility helper panics
-    /// when the graph does not provide the required incidence index.
-    fn neighbors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.try_neighbors_of(v).unwrap()
+    fn neighbors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex>
+    where
+        Self: IncidenceGraph,
+    {
+        self.edges_of(v)
+            .filter_map(move |e| self.opposite_vertex(e, v))
     }
 
     /// Edges leaving `v` with the vertex they lead to. Directed graphs follow edge direction,
     /// undirected graphs yield every incident edge.
-    fn try_outgoing_of<'a>(
+    fn outgoing_of<'a>(
         &'a self,
         v: &'a Self::Vertex,
-    ) -> Result<impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>> {
-        Ok(self.out_edges_of(v)?.filter_map(move |e| {
+    ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>
+    where
+        Self: OutgoingGraph,
+    {
+        self.out_edges_of(v).filter_map(move |e| {
             let (s, t) = self.edge_endpoints(e)?;
             if self.is_edge_directed(e) {
                 (s == v).then_some((e, t))
             } else {
                 Some((e, if s == v { t } else { s }))
             }
-        }))
-    }
-
-    /// Edges leaving `v` with the vertex they lead to.
-    ///
-    /// Prefer [`GraphExt::try_outgoing_of`] in fallible APIs. This compatibility helper panics
-    /// when the graph does not provide outgoing incidence.
-    fn outgoing_of<'a>(
-        &'a self,
-        v: &'a Self::Vertex,
-    ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)> {
-        self.try_outgoing_of(v).unwrap()
+        })
     }
 
     /// Edges entering `v` with the vertex they come from (all incident edges if undirected).
-    fn try_incoming_of<'a>(
+    fn incoming_of<'a>(
         &'a self,
         v: &'a Self::Vertex,
-    ) -> Result<impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>> {
-        Ok(self.in_edges_of(v)?.filter_map(move |e| {
+    ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>
+    where
+        Self: IncomingGraph,
+    {
+        self.in_edges_of(v).filter_map(move |e| {
             let (s, t) = self.edge_endpoints(e)?;
             if self.is_edge_directed(e) {
                 (t == v).then_some((e, s))
             } else {
                 Some((e, if s == v { t } else { s }))
             }
-        }))
-    }
-
-    /// Edges entering `v` with the vertex they come from.
-    ///
-    /// Prefer [`GraphExt::try_incoming_of`] in fallible APIs. This compatibility helper panics
-    /// when the graph does not provide incoming incidence.
-    fn incoming_of<'a>(
-        &'a self,
-        v: &'a Self::Vertex,
-    ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)> {
-        self.try_incoming_of(v).unwrap()
+        })
     }
 
     /// Vertices reachable over one edge; repeats for parallel edges.
-    fn try_out_neighbors_of<'a>(
-        &'a self,
-        v: &'a Self::Vertex,
-    ) -> Result<impl Iterator<Item = &'a Self::Vertex>> {
-        Ok(self.try_outgoing_of(v)?.map(|(_, n)| n))
-    }
-
-    /// Vertices reachable over one edge (see [`GraphExt::try_out_neighbors_of`]); repeats for
-    /// parallel edges.
-    ///
-    /// This compatibility helper panics when the graph does not provide outgoing incidence.
     fn out_neighbors_of<'a>(
         &'a self,
         v: &'a Self::Vertex,
-    ) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.try_out_neighbors_of(v).unwrap()
+    ) -> impl Iterator<Item = &'a Self::Vertex>
+    where
+        Self: OutgoingGraph,
+    {
+        self.outgoing_of(v).map(|(_, n)| n)
     }
 
     /// Neighbours as a list (with repeats for parallel edges), `Graphs.neighborListOf`.
-    fn try_neighbor_list_of(&self, v: &Self::Vertex) -> Result<Vec<Self::Vertex>> {
-        Ok(self.try_neighbors_of(v)?.cloned().collect())
-    }
-
-    /// Neighbours as a list (with repeats for parallel edges), `Graphs.neighborListOf`.
-    ///
-    /// This compatibility helper panics when the graph does not provide the required incidence
-    /// index.
-    fn neighbor_list_of(&self, v: &Self::Vertex) -> Vec<Self::Vertex> {
-        self.try_neighbor_list_of(v).unwrap()
+    fn neighbor_list_of(&self, v: &Self::Vertex) -> Vec<Self::Vertex>
+    where
+        Self: IncidenceGraph,
+    {
+        self.neighbors_of(v).cloned().collect()
     }
 
     /// Distinct neighbours, `Graphs.neighborSetOf`.
-    fn try_neighbor_set_of(
-        &self,
-        v: &Self::Vertex,
-    ) -> Result<std::collections::HashSet<Self::Vertex>> {
-        Ok(self.try_neighbors_of(v)?.cloned().collect())
-    }
-
-    /// Distinct neighbours, `Graphs.neighborSetOf`.
-    ///
-    /// This compatibility helper panics when the graph does not provide the required incidence
-    /// index.
-    fn neighbor_set_of(&self, v: &Self::Vertex) -> std::collections::HashSet<Self::Vertex> {
-        self.try_neighbor_set_of(v).unwrap()
+    fn neighbor_set_of(&self, v: &Self::Vertex) -> std::collections::HashSet<Self::Vertex>
+    where
+        Self: IncidenceGraph,
+    {
+        self.neighbors_of(v).cloned().collect()
     }
 
     /// Whether `v` is an endpoint of `e` (`Graphs.testIncidence`).
@@ -173,142 +127,97 @@ impl<G: Graph + ?Sized> GraphExt for G {}
 
 pub trait DirectedExt: DirectedGraph {
     /// Successors reached by outgoing edges.
-    fn try_successors_of<'a>(
-        &'a self,
-        v: &'a Self::Vertex,
-    ) -> Result<impl Iterator<Item = &'a Self::Vertex>> {
-        Ok(self
-            .out_edges_of(v)?
-            .filter_map(move |e| self.edge_target(e)))
-    }
-
-    /// Successors reached by outgoing edges.
-    ///
-    /// This compatibility helper panics when the graph does not provide outgoing incidence.
-    fn successors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.try_successors_of(v).unwrap()
-    }
-
-    /// Successors as an owned list.
-    fn try_successor_list_of(&self, v: &Self::Vertex) -> Result<Vec<Self::Vertex>> {
-        Ok(self.try_successors_of(v)?.cloned().collect())
-    }
-
-    /// Successors as an owned list.
-    ///
-    /// This compatibility helper panics when the graph does not provide outgoing incidence.
-    fn successor_list_of(&self, v: &Self::Vertex) -> Vec<Self::Vertex> {
-        self.try_successor_list_of(v).unwrap()
-    }
-
-    /// Predecessors as an owned list.
-    fn try_predecessor_list_of(&self, v: &Self::Vertex) -> Result<Vec<Self::Vertex>> {
-        Ok(self.try_predecessors_of(v)?.cloned().collect())
-    }
-
-    /// Predecessors as an owned list.
-    ///
-    /// This compatibility helper panics when the graph does not provide incoming incidence.
-    fn predecessor_list_of(&self, v: &Self::Vertex) -> Vec<Self::Vertex> {
-        self.try_predecessor_list_of(v).unwrap()
-    }
-
-    /// Every vertex from which `v` is reachable (excluding `v` unless it lies on a cycle).
-    fn try_ancestors_of(
-        &self,
-        v: &Self::Vertex,
-    ) -> Result<std::collections::HashSet<Self::Vertex>> {
-        let mut seen = std::collections::HashSet::new();
-        let mut stack = vec![v];
-        while let Some(x) = stack.pop() {
-            for p in self.try_predecessors_of(x)? {
-                if seen.insert(p.clone()) {
-                    stack.push(p);
-                }
-            }
-        }
-        Ok(seen)
-    }
-
-    /// Every vertex from which `v` is reachable (excluding `v` unless it lies on a cycle).
-    ///
-    /// This compatibility helper panics when the graph does not provide incoming incidence.
-    fn ancestors_of(&self, v: &Self::Vertex) -> std::collections::HashSet<Self::Vertex> {
-        self.try_ancestors_of(v).unwrap()
-    }
-
-    /// Every vertex reachable from `v` (excluding `v` unless it lies on a cycle).
-    fn try_descendants_of(
-        &self,
-        v: &Self::Vertex,
-    ) -> Result<std::collections::HashSet<Self::Vertex>> {
-        let mut seen = std::collections::HashSet::new();
-        let mut stack = vec![v];
-        while let Some(x) = stack.pop() {
-            for p in self.try_successors_of(x)? {
-                if seen.insert(p.clone()) {
-                    stack.push(p);
-                }
-            }
-        }
-        Ok(seen)
-    }
-
-    /// Every vertex reachable from `v` (excluding `v` unless it lies on a cycle).
-    ///
-    /// This compatibility helper panics when the graph does not provide outgoing incidence.
-    fn descendants_of(&self, v: &Self::Vertex) -> std::collections::HashSet<Self::Vertex> {
-        self.try_descendants_of(v).unwrap()
-    }
-    /// Vertices in a topological order (sources in insertion order first); `None` if cyclic.
-    fn topological_order(&self) -> Option<Vec<Self::Vertex>>
+    fn successors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex>
     where
-        Self: Sized,
+        Self: OutgoingGraph,
     {
-        crate::traverse::topological_sort(self).map(|v| v.into_iter().cloned().collect())
-    }
-    /// Whether `v` has an outgoing edge.
-    fn try_vertex_has_successors(&self, v: &Self::Vertex) -> Result<bool> {
-        Ok(self.out_edges_of(v)?.next().is_some())
+        self.out_edges_of(v)
+            .filter_map(move |e| self.edge_target(e))
     }
 
-    /// Whether `v` has an outgoing edge.
-    ///
-    /// This compatibility helper panics when the graph does not provide outgoing incidence.
-    fn vertex_has_successors(&self, v: &Self::Vertex) -> bool {
-        self.try_vertex_has_successors(v).unwrap()
-    }
-
-    /// Whether `v` has an incoming edge.
-    fn try_vertex_has_predecessors(&self, v: &Self::Vertex) -> Result<bool> {
-        Ok(self.in_edges_of(v)?.next().is_some())
-    }
-
-    /// Whether `v` has an incoming edge.
-    ///
-    /// This compatibility helper panics when the graph does not provide incoming incidence.
-    fn vertex_has_predecessors(&self, v: &Self::Vertex) -> bool {
-        self.try_vertex_has_predecessors(v).unwrap()
+    /// Successors as an owned list.
+    fn successor_list_of(&self, v: &Self::Vertex) -> Vec<Self::Vertex>
+    where
+        Self: OutgoingGraph,
+    {
+        self.successors_of(v).cloned().collect()
     }
 
     /// Predecessors reached by incoming edges.
-    fn try_predecessors_of<'a>(
-        &'a self,
-        v: &'a Self::Vertex,
-    ) -> Result<impl Iterator<Item = &'a Self::Vertex>> {
-        Ok(self
-            .in_edges_of(v)?
-            .filter_map(move |e| self.edge_source(e)))
-    }
-
-    /// Predecessors reached by incoming edges.
-    ///
-    /// This compatibility helper panics when the graph does not provide incoming incidence.
     fn predecessors_of<'a>(
         &'a self,
         v: &'a Self::Vertex,
-    ) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.try_predecessors_of(v).unwrap()
+    ) -> impl Iterator<Item = &'a Self::Vertex>
+    where
+        Self: IncomingGraph,
+    {
+        self.in_edges_of(v).filter_map(move |e| self.edge_source(e))
+    }
+
+    /// Predecessors as an owned list.
+    fn predecessor_list_of(&self, v: &Self::Vertex) -> Vec<Self::Vertex>
+    where
+        Self: IncomingGraph,
+    {
+        self.predecessors_of(v).cloned().collect()
+    }
+
+    /// Every vertex from which `v` is reachable (excluding `v` unless it lies on a cycle).
+    fn ancestors_of(&self, v: &Self::Vertex) -> std::collections::HashSet<Self::Vertex>
+    where
+        Self: IncomingGraph,
+    {
+        let mut seen = std::collections::HashSet::new();
+        let mut stack = vec![v];
+        while let Some(x) = stack.pop() {
+            for p in self.predecessors_of(x) {
+                if seen.insert(p.clone()) {
+                    stack.push(p);
+                }
+            }
+        }
+        seen
+    }
+
+    /// Every vertex reachable from `v` (excluding `v` unless it lies on a cycle).
+    fn descendants_of(&self, v: &Self::Vertex) -> std::collections::HashSet<Self::Vertex>
+    where
+        Self: OutgoingGraph,
+    {
+        let mut seen = std::collections::HashSet::new();
+        let mut stack = vec![v];
+        while let Some(x) = stack.pop() {
+            for p in self.successors_of(x) {
+                if seen.insert(p.clone()) {
+                    stack.push(p);
+                }
+            }
+        }
+        seen
+    }
+
+    /// Vertices in a topological order (sources in insertion order first); `None` if cyclic.
+    fn topological_order(&self) -> Option<Vec<Self::Vertex>>
+    where
+        Self: Sized + IncidenceGraph,
+    {
+        crate::traverse::topological_sort(self).map(|v| v.into_iter().cloned().collect())
+    }
+
+    /// Whether `v` has an outgoing edge.
+    fn vertex_has_successors(&self, v: &Self::Vertex) -> bool
+    where
+        Self: OutgoingGraph,
+    {
+        self.out_edges_of(v).next().is_some()
+    }
+
+    /// Whether `v` has an incoming edge.
+    fn vertex_has_predecessors(&self, v: &Self::Vertex) -> bool
+    where
+        Self: IncomingGraph,
+    {
+        self.in_edges_of(v).next().is_some()
     }
 }
 impl<G: DirectedGraph + ?Sized> DirectedExt for G {}
@@ -440,7 +349,7 @@ impl<G: GraphMut + ?Sized> GraphMutExt for G {}
 
 /// Removes `v` but reconnects every predecessor to every successor
 /// (`Graphs.removeVertexAndPreserveConnectivity`). Returns `false` if `v` is absent.
-pub fn remove_vertex_and_preserve_connectivity<G: GraphMut + DirectedGraph>(
+pub fn remove_vertex_and_preserve_connectivity<G: GraphMut + DirectedGraph + IncidenceGraph>(
     g: &mut G,
     v: &G::Vertex,
 ) -> Result<bool> {
@@ -458,7 +367,7 @@ pub fn remove_vertex_and_preserve_connectivity<G: GraphMut + DirectedGraph>(
 }
 
 /// Applies [`remove_vertex_and_preserve_connectivity`] to each vertex in turn.
-pub fn remove_vertices_and_preserve_connectivity<G: GraphMut + DirectedGraph>(
+pub fn remove_vertices_and_preserve_connectivity<G: GraphMut + DirectedGraph + IncidenceGraph>(
     g: &mut G,
     vs: impl IntoIterator<Item = G::Vertex>,
 ) -> Result<bool> {

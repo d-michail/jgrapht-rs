@@ -54,7 +54,7 @@ mod chinese_postman_test {
         graph
     }
 
-    fn verify<G: Graph>(graph: &G, expected_weight: f64, expected_length: usize)
+    fn verify<G: IncidenceGraph>(graph: &G, expected_weight: f64, expected_length: usize)
     where
         G::Vertex: std::fmt::Debug,
     {
@@ -2686,7 +2686,7 @@ mod hierholzer_eulerian_cycle_test {
     use rand::{Rng, SeedableRng};
     use std::collections::HashSet;
 
-    fn assert_eulerian<G: Graph>(g: &G, cycle: &GraphWalk<G::Vertex, G::Edge>) {
+    fn assert_eulerian<G: IncidenceGraph>(g: &G, cycle: &GraphWalk<G::Vertex, G::Edge>) {
         assert!(is_eulerian(g));
         assert!(g.vertex_count() > 0);
         if g.edge_count() == 0 {
@@ -3746,7 +3746,7 @@ mod chordality_inspector_test {
         assert!(inspector.get_perfect_elimination_order().is_some());
     }
 
-    fn not_chordal<G: Graph>(graph: &G)
+    fn not_chordal<G: IncidenceGraph>(graph: &G)
     where
         G: jgrapht::graph::UndirectedGraph,
     {
@@ -4229,7 +4229,7 @@ mod weak_chordality_inspector_test {
         true
     }
 
-    fn check<G: Graph>(graph: &G, weakly_chordal: bool) {
+    fn check<G: IncidenceGraph>(graph: &G, weakly_chordal: bool) {
         let mut inspector = WeakChordalityInspector::new(graph);
         assert_eq!(weakly_chordal, inspector.is_weakly_chordal());
         let certificate = inspector.get_certificate();
@@ -4472,7 +4472,7 @@ mod berge_graph_inspector_test {
 
     /// `verifyCertificate`: the certificate spans an odd cycle without chords, in the graph or in
     /// its complement.
-    fn verify_certificate<G: Graph>(g: &G, dut: &BergeGraphInspector<G::Vertex, G::Edge>) -> bool {
+    fn verify_certificate<G: IncidenceGraph>(g: &G, dut: &BergeGraphInspector<G::Vertex, G::Edge>) -> bool {
         let Some(certificate) = dut.get_certificate() else {
             return false;
         };
@@ -4488,7 +4488,7 @@ mod berge_graph_inspector_test {
                 (
                     subg.vertex_count(),
                     subg.edge_count(),
-                    subg.vertices().all(|t| subg.edges_of(t).unwrap().count() == 2),
+                    subg.vertices().all(|t| subg.edges_of(t).count() == 2),
                 )
             })
         } else {
@@ -4497,7 +4497,7 @@ mod berge_graph_inspector_test {
                 (
                     subg.vertex_count(),
                     subg.edge_count(),
-                    subg.vertices().all(|t| subg.edges_of(t).unwrap().count() == 2),
+                    subg.vertices().all(|t| subg.edges_of(t).count() == 2),
                 )
             })
         }

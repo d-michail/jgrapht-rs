@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use super::SingleSourcePaths;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
@@ -35,7 +36,7 @@ pub struct DijkstraClosestFirstIterator<'g, G: Graph> {
     heap: BinaryHeap<Reverse<(OrderedF64, usize)>>,
 }
 
-impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
+impl<'g, G: OutgoingGraph> DijkstraClosestFirstIterator<'g, G> {
     /// Creates a new iterator for the specified graph. Iteration will start at the specified start
     /// vertex and will be limited to the connected component that includes that vertex. This
     /// iterator will use pairing heap as a default heap implementation.
@@ -143,7 +144,7 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
     }
 }
 
-impl<G: Graph> Iterator for DijkstraClosestFirstIterator<'_, G> {
+impl<G: OutgoingGraph> Iterator for DijkstraClosestFirstIterator<'_, G> {
     type Item = G::Vertex;
 
     fn next(&mut self) -> Option<Self::Item> {

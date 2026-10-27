@@ -16,9 +16,10 @@
 //!
 //! Java's `getEdge` returns an `Integer` and `getAllEdges` a set; here they are `Option<&usize>`
 //! and a sorted vector. `UnsupportedOperationException` for graphs without incoming-edge support
-//! becomes `GraphError::Unsupported`.
+//! becomes a compile error: `NoIncoming` graphs do not implement `IncomingGraph`.
 
-use jgrapht::GraphError;
+use jgrapht::OutgoingGraph;
+use jgrapht::graph::IncidenceGraph;
 use jgrapht::graph::sparse::*;
 use jgrapht::graph::{Graph, GraphExt};
 
@@ -73,14 +74,14 @@ fn check_endpoints<G: Graph<Vertex = usize, Edge = usize>>(g: &G, edges: &[(usiz
     }
 }
 
-fn check_rows<G: Graph<Vertex = usize, Edge = usize>>(g: &G, rows: &[Row]) {
+fn check_rows<G: Graph<Vertex = usize, Edge = usize> + IncidenceGraph>(g: &G, rows: &[Row]) {
     for (v, &(deg, indeg, outdeg, edges, incoming, outgoing)) in rows.iter().enumerate() {
-        assert_eq!(g.degree_of(&v).unwrap(), deg);
-        assert_eq!(g.in_degree_of(&v).unwrap(), indeg);
-        assert_eq!(g.out_degree_of(&v).unwrap(), outdeg);
-        assert_eq!(sorted(g.edges_of(&v).unwrap()), edges);
-        assert_eq!(sorted(g.in_edges_of(&v).unwrap()), incoming);
-        assert_eq!(sorted(g.out_edges_of(&v).unwrap()), outgoing);
+        assert_eq!(g.degree_of(&v), deg);
+        assert_eq!(g.in_degree_of(&v), indeg);
+        assert_eq!(g.out_degree_of(&v), outdeg);
+        assert_eq!(sorted(g.edges_of(&v)), edges);
+        assert_eq!(sorted(g.in_edges_of(&v)), incoming);
+        assert_eq!(sorted(g.out_edges_of(&v)), outgoing);
     }
 }
 
@@ -209,7 +210,7 @@ fn check_directed_lookups<G: Graph<Vertex = usize, Edge = usize>>(g: &G) {
     }
 }
 
-fn check_directed(g: &impl Graph<Vertex = usize, Edge = usize>, weighted: bool) {
+fn check_directed(g: &impl IncidenceGraph<Vertex = usize, Edge = usize>, weighted: bool) {
     check_ids(g, 8, 13);
     check_rows(g, &DIRECTED_ROWS);
     check_endpoints(g, &DIRECTED);
@@ -235,8 +236,8 @@ fn test_directed_lazy_no_incoming() {
     .unwrap();
     check_ids(&g, 8, 13);
     for (v, row) in DIRECTED_ROWS.iter().enumerate() {
-        assert_eq!(g.out_degree_of(&v).unwrap(), row.2);
-        assert_eq!(sorted(g.out_edges_of(&v).unwrap()), row.5);
+        assert_eq!(g.out_degree_of(&v), row.2);
+        assert_eq!(sorted(g.out_edges_of(&v)), row.5);
     }
     assert_eq!(
         g.outgoing_of(&1)
@@ -247,21 +248,6 @@ fn test_directed_lazy_no_incoming() {
     check_endpoints(&g, &DIRECTED);
     check_type(&g, true, false);
     check_directed_lookups(&g);
-}
-
-#[test]
-fn test_directed_lazy_no_incoming_fail() {
-    let g = SparseIntDirectedGraph::<NoIncoming>::from_edges(8, &DIRECTED)
-    .unwrap();
-    for v in 0..8 {
-        assert!(matches!(g.degree_of(&v), Err(GraphError::Unsupported(_))));
-        assert!(matches!(
-            g.in_degree_of(&v),
-            Err(GraphError::Unsupported(_))
-        ));
-        assert!(matches!(g.edges_of(&v), Err(GraphError::Unsupported(_))));
-        assert!(matches!(g.in_edges_of(&v), Err(GraphError::Unsupported(_))));
-    }
 }
 
 #[test]
@@ -295,7 +281,7 @@ fn test_absent_elements() {
     assert_eq!(g.get_edge(&0, &8), None);
     assert_eq!(g.get_edge(&9, &0), None);
     assert_eq!(g.edges_between(&0, &8).count(), 0);
-    assert_eq!(g.edges_of(&8).unwrap().count(), 0);
+    assert_eq!(g.edges_of(&8).count(), 0);
     assert_eq!(g.edge_source(&13), None);
     assert_eq!(g.edge_weight(&13), None);
 }

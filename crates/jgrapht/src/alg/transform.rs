@@ -15,6 +15,7 @@
 //! Graph transformations that build a new graph into a caller-provided target.
 //! (Reversal and undirected views live in [`crate::view`].)
 
+use crate::graph::IncidenceGraph;
 use crate::Result;
 use crate::graph::{Graph, GraphMut, GraphMutExt};
 
@@ -46,7 +47,7 @@ where
 /// target must allow loops in that case.
 pub fn line_graph_into<G, T>(g: &G, target: &mut T) -> Result<()>
 where
-    G: Graph,
+    G: IncidenceGraph,
     T: GraphMut<Vertex = G::Edge>,
 {
     line_graph_impl(g, target, None::<fn(&G::Edge, &G::Edge) -> f64>)
@@ -59,7 +60,7 @@ pub fn line_graph_weighted_into<G, T>(
     weight: impl Fn(&G::Edge, &G::Edge) -> f64,
 ) -> Result<()>
 where
-    G: Graph,
+    G: IncidenceGraph,
     T: GraphMut<Vertex = G::Edge>,
 {
     line_graph_impl(g, target, Some(weight))
@@ -67,7 +68,7 @@ where
 
 fn line_graph_impl<G, T, F>(g: &G, target: &mut T, weight: Option<F>) -> Result<()>
 where
-    G: Graph,
+    G: IncidenceGraph,
     T: GraphMut<Vertex = G::Edge>,
     F: Fn(&G::Edge, &G::Edge) -> f64,
 {
@@ -82,16 +83,16 @@ where
     };
     if g.graph_type().directed {
         for v in g.vertices() {
-            for e1 in g.in_edges_of(v)? {
-                for e2 in g.out_edges_of(v)? {
+            for e1 in g.in_edges_of(v) {
+                for e2 in g.out_edges_of(v) {
                     link(target, e1, e2)?;
                 }
             }
         }
     } else {
         for v in g.vertices() {
-            for e1 in g.edges_of(v)? {
-                for e2 in g.edges_of(v)? {
+            for e1 in g.edges_of(v) {
+                for e2 in g.edges_of(v) {
                     if e1 != e2 {
                         link(target, e1, e2)?;
                     }
@@ -104,7 +105,7 @@ where
 
 /// Contracts `e` in place: its target is merged into its source, edges are re-attached
 /// (edges that would become loops are dropped unless the graph allows them).
-pub fn contract_edge<G: GraphMut>(g: &mut G, e: &G::Edge) -> Result<()> {
+pub fn contract_edge<G: GraphMut + IncidenceGraph>(g: &mut G, e: &G::Edge) -> Result<()> {
     let (Some(s), Some(t)) = (g.edge_source(e).cloned(), g.edge_target(e).cloned()) else {
         return Err(crate::GraphError::EdgeNotFound);
     };
@@ -113,7 +114,7 @@ pub fn contract_edge<G: GraphMut>(g: &mut G, e: &G::Edge) -> Result<()> {
         return Ok(());
     }
     let incident: Vec<(G::Edge, G::Vertex, G::Vertex, f64)> = g
-        .edges_of(&t)?
+        .edges_of(&t)
         .filter(|x| *x != e)
         .map(|x| {
             (

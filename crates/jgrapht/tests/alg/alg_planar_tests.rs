@@ -135,7 +135,7 @@ fn embeddings_satisfy_eulers_formula() {
         }
         let emb = inspector.embedding().unwrap().clone();
         // isolated vertices add one face each to the dart count, they have no darts
-        let isolated = graph.vertices().filter(|v| graph.degree_of(v).unwrap() == 0).count();
+        let isolated = graph.vertices().filter(|v| graph.degree_of(v) == 0).count();
         let faces = face_count(&graph, &emb) + isolated;
         assert_eq!(
             graph.vertex_count() + faces,
@@ -164,7 +164,7 @@ fn agrees_with_the_left_right_test_on_random_graphs() {
         if is_planar {
             planar += 1;
             let emb = inspector.embedding().unwrap().clone();
-            let isolated = g.vertices().filter(|v| g.degree_of(v).unwrap() == 0).count();
+            let isolated = g.vertices().filter(|v| g.degree_of(v) == 0).count();
             assert_eq!(
                 g.vertex_count() + face_count(&g, &emb) + isolated,
                 g.edge_count() + 2 * components(&g),

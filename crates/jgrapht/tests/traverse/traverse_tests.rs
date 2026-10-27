@@ -504,7 +504,7 @@ mod edge_selection_test {
 
         let mut iterator = DepthFirstIterator::new(&graph);
         iterator.set_edge_selector(|g, v| {
-            g.out_edges_of(v).unwrap()
+            g.out_edges_of(v)
                 .filter(|e| {
                     if v.0 % 2 == 0 {
                         e.0 == "BLUE"
@@ -791,7 +791,7 @@ mod lex_bfs {
         assert!(it.next().is_none());
     }
 
-    fn visits_all<G: UndirectedGraph>(graph: &G)
+    fn visits_all<G: UndirectedGraph + IncidenceGraph>(graph: &G)
     where
         G::Vertex: std::fmt::Debug,
     {
@@ -874,7 +874,7 @@ mod max_cardinality {
         assert!(it.next().is_none());
     }
 
-    fn visits_all<G: UndirectedGraph>(graph: &G)
+    fn visits_all<G: UndirectedGraph + IncidenceGraph>(graph: &G)
     where
         G::Vertex: std::fmt::Debug,
     {

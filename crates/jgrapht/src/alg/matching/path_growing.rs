@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::base::{DEFAULT_EPSILON, Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
 use crate::graph::{Graph, GraphExt};
@@ -57,7 +58,7 @@ pub struct PathGrowingWeightedMatching<'g, G: Graph> {
     use_heuristics: bool,
 }
 
-impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
+impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
     /// Construct a new instance of the path growing algorithm. Floating point values are compared
     /// using `DEFAULT_EPSILON` tolerance. By default two additional linear time heuristics
     /// are used in order to improve the quality of the matchings.
@@ -108,7 +109,7 @@ impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
     ) -> Result<Option<(G::Edge, f64, G::Vertex)>> {
         let graph = self.graph;
         let mut best: Option<(G::Edge, f64, G::Vertex)> = None;
-        for e in graph.edges_of(x)? {
+        for e in graph.edges_of(x) {
             let other = graph.opposite_vertex(e, x).expect("incident edge");
             if visible_vertex.contains(other) && other != x {
                 let cur_weight = graph.edge_weight(e).unwrap_or(1.0);
@@ -229,7 +230,7 @@ impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
     }
 }
 
-impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for PathGrowingWeightedMatching<'_, G> {
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for PathGrowingWeightedMatching<'_, G> {
     /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum weighted matching.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         if self.use_heuristics {

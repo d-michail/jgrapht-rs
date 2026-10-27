@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use super::{AllPairsPaths, ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
@@ -20,7 +21,7 @@ use std::collections::HashMap;
 
 /// All-pairs shortest paths in `O(V^3)`. Negative weights are fine; a negative cycle gives
 /// `Err(NegativeCycle)`.
-pub fn floyd_warshall<G: Graph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
+pub fn floyd_warshall<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
     let vs: Vec<&G::Vertex> = g.vertices().collect();
     let n = vs.len();
     let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
@@ -97,7 +98,7 @@ pub struct FloydWarshallShortestPaths<'g, G: Graph> {
     paths: AllPairsPaths<G::Vertex, G::Edge>,
 }
 
-impl<'g, G: Graph> FloydWarshallShortestPaths<'g, G> {
+impl<'g, G: OutgoingGraph> FloydWarshallShortestPaths<'g, G> {
     /// Create a new instance of the Floyd-Warshall all-pairs shortest path algorithm.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(Self {

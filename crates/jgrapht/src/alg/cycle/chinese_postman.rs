@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
 use crate::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
 use crate::alg::matching::{KuhnMunkresMinimalWeightBipartitePerfectMatching, MatchingAlgorithm};
@@ -69,7 +70,7 @@ impl ChinesePostman {
     }
 
     /// Returns a minimum-weight closed walk which visits every edge at least once.
-    pub fn get_cpp_solution<G: Graph>(
+    pub fn get_cpp_solution<G: IncidenceGraph>(
         &mut self,
         graph: &G,
     ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
@@ -90,10 +91,10 @@ impl ChinesePostman {
         }
     }
 
-    fn solve_undirected<G: Graph>(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
+    fn solve_undirected<G: IncidenceGraph>(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         let mut odd = Vec::new();
         for vertex in graph.vertices() {
-            if graph.degree_of(vertex)? % 2 == 1 {
+            if graph.degree_of(vertex) % 2 == 1 {
                 odd.push(vertex.clone());
             }
         }
@@ -135,12 +136,12 @@ impl ChinesePostman {
         self.eulerize::<G, Undirected>(graph, shortcuts)
     }
 
-    fn solve_directed<G: Graph>(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
+    fn solve_directed<G: IncidenceGraph>(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         let mut negative = Vec::new();
         let mut positive = Vec::new();
         for vertex in graph.vertices() {
             let imbalance =
-                graph.out_degree_of(vertex)? as isize - graph.in_degree_of(vertex)? as isize;
+                graph.out_degree_of(vertex) as isize - graph.in_degree_of(vertex) as isize;
             if imbalance < 0 {
                 negative.push((vertex.clone(), (-imbalance) as usize));
             } else if imbalance > 0 {

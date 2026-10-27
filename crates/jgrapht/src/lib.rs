@@ -42,7 +42,7 @@ pub mod walk;
 pub use error::{GraphError, Result};
 pub use graph::{
     BaseGraph, DefaultEdge, DiGraph, DirectedGraph, FastutilMapGraph, FastutilMapIntVertexGraph,
-    Graph, GraphExt, GraphMut, GraphMutExt, UGraph, UndirectedGraph, graph_equals, graph_hash,
+    Graph, GraphExt, GraphMut, GraphMutExt, IncidenceGraph, IncomingGraph, OutgoingGraph, UGraph, UndirectedGraph, graph_equals, graph_hash,
     graph_to_string,
 };
 pub use graph_type::GraphType;

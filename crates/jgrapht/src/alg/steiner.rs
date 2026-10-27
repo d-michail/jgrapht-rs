@@ -14,6 +14,7 @@
 
 //! Steiner trees in undirected graphs with non-negative weights.
 
+use crate::graph::OutgoingGraph;
 use super::shortestpath::{Dijkstra, ShortestPathAlgorithm};
 use super::util::Indexed;
 use crate::graph::Graph;
@@ -43,7 +44,7 @@ fn check<G: Graph>(g: &G, terminals: &[G::Vertex]) -> Result<()> {
 
 /// Kou–Markowsky–Berman 2-approximation: MST of the terminal metric closure, expanded into
 /// graph paths, re-spanned and pruned of non-terminal leaves.
-pub fn kmb_steiner_tree<G: Graph>(g: &G, terminals: &[G::Vertex]) -> Result<SteinerTree<G::Edge>> {
+pub fn kmb_steiner_tree<G: OutgoingGraph>(g: &G, terminals: &[G::Vertex]) -> Result<SteinerTree<G::Edge>> {
     check(g, terminals)?;
     let mut terms: Vec<&G::Vertex> = Vec::new();
     for t in terminals {

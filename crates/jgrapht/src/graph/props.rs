@@ -14,6 +14,7 @@
 
 //! Structural predicates (JGraphT's `GraphTests`).
 
+use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use super::{DirectedExt, DirectedGraph, Graph, GraphExt, UndirectedGraph};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -54,7 +55,7 @@ pub fn has_self_loops<G: Graph>(g: &G) -> bool {
     g.graph_type().self_loops && g.edges().any(|e| g.edge_source(e) == g.edge_target(e))
 }
 
-pub fn has_multiple_edges<G: Graph>(g: &G) -> bool {
+pub fn has_multiple_edges<G: OutgoingGraph>(g: &G) -> bool {
     if !g.graph_type().multiple_edges {
         return false;
     }
@@ -65,7 +66,7 @@ pub fn has_multiple_edges<G: Graph>(g: &G) -> bool {
 }
 
 /// No self-loops and no parallel edges.
-pub fn is_simple<G: Graph>(g: &G) -> bool {
+pub fn is_simple<G: OutgoingGraph>(g: &G) -> bool {
     if g.graph_type().is_simple() {
         return true;
     }
@@ -76,7 +77,7 @@ pub fn is_simple<G: Graph>(g: &G) -> bool {
 }
 
 /// Simple and every pair of distinct vertices adjacent (in both directions if directed).
-pub fn is_complete<G: Graph>(g: &G) -> bool {
+pub fn is_complete<G: OutgoingGraph>(g: &G) -> bool {
     let n = g.vertex_count() as u128;
     let all = if g.graph_type().directed {
         n * n.saturating_sub(1)
@@ -87,7 +88,7 @@ pub fn is_complete<G: Graph>(g: &G) -> bool {
 }
 
 /// Weak connectivity (edge direction ignored). The empty graph is not connected.
-pub fn is_connected<G: Graph>(g: &G) -> bool {
+pub fn is_connected<G: IncidenceGraph>(g: &G) -> bool {
     let Some(start) = g.vertices().next() else {
         return false;
     };
@@ -104,12 +105,12 @@ pub fn is_connected<G: Graph>(g: &G) -> bool {
     seen.len() == g.vertex_count()
 }
 
-pub fn is_weakly_connected<G: Graph>(g: &G) -> bool {
+pub fn is_weakly_connected<G: IncidenceGraph>(g: &G) -> bool {
     is_connected(g)
 }
 
 /// Strong connectivity (plain connectivity for undirected graphs).
-pub fn is_strongly_connected<G: Graph>(g: &G) -> bool {
+pub fn is_strongly_connected<G: IncidenceGraph>(g: &G) -> bool {
     if !g.graph_type().directed {
         return is_connected(g);
     }
@@ -168,15 +169,15 @@ pub fn is_forest<G: Graph>(g: &G) -> bool {
 }
 
 /// `|E| == |V| - 1` and connected.
-pub fn is_tree<G: Graph>(g: &G) -> bool {
+pub fn is_tree<G: IncidenceGraph>(g: &G) -> bool {
     g.edge_count() + 1 == g.vertex_count() && is_connected(g)
 }
 
 /// Kahn's algorithm.
-pub fn is_dag<G: DirectedGraph>(g: &G) -> bool {
+pub fn is_dag<G: DirectedGraph + IncomingGraph + OutgoingGraph>(g: &G) -> bool {
     let mut indeg: HashMap<&G::Vertex, usize> = g
         .vertices()
-        .map(|v| (v, g.in_degree_of(v).unwrap()))
+        .map(|v| (v, g.in_degree_of(v)))
         .collect();
     let mut q: VecDeque<_> = indeg
         .iter()
@@ -199,8 +200,8 @@ pub fn is_dag<G: DirectedGraph>(g: &G) -> bool {
 
 /// More edges than `max_degree * floor(n / 2)` (a sufficient condition for chromatic index
 /// `max_degree + 1`). Panics-free: an empty graph is not overfull.
-pub fn is_overfull<G: Graph>(g: &G) -> bool {
-    let Some(max_degree) = g.vertices().map(|v| g.degree_of(v).unwrap()).max() else {
+pub fn is_overfull<G: IncidenceGraph>(g: &G) -> bool {
+    let Some(max_degree) = g.vertices().map(|v| g.degree_of(v)).max() else {
         return false;
     };
     g.edge_count() as f64 > max_degree as f64 * (g.vertex_count() / 2) as f64
@@ -208,11 +209,11 @@ pub fn is_overfull<G: Graph>(g: &G) -> bool {
 
 /// Split graph: the vertices partition into a clique and an independent set
 /// (Hammer & Simeone degree-sequence characterisation). Requires a simple undirected graph.
-pub fn is_split<G: Graph>(g: &G) -> bool {
+pub fn is_split<G: IncidenceGraph>(g: &G) -> bool {
     if g.graph_type().directed || !is_simple(g) || g.vertex_count() == 0 {
         return false;
     }
-    let mut degrees: Vec<usize> = g.vertices().map(|v| g.degree_of(v).unwrap()).collect();
+    let mut degrees: Vec<usize> = g.vertices().map(|v| g.degree_of(v)).collect();
     degrees.sort_unstable_by(|a, b| b.cmp(a));
     let mut m = 1;
     while m < degrees.len() && degrees[m] >= m {
@@ -225,13 +226,13 @@ pub fn is_split<G: Graph>(g: &G) -> bool {
 }
 
 /// Every vertex has degree three.
-pub fn is_cubic<G: Graph>(g: &G) -> bool {
-    g.vertices().all(|v| g.degree_of(v).unwrap() == 3)
+pub fn is_cubic<G: IncidenceGraph>(g: &G) -> bool {
+    g.vertices().all(|v| g.degree_of(v) == 3)
 }
 
 /// Ore's condition: simple, undirected, `n >= 3` and `deg(u) + deg(v) >= n` for all
 /// non-adjacent `u, v` (sufficient for a Hamiltonian cycle).
-pub fn has_ore_property<G: Graph>(g: &G) -> bool {
+pub fn has_ore_property<G: IncidenceGraph>(g: &G) -> bool {
     let n = g.vertex_count();
     if g.graph_type().directed || !g.graph_type().is_simple() || n < 3 {
         return false;
@@ -240,7 +241,7 @@ pub fn has_ore_property<G: Graph>(g: &G) -> bool {
     for (i, v) in vs.iter().enumerate() {
         for w in &vs[i + 1..] {
             if !g.contains_edge_between(v, w)
-                && g.degree_of(v).unwrap() + g.degree_of(w).unwrap() < n
+                && g.degree_of(v) + g.degree_of(w) < n
             {
                 return false;
             }
@@ -259,7 +260,7 @@ pub fn is_bipartite<G: Graph>(g: &G) -> bool {
 }
 
 /// Whether `first` and `second` are the two sides of a bipartition of `g`.
-pub fn is_bipartite_partition<G: Graph>(
+pub fn is_bipartite_partition<G: IncidenceGraph>(
     g: &G,
     first: &std::collections::HashSet<G::Vertex>,
     second: &std::collections::HashSet<G::Vertex>,
@@ -280,20 +281,20 @@ pub fn is_bipartite_partition<G: Graph>(
     crate::alg::partition::BipartitePartitioning::new(g).is_valid_partitioning(&p)
 }
 
-pub fn is_biconnected<G: Graph>(g: &G) -> bool {
+pub fn is_biconnected<G: IncidenceGraph>(g: &G) -> bool {
     crate::alg::connectivity::is_biconnected(g)
 }
 
-pub fn is_eulerian<G: Graph>(g: &G) -> bool {
+pub fn is_eulerian<G: IncidenceGraph>(g: &G) -> bool {
     crate::alg::cycle::HierholzerEulerianCycle::new().is_eulerian(g)
 }
 
-pub fn is_chordal<G: UndirectedGraph>(g: &G) -> bool {
+pub fn is_chordal<G: UndirectedGraph + IncidenceGraph>(g: &G) -> bool {
     crate::alg::cycle::ChordalityInspector::new(g).is_chordal()
 }
 
 /// No induced cycle of length five or more in the graph or its complement.
-pub fn is_weakly_chordal<G: Graph>(g: &G) -> bool {
+pub fn is_weakly_chordal<G: IncidenceGraph>(g: &G) -> bool {
     crate::alg::holes::is_weakly_chordal(g)
 }
 
@@ -302,13 +303,13 @@ pub fn is_perfect<G: Graph>(g: &G) -> bool {
     crate::alg::holes::is_perfect(g)
 }
 
-pub fn is_planar<G: Graph>(g: &G) -> bool {
+pub fn is_planar<G: IncidenceGraph>(g: &G) -> bool {
     crate::alg::planar::BoyerMyrvoldPlanarityInspector::new(g).is_planar()
 }
 
 /// Vertices of degree `degree` reachable from `start` without passing through another vertex of
 /// that degree.
-fn reachable_with_degree<'a, G: Graph>(
+fn reachable_with_degree<'a, G: IncidenceGraph>(
     g: &'a G,
     start: &'a G::Vertex,
     degree: usize,
@@ -318,14 +319,14 @@ fn reachable_with_degree<'a, G: Graph>(
     let mut queue = VecDeque::from([start]);
     while let Some(cur) = queue.pop_front() {
         visited.insert(cur);
-        for e in g.edges_of(cur).unwrap() {
+        for e in g.edges_of(cur) {
             let Some(opp) = g.opposite_vertex(e, cur) else {
                 continue;
             };
             if visited.contains(opp) {
                 continue;
             }
-            if g.degree_of(opp).unwrap() == degree {
+            if g.degree_of(opp) == degree {
                 reachable.insert(opp);
             } else {
                 queue.push_back(opp);
@@ -336,10 +337,10 @@ fn reachable_with_degree<'a, G: Graph>(
 }
 
 /// A subdivision of K3,3 (all vertices have degree 2 or 3, six of degree 3, forming K3,3).
-pub fn is_k33_subdivision<G: Graph>(g: &G) -> bool {
+pub fn is_k33_subdivision<G: IncidenceGraph>(g: &G) -> bool {
     let mut degree3 = Vec::new();
     for v in g.vertices() {
-        match g.degree_of(v).unwrap() {
+        match g.degree_of(v) {
             3 => degree3.push(v),
             2 => {}
             _ => return false,
@@ -359,10 +360,10 @@ pub fn is_k33_subdivision<G: Graph>(g: &G) -> bool {
 }
 
 /// A subdivision of K5.
-pub fn is_k5_subdivision<G: Graph>(g: &G) -> bool {
+pub fn is_k5_subdivision<G: IncidenceGraph>(g: &G) -> bool {
     let mut deg4 = HashSet::new();
     for v in g.vertices() {
-        match g.degree_of(v).unwrap() {
+        match g.degree_of(v) {
             4 => {
                 deg4.insert(v);
             }
@@ -379,6 +380,6 @@ pub fn is_k5_subdivision<G: Graph>(g: &G) -> bool {
     })
 }
 
-pub fn is_kuratowski_subdivision<G: Graph>(g: &G) -> bool {
+pub fn is_kuratowski_subdivision<G: IncidenceGraph>(g: &G) -> bool {
     is_k33_subdivision(g) || is_k5_subdivision(g)
 }

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use rand::Rng;
@@ -48,7 +49,7 @@ impl<'g, G: Graph> ClosestFirst<'g, G> {
     }
 }
 
-impl<'g, G: Graph> Iterator for ClosestFirst<'g, G> {
+impl<'g, G: OutgoingGraph> Iterator for ClosestFirst<'g, G> {
     type Item = (&'g G::Vertex, f64);
     fn next(&mut self) -> Option<Self::Item> {
         let g = self.g;
@@ -94,7 +95,7 @@ impl<'g, G: Graph, R: Rng> RandomWalk<'g, G, R> {
     }
 }
 
-impl<'g, G: Graph, R: Rng> Iterator for RandomWalk<'g, G, R> {
+impl<'g, G: OutgoingGraph, R: Rng> Iterator for RandomWalk<'g, G, R> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         let v = self.cur?;

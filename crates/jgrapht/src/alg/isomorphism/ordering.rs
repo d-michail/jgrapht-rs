@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use crate::graph::Graph;
 use std::borrow::Cow;
 use std::cell::{Cell, OnceCell};
@@ -36,7 +37,7 @@ pub struct GraphOrdering<'g, G: Graph> {
     cache_edges: bool,
 }
 
-impl<'g, G: Graph> GraphOrdering<'g, G> {
+impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
     pub fn new(graph: &'g G) -> Self {
         Self::with_options(graph, false, true)
     }
@@ -45,7 +46,7 @@ impl<'g, G: Graph> GraphOrdering<'g, G> {
         let mut vertices: Vec<&'g G::Vertex> = graph.vertices().collect();
         if order_by_degree {
             // stable, like List.sort
-            vertices.sort_by_key(|v| graph.degree_of(v).unwrap());
+            vertices.sort_by_key(|v| graph.degree_of(v));
         }
         let n = vertices.len();
         let order = vertices.iter().enumerate().map(|(i, v)| (*v, i)).collect();
@@ -84,9 +85,9 @@ impl<'g, G: Graph> GraphOrdering<'g, G> {
             res.push(self.order[if s == vertex { t } else { s }]);
         };
         if out {
-            g.out_edges_of(vertex).unwrap().for_each(&mut push);
+            g.out_edges_of(vertex).for_each(&mut push);
         } else {
-            g.in_edges_of(vertex).unwrap().for_each(&mut push);
+            g.in_edges_of(vertex).for_each(&mut push);
         }
         res
     }

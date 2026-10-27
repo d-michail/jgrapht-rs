@@ -12,6 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
+use crate::graph::IncidenceGraph;
+use crate::graph::IncomingGraph;
 use super::{
     BidirectionalDijkstraShortestPath, DijkstraClosestFirstIterator, ManyToManyPaths,
     ShortestPathAlgorithm, SingleSourcePaths,
@@ -49,7 +52,7 @@ pub struct DefaultManyToManyShortestPaths<'g, G: Graph + 'g> {
     algorithm_factory: Box<dyn Fn(&'g G) -> Box<dyn ShortestPathAlgorithm<G> + 'g> + 'g>,
 }
 
-impl<'g, G: Graph + 'g> DefaultManyToManyShortestPaths<'g, G> {
+impl<'g, G: IncomingGraph + 'g + IncidenceGraph> DefaultManyToManyShortestPaths<'g, G> {
     /// Constructs a new instance of the algorithm for a given `graph`. The `function` is
     /// defaulted to returning `BidirectionalDijkstraShortestPath`.
     pub fn new(graph: &'g G) -> Self {
@@ -96,7 +99,7 @@ impl<'g, G: Graph + 'g> DefaultManyToManyShortestPaths<'g, G> {
     }
 }
 
-impl<G: Graph> ShortestPathAlgorithm<G> for DefaultManyToManyShortestPaths<'_, G> {
+impl<G: IncomingGraph> ShortestPathAlgorithm<G> for DefaultManyToManyShortestPaths<'_, G> {
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         if !self.graph.contains_vertex(source) {
             return Err(GraphError::VertexNotFound);
@@ -160,7 +163,7 @@ pub struct DijkstraManyToManyShortestPaths<'g, G: Graph> {
     graph: &'g G,
 }
 
-impl<'g, G: Graph> DijkstraManyToManyShortestPaths<'g, G> {
+impl<'g, G: IncomingGraph + OutgoingGraph> DijkstraManyToManyShortestPaths<'g, G> {
     /// Constructs an instance of the algorithm for a given `graph`.
     pub fn new(graph: &'g G) -> Self {
         Self { graph }
@@ -210,7 +213,7 @@ impl<'g, G: Graph> DijkstraManyToManyShortestPaths<'g, G> {
     }
 }
 
-impl<G: Graph> ShortestPathAlgorithm<G> for DijkstraManyToManyShortestPaths<'_, G> {
+impl<G: IncomingGraph + OutgoingGraph> ShortestPathAlgorithm<G> for DijkstraManyToManyShortestPaths<'_, G> {
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         DijkstraManyToManyShortestPaths::single_source(self, source)
     }
@@ -231,7 +234,7 @@ fn validate_sets<G: Graph>(
     Ok(())
 }
 
-fn forward_tree<G: Graph>(
+fn forward_tree<G: OutgoingGraph>(
     graph: &G,
     source: &G::Vertex,
     targets: &HashSet<G::Vertex>,
@@ -245,7 +248,7 @@ fn forward_tree<G: Graph>(
     Ok(iterator.paths())
 }
 
-fn reverse_tree<G: Graph>(
+fn reverse_tree<G: IncomingGraph>(
     graph: &G,
     target: &G::Vertex,
     sources: &HashSet<G::Vertex>,
@@ -273,7 +276,7 @@ fn reverse_tree<G: Graph>(
         if remaining.is_empty() {
             break;
         }
-        for (edge, previous) in graph.try_incoming_of(vertices[vertex])? {
+        for (edge, previous) in graph.incoming_of(vertices[vertex]) {
             let weight = graph.edge_weight(edge).unwrap_or(1.0);
             if weight.is_nan() || weight < 0.0 {
                 return Err(GraphError::InvalidArgument(

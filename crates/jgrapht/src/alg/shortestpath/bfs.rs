@@ -12,8 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
-use crate::graph::{Graph, GraphExt};
+use crate::graph::{GraphExt};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, VecDeque};
 
@@ -39,7 +40,7 @@ impl<'g, G> BfsShortestPath<'g, G> {
     }
 }
 
-impl<G: Graph> ShortestPathAlgorithm<G> for BfsShortestPath<'_, G> {
+impl<G: OutgoingGraph> ShortestPathAlgorithm<G> for BfsShortestPath<'_, G> {
     fn single_source(&self, s: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         let g = self.0;
         if !g.contains_vertex(s) {

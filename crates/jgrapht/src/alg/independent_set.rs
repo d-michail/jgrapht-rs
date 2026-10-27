@@ -14,6 +14,7 @@
 
 //! Independent set algorithms (`org.jgrapht.alg.independentset`).
 
+use crate::graph::IncidenceGraph;
 use super::cycle::{ChordalityInspector, IterationOrder};
 use crate::graph::{GraphExt, UndirectedGraph};
 use std::collections::HashSet;
@@ -44,7 +45,7 @@ pub struct ChordalGraphIndependentSetFinder<'g, G: UndirectedGraph> {
     maximum_independent_set: Option<HashSet<G::Vertex>>,
 }
 
-impl<'g, G: UndirectedGraph> ChordalGraphIndependentSetFinder<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphIndependentSetFinder<'g, G> {
     /// Creates a new ChordalGraphIndependentSetFinder instance. The `ChordalityInspector` used
     /// in this implementation uses the default `MaximumCardinalityIterator` iterator.
     pub fn new(graph: &'g G) -> Self {
@@ -74,7 +75,7 @@ impl<'g, G: UndirectedGraph> ChordalGraphIndependentSetFinder<'g, G> {
             for previous in perfect_elimination_order.iter().rev() {
                 if !restricted.contains(previous) {
                     is.insert(previous.clone());
-                    for edge in self.graph.edges_of(previous).unwrap() {
+                    for edge in self.graph.edges_of(previous) {
                         let opposite = self
                             .graph
                             .opposite_vertex(edge, previous)

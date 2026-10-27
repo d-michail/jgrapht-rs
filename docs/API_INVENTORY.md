@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1489 | 342 | 117 | 376 | 13 | 19 | 422 | 200 |
+| `jgrapht` | 1468 | 342 | 117 | 356 | 13 | 19 | 421 | 200 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -93,10 +93,10 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | Location | Item | Count |
 |---|---|---|
 | `jgrapht-io/src/csv.rs` | `CsvExporter::new` | 0 unwrap, 1 expect/panic/assert |
-| `jgrapht/src/alg/capacitated.rs` | `CapacitatedSpanningTree::is_capacitated_spanning_tree` | 2 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/alg/capacitated.rs` | `CapacitatedSpanningTree::is_capacitated_spanning_tree` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/capacitated.rs` | `Solution::move_vertex` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/capacitated.rs` | `Solution::move_vertices` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/capacitated.rs` | `Solution::partition_subtrees_of_subset` | 1 unwrap, 1 expect/panic/assert |
+| `jgrapht/src/alg/capacitated.rs` | `Solution::partition_subtrees_of_subset` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/centers.rs` | `greedy_k_center` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/clique.rs` | `CliqueMinimalSeparatorDecomposition::atoms` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/clique.rs` | `CliqueMinimalSeparatorDecomposition::is_chordal` | 1 unwrap, 0 expect/panic/assert |
@@ -104,38 +104,36 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/clique.rs` | `CliqueMinimalSeparatorDecomposition::separators` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/clustering.rs` | `k_spanning_tree_clustering` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/clustering.rs` | `UndirectedModularityMeasurer::modularity` | 2 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/clustering.rs` | `UndirectedModularityMeasurer::new` | 3 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/alg/clustering.rs` | `UndirectedModularityMeasurer::new` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/color.rs` | `is_proper_coloring` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/color.rs` | `saturation_degree_coloring` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/color.rs` | `smallest_degree_last_coloring` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/color.rs` | `BrownBacktrackColoring::new` | 2 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/connectivity.rs` | `block_cut_tree` | 3 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/alg/color.rs` | `BrownBacktrackColoring::new` | 1 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/alg/connectivity.rs` | `block_cut_tree` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/connectivity.rs` | `condensation` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/connectivity.rs` | `strongly_connected_components` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/connectivity.rs` | `strongly_connected_components_kosaraju` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/connectivity.rs` | `BiconnectivityInspector::new` | 7 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/alg/connectivity.rs` | `BiconnectivityInspector::new` | 6 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/connectivity.rs` | `ConnectivityInspector::connected_set_of` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/connectivity.rs` | `ConnectivityInspector::edge_added` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/connectivity.rs` | `GabowStrongConnectivityInspector::new` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/connectivity.rs` | `KConnectivityFlowAlgorithm::edge_connectivity` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/connectivity.rs` | `KConnectivityFlowAlgorithm::vertex_connectivity` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/connectivity.rs` | `KConnectivityFlowAlgorithm::with_flow` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/cover.rs` | `bipartite_vertex_cover` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/cover.rs` | `is_vertex_cover` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/cycle/detector.rs` | `CycleDetector::find_cycles` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/cycle/eulerian.rs` | `HierholzerEulerianCycle::is_eulerian` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/cycle/howard.rs` | `HowardMinimumMeanCycle::with_maximum_iterations` | 0 unwrap, 1 expect/panic/assert |
-| `jgrapht/src/alg/cycle/weak_chordality.rs` | `WeakChordalityInspector::new` | 1 unwrap, 2 expect/panic/assert |
-| `jgrapht/src/alg/cyclic_exchange.rs` | `AhujaOrlinSharmaCyclicExchangeLocalAugmentation::local_augmentation_cycle` | 5 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/alg/cycle/weak_chordality.rs` | `WeakChordalityInspector::new` | 0 unwrap, 2 expect/panic/assert |
+| `jgrapht/src/alg/cyclic_exchange.rs` | `AhujaOrlinSharmaCyclicExchangeLocalAugmentation::local_augmentation_cycle` | 4 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/decomposition.rs` | `tree_decomposition` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/decomposition.rs` | `DulmageMendelsohnDecomposition::decompose` | 8 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/alg/decomposition.rs` | `DulmageMendelsohnDecomposition::decompose` | 6 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/densest.rs` | `greedy_densest_subgraph` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/densest.rs` | `GoldbergMaximumDensitySubgraph::calculate_densest` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/drawing/fr.rs` | `FRLayoutAlgorithm2D::new` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/drawing/fr.rs` | `FRQuadTree::centroid` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/drawing/fr.rs` | `FRQuadTree::insert` | 6 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/drawing/model.rs` | `equals` | 0 unwrap, 1 expect/panic/assert |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::cut_edges` | 5 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/alg/flow/base.rs` | `FlowNet::cut_edges` | 4 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::flow_map` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::sink_partition` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::source_partition` | 1 unwrap, 0 expect/panic/assert |
@@ -146,7 +144,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/interfaces.rs` | `StrongConnectivityAlgorithm::condensation` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/isomorphism/ahu.rs` | `AHURootedTreeIsomorphismInspector::new` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::edge_numbers` | 2 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::with_options` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/isomorphism/refinement.rs` | `ColorRefinementIsomorphismInspector::isomorphism_exists` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/matching/base.rs` | `Matching::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/matching/blossom/matching.rs` | `KolmogorovWeightedMatching::get_error` | 0 unwrap, 1 expect/panic/assert |
@@ -159,10 +156,8 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/planar.rs` | `BoyerMyrvoldPlanarityInspector::embedding` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/planar.rs` | `BoyerMyrvoldPlanarityInspector::kuratowski_subdivision` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/scoring.rs` | `coreness` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/scoring.rs` | `degree_centrality` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/scoring.rs` | `ApBetweennessCentrality::with_precision` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/scoring.rs` | `BetweennessCentrality::with_options` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/scoring.rs` | `ClusteringCoefficient::global_clustering_coefficient` | 3 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/scoring.rs` | `EdgeBetweennessCentrality::scores` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/scoring.rs` | `EigenvectorCentrality::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/scoring.rs` | `KatzCentrality::new` | 0 unwrap, 1 expect/panic/assert |
@@ -201,7 +196,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/tree_connectivity/sequence.rs` | `SequenceArena::remove_min` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/tree_connectivity/sequence.rs` | `SequenceArena::split_after` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/tree_connectivity/sequence.rs` | `SequenceArena::split_before` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/util.rs` | `vertex_degree_comparator` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/util.rs` | `Indexed::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/util/queue.rs` | `FixedSizeIntegerQueue::enqueue` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/util/queue.rs` | `FixedSizeIntegerQueue::new` | 0 unwrap, 1 expect/panic/assert |
@@ -211,37 +205,16 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/generate/netgen/problems.rs` | `MaximumFlowProblem::sink` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/generate/netgen/problems.rs` | `MaximumFlowProblem::source` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/generate/structured.rs` | `Complement::new` | 2 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::ancestors_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::descendants_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::predecessor_list_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::predecessors_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::successor_list_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::successors_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::vertex_has_predecessors` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::vertex_has_successors` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::incoming_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::neighbor_list_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::neighbor_set_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::neighbors_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::out_neighbors_of` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::outgoing_of` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_graph` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_graph_reversed` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/graph/mod.rs` | `graph_hash` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/graph/mod.rs` | `graph_to_string` | 0 unwrap, 2 expect/panic/assert |
-| `jgrapht/src/graph/props.rs` | `has_ore_property` | 2 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/props.rs` | `is_cubic` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/props.rs` | `is_dag` | 2 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/graph/props.rs` | `is_dag` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/graph/props.rs` | `is_forest` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/props.rs` | `is_k33_subdivision` | 2 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/props.rs` | `is_k5_subdivision` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/props.rs` | `is_overfull` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/props.rs` | `is_split` | 1 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/graph/props.rs` | `is_k33_subdivision` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/traverse/cross.rs` | `BreadthFirstIterator::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/traverse/cross.rs` | `DepthFirstIterator::new` | 0 unwrap, 1 expect/panic/assert |
-| `jgrapht/src/traverse/ordered.rs` | `DegeneracyOrderingIterator::new` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/traverse/simple.rs` | `TopologicalOrder::new` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/util/java.rs` | `JavaRandom::next_int_bound` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/util/sampler.rs` | `AliasMethodSampler::with_epsilon` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/walk.rs` | `GraphWalk::reverse` | 0 unwrap, 1 expect/panic/assert |
@@ -1437,14 +1410,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/graph/ext.rs` | `DirectedExt::successor_list_of` | state query | `Vec<Self::Vertex>` |
 | `jgrapht/src/graph/ext.rs` | `DirectedExt::successors_of` | iterator | `impl Iterator<Item = &'a Self::Vertex>` |
 | `jgrapht/src/graph/ext.rs` | `DirectedExt::topological_order` | Option | `Option<Vec<Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::try_ancestors_of` | Result | `Result<std::collections::HashSet<Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::try_descendants_of` | Result | `Result<std::collections::HashSet<Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::try_predecessor_list_of` | Result | `Result<Vec<Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::try_predecessors_of` | Result | `Result<impl Iterator<Item = &'a Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::try_successor_list_of` | Result | `Result<Vec<Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::try_successors_of` | Result | `Result<impl Iterator<Item = &'a Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::try_vertex_has_predecessors` | Result | `Result<bool>` |
-| `jgrapht/src/graph/ext.rs` | `DirectedExt::try_vertex_has_successors` | Result | `Result<bool>` |
 | `jgrapht/src/graph/ext.rs` | `DirectedExt::vertex_has_predecessors` | state query | `bool` |
 | `jgrapht/src/graph/ext.rs` | `DirectedExt::vertex_has_successors` | state query | `bool` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::edge_endpoints` | Option | `Option<(&Self::Vertex, &Self::Vertex)>` |
@@ -1458,12 +1423,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/graph/ext.rs` | `GraphExt::outgoing_of` | iterator | `impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::test_incidence` | state query | `bool` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::total_weight` | state query | `f64` |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::try_incoming_of` | Result | `Result<impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>>` |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::try_neighbor_list_of` | Result | `Result<Vec<Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::try_neighbor_set_of` | Result | `Result<std::collections::HashSet<Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::try_neighbors_of` | Result | `Result<impl Iterator<Item = &'a Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::try_out_neighbors_of` | Result | `Result<impl Iterator<Item = &'a Self::Vertex>>` |
-| `jgrapht/src/graph/ext.rs` | `GraphExt::try_outgoing_of` | Result | `Result<impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>>` |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_edge_with_vertices` | Result<Option> | `Result<Option<Self::Edge>>` |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_graph` | Result | `Result<bool>` |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_graph_reversed` | Result | `Result<bool>` |
@@ -1486,22 +1445,15 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/graph/mod.rs` | `Graph::contains_edge` | infallible | `bool` |
 | `jgrapht/src/graph/mod.rs` | `Graph::contains_edge_between` | infallible | `bool` |
 | `jgrapht/src/graph/mod.rs` | `Graph::contains_vertex` | infallible | `bool` |
-| `jgrapht/src/graph/mod.rs` | `Graph::degree_of` | Result | `Result<usize>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::edge_count` | state query | `usize` |
 | `jgrapht/src/graph/mod.rs` | `Graph::edge_source` | Option | `Option<&Self::Vertex>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::edge_target` | Option | `Option<&Self::Vertex>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::edge_weight` | Option | `Option<f64>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::edges` | iterator | `impl Iterator<Item = &Self::Edge>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::edges_between` | iterator | `impl Iterator<Item = &'a Self::Edge>` |
-| `jgrapht/src/graph/mod.rs` | `Graph::edges_of` | Result | `Result<impl Iterator<Item = &Self::Edge>>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::get_edge` | Option | `Option<&'a Self::Edge>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::graph_type` | state query | `GraphType` |
-| `jgrapht/src/graph/mod.rs` | `Graph::in_degree_of` | Result | `Result<usize>` |
-| `jgrapht/src/graph/mod.rs` | `Graph::in_edges_of` | Result | `Result<impl Iterator<Item = &Self::Edge>>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::is_edge_directed` | infallible | `bool` |
-| `jgrapht/src/graph/mod.rs` | `Graph::mixed_weight` | state query | `usize` |
-| `jgrapht/src/graph/mod.rs` | `Graph::out_degree_of` | Result | `Result<usize>` |
-| `jgrapht/src/graph/mod.rs` | `Graph::out_edges_of` | Result | `Result<impl Iterator<Item = &Self::Edge>>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::vertex_count` | state query | `usize` |
 | `jgrapht/src/graph/mod.rs` | `Graph::vertices` | iterator | `impl Iterator<Item = &Self::Vertex>` |
 | `jgrapht/src/graph/mod.rs` | `GraphMut::add_edge` | Result<Option> | `Result<Option<Self::Edge>>` |

@@ -33,7 +33,7 @@ use std::collections::HashSet;
 
 mod line_graph_converter_test {
     use super::*;
-    use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph};
+    
 
     #[test]
     fn test_empty_graph() {
@@ -131,17 +131,6 @@ mod line_graph_converter_test {
         }
     }
 
-    #[test]
-    fn unsupported_incoming_edges_are_returned_as_an_error() {
-        let graph = SparseIntDirectedGraph::<NoIncoming>::from_edges(2, &[(0, 1)])
-        .unwrap();
-        let mut target = DiGraph::<usize>::simple();
-
-        assert!(matches!(
-            line_graph_into(&graph, &mut target),
-            Err(GraphError::Unsupported(_))
-        ));
-    }
 
     #[test]
     fn self_loop_test_undirected() {
@@ -378,7 +367,7 @@ mod kou_markowsky_berman_algorithm_test {
 mod bipartite_partitioning_test {
     use super::*;
 
-    fn check(g: &impl Graph<Vertex = i32>) -> bool {
+    fn check(g: &impl IncidenceGraph<Vertex = i32>) -> bool {
         BipartitePartitioning::new(g).is_bipartite()
     }
 
@@ -778,7 +767,7 @@ mod goldberg_maximum_density_subgraph_tests {
     }
 
     /// `GoldbergMaximumDensitySubgraphTestBase.test`
-    fn check<'g, G: Graph>(
+    fn check<'g, G: IncidenceGraph>(
         g: &'g G,
         solver: &mut GoldbergMaximumDensitySubgraph<'g, G>,
         expected_density: f64,

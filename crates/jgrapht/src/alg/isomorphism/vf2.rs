@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::IsomorphismInspector;
 use super::mapping::{IsomorphicGraphMapping, NULL_NODE};
 use super::ordering::GraphOrdering;
@@ -84,7 +85,7 @@ struct Arrays {
 }
 
 /// The VF2 search shared by the graph and the subgraph variant.
-struct Vf2<'a, 'g, G: Graph> {
+struct Vf2<'a, 'g, G: IncidenceGraph> {
     g1: &'a GraphOrdering<'g, G>,
     g2: &'a GraphOrdering<'g, G>,
     vertex_comparator: Option<&'a VertexComparator<'g, G>>,
@@ -96,7 +97,7 @@ struct Vf2<'a, 'g, G: Graph> {
     stack: Vec<Cursor>,
 }
 
-impl<'a, 'g, G: Graph> Vf2<'a, 'g, G> {
+impl<'a, 'g, G: IncidenceGraph> Vf2<'a, 'g, G> {
     fn next_pair(&self, s: &mut Cursor) -> bool {
         let (n1, n2, a) = (self.n1, self.n2, &self.a);
         if s.add_vertex2 == NULL_NODE {
@@ -404,13 +405,13 @@ impl<'a, 'g, G: Graph> Vf2<'a, 'g, G> {
 
 /// `VF2GraphMappingIterator` / `VF2SubgraphMappingIterator`: lazily enumerates the mappings of
 /// the second graph's vertices into the first graph's by depth-first search over VF2 states.
-pub struct VF2MappingIterator<'a, 'g, G: Graph> {
+pub struct VF2MappingIterator<'a, 'g, G: IncidenceGraph> {
     vf2: Vf2<'a, 'g, G>,
     next_mapping: Option<IsomorphicGraphMapping<'g, G>>,
     had_one_mapping: bool,
 }
 
-impl<'a, 'g, G: Graph> VF2MappingIterator<'a, 'g, G> {
+impl<'a, 'g, G: IncidenceGraph> VF2MappingIterator<'a, 'g, G> {
     fn new(
         g1: &'a GraphOrdering<'g, G>,
         g2: &'a GraphOrdering<'g, G>,
@@ -512,7 +513,7 @@ impl<'a, 'g, G: Graph> VF2MappingIterator<'a, 'g, G> {
     }
 }
 
-impl<'a, 'g, G: Graph> Iterator for VF2MappingIterator<'a, 'g, G> {
+impl<'a, 'g, G: IncidenceGraph> Iterator for VF2MappingIterator<'a, 'g, G> {
     type Item = IsomorphicGraphMapping<'g, G>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -520,7 +521,7 @@ impl<'a, 'g, G: Graph> Iterator for VF2MappingIterator<'a, 'g, G> {
     }
 }
 
-pub(super) fn check_types<G: Graph>(g1: &G, g2: &G) -> Result<()> {
+pub(super) fn check_types<G: IncidenceGraph>(g1: &G, g2: &G) -> Result<()> {
     let (t1, t2) = (g1.graph_type(), g2.graph_type());
     if t1.multiple_edges || t2.multiple_edges {
         return Err(GraphError::InvalidArgument(
@@ -543,14 +544,14 @@ pub(super) fn check_types<G: Graph>(g1: &G, g2: &G) -> Result<()> {
 macro_rules! vf2_inspector {
     ($(#[$doc:meta])* $name:ident, $kind:expr) => {
         $(#[$doc])*
-        pub struct $name<'g, G: Graph> {
+        pub struct $name<'g, G: $crate::graph::IncidenceGraph> {
             vertex_comparator: Option<VertexComparator<'g, G>>,
             edge_comparator: Option<EdgeComparator<'g, G>>,
             ordering1: GraphOrdering<'g, G>,
             ordering2: GraphOrdering<'g, G>,
         }
 
-        impl<'g, G: Graph> $name<'g, G> {
+        impl<'g, G: $crate::graph::IncidenceGraph> $name<'g, G> {
             /// Fails for multigraphs, mixed graphs and a directed/undirected pair.
             pub fn new(graph1: &'g G, graph2: &'g G) -> Result<Self> {
                 Self::with_options(graph1, graph2, None, None, true)
@@ -585,7 +586,7 @@ macro_rules! vf2_inspector {
             }
         }
 
-        impl<'g, G: Graph> IsomorphismInspector<'g, G> for $name<'g, G> {
+        impl<'g, G: $crate::graph::IncidenceGraph> IsomorphismInspector<'g, G> for $name<'g, G> {
             fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_> {
                 Box::new(self.iter())
             }

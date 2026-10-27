@@ -12,8 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
-use crate::graph::{Graph, GraphExt};
+use crate::graph::{GraphExt};
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use indexmap::IndexSet;
@@ -153,7 +154,7 @@ impl<'g, G> BellmanFord<'g, G> {
     }
 }
 
-impl<G: Graph> BellmanFord<'_, G> {
+impl<G: OutgoingGraph> BellmanFord<'_, G> {
     fn improves(&self, candidate: f64, current: f64) -> bool {
         (candidate - current).abs() >= self.epsilon && candidate < current
     }
@@ -293,7 +294,7 @@ impl<G: Graph> BellmanFord<'_, G> {
     }
 }
 
-impl<G: Graph> ShortestPathAlgorithm<G> for BellmanFord<'_, G> {
+impl<G: OutgoingGraph> ShortestPathAlgorithm<G> for BellmanFord<'_, G> {
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         self.get_paths(source).map_err(|error| match error {
             BellmanFordError::Graph(error) => error,
@@ -304,7 +305,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for BellmanFord<'_, G> {
 
 /// Relaxes all edges up to `|V|` rounds from the given initial distances.
 /// Returns `Err(NegativeCycle)` if still improving afterwards.
-pub(crate) fn relax_all<'g, G: Graph>(
+pub(crate) fn relax_all<'g, G: OutgoingGraph>(
     graph: &'g G,
     distance: &mut HashMap<&'g G::Vertex, f64>,
     predecessor: &mut HashMap<&'g G::Vertex, (&'g G::Edge, &'g G::Vertex)>,

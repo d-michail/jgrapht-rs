@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use super::search::search;
 use crate::graph::Graph;
 use crate::util::OrderedF64;
@@ -68,7 +69,7 @@ impl<'g, G: Graph, F: Fn(&G::Vertex, &G::Vertex) -> f64> AStar<'g, G, F> {
 
 impl<
     'g,
-    G: Graph,
+    G: OutgoingGraph,
     F: Fn(&G::Vertex, &G::Vertex) -> f64,
     H: DecreaseKeyHeap<OrderedF64, usize> + Default,
 > AStar<'g, G, F, H>

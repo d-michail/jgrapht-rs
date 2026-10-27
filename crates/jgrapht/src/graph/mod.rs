@@ -25,6 +25,7 @@ pub mod sparse;
 pub use base::{
     BaseGraph, DefaultEdge, DefaultGraphSpecifics, DiGraph, Directed, Direction, UGraph, Undirected,
 };
+pub use capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 pub use ext::{
     DirectedExt, GraphExt, GraphMutExt, remove_vertex_and_preserve_connectivity,
     remove_vertices_and_preserve_connectivity,
@@ -60,11 +61,6 @@ pub trait Graph {
     /// Weight of the edge; `1.0` for unweighted graphs. `None` if the edge does not exist.
     fn edge_weight(&self, e: &Self::Edge) -> Option<f64>;
 
-    /// All edges touching `v` (empty if `v` is absent). Directed graphs yield in- and out-edges,
-    /// a self-loop appears once. Fails with [`crate::GraphError::Unsupported`] on graphs that do
-    /// not index incoming edges.
-    fn edges_of(&self, v: &Self::Vertex) -> Result<impl Iterator<Item = &Self::Edge>>;
-
     /// Edges from `u` to `v` (either orientation for undirected graphs).
     fn edges_between<'a>(
         &'a self,
@@ -77,73 +73,16 @@ pub trait Graph {
     fn is_edge_directed(&self, _e: &Self::Edge) -> bool {
         self.graph_type().directed
     }
-    /// Edges entering `v`; undirected edges count as entering (`incomingEdgesOf`).
-    fn in_edges_of(&self, v: &Self::Vertex) -> Result<impl Iterator<Item = &Self::Edge>> {
-        Ok(self
-            .edges_of(v)?
-            .filter(move |e| !self.is_edge_directed(e) || self.edge_target(e) == Some(v)))
-    }
-    /// Edges leaving `v`; undirected edges count as leaving (`outgoingEdgesOf`).
-    fn out_edges_of(&self, v: &Self::Vertex) -> Result<impl Iterator<Item = &Self::Edge>> {
-        Ok(self
-            .edges_of(v)?
-            .filter(move |e| !self.is_edge_directed(e) || self.edge_source(e) == Some(v)))
-    }
-    /// `inDegreeOf`: incoming edge count; equals [`Graph::degree_of`] for undirected graphs.
-    fn in_degree_of(&self, v: &Self::Vertex) -> Result<usize> {
-        let t = self.graph_type();
-        if t.directed {
-            Ok(self.in_edges_of(v)?.count())
-        } else if t.mixed {
-            Ok(self.in_edges_of(v)?.map(|e| self.mixed_weight(e)).sum())
-        } else {
-            self.degree_of(v)
-        }
-    }
-    /// `outDegreeOf`: outgoing edge count; equals [`Graph::degree_of`] for undirected graphs.
-    fn out_degree_of(&self, v: &Self::Vertex) -> Result<usize> {
-        let t = self.graph_type();
-        if t.directed {
-            Ok(self.out_edges_of(v)?.count())
-        } else if t.mixed {
-            Ok(self.out_edges_of(v)?.map(|e| self.mixed_weight(e)).sum())
-        } else {
-            self.degree_of(v)
-        }
-    }
-    #[doc(hidden)]
-    /// Degree contribution of an edge in a mixed graph: undirected loops count twice.
-    fn mixed_weight(&self, e: &Self::Edge) -> usize {
-        if !self.is_edge_directed(e) && self.edge_source(e) == self.edge_target(e) {
-            2
-        } else {
-            1
-        }
-    }
-
     fn get_edge<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> Option<&'a Self::Edge> {
         self.edges_between(u, v).next()
     }
     fn contains_edge_between<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> bool {
         self.get_edge(u, v).is_some()
     }
-    /// Degree; self-loops count twice.
-    fn degree_of(&self, v: &Self::Vertex) -> Result<usize> {
-        Ok(self
-            .edges_of(v)?
-            .map(|e| {
-                if self.edge_source(e) == self.edge_target(e) {
-                    2
-                } else {
-                    1
-                }
-            })
-            .sum())
-    }
 }
 
-/// Marker for graphs whose edges have a direction. (The incoming/outgoing accessors live on
-/// [`Graph`], where they degrade to "all incident edges" for undirected graphs.)
+/// Marker for graphs whose edges have a direction. (Incidence queries live on the capability
+/// traits in [`capability`], where undirected edges count as both leaving and entering.)
 pub trait DirectedGraph: Graph {}
 
 /// Marker for graphs whose edges are unordered pairs.

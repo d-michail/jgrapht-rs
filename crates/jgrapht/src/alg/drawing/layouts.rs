@@ -14,6 +14,7 @@
 
 //! Layout algorithms that write vertex positions into a [`LayoutModel2D`].
 
+use crate::graph::IncidenceGraph;
 use super::model::{Box2D, LayoutModel2D, Point2D};
 use crate::alg::interfaces::PartitioningAlgorithm;
 use crate::alg::partition::BipartitePartitioning;
@@ -102,7 +103,7 @@ impl<V> Default for CircularLayoutAlgorithm2D<V> {
     }
 }
 
-impl<G: Graph> LayoutAlgorithm2D<G> for CircularLayoutAlgorithm2D<G::Vertex> {
+impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for CircularLayoutAlgorithm2D<G::Vertex> {
     /// Layout a graph.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         init(&self.initializer, graph, model);
@@ -157,7 +158,7 @@ impl<R: RandomSource> RandomLayoutAlgorithm2D<R> {
     }
 }
 
-impl<G: Graph, R: RandomSource> LayoutAlgorithm2D<G> for RandomLayoutAlgorithm2D<R> {
+impl<G: IncidenceGraph, R: RandomSource> LayoutAlgorithm2D<G> for RandomLayoutAlgorithm2D<R> {
     /// Layout a graph.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         let area = model.drawable_area();
@@ -197,7 +198,7 @@ impl RescaleLayoutAlgorithm2D {
     }
 }
 
-impl<G: Graph> LayoutAlgorithm2D<G> for RescaleLayoutAlgorithm2D {
+impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for RescaleLayoutAlgorithm2D {
     /// Layout a graph.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         let old = model.drawable_area();
@@ -328,7 +329,7 @@ impl<V> TwoLayeredBipartiteLayout2D<V> {
 impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
     /// Compute the vertex partitions.
     #[allow(clippy::type_complexity)]
-    fn compute_partitions<G: Graph<Vertex = V>>(&self, graph: &G) -> Result<(Vec<V>, Vec<V>)> {
+    fn compute_partitions<G: Graph<Vertex = V> + IncidenceGraph>(&self, graph: &G) -> Result<(Vec<V>, Vec<V>)> {
         let (mut left, mut right): (Vec<V>, Vec<V>) = (Vec::new(), Vec::new());
         if let Some(partition) = &self.partition {
             for v in graph.vertices() {
@@ -418,7 +419,7 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
     }
 
     /// Sorts the second layer by barycenter or median of the neighbours' coordinates.
-    fn greedy_sort<G: Graph<Vertex = V>, M: LayoutModel2D<V>>(
+    fn greedy_sort<G: Graph<Vertex = V> + IncidenceGraph, M: LayoutModel2D<V>>(
         &self,
         graph: &G,
         partition: &mut [V],
@@ -432,13 +433,12 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
         for (i, v) in partition.iter().enumerate() {
             let key = match self.order {
                 SecondLayerOrder::BarycenterGreedy => {
-                    let degree = graph.degree_of(v).unwrap();
+                    let degree = graph.degree_of(v);
                     if degree == 0 {
                         -f64::MAX
                     } else {
                         let sum: f64 = graph
                             .out_edges_of(v)
-                            .unwrap()
                             .map(|e| coord(graph.opposite_vertex(e, v).unwrap()))
                             .sum();
                         sum / degree as f64
@@ -447,7 +447,6 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
                 _ => {
                     let mut other: Vec<f64> = graph
                         .edges_of(v)
-                        .unwrap()
                         .map(|e| coord(graph.opposite_vertex(e, v).unwrap()))
                         .collect();
                     other.sort_by(|a, b| a.total_cmp(b));
@@ -466,7 +465,7 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
             if d != Ordering::Equal {
                 return d;
             }
-            let (dv, du) = (graph.degree_of(v).unwrap(), graph.degree_of(u).unwrap());
+            let (dv, du) = (graph.degree_of(v), graph.degree_of(u));
             if dv % 2 == 1 && du % 2 == 0 {
                 return Ordering::Less;
             }
@@ -478,7 +477,7 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
     }
 }
 
-impl<G: Graph> LayoutAlgorithm2D<G> for TwoLayeredBipartiteLayout2D<G::Vertex> {
+impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for TwoLayeredBipartiteLayout2D<G::Vertex> {
     /// Layout a graph.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         let (left, mut right) = self.compute_partitions(graph)?;

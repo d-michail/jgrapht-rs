@@ -19,6 +19,7 @@
 //! persistent heaps contain only sidetracks reachable from the source, and cross edges are built
 //! only for paths-graph vertices reachable from its root.
 
+use crate::graph::{IncomingGraph, OutgoingGraph};
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::walk::GraphWalk;
@@ -110,7 +111,7 @@ pub struct EppsteinShortestPathIterator<'g, G: Graph> {
     sequence: usize,
 }
 
-impl<'g, G: Graph> EppsteinShortestPathIterator<'g, G> {
+impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinShortestPathIterator<'g, G> {
     /// Construct an Eppstein iterator.
     ///
     /// As in JGraphT, Eppstein is restricted to directed simple graphs with non-negative weights.
@@ -506,7 +507,7 @@ impl<'g, G: Graph> EppsteinShortestPathIterator<'g, G> {
     }
 }
 
-impl<G: Graph> Iterator for EppsteinShortestPathIterator<'_, G> {
+impl<G: OutgoingGraph + IncomingGraph> Iterator for EppsteinShortestPathIterator<'_, G> {
     type Item = GraphWalk<G::Vertex, G::Edge>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -537,7 +538,7 @@ pub struct EppsteinKShortestPath<'g, G: Graph> {
     graph: &'g G,
 }
 
-impl<'g, G: Graph> EppsteinKShortestPath<'g, G> {
+impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinKShortestPath<'g, G> {
     /// Bind the algorithm to a graph.
     pub fn new(graph: &'g G) -> Self {
         Self { graph }
@@ -571,7 +572,7 @@ impl<'g, G: Graph> EppsteinKShortestPath<'g, G> {
     }
 }
 
-fn reverse_shortest_path_tree<G: Graph>(
+fn reverse_shortest_path_tree<G: IncomingGraph>(
     graph: &G,
     sink: &G::Vertex,
 ) -> Result<(HashMap<G::Vertex, f64>, HashMap<G::Vertex, G::Edge>)> {
@@ -595,7 +596,7 @@ fn reverse_shortest_path_tree<G: Graph>(
         }
         settled[vertex_index] = true;
         let vertex = vertices[vertex_index];
-        for (edge, source) in graph.try_incoming_of(vertex)? {
+        for (edge, source) in graph.incoming_of(vertex) {
             let weight = graph.edge_weight(edge).unwrap_or(1.0);
             if weight.is_nan() || weight < 0.0 {
                 return Err(GraphError::InvalidArgument(

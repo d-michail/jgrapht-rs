@@ -12,6 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
+use crate::graph::capability::IncidenceGraph;
 use super::base::{HamiltonianCycleAlgorithm, check_graph, singleton_tour, vertex_list_to_tour};
 use crate::Result;
 use crate::alg::cycle::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
@@ -74,7 +76,7 @@ impl ChristofidesThreeHalvesApproxMetricTSP {
     }
 }
 
-impl<G: Graph> HamiltonianCycleAlgorithm<G> for ChristofidesThreeHalvesApproxMetricTSP {
+impl<G: OutgoingGraph> HamiltonianCycleAlgorithm<G> for ChristofidesThreeHalvesApproxMetricTSP {
     /// Computes a $3/2$-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
         check_graph(graph)?;
@@ -93,7 +95,7 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for ChristofidesThreeHalvesApproxMet
 
         let mut odd_degree_vertices = Vec::new();
         for vertex in mst_and_matching.vertices() {
-            if mst_and_matching.degree_of(vertex)? % 2 == 1 {
+            if mst_and_matching.degree_of(vertex) % 2 == 1 {
                 odd_degree_vertices.push(vertex.clone());
             }
         }

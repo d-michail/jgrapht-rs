@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::graph::OutgoingGraph;
 use super::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -297,7 +298,7 @@ fn random_cyclic_graph(
 
 fn brute_force_walks<G>(graph: &G, source: i32, target: i32, max_length: usize) -> Vec<Vec<i32>>
 where
-    G: DirectedGraph<Vertex = i32>,
+    G: DirectedGraph<Vertex = i32> + OutgoingGraph,
 {
     fn visit<G>(
         graph: &G,
@@ -306,7 +307,7 @@ where
         stack: &mut Vec<i32>,
         walks: &mut Vec<Vec<i32>>,
     ) where
-        G: DirectedGraph<Vertex = i32>,
+        G: DirectedGraph<Vertex = i32> + OutgoingGraph,
     {
         let current = *stack.last().unwrap();
         if current == target {
@@ -333,7 +334,7 @@ fn brute_force_simple_paths<G>(
     max_length: usize,
 ) -> Vec<Vec<i32>>
 where
-    G: DirectedGraph<Vertex = i32>,
+    G: DirectedGraph<Vertex = i32> + OutgoingGraph,
 {
     fn visit<G>(
         graph: &G,
@@ -343,7 +344,7 @@ where
         visited: &mut HashSet<i32>,
         paths: &mut Vec<Vec<i32>>,
     ) where
-        G: DirectedGraph<Vertex = i32>,
+        G: DirectedGraph<Vertex = i32> + OutgoingGraph,
     {
         let current = *path.last().unwrap();
         if current == target {

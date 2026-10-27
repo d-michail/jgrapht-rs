@@ -403,7 +403,7 @@ mod chordal_graph_coloring_test {
 
     fn assert_is_coloring(g: &G, coloring: &Coloring<i32>) {
         for v in g.vertices() {
-            for e in g.edges_of(v).unwrap() {
+            for e in g.edges_of(v) {
                 let other = g.opposite_vertex(e, v).unwrap();
                 if v != other {
                     assert_ne!(coloring.colors[v], coloring.colors[other]);
@@ -498,7 +498,7 @@ mod chordal_graph_coloring_test {
 mod color_refinement_algorithm_test {
     use super::*;
 
-    fn colors(g: &impl Graph<Vertex = i32>) -> HashMap<i32, usize> {
+    fn colors(g: &impl IncidenceGraph<Vertex = i32>) -> HashMap<i32, usize> {
         ColorRefinementAlgorithm::new(g).coloring().unwrap().colors
     }
 

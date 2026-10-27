@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::graph::{IncidenceGraph, OutgoingGraph};
 use jgrapht::alg::shortestpath::{
     DijkstraShortestPath, FloydWarshallShortestPaths, ShortestPathAlgorithm,
 };
@@ -19,7 +20,7 @@ use jgrapht::generate::{GnmRandomGraphGenerator, GnpRandomGraphGenerator, GraphG
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use rand::{Rng, SeedableRng, rngs::StdRng};
 
-fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge>>(graph: &G, check_hops: bool) {
+fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph>(graph: &G, check_hops: bool) {
     let floyd_warshall = FloydWarshallShortestPaths::new(graph).unwrap();
     let dijkstra = DijkstraShortestPath::new(graph);
     for source in graph.vertices() {
@@ -219,7 +220,7 @@ fn pseudograph_test_loops() {
 
 fn random_pseudograph<G>(mut graph: G, seed: u64)
 where
-    G: Graph<Vertex = usize, Edge = DefaultEdge> + GraphMut,
+    G: Graph<Vertex = usize, Edge = DefaultEdge> + GraphMut + IncidenceGraph,
 {
     const N: usize = 50;
     const P: f64 = 0.85;

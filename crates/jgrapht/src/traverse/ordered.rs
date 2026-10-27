@@ -17,6 +17,7 @@
 //! Events: `vertex_traversed` fires when the next vertex is determined (`has_next`) and
 //! `vertex_finished` when it is handed out (`next`).
 
+use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use super::events::{TraversalListener, TraversalListeners};
 use crate::graph::{DirectedGraph, Graph, GraphExt, UndirectedGraph};
 use crate::util::java::JavaPriorityQueue;
@@ -36,7 +37,7 @@ pub struct Ordered<'g, G: Graph + 'g, A> {
     listeners: TraversalListeners<'g, G::Vertex, G::Edge>,
 }
 
-impl<'g, G: Graph + 'g, A: Advance<'g, G::Vertex>> Ordered<'g, G, A> {
+impl<'g, G: IncidenceGraph + 'g, A: Advance<'g, G::Vertex>> Ordered<'g, G, A> {
     fn wrap(adv: A) -> Self {
         Ordered {
             adv,
@@ -83,7 +84,7 @@ impl<'g, G: Graph + 'g, A: Advance<'g, G::Vertex>> Ordered<'g, G, A> {
     }
 }
 
-impl<'g, G: Graph + 'g, A: Advance<'g, G::Vertex>> Iterator for Ordered<'g, G, A> {
+impl<'g, G: IncidenceGraph + 'g, A: Advance<'g, G::Vertex>> Iterator for Ordered<'g, G, A> {
     type Item = &'g G::Vertex;
     fn next(&mut self) -> Option<&'g G::Vertex> {
         if !self.has_next() {
@@ -127,20 +128,20 @@ pub struct TopologicalAdvance<'g, G: Graph + 'g> {
     cyclic: bool,
 }
 
-impl<'g, G: Graph + 'g> TopologicalAdvance<'g, G> {
+impl<'g, G: IncidenceGraph + 'g> TopologicalAdvance<'g, G> {
     /// Set once the iterator got stuck on a cycle (JGraphT throws `NotDirectedAcyclicGraphException`).
     pub fn is_cyclic(&self) -> bool {
         self.cyclic
     }
 }
 
-impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for TopologicalAdvance<'g, G> {
+impl<'g, G: IncidenceGraph + 'g + OutgoingGraph> Advance<'g, G::Vertex> for TopologicalAdvance<'g, G> {
     fn advance(&mut self) -> Option<&'g G::Vertex> {
         let result = self.queue.poll();
         match result {
             Some(v) => {
                 let g = self.g;
-                for e in g.out_edges_of(v).unwrap() {
+                for e in g.out_edges_of(v) {
                     let Some(other) = g.opposite_vertex(e, v) else {
                         continue;
                     };
@@ -167,7 +168,7 @@ impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for TopologicalAdvance<'g, G> {
 /// and records whether traversal stopped on a cycle in its ordering state.
 pub type TopologicalOrderIterator<'g, G> = Ordered<'g, G, TopologicalAdvance<'g, G>>;
 
-impl<'g, G: DirectedGraph + 'g> TopologicalOrderIterator<'g, G> {
+impl<'g, G: DirectedGraph + 'g + IncomingGraph + OutgoingGraph + IncidenceGraph> TopologicalOrderIterator<'g, G> {
     pub fn new(g: &'g G) -> Result<Self> {
         Self::build(g, Queue::Fifo(VecDeque::new()))
     }
@@ -184,7 +185,7 @@ impl<'g, G: DirectedGraph + 'g> TopologicalOrderIterator<'g, G> {
         let mut in_degree = HashMap::new();
         for v in g.vertices() {
             let mut d = 0;
-            for e in g.in_edges_of(v)? {
+            for e in g.in_edges_of(v) {
                 if g.opposite_vertex(e, v) == Some(v) {
                     return Err(GraphError::CycleProhibited);
                 }
@@ -221,7 +222,7 @@ pub struct LexAdvance<'g, G: Graph + 'g> {
     bucket_of: HashMap<&'g G::Vertex, usize>,
 }
 
-impl<'g, G: Graph + 'g> LexAdvance<'g, G> {
+impl<'g, G: IncidenceGraph + 'g> LexAdvance<'g, G> {
     fn poll(&mut self) -> Option<&'g G::Vertex> {
         if self.bucket_of.is_empty() {
             return None;
@@ -281,12 +282,12 @@ impl<'g, G: Graph + 'g> LexAdvance<'g, G> {
     }
 }
 
-impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for LexAdvance<'g, G> {
+impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> Advance<'g, G::Vertex> for LexAdvance<'g, G> {
     fn advance(&mut self) -> Option<&'g G::Vertex> {
         let v = self.poll()?;
         let g = self.g;
         let mut unvisited: IndexSet<&'g G::Vertex> = IndexSet::new();
-        for e in g.edges_of(v).unwrap() {
+        for e in g.edges_of(v) {
             if let Some(o) = g.opposite_vertex(e, v) {
                 if self.bucket_of.contains_key(o) {
                     unvisited.insert(o);
@@ -301,7 +302,7 @@ impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for LexAdvance<'g, G> {
 /// Lexicographic breadth-first search of an undirected graph.
 pub type LexBreadthFirstIterator<'g, G> = Ordered<'g, G, LexAdvance<'g, G>>;
 
-impl<'g, G: UndirectedGraph + 'g> LexBreadthFirstIterator<'g, G> {
+impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> LexBreadthFirstIterator<'g, G> {
     pub fn new(g: &'g G) -> Self {
         let all: IndexSet<&'g G::Vertex> = g.vertices().collect();
         let bucket_of = all.iter().map(|v| (*v, 0)).collect();
@@ -330,7 +331,7 @@ pub struct MaxCardAdvance<'g, G: Graph + 'g> {
     cardinality: HashMap<&'g G::Vertex, usize>,
 }
 
-impl<'g, G: Graph + 'g> MaxCardAdvance<'g, G> {
+impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> MaxCardAdvance<'g, G> {
     fn remove_from_bucket(&mut self, v: &'g G::Vertex) -> Option<usize> {
         let c = self.cardinality.remove(v)?;
         let b = self.buckets[c].as_mut().expect("bucket exists");
@@ -347,7 +348,7 @@ impl<'g, G: Graph + 'g> MaxCardAdvance<'g, G> {
     fn update_neighbours(&mut self, v: &'g G::Vertex) {
         let g = self.g;
         let mut processed: HashSet<&'g G::Vertex> = HashSet::new();
-        for e in g.edges_of(v).unwrap() {
+        for e in g.edges_of(v) {
             let Some(o) = g.opposite_vertex(e, v) else {
                 continue;
             };
@@ -369,7 +370,7 @@ impl<'g, G: Graph + 'g> MaxCardAdvance<'g, G> {
     }
 }
 
-impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for MaxCardAdvance<'g, G> {
+impl<'g, G: IncidenceGraph + 'g> Advance<'g, G::Vertex> for MaxCardAdvance<'g, G> {
     fn advance(&mut self) -> Option<&'g G::Vertex> {
         if self.remaining == 0 {
             return None;
@@ -402,7 +403,7 @@ impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for MaxCardAdvance<'g, G> {
 /// already-visited neighbours.
 pub type MaximumCardinalityIterator<'g, G> = Ordered<'g, G, MaxCardAdvance<'g, G>>;
 
-impl<'g, G: UndirectedGraph + 'g> MaximumCardinalityIterator<'g, G> {
+impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> MaximumCardinalityIterator<'g, G> {
     pub fn new(g: &'g G) -> Self {
         let n = g.vertex_count();
         let mut buckets: Vec<Option<IndexSet<&'g G::Vertex>>> = vec![None; n];
@@ -430,7 +431,7 @@ pub struct DegeneracyAdvance<'g, G: Graph + 'g> {
     min_degree: usize,
 }
 
-impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for DegeneracyAdvance<'g, G> {
+impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> Advance<'g, G::Vertex> for DegeneracyAdvance<'g, G> {
     fn advance(&mut self) -> Option<&'g G::Vertex> {
         while self.min_degree < self.buckets.len() && self.buckets[self.min_degree].is_empty() {
             self.min_degree += 1;
@@ -443,7 +444,7 @@ impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for DegeneracyAdvance<'g, G> {
             .expect("non-empty bucket");
         self.degrees.shift_remove(v);
         let g = self.g;
-        for e in g.edges_of(v).unwrap() {
+        for e in g.edges_of(v) {
             let Some(u) = g.opposite_vertex(e, v) else {
                 continue;
             };
@@ -465,14 +466,13 @@ impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for DegeneracyAdvance<'g, G> {
 /// Repeatedly removes a vertex of minimum degree (self-loops ignored, parallel edges counted).
 pub type DegeneracyOrderingIterator<'g, G> = Ordered<'g, G, DegeneracyAdvance<'g, G>>;
 
-impl<'g, G: Graph + 'g> DegeneracyOrderingIterator<'g, G> {
+impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> DegeneracyOrderingIterator<'g, G> {
     pub fn new(g: &'g G) -> Self {
         let mut degrees: IndexMap<&'g G::Vertex, usize> = IndexMap::new();
         let (mut min_degree, mut max_degree) = (usize::MAX, 0);
         for v in g.vertices() {
             let d = g
                 .edges_of(v)
-                .unwrap()
                 .filter(|e| g.opposite_vertex(e, v) != Some(v))
                 .count();
             degrees.insert(v, d);

@@ -14,6 +14,7 @@
 
 //! Densest subgraph (density = edges / vertices, direction and multiplicity ignored).
 
+use crate::graph::OutgoingGraph;
 use super::flow::{MinimumSTCutAlgorithm, PushRelabelMFImpl};
 use super::util::Indexed;
 use crate::Result;
@@ -117,7 +118,7 @@ where
     densest: Option<HashSet<G::Vertex>>,
 }
 
-impl<'g, G: Graph> GoldbergMaximumDensitySubgraph<'g, G>
+impl<'g, G: OutgoingGraph> GoldbergMaximumDensitySubgraph<'g, G>
 where
     G::Vertex: 'static,
 {
@@ -238,7 +239,6 @@ where
     fn outgoing_weight(&self, v: &G::Vertex) -> f64 {
         self.graph
             .out_edges_of(v)
-            .unwrap()
             .map(|e| Self::weight_of(self.graph, e))
             .sum()
     }

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use crate::alg::util::FixedSizeIntegerQueue;
 use crate::error::Result;
@@ -62,7 +63,7 @@ struct State<'a, G: Graph> {
     queue: FixedSizeIntegerQueue,
 }
 
-impl<'g, G: Graph> HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G> {
+impl<'g, G: IncidenceGraph> HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G> {
     /// `partition1` and `partition2` are the two sides of the bipartition. Fails if the graph is
     /// not undirected.
     pub fn new(
@@ -136,7 +137,7 @@ impl<'a, G: Graph> State<'a, G> {
     }
 }
 
-impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge>
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     for HopcroftKarpMaximumCardinalityBipartiteMatching<'_, G>
 {
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {

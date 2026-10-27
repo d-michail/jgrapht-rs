@@ -15,6 +15,7 @@
 //! Traits and result types shared by several algorithms (JGraphT's `alg.interfaces`).
 //! More are added as the algorithm families that need them are ported.
 
+use crate::graph::OutgoingGraph;
 use super::color::Coloring;
 use super::cover::VertexCover;
 use crate::Result;
@@ -72,7 +73,7 @@ where
 ///
 /// Algorithms choosing `k` center vertices of a complete graph (`CentersLocationAlgorithm`).
 pub trait CentersLocationAlgorithm<V: Eq + Hash + Clone> {
-    fn centers<G: Graph<Vertex = V>>(&mut self, graph: &G, k: usize) -> Result<IndexSet<V>>;
+    fn centers<G: OutgoingGraph<Vertex = V>>(&mut self, graph: &G, k: usize) -> Result<IndexSet<V>>;
     /// Client to its closest center; an error before [`centers`](Self::centers) ran.
     fn assignment(&self) -> Result<&IndexMap<V, V>>;
     fn covering_radius(&self) -> Result<f64>;

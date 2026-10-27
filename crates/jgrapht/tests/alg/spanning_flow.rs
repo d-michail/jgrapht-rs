@@ -151,16 +151,6 @@ fn max_flow_algorithms() {
     );
 }
 
-#[test]
-fn flow_incidence_errors_are_returned() {
-    use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedWeightedGraph};
-
-    let graph = SparseIntDirectedWeightedGraph::<NoIncoming>::from_edges(2, &[(0, 1, 1.0)])
-    .unwrap();
-    let result = PushRelabelMFImpl::new(&graph).unwrap().maximum_flow(&0, &1);
-
-    assert!(matches!(result, Err(GraphError::Unsupported(_))));
-}
 
 #[test]
 fn flow_algorithms_agree_randomly() {
@@ -265,7 +255,6 @@ fn min_cost_flow_works() {
         .unwrap();
     assert_eq!(
         g.out_edges_of(&0)
-            .unwrap()
             .map(|edge| flow.flow(edge).unwrap())
             .sum::<f64>(),
         6.0

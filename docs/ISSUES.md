@@ -18,11 +18,11 @@ Review of 2026-10-27 on `master` (e8d4f07). Build and `cargo test --workspace` a
 
 ## API and robustness
 
-**I-6. Panics in library code.** About 950 `unwrap`/`expect`/`panic!` sites in `crates/jgrapht/src` (concentrated in `alg/matching/blossom/*`, about 270, then `clustering.rs` 33 and `connectivity.rs` 24) and 19 in `jgrapht-io`. Many are internal invariants of the Blossom V port, but public entry points still unwrap caller-reachable incidence errors, hide iterator failures or rely on stateful sentinels. The correction plan and acceptance criteria are R0-R9 in [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md).
+**I-6. Panics in library code.** About 950 `unwrap`/`expect`/`panic!` sites in `crates/jgrapht/src` (concentrated in `alg/matching/blossom/*`, about 270, then `clustering.rs` 33 and `connectivity.rs` 24) and 19 in `jgrapht-io`. Many are internal invariants of the Blossom V port, but public entry points still hide iterator failures or rely on stateful sentinels. Caller-reachable unwraps of incidence errors are gone (roadmap step 6: incidence is a compile-time capability). The correction plan and acceptance criteria are R0-R9 in [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md).
 
 **I-7. Public API is undocumented in `jgrapht`.** 729 public items lack docs (`-W missing_docs`); `jgrapht-io` already has `#![deny(missing_docs)]`. Enabling the lint crate-wide is the Phase 4 target.
 
-**I-8. API consistency not yet reviewed.** Phase 4 items still open: graph capability traits versus runtime `Unsupported`, `Result`/`Option` policy, fallible iterators, stateful result objects, numeric sentinels, `*_num` versus `*_count` naming, `#[non_exhaustive]` on public enums, and error type uniformity between `jgrapht::GraphError` and per-module errors. Tracked in detail by [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md).
+**I-8. API consistency not yet reviewed.** Phase 4 items still open: capability bounds are in place but many algorithms still ask for `IncidenceGraph` where a narrower trait would do, `Result`/`Option` policy, fallible iterators, stateful result objects, numeric sentinels, `*_num` versus `*_count` naming, `#[non_exhaustive]` on public enums, and error type uniformity between `jgrapht::GraphError` and per-module errors. Tracked in detail by [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md).
 
 **I-9. Sparse graphs borrow ids from an identity array** of `max(n, m)` elements because `Graph` returns references (documented in `STATUS.md`). Costs memory proportional to the larger of `n` and `m`; revisit if the `Graph` trait ever returns owned ids.
 

@@ -12,6 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
+use crate::graph::capability::IncidenceGraph;
 use crate::alg::connectivity::ConnectivityInspector;
 use crate::alg::shortestpath::{Dijkstra, ShortestPathAlgorithm};
 use crate::error::{GraphError, Result};
@@ -65,7 +67,7 @@ fn induced<'a, S: Graph<Vertex = usize, Edge = DefaultEdge>>(
     AsSubgraph::induced(g, set.iter().copied())
 }
 
-fn shortest_path<S: Graph<Vertex = usize, Edge = DefaultEdge>>(
+fn shortest_path<S: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph>(
     g: &S,
     a: usize,
     b: usize,
@@ -73,7 +75,7 @@ fn shortest_path<S: Graph<Vertex = usize, Edge = DefaultEdge>>(
     Dijkstra::new(g).path(&a, &b).ok().flatten()
 }
 
-fn shortest_path_in<S: Graph<Vertex = usize, Edge = DefaultEdge>>(
+fn shortest_path_in<S: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph>(
     g: &S,
     set: &VSet,
     a: usize,
@@ -83,7 +85,7 @@ fn shortest_path_in<S: Graph<Vertex = usize, Edge = DefaultEdge>>(
     shortest_path(&sub, a, b)
 }
 
-fn connected_sets<S: Graph<Vertex = usize>>(g: &S) -> Vec<VSet> {
+fn connected_sets<S: Graph<Vertex = usize> + IncidenceGraph>(g: &S) -> Vec<VSet> {
     ConnectivityInspector::new()
         .connected_sets(g)
         .into_iter()
@@ -184,17 +186,17 @@ impl Core {
         }
     }
 
-    fn bf_odd_hole_certificate<S: Graph<Vertex = usize, Edge = DefaultEdge>>(&mut self, g: &S) {
+    fn bf_odd_hole_certificate<S: Graph<Vertex = usize, Edge = DefaultEdge> + IncidenceGraph>(&mut self, g: &S) {
         let vertices: Vec<usize> = g.vertices().copied().collect();
         for &start in &vertices {
-            if g.degree_of(&start).unwrap() < 2 {
+            if g.degree_of(&start) < 2 {
                 continue;
             }
             let mut set: VSet = vertices.iter().copied().collect();
             for &neighbor_of_start in &vertices {
                 if neighbor_of_start == start
                     || !ce(g, start, neighbor_of_start)
-                    || g.degree_of(&neighbor_of_start).unwrap() != 2
+                    || g.degree_of(&neighbor_of_start) != 2
                 {
                     continue;
                 }
@@ -205,7 +207,7 @@ impl Core {
                         || neighbors_neighbor == neighbor_of_start
                         || !ce(g, neighbors_neighbor, neighbor_of_start)
                         || ce(g, neighbors_neighbor, start)
-                        || g.degree_of(&neighbors_neighbor).unwrap() < 2
+                        || g.degree_of(&neighbors_neighbor) < 2
                     {
                         continue;
                     }
@@ -423,7 +425,7 @@ impl Core {
         false
     }
 
-    fn find_all_components<S: Graph<Vertex = usize>>(g: &S, f: &VSet) -> Vec<VSet> {
+    fn find_all_components<S: Graph<Vertex = usize> + IncidenceGraph>(g: &S, f: &VSet) -> Vec<VSet> {
         connected_sets(&AsSubgraph::induced(g, f.iter().copied()))
     }
 
@@ -551,7 +553,7 @@ impl Core {
                         || subg.vertex_count() != set.len()
                         || subg.edge_count() != subg.vertex_count()
                         || subg.vertex_count() % 2 == 0
-                        || subg.vertices().any(|t| subg.degree_of(t).unwrap() != 2)
+                        || subg.vertices().any(|t| subg.degree_of(t) != 2)
                     {
                         continue;
                     }

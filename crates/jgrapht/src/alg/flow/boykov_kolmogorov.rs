@@ -12,10 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use super::DEFAULT_EPSILON;
 use super::base::{FlowNet, flow_algorithm_api};
 use crate::error::Result;
-use crate::graph::Graph;
 use std::collections::VecDeque;
 
 const FREE_NODE_TIMESTAMP: u64 = 0;
@@ -75,7 +76,7 @@ struct AdoptionParent {
 ///
 /// `BoykovKolmogorovMFImpl`: two search trees (from the source and from the sink) that are grown,
 /// augmented along and repaired, `O(V² E |C|)` in theory and fast on vision-style graphs.
-pub struct BoykovKolmogorovMFImpl<'g, G: Graph> {
+pub struct BoykovKolmogorovMFImpl<'g, G: IncidenceGraph> {
     net: FlowNet<'g, G>,
     data: Vec<VertexData>,
     current_timestamp: u64,
@@ -84,7 +85,7 @@ pub struct BoykovKolmogorovMFImpl<'g, G: Graph> {
     child_orphans: VecDeque<usize>,
 }
 
-impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
+impl<'g, G: OutgoingGraph + IncidenceGraph> BoykovKolmogorovMFImpl<'g, G> {
     /// Creates a new algorithm instance with the specified `network`. The created algorithm
     /// uses default epsilon.
     pub fn new(network: &'g G) -> Result<Self> {

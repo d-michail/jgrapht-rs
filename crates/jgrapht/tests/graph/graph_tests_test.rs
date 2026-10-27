@@ -29,7 +29,7 @@ fn get_graph(edges: &[(i32, i32)]) -> UGraph<i32> {
 }
 
 /// Generates into `g`, drawing fresh integer vertices from `counter` (like an integer supplier).
-fn generate_into<G: GraphMut<Vertex = i32>>(
+fn generate_into<G: GraphMut<Vertex = i32> + IncidenceGraph>(
     g: &mut G,
     gen_: &mut impl GraphGenerator,
     counter: &mut i32,

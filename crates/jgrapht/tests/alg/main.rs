@@ -18,6 +18,7 @@
 mod common;
 
 mod alg_clique_tests;
+mod capability_bounds_test;
 mod alg_clustering_tests;
 mod alg_color_tests;
 mod alg_connectivity_tests;
@@ -43,7 +44,6 @@ mod brown_data;
 mod matching_data;
 mod clustering_data;
 mod flow_data;
-mod incidence_errors;
 mod mincost_data;
 mod planar_data;
 mod vertex_cover_data;

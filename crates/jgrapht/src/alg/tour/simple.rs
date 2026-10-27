@@ -12,6 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
+use crate::graph::IncidenceGraph;
 use super::base::{
     HamiltonianCycleAlgorithm, check_graph, closed_vertex_list_to_tour, edge_set_to_tour,
     require_not_empty, singleton_tour, vertex_list_to_tour,
@@ -64,7 +66,7 @@ impl<R: RandomSource> RandomTourTSP<R> {
     }
 }
 
-impl<G: Graph, R: RandomSource> HamiltonianCycleAlgorithm<G> for RandomTourTSP<R> {
+impl<G: OutgoingGraph, R: RandomSource> HamiltonianCycleAlgorithm<G> for RandomTourTSP<R> {
     /// Computes a tour using the greedy heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -153,7 +155,7 @@ impl<V, R> NearestNeighborHeuristicTSP<V, R> {
     }
 }
 
-impl<G: Graph, R: RandomSource> HamiltonianCycleAlgorithm<G>
+impl<G: OutgoingGraph, R: RandomSource> HamiltonianCycleAlgorithm<G>
     for NearestNeighborHeuristicTSP<G::Vertex, R>
 {
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
@@ -226,7 +228,7 @@ impl TwoApproxMetricTSP {
     }
 }
 
-impl<G: Graph> HamiltonianCycleAlgorithm<G> for TwoApproxMetricTSP {
+impl<G: OutgoingGraph> HamiltonianCycleAlgorithm<G> for TwoApproxMetricTSP {
     /// Computes a 2-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -282,7 +284,7 @@ impl GreedyHeuristicTSP {
     }
 }
 
-impl<G: Graph> HamiltonianCycleAlgorithm<G> for GreedyHeuristicTSP {
+impl<G: OutgoingGraph + IncidenceGraph> HamiltonianCycleAlgorithm<G> for GreedyHeuristicTSP {
     /// Computes a tour using the greedy heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -531,7 +533,7 @@ pub(crate) fn reverse<T>(arr: &mut [T], from: isize, to: isize) {
     }
 }
 
-impl<G: Graph> HamiltonianCycleAlgorithm<G> for PalmerHamiltonianCycle {
+impl<G: IncidenceGraph> HamiltonianCycleAlgorithm<G> for PalmerHamiltonianCycle {
     /// Computes a Hamiltonian tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         if !has_ore_property(graph) {

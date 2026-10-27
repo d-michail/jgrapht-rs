@@ -14,6 +14,7 @@
 
 //! Index-based snapshot of a graph, used by algorithms that prefer dense arrays.
 
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use std::collections::HashMap;
 
@@ -28,10 +29,10 @@ pub use queue::FixedSizeIntegerQueue;
 pub use union_find::UnionFind;
 
 /// `VertexDegreeComparator.of(g)`: a comparison function ordering vertices by degree.
-pub fn vertex_degree_comparator<G: Graph>(
+pub fn vertex_degree_comparator<G: IncidenceGraph>(
     g: &G,
 ) -> impl Fn(&G::Vertex, &G::Vertex) -> std::cmp::Ordering + '_ {
-    move |a, b| g.degree_of(a).unwrap().cmp(&g.degree_of(b).unwrap())
+    move |a, b| g.degree_of(a).cmp(&g.degree_of(b))
 }
 
 pub struct Indexed<'g, G: Graph> {

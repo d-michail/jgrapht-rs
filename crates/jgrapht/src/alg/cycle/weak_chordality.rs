@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::java_int_hash_set::JavaIntHashSet;
 use crate::walk::GraphWalk;
@@ -112,7 +113,7 @@ pub struct WeakChordalityInspector<'g, G: Graph> {
     certificate: Option<GraphWalk<G::Vertex, G::Edge>>,
 }
 
-impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
+impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
     /// Creates a weak chordality inspector for the `graph`
     pub fn new(graph: &'g G) -> Self {
         let vertices: Vec<G::Vertex> = graph.vertices().cloned().collect();
@@ -127,7 +128,7 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         let mut neighbors = vec![Vec::new(); n];
         let mut adjacent = vec![HashSet::new(); n];
         for (i, v) in vertices.iter().enumerate() {
-            for e in graph.edges_of(v).unwrap() {
+            for e in graph.edges_of(v) {
                 let o = index[graph.opposite_vertex(e, v).expect("edge of the graph")];
                 neighbors[i].push(o);
                 adjacent[i].insert(o);

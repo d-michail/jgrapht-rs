@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::OutgoingGraph;
 use super::config::NetworkGeneratorConfig;
 use super::distributor::Distributor;
 use super::problems::{BipartiteMatchingProblem, MaximumFlowProblem, NetworkInfo};
@@ -101,7 +102,7 @@ where
     E: Clone + Eq + std::hash::Hash,
     R: RandomSource,
 {
-    pub fn generate_bipartite_matching_problem<G: GraphMut<Vertex = V, Edge = E>>(
+    pub fn generate_bipartite_matching_problem<G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph>(
         &mut self,
         graph: &mut G,
     ) -> Result<BipartiteMatchingProblem<V, E>> {
@@ -119,7 +120,7 @@ where
         })
     }
 
-    pub fn generate_max_flow_problem<G: GraphMut<Vertex = V, Edge = E>>(
+    pub fn generate_max_flow_problem<G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph>(
         &mut self,
         graph: &mut G,
     ) -> Result<MaximumFlowProblem<V, E>> {
@@ -140,7 +141,7 @@ where
         })
     }
 
-    pub fn generate_minimum_cost_flow_problem<'g, G: GraphMut<Vertex = V, Edge = E>>(
+    pub fn generate_minimum_cost_flow_problem<'g, G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph>(
         &mut self,
         graph: &'g mut G,
     ) -> Result<MinimumCostFlowProblemImpl<'g, G>>
@@ -159,7 +160,7 @@ where
         ))
     }
 
-    fn generate<G: GraphMut<Vertex = V, Edge = E>>(
+    fn generate<G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph>(
         &mut self,
         graph: &mut G,
     ) -> Result<RunResult<V, E>> {
@@ -202,7 +203,7 @@ struct Run<'a, G: Graph, R> {
     ub: [i64; 9],
 }
 
-impl<'a, G: GraphMut, R: RandomSource> Run<'a, G, R> {
+impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
     fn new(config: &'a NetworkGeneratorConfig, rng: &'a mut R, graph: &'a mut G) -> Result<Self> {
         let mut run = Run {
             config,
@@ -446,7 +447,7 @@ impl<'a, G: GraphMut, R: RandomSource> Run<'a, G, R> {
             possible -= 1;
         }
         let v = &self.nodes[node].vertex;
-        for arc in self.graph.out_edges_of(v)? {
+        for arc in self.graph.out_edges_of(v) {
             let head = self.graph.edge_target(arc).unwrap();
             if nodes.contains(&self.index[head]) {
                 possible -= 1;

@@ -19,6 +19,7 @@
 //! exceed the capacity; every subset hangs below the root as one or more subtrees. Hash sets and
 //! maps of the Java code are insertion-ordered here, which makes the heuristics deterministic.
 
+use crate::graph::IncidenceGraph;
 use super::connectivity::ConnectivityInspector;
 use super::spanning::prim;
 use super::util::Pair;
@@ -45,7 +46,7 @@ pub struct CapacitatedSpanningTree<V: Eq + Hash, E: Eq + Hash> {
 
 impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> CapacitatedSpanningTree<V, E> {
     /// Checks the tree against the problem data (`isCapacitatedSpanningTree`).
-    pub fn is_capacitated_spanning_tree<G: Graph<Vertex = V, Edge = E>>(
+    pub fn is_capacitated_spanning_tree<G: IncidenceGraph<Vertex = V, Edge = E>>(
         &self,
         graph: &G,
         root: &V,
@@ -101,7 +102,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> CapacitatedSpanningTree<V, E> {
             }
             current.insert(next.clone());
         }
-        root_edges_explored == tree.degree_of(root).unwrap()
+        root_edges_explored == tree.degree_of(root)
     }
 }
 
@@ -122,7 +123,7 @@ pub trait CapacitatedSpanningTreeAlgorithm<V: Eq + Hash, E: Eq + Hash> {
 }
 
 /// Problem data with the validation of `AbstractCapacitatedMinimumSpanningTree`.
-pub(crate) struct Problem<'g, G: Graph> {
+pub(crate) struct Problem<'g, G: IncidenceGraph> {
     pub graph: &'g G,
     pub root: G::Vertex,
     pub capacity: f64,
@@ -132,7 +133,7 @@ pub(crate) struct Problem<'g, G: Graph> {
     index: HashMap<G::Vertex, usize>,
 }
 
-impl<G: Graph> Clone for Problem<'_, G> {
+impl<G: IncidenceGraph> Clone for Problem<'_, G> {
     fn clone(&self) -> Self {
         Problem {
             graph: self.graph,
@@ -144,7 +145,7 @@ impl<G: Graph> Clone for Problem<'_, G> {
     }
 }
 
-impl<'g, G: Graph> Problem<'g, G> {
+impl<'g, G: IncidenceGraph> Problem<'g, G> {
     pub fn new(
         graph: &'g G,
         root: G::Vertex,
@@ -236,7 +237,7 @@ impl<V: Eq + Hash + Clone> Solution<V> {
         s
     }
 
-    pub fn calculate_resulting_spanning_tree<G: Graph<Vertex = V>>(
+    pub fn calculate_resulting_spanning_tree<G: IncidenceGraph<Vertex = V>>(
         &self,
         problem: &Problem<'_, G>,
     ) -> CapacitatedSpanningTree<V, G::Edge> {
@@ -257,7 +258,7 @@ impl<V: Eq + Hash + Clone> Solution<V> {
         }
     }
 
-    pub fn move_vertex<G: Graph<Vertex = V>>(
+    pub fn move_vertex<G: IncidenceGraph<Vertex = V>>(
         &mut self,
         problem: &Problem<'_, G>,
         vertex: &V,
@@ -277,7 +278,7 @@ impl<V: Eq + Hash + Clone> Solution<V> {
         new.second += d;
     }
 
-    pub fn move_vertices<G: Graph<Vertex = V>>(
+    pub fn move_vertices<G: IncidenceGraph<Vertex = V>>(
         &mut self,
         problem: &Problem<'_, G>,
         vertices: &IndexSet<V>,
@@ -302,7 +303,7 @@ impl<V: Eq + Hash + Clone> Solution<V> {
 
     /// Splits the vertices of `vertex_subset` (a subset of the partition set `label`) into one
     /// part per subtree below the root of their minimum spanning tree; returns the new labels.
-    pub fn partition_subtrees_of_subset<G: Graph<Vertex = V>>(
+    pub fn partition_subtrees_of_subset<G: IncidenceGraph<Vertex = V>>(
         &mut self,
         problem: &Problem<'_, G>,
         vertex_subset: &IndexSet<V>,
@@ -315,7 +316,7 @@ impl<V: Eq + Hash + Clone> Solution<V> {
         with_root.insert(problem.root.clone());
         let (tree_edges, _) = problem.mst_with_root(&with_root);
         let tree = AsSubgraph::with_edges(problem.graph, with_root.iter().cloned(), tree_edges);
-        let degree_of_root = tree.degree_of(&problem.root).unwrap();
+        let degree_of_root = tree.degree_of(&problem.root);
         if degree_of_root == 1 {
             return IndexSet::new();
         }
@@ -405,7 +406,7 @@ impl<V: Eq + Hash + Clone> Solution<V> {
 ///
 /// `number_of_operations` best moves are kept per round and one of them is picked at random;
 /// use [`with_seed`](Self::with_seed) for a reproducible run.
-pub struct EsauWilliamsCapacitatedMinimumSpanningTree<'g, G: Graph> {
+pub struct EsauWilliamsCapacitatedMinimumSpanningTree<'g, G: IncidenceGraph> {
     problem: Problem<'g, G>,
     number_of_operations: usize,
     best: Solution<G::Vertex>,
@@ -413,7 +414,7 @@ pub struct EsauWilliamsCapacitatedMinimumSpanningTree<'g, G: Graph> {
     rng: StdRng,
 }
 
-impl<'g, G: Graph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
+impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
     /// Constructs an Esau-Williams GRASP algorithm instance.
     pub fn new(
         graph: &'g G,
@@ -598,7 +599,7 @@ impl<'g, G: Graph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
     }
 }
 
-impl<'g, G: Graph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: IncidenceGraph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
     for EsauWilliamsCapacitatedMinimumSpanningTree<'g, G>
 {
     /// Computes a capacitated spanning tree.
@@ -692,7 +693,7 @@ impl Default for AhujaOrlinSharmaOptions {
 ///
 /// Local search with cyclic exchanges of vertices and subtrees between the parts of the
 /// partition, with optional tabu search (`AhujaOrlinSharmaCapacitatedMinimumSpanningTree`).
-pub struct AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G: Graph> {
+pub struct AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G: IncidenceGraph> {
     problem: Problem<'g, G>,
     length_bound: usize,
     options: AhujaOrlinSharmaOptions,
@@ -704,7 +705,7 @@ pub struct AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G: Graph> {
 type Subtrees<V> = HashMap<V, (IndexSet<V>, f64)>;
 type PartitionTrees<E> = HashMap<usize, SpanningTree<E>>;
 
-impl<'g, G: Graph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G> {
+impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G> {
     /// Starts from an Esau–Williams solution with default options.
     pub fn new(
         graph: &'g G,
@@ -1014,7 +1015,7 @@ impl<'g, G: Graph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G> {
     }
 }
 
-impl<'g, G: Graph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: IncidenceGraph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
     for AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G>
 {
     /// Computes a capacitated spanning tree.
@@ -1041,12 +1042,12 @@ struct ImprovementGraph<V: Eq + Hash + Clone> {
     path_exchange: IndexMap<Iv, i64>,
 }
 
-fn prim_of_set<G: Graph>(p: &Problem<'_, G>, set: &IndexSet<G::Vertex>) -> SpanningTree<G::Edge> {
+fn prim_of_set<G: IncidenceGraph>(p: &Problem<'_, G>, set: &IndexSet<G::Vertex>) -> SpanningTree<G::Edge> {
     prim(&AsSubgraph::induced(p.graph, set.iter().cloned()))
 }
 
 impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
-    fn new<G: Graph<Vertex = V>>(
+    fn new<G: IncidenceGraph<Vertex = V>>(
         p: &Problem<'_, G>,
         o: &AhujaOrlinSharmaOptions,
         solution: &Solution<V>,
@@ -1122,7 +1123,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn update<G: Graph<Vertex = V>>(
+    fn update<G: IncidenceGraph<Vertex = V>>(
         &mut self,
         p: &Problem<'_, G>,
         o: &AhujaOrlinSharmaOptions,
@@ -1241,7 +1242,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn update_origin_node_connections<G: Graph<Vertex = V>>(
+    fn update_origin_node_connections<G: IncidenceGraph<Vertex = V>>(
         &mut self,
         p: &Problem<'_, G>,
         o: &AhujaOrlinSharmaOptions,
@@ -1290,7 +1291,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
     }
 
     /// A tree of the modified part, with its largest subtree demand if it spans the set.
-    fn evaluate<G: Graph<Vertex = V>>(
+    fn evaluate<G: IncidenceGraph<Vertex = V>>(
         &self,
         p: &Problem<'_, G>,
         set: &IndexSet<V>,
@@ -1308,7 +1309,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn update_single_node<G: Graph<Vertex = V>>(
+    fn update_single_node<G: IncidenceGraph<Vertex = V>>(
         &mut self,
         p: &Problem<'_, G>,
         o: &AhujaOrlinSharmaOptions,
@@ -1356,7 +1357,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn update_subtree_node<G: Graph<Vertex = V>>(
+    fn update_subtree_node<G: IncidenceGraph<Vertex = V>>(
         &mut self,
         p: &Problem<'_, G>,
         o: &AhujaOrlinSharmaOptions,
@@ -1412,7 +1413,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
         self.update_edge(p, subtree, pseudo, cap, w - old_weight)
     }
 
-    fn update_edge<G: Graph<Vertex = V>>(
+    fn update_edge<G: IncidenceGraph<Vertex = V>>(
         &mut self,
         p: &Problem<'_, G>,
         a: Iv,
@@ -1430,7 +1431,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
 
     /// `calculateMaximumDemandOfSubtrees`: the largest demand below one root edge of the tree,
     /// cut short once it is clear that the capacity bound decides.
-    fn maximum_demand_of_subtrees<G: Graph<Vertex = V>>(
+    fn maximum_demand_of_subtrees<G: IncidenceGraph<Vertex = V>>(
         &self,
         p: &Problem<'_, G>,
         subset: &IndexSet<V>,
@@ -1439,7 +1440,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
     ) -> f64 {
         let st =
             AsSubgraph::with_edges(p.graph, subset.iter().cloned(), tree.edges.iter().cloned());
-        let degree_of_root = st.degree_of(&p.root).unwrap();
+        let degree_of_root = st.degree_of(&p.root);
         if degree_of_root == 1 {
             return total_demand;
         }

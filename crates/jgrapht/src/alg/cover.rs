@@ -14,6 +14,7 @@
 
 //! Vertex cover.
 
+use crate::graph::IncidenceGraph;
 use super::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
 use super::partition::two_color;
 use super::util::Indexed;
@@ -140,7 +141,7 @@ pub fn clarkson_vertex_cover<G: Graph>(
 }
 
 /// Exact minimum vertex cover of a bipartite graph (König's theorem).
-pub fn bipartite_vertex_cover<G: Graph>(g: &G) -> Result<VertexCover<G::Vertex>> {
+pub fn bipartite_vertex_cover<G: IncidenceGraph>(g: &G) -> Result<VertexCover<G::Vertex>> {
     let ix = Indexed::new(g);
     let side = two_color(&ix)
         .ok_or_else(|| GraphError::InvalidArgument("graph is not bipartite".into()))?;
@@ -229,7 +230,7 @@ fn weight_of<V: Eq + Hash>(weights: &HashMap<V, f64>, v: &V) -> Result<f64> {
 
 /// Shared engine of the greedy and Clarkson covers: repeatedly take the vertex of smallest
 /// weight / degree ratio (ties by creation order).
-fn ratio_cover<G: Graph>(
+fn ratio_cover<G: IncidenceGraph>(
     g: &G,
     weights: &HashMap<G::Vertex, f64>,
     clarkson: bool,
@@ -248,7 +249,7 @@ fn ratio_cover<G: Graph>(
     let mut ids: HashMap<&G::Vertex, usize> = HashMap::new();
     let mut rv: Vec<RatioVertex<G::Vertex>> = Vec::new();
     for v in g.vertices() {
-        if g.degree_of(v)? > 0 {
+        if g.degree_of(v) > 0 {
             ids.insert(v, rv.len());
             rv.push(RatioVertex {
                 v: v.clone(),
@@ -309,7 +310,7 @@ macro_rules! weighted_cover_class {
             weights: HashMap<G::Vertex, f64>,
         }
 
-        impl<'g, G: Graph> $name<'g, G> {
+        impl<'g, G: IncidenceGraph> $name<'g, G> {
             pub fn new(graph: &'g G) -> Result<Self> {
                 props::require_undirected(graph)?;
                 Ok($name { graph, weights: unit_weights(graph) })
@@ -339,19 +340,19 @@ weighted_cover_class!(
     RecursiveExactVcImpl
 );
 
-impl<G: Graph> VertexCoverAlgorithm<G::Vertex> for GreedyVcImpl<'_, G> {
+impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for GreedyVcImpl<'_, G> {
     fn vertex_cover(&self) -> Result<VertexCover<G::Vertex>> {
         ratio_cover(self.graph, &self.weights, false)
     }
 }
 
-impl<G: Graph> VertexCoverAlgorithm<G::Vertex> for ClarksonTwoApproxVcImpl<'_, G> {
+impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for ClarksonTwoApproxVcImpl<'_, G> {
     fn vertex_cover(&self) -> Result<VertexCover<G::Vertex>> {
         ratio_cover(self.graph, &self.weights, true)
     }
 }
 
-impl<G: Graph> VertexCoverAlgorithm<G::Vertex> for BarYehudaEvenTwoApproxVcImpl<'_, G> {
+impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for BarYehudaEvenTwoApproxVcImpl<'_, G> {
     fn vertex_cover(&self) -> Result<VertexCover<G::Vertex>> {
         let g = self.graph;
         let mut w: HashMap<G::Vertex, f64> = HashMap::new();
@@ -392,14 +393,14 @@ pub struct EdgeBasedTwoApproxVcImpl<'g, G: Graph> {
     graph: &'g G,
 }
 
-impl<'g, G: Graph> EdgeBasedTwoApproxVcImpl<'g, G> {
+impl<'g, G: IncidenceGraph> EdgeBasedTwoApproxVcImpl<'g, G> {
     pub fn new(graph: &'g G) -> Result<Self> {
         props::require_undirected(graph)?;
         Ok(EdgeBasedTwoApproxVcImpl { graph })
     }
 }
 
-impl<G: Graph> VertexCoverAlgorithm<G::Vertex> for EdgeBasedTwoApproxVcImpl<'_, G> {
+impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for EdgeBasedTwoApproxVcImpl<'_, G> {
     fn vertex_cover(&self) -> Result<VertexCover<G::Vertex>> {
         let g = self.graph;
         let mut removed: HashSet<G::Vertex> = HashSet::new();
@@ -535,7 +536,7 @@ impl<V> ExactState<'_, V> {
     }
 }
 
-impl<G: Graph> VertexCoverAlgorithm<G::Vertex> for RecursiveExactVcImpl<'_, G> {
+impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for RecursiveExactVcImpl<'_, G> {
     fn vertex_cover(&self) -> Result<VertexCover<G::Vertex>> {
         let g = self.graph;
         // (for unit weights the weighted sum equals the vertex count, so one code path suffices)
@@ -544,7 +545,7 @@ impl<G: Graph> VertexCoverAlgorithm<G::Vertex> for RecursiveExactVcImpl<'_, G> {
         let mut vertices: Vec<G::Vertex> = g.vertices().cloned().collect();
         let mut keyed: Vec<(f64, G::Vertex)> = Vec::new();
         for v in vertices.drain(..) {
-            let ratio = weight_of(&self.weights, &v)? / g.degree_of(&v)? as f64;
+            let ratio = weight_of(&self.weights, &v)? / g.degree_of(&v) as f64;
             keyed.push((ratio, v));
         }
         keyed.sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -555,7 +556,7 @@ impl<G: Graph> VertexCoverAlgorithm<G::Vertex> for RecursiveExactVcImpl<'_, G> {
             .iter()
             .map(|v| -> Result<Vec<usize>> {
                 let mut seen = indexmap::IndexSet::new();
-                for e in g.edges_of(v)? {
+                for e in g.edges_of(v) {
                     if let Some(w) = g.opposite_vertex(e, v) {
                         if w != v {
                             seen.insert(index[w]);
