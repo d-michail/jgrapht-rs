@@ -231,3 +231,53 @@ impl<T> ElementsSequenceGenerator<T> {
         Some(self.elements.swap_remove(index))
     }
 }
+
+/// A set usable as a hash key: equal sets hash equally whatever their iteration order.
+/// (JGraphT puts `Set<V>` into maps and sets all the time; Rust's `HashSet` is not `Hash`.)
+#[derive(Debug, Clone, Default)]
+pub struct HashableSet<T: Eq + std::hash::Hash>(pub std::collections::HashSet<T>);
+
+impl<T: Eq + std::hash::Hash> HashableSet<T> {
+    pub fn new() -> Self {
+        HashableSet(std::collections::HashSet::new())
+    }
+}
+
+impl<T: Eq + std::hash::Hash> std::ops::Deref for HashableSet<T> {
+    type Target = std::collections::HashSet<T>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl<T: Eq + std::hash::Hash> std::ops::DerefMut for HashableSet<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+impl<T: Eq + std::hash::Hash> PartialEq for HashableSet<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+impl<T: Eq + std::hash::Hash> Eq for HashableSet<T> {}
+impl<T: Eq + std::hash::Hash> std::hash::Hash for HashableSet<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let sum = self.0.iter().fold(0u64, |acc, t| {
+            let mut h = std::collections::hash_map::DefaultHasher::new();
+            t.hash(&mut h);
+            acc.wrapping_add(std::hash::Hasher::finish(&h))
+        });
+        state.write_u64(sum);
+        state.write_usize(self.0.len());
+    }
+}
+impl<T: Eq + std::hash::Hash> FromIterator<T> for HashableSet<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        HashableSet(iter.into_iter().collect())
+    }
+}
+impl<T: Eq + std::hash::Hash, const N: usize> From<[T; N]> for HashableSet<T> {
+    fn from(a: [T; N]) -> Self {
+        HashableSet(a.into_iter().collect())
+    }
+}

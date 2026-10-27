@@ -104,3 +104,16 @@ pub trait LinkPredictionAlgorithm<V: Clone> {
             .collect()
     }
 }
+
+/// Enumerates the maximal cliques of a graph (`MaximalCliqueEnumerationAlgorithm`).
+pub trait MaximalCliqueEnumerationAlgorithm<V: Eq + Hash + Clone> {
+    /// All maximal cliques (computed on first use); an error for graphs that are not simple.
+    fn cliques(&mut self) -> Result<&[HashSet<V>]>;
+
+    /// The cliques of maximum size.
+    fn maximum_cliques(&mut self) -> Result<Vec<&HashSet<V>>> {
+        let all = self.cliques()?;
+        let max = all.iter().map(HashSet::len).max().unwrap_or(0);
+        Ok(all.iter().filter(|c| c.len() == max).collect())
+    }
+}

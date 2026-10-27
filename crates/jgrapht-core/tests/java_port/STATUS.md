@@ -57,3 +57,4 @@ Note: `rheaps` 0.16.2 matches JHeaps' tie-breaking for insert/pop, decrease-key 
 | `alg/similarity/ZhangShashaTreeEditDistanceTest` | `alg_small_tests::zhang_shasha_tree_edit_distance_test` | done |
 | `alg/lca/*` (LCATreeTestBase x4 finders, NaiveLCAFinderTest) | `alg_lca_tests` | done (Tarjan reports a shared tree when queried, like Java) |
 | `alg/linkprediction/*` (10 files) | `alg_linkprediction_tests` | done (undefined indices are `GraphError::IndexNotWellDefined`; the Leicht–Holme–Newman bug is kept) |
+| `alg/clique/*` (7 files: BronKerbosch x3 via base test, all-variants, ChordalGraphMaxCliqueFinder, CliqueMinimalSeparatorDecomposition) | `alg_clique_tests` | done (`util::HashableSet` stands in for Java `Set<Set<V>>` keys; `fill_edges` are endpoint pairs) |

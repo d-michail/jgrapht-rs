@@ -5,6 +5,7 @@
     clippy::useless_vec
 )]
 
+mod alg_clique_tests;
 mod alg_decomposition_tests;
 mod alg_lca_tests;
 mod alg_linkprediction_tests;
