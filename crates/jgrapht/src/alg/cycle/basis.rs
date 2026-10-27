@@ -169,7 +169,7 @@ macro_rules! fundamental_basis {
                 Ok($name { graph })
             }
 
-            fn compute_spanning_forest(&self) -> HashMap<G::Vertex, Option<G::Edge>> {
+            fn compute_spanning_forest(&self) -> Result<HashMap<G::Vertex, Option<G::Edge>>> {
                 let graph = self.graph;
                 let mut pred: HashMap<G::Vertex, Option<G::Edge>> = HashMap::new();
                 let mut queue: VecDeque<G::Vertex> = VecDeque::new();
@@ -180,7 +180,7 @@ macro_rules! fundamental_basis {
                     pred.insert(s.clone(), None);
                     queue.$push(s.clone());
                     while let Some(v) = queue.$pop() {
-                        for e in graph.edges_of(&v).unwrap() {
+                        for e in graph.edges_of(&v)? {
                             let u = graph.opposite_vertex(e, &v).expect("edge of the graph");
                             if !pred.contains_key(u) {
                                 pred.insert(u.clone(), Some(e.clone()));
@@ -189,13 +189,13 @@ macro_rules! fundamental_basis {
                         }
                     }
                 }
-                pred
+                Ok(pred)
             }
         }
 
         impl<'g, G: Graph> CycleBasisAlgorithm<G::Edge> for $name<'g, G> {
             fn get_cycle_basis(&mut self) -> Result<CycleBasis<G::Edge>> {
-                let forest = self.compute_spanning_forest();
+                let forest = self.compute_spanning_forest()?;
                 Ok(fundamental_cycle_basis(self.graph, &forest))
             }
         }
@@ -254,7 +254,7 @@ impl<'g, G: Graph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, G> {
             used.insert(root.clone(), IndexMap::new());
             stack.push(root.clone());
             while let Some(current) = stack.pop() {
-                for e in graph.edges_of(&current).unwrap() {
+                for e in graph.edges_of(&current)? {
                     let neighbor = graph
                         .opposite_vertex(e, &current)
                         .expect("edge of the graph");

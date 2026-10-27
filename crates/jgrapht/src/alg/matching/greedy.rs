@@ -18,7 +18,7 @@ use crate::graph::{Graph, GraphExt, props};
 use crate::util::ToleranceDoubleComparator;
 use indexmap::IndexSet;
 use std::cmp::Ordering;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 fn ordering(c: i32) -> Ordering {
     c.cmp(&0)
@@ -47,9 +47,13 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumCardinalit
         let mut cost = 0.0;
         if self.sort {
             // sort edges in increasing order of the total degree of their endpoints
+            let degrees: HashMap<&G::Vertex, usize> = graph
+                .vertices()
+                .map(|v| Ok((v, graph.degree_of(v)?)))
+                .collect::<Result<_>>()?;
             let degree = |e: &G::Edge| {
                 let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
-                graph.degree_of(s).unwrap() + graph.degree_of(t).unwrap()
+                degrees[s] + degrees[t]
             };
             let mut all_edges: Vec<&G::Edge> = graph.edges().collect();
             all_edges.sort_by_key(|e| degree(e));
@@ -67,7 +71,7 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumCardinalit
                 if matched.contains(v) {
                     continue;
                 }
-                for e in graph.edges_of(v).unwrap() {
+                for e in graph.edges_of(v)? {
                     let w = graph.opposite_vertex(e, v).expect("incident edge");
                     if v != w && !matched.contains(w) {
                         edges.insert(e.clone());
@@ -112,9 +116,13 @@ impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeightedMatching<
         // sort edges in non-increasing order of weight
         let mut all_edges: Vec<&G::Edge> = graph.edges().collect();
         if self.normalize_edge_costs {
+            let degrees: HashMap<&G::Vertex, usize> = graph
+                .vertices()
+                .map(|v| Ok((v, graph.degree_of(v)?)))
+                .collect::<Result<_>>()?;
             let degree = |e: &G::Edge| {
                 let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
-                (graph.degree_of(s).unwrap() + graph.degree_of(t).unwrap()) as f64
+                (degrees[s] + degrees[t]) as f64
             };
             all_edges.sort_by(|e1, e2| {
                 ordering(

@@ -538,7 +538,7 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
         while let Some(v) = queue.pop_front() {
             stack.push(v.clone());
             let v_distance = dist[&v];
-            for e in g.out_edges_of(&v).unwrap() {
+            for e in g.out_edges_of(&v)? {
                 let w = g.opposite_vertex(e, &v).unwrap();
                 if *w == v {
                     continue;
@@ -573,7 +573,7 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
         while let Some((OrderedF64(v_distance), v)) = heap.pop() {
             final_dist.insert(v.clone(), v_distance);
             stack.push(v.clone());
-            for e in g.out_edges_of(&v).unwrap() {
+            for e in g.out_edges_of(&v)? {
                 let w = g.opposite_vertex(e, &v).unwrap();
                 if *w == v {
                     continue;
@@ -854,19 +854,21 @@ fn invalid(msg: &str) -> GraphError {
 }
 
 /// Weighted incoming neighbours of every vertex as indices, in the graph's iteration order.
-fn incoming_lists<G: Graph>(g: &G, vs: &[&G::Vertex]) -> Vec<Vec<(usize, f64)>> {
+fn incoming_lists<G: Graph>(
+    g: &G,
+    vs: &[&G::Vertex],
+) -> Result<Vec<Vec<(usize, f64)>>, GraphError> {
     let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
     vs.iter()
         .map(|v| {
-            g.in_edges_of(v)
-                .unwrap()
+            Ok(g.in_edges_of(v)?
                 .map(|e| {
                     (
                         idx[g.opposite_vertex(e, v).unwrap()],
                         g.edge_weight(e).unwrap_or(1.0),
                     )
                 })
-                .collect()
+                .collect())
         })
         .collect()
 }
@@ -894,7 +896,7 @@ impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
         }
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
-        let incoming = incoming_lists(g, &vs);
+        let incoming = incoming_lists(g, &vs)?;
         let mut scores = vec![(1.0 / n as f64).sqrt(); n];
         let mut next = vec![0.0; n];
         let mut l2_norm = tolerance;
@@ -972,7 +974,7 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
         }
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
-        let incoming = incoming_lists(g, &vs);
+        let incoming = incoming_lists(g, &vs)?;
         let exo: Vec<f64> = vs.iter().map(|v| exogenous_factor(v)).collect();
         let mut scores = exo.clone();
         let mut next = vec![0.0; n];
@@ -1032,8 +1034,11 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
         let weighted = g.graph_type().weighted;
-        let out_degree: Vec<usize> = vs.iter().map(|v| g.out_degree_of(v).unwrap()).collect();
-        let incoming = incoming_lists(g, &vs);
+        let out_degree: Vec<usize> = vs
+            .iter()
+            .map(|v| g.out_degree_of(v))
+            .collect::<Result<_, _>>()?;
+        let incoming = incoming_lists(g, &vs)?;
         let mut weight_sum = vec![0.0; n];
         if weighted {
             for list in &incoming {
@@ -1112,17 +1117,16 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
         let out: Vec<Vec<(usize, f64)>> = vs
             .iter()
             .map(|v| {
-                g.out_edges_of(v)
-                    .unwrap()
+                Ok(g.out_edges_of(v)?
                     .map(|e| {
                         (
                             idx[g.opposite_vertex(e, v).unwrap()],
                             g.edge_weight(e).unwrap_or(1.0),
                         )
                     })
-                    .collect()
+                    .collect())
             })
-            .collect();
+            .collect::<Result<_, GraphError>>()?;
         let weighted = g.graph_type().weighted;
         let mut scores = vec![0.0; n];
         for s in 0..n {
@@ -1346,17 +1350,16 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
         let out: Vec<Vec<(usize, f64)>> = vs
             .iter()
             .map(|v| {
-                g.out_edges_of(v)
-                    .unwrap()
+                Ok(g.out_edges_of(v)?
                     .map(|e| {
                         (
                             idx[g.opposite_vertex(e, v).unwrap()],
                             g.edge_weight(e).unwrap_or(1.0),
                         )
                     })
-                    .collect()
+                    .collect())
             })
-            .collect();
+            .collect::<Result<_, GraphError>>()?;
         let weighted = g.graph_type().weighted;
         let zero = ap_integer(0, precision);
         let one = ap_integer(1, precision);

@@ -74,10 +74,10 @@ impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
         &self,
         x: &G::Vertex,
         visible_vertex: &IndexSet<G::Vertex>,
-    ) -> Option<(G::Edge, f64, G::Vertex)> {
+    ) -> Result<Option<(G::Edge, f64, G::Vertex)>> {
         let graph = self.graph;
         let mut best: Option<(G::Edge, f64, G::Vertex)> = None;
-        for e in graph.edges_of(x).unwrap() {
+        for e in graph.edges_of(x)? {
             let other = graph.opposite_vertex(e, x).expect("incident edge");
             if visible_vertex.contains(other) && other != x {
                 let cur_weight = graph.edge_weight(e).unwrap_or(1.0);
@@ -90,7 +90,7 @@ impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
                 }
             }
         }
-        best
+        Ok(best)
     }
 
     /// The algorithm (no heuristics).
@@ -104,7 +104,7 @@ impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
             // grow path from x
             let mut x = Some(first);
             while let Some(cur) = x {
-                let best = self.heaviest_visible_edge(&cur, &visible_vertex);
+                let best = self.heaviest_visible_edge(&cur, &visible_vertex)?;
                 // add it to either m1 or m2, alternating between them
                 if let Some((edge, weight, _)) = &best {
                     match i {
@@ -152,7 +152,7 @@ impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
             let mut path: Vec<G::Edge> = Vec::new();
             let mut x = Some(first);
             while let Some(cur) = x {
-                let best = self.heaviest_visible_edge(&cur, &visible_vertex);
+                let best = self.heaviest_visible_edge(&cur, &visible_vertex)?;
                 // add edge to path and remove x
                 if let Some((edge, _, _)) = &best {
                     path.push(edge.clone());

@@ -108,7 +108,7 @@ impl<'g, G: Graph> MaximumWeightBipartiteMatching<'g, G> {
     /// Relaxes all edges out of `a1`.
     fn relax_edges_out_of(&mut self, a1: &G::Vertex, reached_b: &mut Vec<G::Vertex>) -> Result<()> {
         let graph = self.graph;
-        for e1 in graph.edges_of(a1).unwrap() {
+        for e1 in graph.edges_of(a1)? {
             if !self.matching.contains(e1) {
                 let b1 = graph.opposite_vertex(e1, a1).expect("incident edge");
                 let db1 = &(&(&self.dist[a1] + self.pot(a1)) + self.pot(b1)) - &self.weight(e1)?;
@@ -256,7 +256,7 @@ impl<'g, G: Graph> MaximumWeightBipartiteMatching<'g, G> {
         for v in &partition1 {
             let mut max_edge: Option<&G::Edge> = None;
             let mut max_weight = zero();
-            for e in graph.edges_of(v).unwrap() {
+            for e in graph.edges_of(v)? {
                 let w = self.weight(e)?;
                 if w > max_weight {
                     max_weight = w;
