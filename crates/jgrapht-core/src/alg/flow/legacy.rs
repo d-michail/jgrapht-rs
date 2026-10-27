@@ -3,7 +3,7 @@
 //! Edge weights are capacities. In undirected graphs each edge carries capacity in both
 //! directions and the reported flow of an edge is signed relative to (source -> target).
 
-use super::util::Indexed;
+use crate::alg::util::Indexed;
 use crate::graph::{DirectedGraph, Graph};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, VecDeque};

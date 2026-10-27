@@ -1,0 +1,217 @@
+use super::base::MinimumSTCutAlgorithm;
+use super::{DEFAULT_EPSILON, GusfieldGomoryHuCutTree, PushRelabelMFImpl};
+use crate::alg::connectivity::ConnectivityInspector;
+use crate::error::{GraphError, Result};
+use crate::graph::props::require_undirected;
+use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, UGraph};
+use indexmap::IndexSet;
+use std::collections::VecDeque;
+
+/// `PadbergRaoOddMinimumCutset`: a minimum weight cut that separates the given "odd" vertices into
+/// two odd-sized sets, read off a Gomory–Hu tree. Edge weights must be non-negative.
+pub struct PadbergRaoOddMinimumCutset<'g, G: Graph> {
+    network: &'g G,
+    odd_vertices: IndexSet<G::Vertex>,
+    gusfield: GusfieldGomoryHuCutTree<'g, G>,
+    gomory_hu_tree: Option<UGraph<G::Vertex>>,
+    minimum_cut_weight: f64,
+    source_partition_minimum_cut: Option<IndexSet<G::Vertex>>,
+}
+
+impl<'g, G: Graph + 'g> PadbergRaoOddMinimumCutset<'g, G> {
+    pub fn new(network: &'g G) -> Result<Self> {
+        Self::with_epsilon(network, DEFAULT_EPSILON)
+    }
+
+    pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
+        Self::with_algorithm(
+            network,
+            Box::new(PushRelabelMFImpl::with_epsilon(network, epsilon)?),
+        )
+    }
+
+    /// Uses `minimum_st_cut_algorithm` for the cut computations.
+    pub fn with_algorithm(
+        network: &'g G,
+        minimum_st_cut_algorithm: Box<dyn MinimumSTCutAlgorithm<G::Vertex, G::Edge> + 'g>,
+    ) -> Result<Self> {
+        require_undirected(network)?;
+        Ok(PadbergRaoOddMinimumCutset {
+            network,
+            odd_vertices: IndexSet::new(),
+            gusfield: GusfieldGomoryHuCutTree::with_algorithm(network, minimum_st_cut_algorithm)?,
+            gomory_hu_tree: None,
+            minimum_cut_weight: f64::MAX,
+            source_partition_minimum_cut: None,
+        })
+    }
+
+    /// Computes the minimum odd cut-set for `odd_vertices` (an even number of vertices of the
+    /// network); `use_tree_compression` splits the odd vertices into clusters instead of
+    /// scanning every tree edge.
+    pub fn calculate_min_cut(
+        &mut self,
+        odd_vertices: IndexSet<G::Vertex>,
+        use_tree_compression: bool,
+    ) -> Result<f64> {
+        self.minimum_cut_weight = f64::MAX;
+        if odd_vertices.len() % 2 == 1 {
+            return Err(GraphError::InvalidArgument(
+                "There needs to be an even number of odd vertices".into(),
+            ));
+        }
+        debug_assert!(odd_vertices.iter().all(|v| self.network.contains_vertex(v)));
+        self.odd_vertices = odd_vertices;
+        self.gomory_hu_tree = Some(self.gusfield.gomory_hu_tree()?);
+        if use_tree_compression {
+            self.calculate_min_cut_with_tree_compression()
+        } else {
+            Ok(self.calculate_min_cut_without_tree_compression())
+        }
+    }
+
+    fn calculate_min_cut_without_tree_compression(&mut self) -> f64 {
+        let tree = self.gomory_hu_tree.as_mut().unwrap();
+        let edges: Vec<DefaultEdge> = tree.edges().cloned().collect();
+        for edge in edges {
+            let (source, target) = {
+                let (u, v) = tree.edge_endpoints(&edge).unwrap();
+                (u.clone(), v.clone())
+            };
+            let edge_weight = tree.edge_weight(&edge).unwrap();
+            if edge_weight >= self.minimum_cut_weight {
+                continue;
+            }
+            tree.remove_edge(&edge); // temporarily
+            let component = ConnectivityInspector::new()
+                .connected_set_of(&*tree, &source)
+                .expect("endpoint of a tree edge");
+            let source_partition: IndexSet<G::Vertex> = tree
+                .vertices()
+                .filter(|v| component.contains(*v))
+                .cloned()
+                .collect();
+            if Self::is_odd_vertex_set(&source_partition, &self.odd_vertices) {
+                self.minimum_cut_weight = edge_weight;
+                self.source_partition_minimum_cut = Some(source_partition);
+            }
+            tree.add_edge_with(&source, &target, edge)
+                .expect("placing the edge back");
+            tree.set_edge_weight(&edge, edge_weight)
+                .expect("weighted tree");
+        }
+        self.minimum_cut_weight
+    }
+
+    fn calculate_min_cut_with_tree_compression(&mut self) -> Result<f64> {
+        let mut queue: VecDeque<IndexSet<G::Vertex>> = VecDeque::new();
+        queue.push_back(self.odd_vertices.clone());
+        while let Some(next_cluster) = queue.pop_front() {
+            self.split_cluster(&next_cluster, &mut queue)?;
+        }
+        Ok(self.minimum_cut_weight)
+    }
+
+    fn split_cluster(
+        &mut self,
+        cluster: &IndexSet<G::Vertex>,
+        queue: &mut VecDeque<IndexSet<G::Vertex>>,
+    ) -> Result<()> {
+        debug_assert!(cluster.len() >= 2);
+        let odd_node1 = &cluster[0];
+        let odd_node2 = &cluster[1];
+        let cut_weight = self.gusfield.calculate_min_cut(odd_node1, odd_node2)?;
+        let mut source_partition: Option<IndexSet<G::Vertex>> = None;
+        if cut_weight < self.minimum_cut_weight {
+            let partition = self.gusfield.source_partition().clone();
+            if Self::is_odd_vertex_set(&partition, &self.odd_vertices) {
+                self.minimum_cut_weight = cut_weight;
+                self.source_partition_minimum_cut = Some(partition.clone());
+            }
+            source_partition = Some(partition);
+        }
+        if cluster.len() == 2 {
+            return Ok(());
+        }
+        let source_partition = match source_partition {
+            Some(p) => p,
+            None => self.gusfield.source_partition().clone(),
+        };
+        let split1 = Self::intersection(cluster, &source_partition);
+        let split2: IndexSet<G::Vertex> = cluster
+            .iter()
+            .filter(|v| !split1.contains(*v))
+            .cloned()
+            .collect();
+        if split1.len() > 1 {
+            queue.push_back(split1);
+        }
+        if split2.len() > 1 {
+            queue.push_back(split2);
+        }
+        Ok(())
+    }
+
+    fn intersection(set1: &IndexSet<G::Vertex>, set2: &IndexSet<G::Vertex>) -> IndexSet<G::Vertex> {
+        let (a, b) = if set1.len() <= set2.len() {
+            (set1, set2)
+        } else {
+            (set2, set1)
+        };
+        a.iter().filter(|v| b.contains(*v)).cloned().collect()
+    }
+
+    /// Whether `vertices` contains an odd number of the `odd_vertices`.
+    pub fn is_odd_vertex_set(
+        vertices: &IndexSet<G::Vertex>,
+        odd_vertices: &IndexSet<G::Vertex>,
+    ) -> bool {
+        if vertices.len() < odd_vertices.len() {
+            vertices
+                .iter()
+                .filter(|v| odd_vertices.contains(*v))
+                .count()
+                % 2
+                == 1
+        } else {
+            odd_vertices
+                .iter()
+                .filter(|v| vertices.contains(*v))
+                .count()
+                % 2
+                == 1
+        }
+    }
+
+    /// The source side of the last minimum odd cut-set.
+    pub fn source_partition(&self) -> Option<&IndexSet<G::Vertex>> {
+        self.source_partition_minimum_cut.as_ref()
+    }
+
+    /// The sink side of the last minimum odd cut-set.
+    pub fn sink_partition(&self) -> Option<IndexSet<G::Vertex>> {
+        let source = self.source_partition_minimum_cut.as_ref()?;
+        Some(
+            self.network
+                .vertices()
+                .filter(|v| !source.contains(*v))
+                .cloned()
+                .collect(),
+        )
+    }
+
+    /// The edges of the last minimum odd cut-set.
+    pub fn cut_edges(&self) -> Option<IndexSet<G::Edge>> {
+        let source = self.source_partition_minimum_cut.as_ref()?;
+        let g = self.network;
+        Some(
+            g.edges()
+                .filter(|e| {
+                    let (u, v) = g.edge_endpoints(e).unwrap();
+                    source.contains(u) ^ source.contains(v)
+                })
+                .cloned()
+                .collect(),
+        )
+    }
+}
