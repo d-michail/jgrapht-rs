@@ -9,7 +9,7 @@ Status on 2026-10-27. Source of truth for what is ported: `crates/jgrapht/tests/
 | core `graph/`, views, events, `traverse/`, `util/`, `generate/` (incl. netgen) | ported, tests ported (about 400 tests passing, `tests/{alg,graph,generate,traverse,util}`) | done |
 | core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1f (isomorphism, flow, tour, cycle done; 1458 ported tests pass in `tests/{alg,graph,generate,traverse,util}`); 1g (matching) and 1i (shortest paths) still functional. See `FIDELITY_ROADMAP.md` for deviations from Java |
 | `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | all planned format modules started; 285 Rust integration tests pass, with full Java test-parity expansion still in progress |
-| `jgrapht::graph::{sparse,map}` | 22 files (about 2.5k loc), 4 test files | sparse (CSR) graphs done in `graph/sparse/`; map-based (`fastutil`) backends not started (Phase 3b) |
+| `jgrapht::graph::{sparse,map}` | 22 files (about 2.5k loc), 4 test files | sparse (CSR) graphs done in `graph/sparse/`; the `fastutil` map graphs need no separate type (`BaseGraph` is that graph, tests covered) (Phase 3b done) |
 | other modules (ext, guava, unimi-dsi, osm, demo) | see "Out of scope" | no |
 
 The existing `alg/` is a *functional* port: one function per family (`maximal_cliques`, `simple_cycles`, `nearest_neighbor_tour`, ...). The Java test suite exercises the individual *classes* (every Bron–Kerbosch variant, every simple-cycle algorithm, every TSP heuristic, ...) and often depends on their exact tie-breaking. Porting the tests therefore means growing the algorithm layer class by class, and checking the results against Java.
@@ -108,7 +108,7 @@ These are graph storage implementations, not a separate integration boundary. Po
 
 - README: Java-to-Rust mapping table, per-package status, how to run the Java-port suite.
 - API pass: naming consistency (`*_num` vs `*_count`), error types, `#[non_exhaustive]` on public enums, docs for every public item (`#![warn(missing_docs)]`), doc examples.
-- `benches/` (criterion) for the Java `perf/` tests (15), compared with the Java numbers.
+- `benches/` (criterion) for the Java `perf/` tests (15), compared with the Java numbers. Started in `crates/jgrapht/benches/`: `graph_perf` (`GraphPerformanceTest`) and `shortestpath_perf` (`DijkstraShortestPathPerformanceTest` plus the `BaseGraph` vs sparse Dijkstra/BFS comparison from Phase 3b); the remaining perf tests are still to port.
 - CI (fmt, clippy, tests on stable and MSRV, nightly doc build) and publishing `jgrapht`/`jgrapht-io` to crates.io once the user is ready.
 - Re-run the heap differential test against each `rheaps` release.
 

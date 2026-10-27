@@ -11,14 +11,14 @@ Heap-based algorithms (Dijkstra, A\*, Prim, Johnson, ...) use the priority queue
 > Status: early. The API is not stable and the crate is not yet published.
 >
 > Major incomplete areas: maximum-weight matching for large general graphs (Blossom V), full
-> Java-fidelity coverage for the shortest-path speedups, graph I/O, and specialized sparse/map
-> graph backends.
+> Java-fidelity coverage for the shortest-path speedups and graph I/O. CSR sparse graphs are in
+> `jgrapht::graph::sparse`.
 
 ## Crates
 
 - `jgrapht` contains graph traits, mutable and immutable graph implementations, algorithms,
-  traversal and generators. Planned CSR sparse graphs and specialized map backends also belong
-  here because they are graph storage choices rather than optional integrations.
+  traversal and generators. The CSR sparse graphs (`graph::sparse`) also live here because they are graph storage
+  choices rather than optional integrations.
 - `jgrapht-io` is the companion import/export crate. All supported formats live in this one crate
   as modules, keeping parser dependencies out of `jgrapht` without creating a crate per format.
 

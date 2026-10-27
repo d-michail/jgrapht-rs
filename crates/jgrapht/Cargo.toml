@@ -13,3 +13,14 @@ thiserror = "2"
 rand = "0.9"
 dashu-float = "0.6.2"
 dashu-int = "0.6.2"
+
+[dev-dependencies]
+criterion = { version = "0.5", default-features = false }
+
+[[bench]]
+name = "graph_perf"
+harness = false
+
+[[bench]]
+name = "shortestpath_perf"
+harness = false
