@@ -221,6 +221,7 @@ impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
         })
     }
 
+    /// Prepares the data structures
     fn init(&mut self) {
         let graph = self.graph;
         self.vertices = graph.vertices().cloned().collect();
@@ -253,6 +254,7 @@ impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
         self.w_ancestors.clear();
     }
 
+    /// Calculates an initial feasible matching.
     fn warm_start(&mut self) -> Result<()> {
         let graph = self.graph;
         if let Some(initializer) = self.initializer.as_mut() {
@@ -319,6 +321,8 @@ impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
         false
     }
 
+    /// Creates a new blossom using bridge $(v,w)$. The blossom is an odd cycle. Nodes $v$ and $w$
+    /// are both even vertices.
     fn blossom(&mut self, v: usize, w: usize) {
         let base = self.nearest_common_ancestor(v, w);
         self.blossom_supports(v, w, base);
@@ -330,6 +334,12 @@ impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
         self.levels.set_even(fb, even);
     }
 
+    /// This method creates one side of the blossom: the path from vertex $v$ to the base of the
+    /// blossom. The vertices encountered on this path are grouped together (union). The odd vertices
+    /// are added to the processing queue (odd vertices in a blossom become even) and a pointer to
+    /// the bridge $(v,w)$ is stored for each odd vertex. Notice the orientation of the bridge: the
+    /// first vertex of the bridge returned by bridge.get(x) is always on the same side of the
+    /// blossom as $x$.
     fn blossom_supports(&mut self, v: usize, w: usize, base: usize) {
         let bridge = (v, w);
         let mut v = self.find(v);
@@ -345,6 +355,8 @@ impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
         }
     }
 
+    /// Computes the base of the blossom formed by bridge edge $(v,w)$. The base vertex is the
+    /// nearest common ancestor of $v$ and $w$.
     fn nearest_common_ancestor(&mut self, mut v: usize, mut w: usize) -> usize {
         self.v_ancestors.clear();
         let fv = self.find(v);
@@ -365,6 +377,8 @@ impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
         }
     }
 
+    /// Compute the nearest even ancestor of even node $v$. If $v$ is the root of a tree, then this
+    /// method returns $v$ itself.
     fn parent(&mut self, v: usize) -> usize {
         let v = self.find(v); // even vertex
         let even = self.levels.get_even(v);
@@ -387,6 +401,8 @@ impl<'g, G: Graph + 'g> DenseEdmondsMaximumCardinalityMatching<'g, G> {
         self.path = path;
     }
 
+    /// Builds the path backwards from the specified start vertex to the end vertex. If the path
+    /// reaches a blossom then the path through the blossom is lifted to the original graph.
     fn build_path(
         &self,
         path: &mut [usize],

@@ -118,6 +118,7 @@ impl<'g, G: Graph + 'g> GusfieldEquivalentFlowTree<'g, G> {
         })
     }
 
+    /// Runs the algorithm
     fn calculate_equivalent_flow_tree(&mut self) -> Result<()> {
         let n = self.n;
         let mut flow_matrix = vec![vec![0.0; n]; n];
@@ -289,6 +290,7 @@ impl<'g, G: Graph + 'g> GusfieldGomoryHuCutTree<'g, G> {
         })
     }
 
+    /// Runs the algorithm
     fn calculate_gomory_hu_tree(&mut self) -> Result<()> {
         let n = self.n;
         let mut flow_matrix = vec![vec![0.0; n]; n];
@@ -365,6 +367,8 @@ impl<'g, G: Graph + 'g> GusfieldGomoryHuCutTree<'g, G> {
         Ok(weight)
     }
 
+    /// BFS method to find the edges in the shortest path from a source to a target vertex in a tree
+    /// graph.
     fn find_path_between(
         &self,
         tree: &UGraph<G::Vertex>,

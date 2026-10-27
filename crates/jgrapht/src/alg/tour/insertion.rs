@@ -79,6 +79,7 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
         }
     }
 
+    /// Get or create a sub-tour to start augmenting
     fn subtour(&self, graph: &G) -> Result<Vec<G::Vertex>> {
         let mut subtour_vertices = Vec::new();
         if let Some(subtour) = &self.subtour {
@@ -139,6 +140,7 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
         }
     }
 
+    /// Update the Map storing closest unvisited vertex for each tour vertex
     fn update_closest(
         current_closest: &mut IndexMap<G::Vertex, Closest<G::Vertex>>,
         chosen: &Closest<G::Vertex>,
@@ -165,6 +167,7 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
         );
     }
 
+    /// Augment an existing tour to give a complete tour
     fn augment(&self, mut subtour: Vec<G::Vertex>, graph: &G) -> Vec<G::Vertex> {
         let mut unvisited: IndexSet<G::Vertex> = graph
             .vertices()
@@ -217,6 +220,7 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
 }
 
 impl<G: Graph> HamiltonianCycleAlgorithm<G> for NearestInsertionHeuristicTSP<G> {
+    /// Computes a tour using the nearest insertion heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {
@@ -284,6 +288,7 @@ impl<G: Graph> FarthestInsertionHeuristicTSP<G> {
 }
 
 impl<G: Graph> HamiltonianCycleAlgorithm<G> for FarthestInsertionHeuristicTSP<G> {
+    /// Computes a tour using the farthest insertion heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {

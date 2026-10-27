@@ -164,6 +164,8 @@ impl<'g, G: Graph> KolmogorovWeightedMatching<'g, G> {
 }
 
 impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for KolmogorovWeightedMatching<'_, G> {
+    /// Computes and returns a matching of maximum or minimum weight in the `initialGraph`
+    /// depending on the goal of the algorithm.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         self.compute()?;
         Ok(self.matching.clone().expect("computed matching"))

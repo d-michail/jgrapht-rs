@@ -106,6 +106,10 @@ impl<'g, G: Graph + 'g> PadbergRaoOddMinimumCutset<'g, G> {
         }
     }
 
+    /// Modified implementation of the algorithm proposed in Odd Minimum Cut-sets and b-matchings by
+    /// Padberg and Rao. The optimal cut is directly computed on the Gomory-Hu tree computed for
+    /// graph $G$. This approach iterates efficiently over all possible cuts of the graph (there are
+    /// $|V|$ such cuts).
     fn calculate_min_cut_without_tree_compression(&mut self) -> f64 {
         let tree = self.gomory_hu_tree.as_mut().unwrap();
         let edges: Vec<DefaultEdge> = tree.edges().cloned().collect();
@@ -139,6 +143,8 @@ impl<'g, G: Graph + 'g> PadbergRaoOddMinimumCutset<'g, G> {
         self.minimum_cut_weight
     }
 
+    /// Implementation of the algorithm proposed in Odd Minimum Cut-sets and b-matchings by Padberg
+    /// and Rao. The algorithm evaluates at most $|T|$ cuts in the Gomory-Hu tree.
     fn calculate_min_cut_with_tree_compression(&mut self) -> Result<f64> {
         let mut queue: VecDeque<IndexSet<G::Vertex>> = VecDeque::new();
         queue.push_back(self.odd_vertices.clone());
@@ -148,6 +154,8 @@ impl<'g, G: Graph + 'g> PadbergRaoOddMinimumCutset<'g, G> {
         Ok(self.minimum_cut_weight)
     }
 
+    /// Takes a set of odd vertices with cardinality $2$ or more, and splits them into $2$ new
+    /// non-empty sets.
     fn split_cluster(
         &mut self,
         cluster: &IndexSet<G::Vertex>,
@@ -188,6 +196,7 @@ impl<'g, G: Graph + 'g> PadbergRaoOddMinimumCutset<'g, G> {
         Ok(())
     }
 
+    /// Efficient way to compute the intersection between two sets
     fn intersection(set1: &IndexSet<G::Vertex>, set2: &IndexSet<G::Vertex>) -> IndexSet<G::Vertex> {
         let (a, b) = if set1.len() <= set2.len() {
             (set1, set2)

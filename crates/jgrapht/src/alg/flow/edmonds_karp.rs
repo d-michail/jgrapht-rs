@@ -109,6 +109,10 @@ impl<'g, G: Graph> EdmondsKarpMFImpl<'g, G> {
         Ok(self.net.max_flow_value)
     }
 
+    /// Method which finds a path from source to sink the in the residual graph. Note that this
+    /// method tries to find multiple paths at once. Once a single path has been discovered, no new
+    /// nodes are added to the queue, but nodes which are already in the queue are fully explored. As
+    /// such there's a chance that multiple paths are discovered.
     fn breadth_first_search(&mut self) {
         let n = self.net.vs.len();
         self.visited = vec![false; n];
@@ -144,6 +148,8 @@ impl<'g, G: Graph> EdmondsKarpMFImpl<'g, G> {
         }
     }
 
+    /// For all paths which end in the sink. trace them back to the source and push flow through
+    /// them.
     fn augment_flow(&mut self) -> f64 {
         let mut flow_increase = 0.0;
         let mut seen = HashSet::new();

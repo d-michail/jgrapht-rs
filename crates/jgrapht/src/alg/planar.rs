@@ -375,6 +375,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         e
     }
 
+    /// Creates a new node by converting the `graphVertex` to the internal node representation.
     fn create_new_node(
         &mut self,
         vertex_map: &mut HashMap<G::Vertex, NodeId>,
@@ -411,6 +412,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
 
     // ----- DFS orientation ----------------------------------------------------------------------
 
+    /// Orients the input graph according to its dfs traversal by creating a dfs tree. Computes the
+    /// least ancestors and lowpoints of the nodes
     fn orient_dfs(
         &mut self,
         vertex_map: &mut HashMap<G::Vertex, NodeId>,
@@ -487,6 +490,9 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         current_dfs_index
     }
 
+    /// Iteratively start an orienting dfs from every `graph` vertex that hasn't been visited
+    /// yet. After orienting the graph, sorts the nodes by their lowpoints and adds them to the
+    /// `separatedDfsChildList`
     fn orient(&mut self) {
         let mut visited: HashMap<G::Vertex, NodeId> = HashMap::new();
         let mut index = 0;
@@ -566,16 +572,19 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Checks whether this node has a neighbor, which is a root of a biconnected component
     fn has_root_neighbor(&self, x: NodeId) -> bool {
         let o = self.arena[x].outer;
         self.is_root(o[0]) || self.is_root(o[1])
     }
 
+    /// Returns a neighbor of this node which is not equal to the `prev`
     fn next_on_outer_face(&self, x: NodeId, prev: NodeId) -> NodeId {
         let o = self.arena[x].outer;
         if o[0] == prev { o[1] } else { o[0] }
     }
 
+    /// Substitutes the neighbor `node` with a `newNeighbor`
     fn substitute(&mut self, x: NodeId, node: NodeId, new_neighbor: NodeId) {
         let o = &mut self.arena[x].outer;
         if o[0] == node {
@@ -585,6 +594,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Substitutes a neighbor of this node, which is not equal to the `node`, with the
+    /// `newNeighbor`
     fn substitute_another(&mut self, x: NodeId, node: NodeId, new_neighbor: NodeId) {
         let o = &mut self.arena[x].outer;
         if o[0] == node {
@@ -594,6 +605,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Returns a circulator, that moves in the direction `direction`. The next node along
+    /// the traversal will be `this.outerFaceNeighbor[direction]`.
     fn iterator(&self, x: NodeId, dir: usize) -> Circ {
         Circ {
             current: self.arena[x].outer[dir],
@@ -675,6 +688,12 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Merges the embedded edges of the child component root into this node's embedded edges.
+    /// Note, that the edges in the `edges` list are always in the clockwise order. There
+    /// are 3 parameters which determine how the `edges` list is merged: the `vIn`
+    /// direction, the `vOut` direction and the orientation of the edges around this node
+    /// (clockwise or counterclockwise). The edges in the `edges` list should have the same
+    /// orientation. If this list is inverted, the sign of the `parentEdge` is set to $-1$.
     fn merge_child_edges(
         &mut self,
         x: NodeId,
@@ -716,6 +735,10 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
             .splice(&mut self.arena[x].embedded, &mut edges, !action_append);
     }
 
+    /// Merges the last two biconnected components using the info stored on top of the stack. The key
+    /// goal of this method is to merge the outer faces of the two components and to merge the
+    /// embedded edges of the child component root with the embedded edges of the component parent
+    /// node.
     fn merge_biconnected_component(&mut self) {
         let info = self.stack.pop().unwrap();
         let virtual_root = info.child;
@@ -743,6 +766,9 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         self.arena[virtual_root].outer = [NIL, NIL];
     }
 
+    /// Embeds the back edge `edge` into the list of embedded edges of the source and the
+    /// virtual target of the edge such that the `childPrev` belongs to the new inner face.
+    /// This method also takes care of modifying the boundary of the outer face accordingly
     fn embed_back_edge(
         &mut self,
         root: NodeId,
@@ -769,6 +795,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Embeds a short-circuit edge from the `componentRoot` to the current node of the
+    /// `circulator`. Changes the outer face accordingly
     fn embed_short_circuit(&mut self, component_root: NodeId, entry_dir: usize, circ: &Circ) {
         let current = self.circ_current(circ);
         let prev = self.circ_prev(circ);
@@ -787,6 +815,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         self.substitute(current, prev, component_root);
     }
 
+    /// Either finds and returns a circulator to the node on the boundary of the component, which
+    /// satisfies the `predicate` or returns a circulator to the `stop` node.
     fn select_on_outer_face(
         &self,
         pred: &dyn Fn(&Self, NodeId) -> bool,
@@ -823,6 +853,9 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
 
     // ----- the planarity test -------------------------------------------------------------------
 
+    /// The walkup procedure from the original paper. Identifies the pertinent subgraph of the graph
+    /// by going up the dfs tree from the `start` node to the `end` node using the edge
+    /// `edge`
     fn walk_up(&mut self, start: NodeId, end: NodeId, edge: EdgeId) {
         let visited = self.arena[end].dfs_index;
         self.arena[start].back_edge_flag = visited;
@@ -876,6 +909,12 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// The walkdown procedure from the original paper. Either embeds all of the back edges in the
+    /// subtree rooted at the child of the `componentRoot` or identifies the back edges which
+    /// can be used to extract a Kuratowski subdivision. Iteratively traverses the tree of the
+    /// biconnected component and descends only to the pertinent components. This procedure is also
+    /// responsible for embedding short-circuit edges to make the algorithm run in linear time in the
+    /// worst case.
     fn walk_down(&mut self, component_root: NodeId) {
         let mut entry_dir = 0;
         while entry_dir < 2 && self.stack.is_empty() {
@@ -950,6 +989,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Lazily tests the planarity of the graph. The implementation below is close to the code
+    /// presented in the original paper
     fn lazy_test_planarity(&mut self) -> bool {
         if !self.tested {
             self.tested = true;
@@ -980,6 +1021,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
 
     // ----- the embedding ------------------------------------------------------------------------
 
+    /// Recursively cleans up the dfs tree rooted at the `dfsTreeRoot` my removing all the
+    /// short-circuit edges and properly orienting other embedded edges
     fn clean_up_dfs(&mut self, dfs_tree_root: NodeId) {
         let mut stack = vec![(dfs_tree_root, 1i32)];
         while let Some((current, sign)) = stack.pop() {
@@ -1003,6 +1046,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
             .retain(&mut self.arena[x].embedded, |e| !edges[e].short_circuit);
     }
 
+    /// Lazily computes a combinatorial embedding of the `graph` by removing all the
+    /// short-circuit edges and properly orienting the edges around the nodes.
     fn lazy_compute_embedding(&mut self) {
         if self.embedding.is_some() {
             return;
@@ -1044,12 +1089,15 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Adds the edges on the path from the `startEdge` up to the node `stop` to the set
+    /// `edges`
     fn add_path_edges(&self, edges: &mut EdgeSet, start: NodeId, stop: NodeId) {
         if start != stop {
             self.add_path_edges_from_edge(edges, self.arena[start].parent_edge, stop);
         }
     }
 
+    /// Searches a back edge which target has a height smaller than `heightMax`
     fn search_edge(
         &self,
         current: NodeId,
@@ -1078,6 +1126,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         })
     }
 
+    /// Recursively searches all the subtree root at the node `start` to find an edge
+    /// satisfying the `predicate`.
     fn search_subtree_dfs(
         &self,
         start: NodeId,
@@ -1097,6 +1147,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         None
     }
 
+    /// Returns the highest of the two input node, i.e. the node with the greater height
     fn highest(&self, a: NodeId, b: NodeId) -> NodeId {
         if self.arena[a].height > self.arena[b].height {
             a
@@ -1105,6 +1156,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Returns the lowest of the two input node, i.e. the node with the least height.
     fn lowest(&self, a: NodeId, b: NodeId) -> NodeId {
         if self.arena[a].height < self.arena[b].height {
             a
@@ -1113,6 +1165,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Iteratively sets a boundary height for the nodes on the outer face branch ending at the node
+    /// `w`.
     fn set_boundary_depth(&mut self, component_root: NodeId, w: NodeId, dir: usize, delta: i32) {
         let mut c = self.iterator(component_root, dir);
         let mut current = self.circ_next(&mut c);
@@ -1124,6 +1178,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Clears the visited variable of all the nodes and component roots
     fn clear_visited(&mut self) {
         for &n in &self.nodes {
             self.arena[n].visited = 0;
@@ -1133,6 +1188,11 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Generically searches a path from the `current` node to the first node satisfying the
+    /// `isFinish` predicate consisting of all the nodes satisfying the `canGo`
+    /// predicate. The key property of this method is that it searches the next edge on the path in
+    /// the clockwise order starting from the previous edge. The edges of the resulting path are
+    /// added to the `edges`.
     fn find_path_dfs(
         &mut self,
         start: NodeId,
@@ -1182,6 +1242,11 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         false
     }
 
+    /// Finds the highest obstructing path in the component rooted at `componentRoot`. See the
+    /// original paper for the definition of the obstructing path. This method heavily relies on the
+    /// fact that the method
+    /// `find_path_dfs`
+    /// chooses the edges in the clockwise order.
     fn find_highest_obstructing_path(&mut self, component_root: NodeId, w: NodeId) -> Vec<EdgeId> {
         self.clear_visited();
         let mut result = Vec::new();
@@ -1197,6 +1262,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         result
     }
 
+    /// Finishes the Kuratowski subdivision extraction by constructing the desired subgraph
     fn finish(&mut self, subdivision: &EdgeSet) {
         let mut edge_subset = Vec::new();
         let mut vertex_subset: HashSet<G::Vertex> = HashSet::new();
@@ -1214,6 +1280,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         self.kuratowski = Some((vertex_subset.into_iter().collect(), edge_subset));
     }
 
+    /// Adds the edges on the outer face of the component rooted at `componentRoot` to the set
+    /// `edges`
     fn add_boundary_edges(&mut self, edges: &mut EdgeSet, component_root: NodeId) {
         let mut c = self.iterator(component_root, 0);
         loop {
@@ -1229,6 +1297,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Cleans up the dfs trees before the Kuratowski subdivision extraction phase
     fn kuratowski_clean_up(&mut self) {
         for r in self.dfs_tree_roots.clone() {
             self.clean_up_dfs(r);
@@ -1241,6 +1310,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Orient the connections on the outer face of the component rooted at `componentRoot`
+    /// such that they are ordered
     fn fix_boundary_order(&mut self, component_root: NodeId) {
         if self.arena[component_root].embedded.size < 2 {
             return;
@@ -1272,6 +1343,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Removes the edges from the outer face from the `start` node to the `end` node in
+    /// the direction `dir` from the set `edges`
     fn remove_up(&self, start: NodeId, end: NodeId, dir: usize, edges: &mut EdgeSet) {
         if start == end {
             return;
@@ -1301,6 +1374,9 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         prev
     }
 
+    /// Finds a path from some intermediate nodes on the path represented by the list `path` to
+    /// the node `v`. The path to `v` certainly doesn't exist if the list `path`
+    /// has size 1, because we're looking for a path from some intermediate node
     fn find_path_to_v(&mut self, path: &[EdgeId], v: NodeId) -> Vec<EdgeId> {
         self.clear_visited();
         let mut i = 0;
@@ -1322,10 +1398,15 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         result
     }
 
+    /// Checks whether the first node `a` is strictly higher than nodes `b` and `c`
     fn first_strictly_higher(&self, a: NodeId, b: NodeId, c: NodeId) -> bool {
         self.arena[a].height > self.arena[b].height && self.arena[a].height > self.arena[c].height
     }
 
+    /// Checks whether the biconnected component rooted at `componentRoot` can be used to
+    /// extract a Kuratowski subdivision. It can be used in the case there is one externally active
+    /// node on each branch of the outer face and there is a pertinent node on the lower part of the
+    /// outer face between these two externally active nodes.
     fn check_component_for_failed_edge(&self, component_root: NodeId, v: NodeId) -> Option<EdgeId> {
         let mut first_dir = self.externally_active_successor(component_root, component_root, v, 0);
         let first_dir_node = self.circ_current(&first_dir);
@@ -1345,6 +1426,17 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         None
     }
 
+    /// Finds an unembedded back edge to `v`, which can be used to extract the Kuratowski
+    /// subdivision. If the merge stack isn't empty, the last biconnected component processed by the
+    /// walkdown can be used to find such an edge, because walkdown descended to that component
+    /// (which means that component is pertinent) and couldn't reach a pertinent node. This can only
+    /// happen by encountering externally active nodes on both branches of the traversal. Otherwise,
+    /// be have look in all the child biconnected components to find an unembedded back edge. We're
+    /// guided by the fact that an edge can not be embedded only in the case both traversals of the
+    /// walkdown could reach all off the pertinent nodes. This in turn can happen only if both
+    /// traversals get stuck on externally active nodes.
+    ///
+    /// **Note:** not every unembedded back edge can be used to extract a Kuratowski subdivision
     fn find_failed_edge(&self, v: NodeId) -> Option<EdgeId> {
         if self.stack.is_empty() {
             for child in self.separated_vec(v) {

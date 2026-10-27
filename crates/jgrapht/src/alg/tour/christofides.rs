@@ -74,6 +74,7 @@ impl ChristofidesThreeHalvesApproxMetricTSP {
         Self
     }
 }
+    /// Computes a $3/2$-approximate tour.
 
 impl<G: Graph> HamiltonianCycleAlgorithm<G> for ChristofidesThreeHalvesApproxMetricTSP {
     fn get_tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {

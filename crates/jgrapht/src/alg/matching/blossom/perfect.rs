@@ -394,6 +394,8 @@ impl<'g, G: Graph> KolmogorovWeightedPerfectMatching<'g, G> {
         Ok(())
     }
 
+    /// Sets the currentEdge and currentDirection variables for all trees adjacent to the
+    /// `tree`
     fn set_current_edges_and_try_to_augment(state: &mut BlossomVState<'_, G>, tree: TreeId) {
         for (tree_edge, direction) in state.arena.tree_edges(tree) {
             let opposite =
@@ -415,6 +417,22 @@ impl<'g, G: Graph> KolmogorovWeightedPerfectMatching<'g, G> {
         }
     }
 
+    /// Finishes the algorithm after all nodes are matched. The main problem it solves is that the
+    /// matching after the end of primal and dual operations may not be valid in the contracted
+    /// blossoms.
+    ///
+    /// Property: if a matching is changed in the parent blossom, the matching in all lower blossoms
+    /// can become invalid. Therefore, we traverse all nodes, find an unmatched node (it is
+    /// necessarily contracted), go up to the first blossom whose matching hasn't been fixed (we set
+    /// blossomGrandparent references to point to the previous nodes on the path). Then we start to
+    /// change the matching accordingly all the way down to the initial node.
+    ///
+    /// Let's call an edge that is matched to a blossom root a "blossom edge". To make the matching
+    /// valid we move the blossom edge one layer down at a time so that in the end its endpoints are
+    /// valid initial nodes of the graph. After this transformation we can't traverse the
+    /// blossomSibling references any more. That is why we initially compute a mapping of every
+    /// pseudonode to the set of nodes that are contracted in it. This map is needed to construct a
+    /// dual solution after the matching in the graph becomes valid.
     fn finish(state: &mut BlossomVState<'_, G>, graph: &G) -> Result<Matching<G::Vertex, G::Edge>> {
         let mut processed = Vec::new();
         for node in 0..state.node_num {
@@ -532,6 +550,7 @@ impl<'g, G: Graph> KolmogorovWeightedPerfectMatching<'g, G> {
         error
     }
 
+    /// Computes the sum of all duals from `start` inclusive to `end` inclusive
     fn total_dual(state: &BlossomVState<'_, G>, start: NodeId, end: NodeId) -> f64 {
         let mut result = 0.0;
         let mut current = start;
@@ -580,6 +599,8 @@ impl<'g, G: Graph> KolmogorovWeightedPerfectMatching<'g, G> {
 }
 
 impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for KolmogorovWeightedPerfectMatching<'_, G> {
+    /// Computes and returns a weighted perfect matching in the `graph`. See the class
+    /// description for the relative definitions and algorithm description.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         self.compute()?;
         Ok(self.matching.clone().expect("computed matching"))

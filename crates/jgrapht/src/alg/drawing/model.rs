@@ -31,6 +31,7 @@ pub struct Point2D {
 }
 
 impl Point2D {
+    /// Create a new point
     pub fn of(x: f64, y: f64) -> Self {
         Point2D { x, y }
     }
@@ -284,6 +285,7 @@ impl<V, M: LayoutModel2D<V>> ListenableLayoutModel2D<V, M> {
         self.listeners.push((self.next_id, Box::new(listener)));
         self.next_id
     }
+    /// Remove a listener.
     pub fn remove_listener(&mut self, id: usize) -> bool {
         let before = self.listeners.len();
         self.listeners.retain(|(i, _)| *i != id);

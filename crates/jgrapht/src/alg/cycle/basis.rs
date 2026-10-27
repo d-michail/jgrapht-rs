@@ -255,6 +255,8 @@ impl<'g, G: Graph> PatonCycleBase<'g, G> {
 }
 
 impl<'g, G: Graph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, G> {
+    /// Return an undirected cycle basis of a graph. Works only for undirected graphs which do not
+    /// have multiple (parallel) edges.
     fn get_cycle_basis(&mut self) -> Result<CycleBasis<G::Edge>> {
         let graph = self.graph;
         if has_multiple_edges(graph) {

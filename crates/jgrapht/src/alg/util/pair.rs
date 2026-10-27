@@ -26,6 +26,7 @@ pub struct Pair<A, B> {
 }
 
 impl<A, B> Pair<A, B> {
+    /// Create a new pair.
     pub fn of(first: A, second: B) -> Self {
         Pair { first, second }
     }
@@ -66,6 +67,7 @@ pub struct Triple<A, B, C> {
 }
 
 impl<A, B, C> Triple<A, B, C> {
+    /// Create a new triple.
     pub fn of(first: A, second: B, third: C) -> Self {
         Triple {
             first,
@@ -93,6 +95,8 @@ pub struct UnorderedPair<T> {
 }
 
 impl<T> UnorderedPair<T> {
+    /// Creates new unordered pair of elements pulling of the necessity to provide corresponding
+    /// types of the elements supplied.
     pub fn of(first: T, second: T) -> Self {
         UnorderedPair { first, second }
     }

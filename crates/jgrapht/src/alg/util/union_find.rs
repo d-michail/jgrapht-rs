@@ -51,6 +51,7 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
         uf
     }
 
+    /// Adds a new element to the data structure in its own set.
     pub fn add_element(&mut self, element: T) -> Result<()> {
         if self.contains(&element) {
             return Err(GraphError::InvalidArgument(
@@ -63,6 +64,7 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
         Ok(())
     }
 
+    /// Returns true if the given value is an element in this UnionFind data structure.
     pub fn contains(&self, element: &T) -> bool {
         self.parent.contains_key(element)
     }
@@ -92,6 +94,9 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
         Ok(root)
     }
 
+    /// Merges the sets which contain element1 and element2. No guarantees are given as to which
+    /// element becomes the representative of the resulting (merged) set: this can be either
+    /// find(element1) or find(element2).
     pub fn union(&mut self, element1: &T, element2: &T) -> Result<()> {
         if !self.contains(element1) || !self.contains(element2) {
             return Err(GraphError::InvalidArgument(
@@ -116,10 +121,13 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
         Ok(())
     }
 
+    /// Tests whether two elements are contained in the same set.
     pub fn in_same_set(&mut self, element1: &T, element2: &T) -> Result<bool> {
         Ok(self.find(element1)? == self.find(element2)?)
     }
 
+    /// Returns the number of sets. Initially, all items are in their own set. The smallest number of
+    /// sets equals one.
     pub fn number_of_sets(&self) -> usize {
         self.count
     }

@@ -1213,6 +1213,20 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
             .collect())
     }
 
+    /// Performs the Berge Recognition Algorithm.
+    ///
+    /// First this algorithm is used to test whether $G$ or its complement contain a jewel, a pyramid
+    /// or a configuration of type 1, 2 or 3. If so, it is output that $G$ is not Berge. If not, then
+    /// every shortest odd hole in $G$ is amenable. This asserted, the near-cleaner subsets of $V(G)$
+    /// are determined. For each of them in turn it is checked, if this subset is a near-cleaner and,
+    /// thus, if there is an odd hole. If an odd hole is found, this checker will output that $G$ is
+    /// not Berge. If no odd hole is found, all near-cleaners for the complement graph are determined
+    /// and it will be proceeded as before. If again no odd hole is detected, $G$ is Berge.
+    ///
+    /// A certificate can be obtained through the `BergeGraphInspector#getCertificate` method,
+    /// if `computeCertificate` is `true`.
+    ///
+    /// Running this method takes $O(|V|^9)$, and computing the certificate takes $O(|V|^5)$.
     pub fn is_berge<G: Graph<Vertex = V, Edge = E>>(&mut self, g: &G) -> Result<bool> {
         self.is_berge_with_certificate(g, false)
     }

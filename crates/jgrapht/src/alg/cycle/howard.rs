@@ -107,6 +107,9 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
         })
     }
 
+    /// Computes policy graph for `component` and stores result in `policyGraph` and
+    /// `vertexDistance`. For every vertex in the policy graph an edge with the minimum weight
+    /// is retained in the policy graph.
     fn construct_policy_graph<C: Graph<Vertex = G::Vertex, Edge = G::Edge>>(
         &mut self,
         component: &C,
@@ -139,6 +142,15 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
             .clone()
     }
 
+    /// Finds cycle in the `policyGraph` and computes computes its mean. The found cycle is
+    /// identified by a vertex `currentCycleVertex`. The cycle returned by this method does not
+    /// necessarily has the smalles mean over all cycles in the policy graph.
+    ///
+    /// To find cycles this methods assigns a level to each vertex. Initially every vertex has a
+    /// level equal to $-1$ which means that the vertex has not been visited. During the computations
+    /// this method starts DFS from every not visited vertex and assigns a unique positive level $l$
+    /// to every traversed vertex. If DFS comes across a vertex with level $l$ this indicates that a
+    /// cycle has been detected.
     fn construct_cycle<C: Graph<Vertex = G::Vertex, Edge = G::Edge>>(&mut self, component: &C) {
         for v in component.vertices() {
             self.vertex_level.insert(v.clone(), -1);
@@ -178,6 +190,11 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
         }
     }
 
+    /// This method runs the reverted BFS starting from `currentCycleVertex` to update data in
+    /// `policyGraph` and `vertexDistance`. This step is needed to identify if current
+    /// value of minimum mean is optimal for the `graph`. This method also uses
+    /// `comparator` to find out if update value of minium mean is sufficiently smaller than
+    /// the previous one.
     fn compute_vertex_distance<C: Graph<Vertex = G::Vertex, Edge = G::Edge>>(
         &mut self,
         component: &C,
@@ -229,6 +246,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
         improved
     }
 
+    /// Constructs cycle with minimum mean using information in `policyGraph`.
     fn build_path(
         &self,
         best_cycle_vertex: &G::Vertex,
@@ -259,6 +277,8 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
 impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> MinimumCycleMeanAlgorithm<G>
     for HowardMinimumMeanCycle<'g, G, S>
 {
+    /// Computes minimum mean among all cycle. Returns `Double#POSITIVE_INFINITY` if no cycle
+    /// has been found.
     fn get_cycle_mean(&mut self) -> f64 {
         match self.get_cycle() {
             None => f64::INFINITY,
@@ -266,6 +286,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> MinimumCycleMe
         }
     }
 
+    /// Computes cycle with minimum mean. Returns $null$ if no cycle has been found.
     fn get_cycle(&mut self) -> Option<GraphWalk<G::Vertex, G::Edge>> {
         let mut is_best_cycle_found = false;
         let mut best_cycle_weight = 0.0;

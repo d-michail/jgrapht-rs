@@ -299,6 +299,7 @@ impl HierholzerEulerianCycle {
     }
 }
 
+    /// Compute an Eulerian cycle of a graph.
 impl<G: Graph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
     fn get_eulerian_cycle(&mut self, g: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         if !self.try_is_eulerian(g)? {

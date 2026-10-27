@@ -165,6 +165,9 @@ impl<'g, G: Graph> EppsteinShortestPathIterator<'g, G> {
         self.candidates.push(path);
     }
 
+    /// Guides the building process of the paths graph. The process is divided into three stages.
+    /// First the D(g) is constructed, then cross edges are added and finally the root vertex is
+    /// created.
     fn build_paths_graph(&mut self) {
         self.build_d_graph();
         self.add_cross_edges();
@@ -232,6 +235,11 @@ impl<'g, G: Graph> EppsteinShortestPathIterator<'g, G> {
         }
     }
 
+    /// Guides the process of adding the sidetracks of `v` to the paths graph. First receives
+    /// the outroot and root of the rest heap of `v` by calling
+    /// `getOutrootAndRestHeapRoot(Object)`. If the outroot if $null$ maps $v$ to
+    /// `predecessorHeap` in `hMapping`. Otherwise inserts outroot of $v$ in the balanced
+    /// heap rooted at `predecessorHeap` and links it to the received rest heap root.
     fn insert_vertex(
         &mut self,
         vertex: &G::Vertex,
@@ -326,6 +334,7 @@ impl<'g, G: Graph> EppsteinShortestPathIterator<'g, G> {
         (outroot, rest_root)
     }
 
+    /// Builds a min-heap out of the `vertices` list
     fn heapify(&self, vertices: &mut [usize]) {
         for start in (0..vertices.len() / 2).rev() {
             let mut current = start;
@@ -364,6 +373,10 @@ impl<'g, G: Graph> EppsteinShortestPathIterator<'g, G> {
         Some(node)
     }
 
+    /// Adds cross edges for every vertex $v$ reachable from the root of balanced heap of
+    /// `source` in the paths graph. If a sidetrack, which corresponds to $v$ connects some
+    /// pair of vertices $(u,w)$, a cross edge from $v$ to the root of the balanced heap of $w$ is
+    /// added.
     fn add_cross_edges(&mut self) {
         let Some(source_heap) = self.h_mapping.get(&self.source).copied().flatten() else {
             return;
@@ -392,6 +405,7 @@ impl<'g, G: Graph> EppsteinShortestPathIterator<'g, G> {
         }
     }
 
+    /// Adds an extension of `paths` with `extendingVertex` being its last element.
     fn add_extension(&mut self, path: &ImplicitPath, extending_vertex: usize, added_weight: f64) {
         let mut vertices = path.paths_graph_vertices.clone();
         vertices.push(extending_vertex);

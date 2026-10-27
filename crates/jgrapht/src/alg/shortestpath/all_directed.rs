@@ -101,14 +101,30 @@ impl<'g, G: DirectedGraph> AllDirectedPaths<'g, G, AllowAllPaths> {
 }
 
 impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
+    /// Configure whether the preprocessing step applies the forward-pruning optimisation.
+    ///
+    /// When forward pruning is enabled (the default), `getAllPaths` first runs a forward
+    /// BFS from the source set and uses the result to drop edges whose source endpoint is not
+    /// reachable from any source within the bound, or whose forward-plus-backward length exceeds
+    /// the bound. The prune is exact — it never drops an edge that could lie on a feasible
+    /// source-to-target walk — and can be a large win when a substantial fraction of the
+    /// graph is backward-reachable from the targets but not forward-reachable from the sources.
+    /// On graphs where the prune never fires (e.g. small dense strongly-connected digraphs), the
+    /// optimisation adds the cost of one extra `O(V + E)` BFS per `getAllPaths`
+    /// call.
+    ///
+    /// Setting forward pruning to `false` recovers the historical preprocessing behaviour
+    /// exactly — useful when the cost of the extra BFS is known to dominate.
     pub fn set_forward_pruning(&mut self, forward_pruning: bool) {
         self.forward_pruning = forward_pruning;
     }
 
+    /// Whether the preprocessing step currently applies the forward-pruning optimisation.
     pub fn is_forward_pruning(&self) -> bool {
         self.forward_pruning
     }
 
+    /// Calculate (and return) all paths from the source vertex to the target vertex.
     pub fn get_all_paths(
         &self,
         source: &G::Vertex,
@@ -243,6 +259,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
         Ok(edge_distance)
     }
 
+    /// Generate all paths from the sources to the targets, using pre-computed minimum distances.
     fn generate_paths(
         &self,
         sources: &[&G::Vertex],

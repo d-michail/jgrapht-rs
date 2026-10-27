@@ -300,14 +300,18 @@ impl<V> TwoLayeredBipartiteLayout2D<V> {
             ..Self::default()
         }
     }
+    /// Adjust the vertex comparator which specifies the vertex order.
     pub fn with_vertex_comparator(mut self, cmp: impl Fn(&V, &V) -> Ordering + 'static) -> Self {
         self.vertex_comparator = Some(Box::new(cmp));
         self
     }
+    /// Adjust whether the layout will be vertical or horizontal.
     pub fn with_vertical(mut self, vertical: bool) -> Self {
         self.vertical = vertical;
         self
     }
+    /// Specify the first of the two bipartite partitions. If not provided, the algorithm computes a
+    /// partitioning.
     pub fn with_first_partition(mut self, partition: HashSet<V>) -> Self {
         self.partition = Some(partition);
         self
@@ -315,6 +319,7 @@ impl<V> TwoLayeredBipartiteLayout2D<V> {
 }
 
 impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
+    /// Compute the vertex partitions.
     #[allow(clippy::type_complexity)]
     fn compute_partitions<G: Graph<Vertex = V>>(&self, graph: &G) -> Result<(Vec<V>, Vec<V>)> {
         let (mut left, mut right): (Vec<V>, Vec<V>) = (Vec::new(), Vec::new());

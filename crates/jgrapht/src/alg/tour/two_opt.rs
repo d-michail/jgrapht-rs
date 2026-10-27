@@ -102,6 +102,7 @@ impl<'a, G: Graph + 'a> TwoOptHeuristicTSP<'a, G> {
         })
     }
 
+    /// Initialize graph and mapping to integer vertices.
     fn init(graph: &G) -> State<G::Vertex> {
         let n = graph.vertex_count();
         let rev_index: Vec<G::Vertex> = graph.vertices().cloned().collect();
@@ -126,6 +127,7 @@ impl<'a, G: Graph + 'a> TwoOptHeuristicTSP<'a, G> {
         }
     }
 
+    /// Create an initial tour
     fn create_initial_tour(&mut self, graph: &G, state: &State<G::Vertex>) -> Result<Vec<usize>> {
         let tour = self
             .initializer
@@ -134,6 +136,11 @@ impl<'a, G: Graph + 'a> TwoOptHeuristicTSP<'a, G> {
         Self::path_to_tour(&tour, state)
     }
 
+    /// Improve the tour using the 2-opt heuristic. In each iteration it applies the best possible
+    /// 2-opt move which means to find the best pair of edges $(i,i+1)$ and $(j,j+1)$ such that
+    /// replacing them with $(i,j)$ and $(i+1,j+1)$ minimizes the tour length.
+    ///
+    /// The returned array instance might or might not be the input array.
     fn improve(&self, mut tour: Vec<usize>, state: &State<G::Vertex>) -> Vec<usize> {
         let (n, dist) = (state.n, &state.dist);
         loop {
@@ -158,6 +165,7 @@ impl<'a, G: Graph + 'a> TwoOptHeuristicTSP<'a, G> {
         }
     }
 
+    /// Transform from an array representation to a graph path.
     fn tour_to_path(
         graph: &G,
         tour: &[usize],
@@ -167,6 +175,7 @@ impl<'a, G: Graph + 'a> TwoOptHeuristicTSP<'a, G> {
         closed_vertex_list_to_tour(vertices, graph)
     }
 
+    /// Transform from a path representation to an array representation.
     fn path_to_tour(
         path: &GraphWalk<G::Vertex, G::Edge>,
         state: &State<G::Vertex>,
@@ -201,6 +210,7 @@ impl<'a, G: Graph + 'a> Default for TwoOptHeuristicTSP<'a, G> {
 }
 
 impl<'a, G: Graph + 'a> HamiltonianCycleAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
+    /// Computes a 2-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {
@@ -221,6 +231,7 @@ impl<'a, G: Graph + 'a> HamiltonianCycleAlgorithm<G> for TwoOptHeuristicTSP<'a, 
 }
 
 impl<'a, G: Graph + 'a> HamiltonianCycleImprovementAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
+    /// Try to improve a tour by running the 2-opt heuristic.
     fn improve_tour(
         &mut self,
         graph: &G,

@@ -144,6 +144,8 @@ impl<'g, G: Graph> MaximumWeightBipartiteMatching<'g, G> {
         Ok(())
     }
 
+    /// Augment from a particular node. The algorithm always looks for augmenting paths from nodes in
+    /// partition1. In the following code partition1 is $A$ and partition2 is $B$.
     fn augment(&mut self, a: &G::Vertex) -> Result<()> {
         let graph = self.graph;
         self.dist.insert(a.clone(), zero());

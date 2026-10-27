@@ -39,11 +39,13 @@ impl FixedSizeIntegerQueue {
             n: 0,
         }
     }
+    /// Add an element to the queue.
     pub fn enqueue(&mut self, e: usize) {
         assert!(self.n < self.vs.len(), "queue capacity exceeded");
         self.vs[self.n] = e;
         self.n += 1;
     }
+    /// Poll the first element from the queue.
     pub fn poll(&mut self) -> Option<usize> {
         if self.is_empty() {
             return None;
@@ -51,12 +53,14 @@ impl FixedSizeIntegerQueue {
         self.i += 1;
         Some(self.vs[self.i - 1])
     }
+    /// Check if the queue has any items.
     pub fn is_empty(&self) -> bool {
         self.i == self.n
     }
     pub fn len(&self) -> usize {
         self.n - self.i
     }
+    ///  Empty the queue.
     pub fn clear(&mut self) {
         self.i = 0;
         self.n = 0;

@@ -244,6 +244,14 @@ impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
         None
     }
 
+    /// Augments an s-t path specified using the `boundingEdge` and computes the set of tree
+    /// orphans emerged after augmentation.
+    ///
+    /// First, the path flow bottleneck is found. Then the bottleneck flow value is pushed through
+    /// every path edge. If some path edge gets saturated, the corresponding tree node is added to
+    /// the orphan set. In the case the saturated edge connects source tree vertices, the edge target
+    /// becomes an orphan, otherwise if the saturated edge connects sink tree vertices, that the edge
+    /// source becomes an orphan.
     fn augment(&mut self, bounding_edge: usize) {
         let bottleneck = self.find_bottleneck(bounding_edge);
         self.net.push_flow_through(bounding_edge, bottleneck);
@@ -271,6 +279,7 @@ impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
         self.net.max_flow_value += bottleneck;
     }
 
+    /// Finds augmenting path bottleneck by traversing the path edges.
     fn find_bottleneck(&self, bounding_edge: usize) -> f64 {
         let (s, t) = (self.net.source, self.net.sink);
         let mut bottleneck = self.net.residual_capacity(bounding_edge);
@@ -289,6 +298,12 @@ impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
         bottleneck
     }
 
+    /// Adopts all orphans.
+    ///
+    /// Processing every orphan, the goal of this procedure is to either find a parent node within
+    /// the same tree, or identify that no such parent can be found, make the orphan a free vertex
+    /// and process all descendants of this node the same way. If multiple parents exist, the closest
+    /// to terminal is selected using distance and timestamp heuristic.
     fn adopt(&mut self) {
         while !self.orphans.is_empty() || !self.child_orphans.is_empty() {
             let current = self.next_orphan();
@@ -415,12 +430,14 @@ impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
         self.data[current].distance = parent.distance + 1;
     }
 
+    /// Initializes a new algorithm iteration.
     fn next_iteration(&mut self) {
         self.current_timestamp += 1;
         self.make_checked_in_this_iteration(self.net.source);
         self.make_checked_in_this_iteration(self.net.sink);
     }
 
+    /// Makes the `vertex` an active vertex.
     fn make_active(&mut self, v: usize) {
         if !self.data[v].active {
             self.data[v].active = true;
@@ -428,6 +445,7 @@ impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
         }
     }
 
+    /// Returns the next active vertex to be processed.
     fn next_active_vertex(&mut self) -> Option<usize> {
         while let Some(&next_active) = self.active_vertices.back() {
             if self.data[next_active].tree_status != TreeStatus::Free {
@@ -439,16 +457,19 @@ impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
         None
     }
 
+    /// Makes the `vertex` inactive.
     fn finish_vertex(&mut self, v: usize) {
         debug_assert_eq!(self.active_vertices.back(), Some(&v));
         self.active_vertices.pop_back();
         self.data[v].active = false;
     }
 
+    /// Sets the timestamp of the `vertex` equal to the `currentTimestamp`.
     fn make_checked_in_this_iteration(&mut self, v: usize) {
         self.data[v].timestamp = self.current_timestamp;
     }
 
+    /// Checks if the distance of the `vertex` was updated during this iteration.
     fn was_checked_in_this_iteration(&self, v: usize) -> bool {
         self.data[v].timestamp == self.current_timestamp
     }
@@ -463,6 +484,7 @@ impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
         }
     }
 
+    /// Checks if the `vertex` is connected to a terminal vertex (source or sink).
     fn has_connection_to_terminal(&mut self, vertex: usize) -> bool {
         let (s, t) = (self.net.source, self.net.sink);
         let mut distance: i64 = 0;
@@ -487,6 +509,8 @@ impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
         true
     }
 
+    /// Checks if the vertex `p` is closer to terminal than the vertex `t` using the
+    /// distance heuristic.
     fn is_closer_to_terminal(&self, p: usize, t: usize) -> bool {
         self.data[p].timestamp >= self.data[t].timestamp
             && self.data[p].distance + 1 < self.data[t].distance

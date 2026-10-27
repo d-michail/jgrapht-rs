@@ -89,6 +89,7 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
         self.graph.contains_edge_between(a, b) || self.graph.contains_edge_between(b, a)
     }
 
+    /// Checks whether the inspected graph is chordal.
     pub fn is_chordal(&mut self) -> bool {
         if self.order.is_none() {
             let n = self.graph.vertex_count();
@@ -197,6 +198,9 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
         predecessors
     }
 
+    /// Computes a hole from the vertices of `subgraph` of the inspected `graph` with
+    /// vertices `a`, `b` and `c` on this cycle (there must be no edge between
+    /// `a` and `c`.
     fn find_hole(&mut self, a: &G::Vertex, b: &G::Vertex, c: &G::Vertex) {
         let mut cycle = vec![a.clone(), b.clone(), c.clone()];
         let mut visited: HashMap<G::Vertex, bool> =
@@ -208,6 +212,9 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
         self.hole = GraphWalk::from_vertex_list(self.graph, cycle, 0.0).ok();
     }
 
+    /// Computes some cycle in the graph on the vertices from the domain of the map `visited`.
+    /// More precisely, finds some path from `middle` to `finish`. The vertex
+    /// `middle` isn't the endpoint of any chord in this cycle.
     fn dfs_visit(
         &self,
         cycle: &mut Vec<G::Vertex>,
@@ -236,6 +243,8 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
         }
     }
 
+    /// Minimizes the cycle represented by the list `cycle`. More precisely it retains first 2
+    /// vertices and finds a chordless cycle starting from the third vertex.
     fn minimize_cycle(&self, cycle: &[G::Vertex]) -> Vec<G::Vertex> {
         let graph = self.graph;
         let mut cycle_vertices: HashSet<&G::Vertex> = cycle.iter().collect();

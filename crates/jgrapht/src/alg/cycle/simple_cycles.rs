@@ -678,6 +678,7 @@ impl<'g, G: DirectedGraph> HawickJamesSimpleCycles<'g, G> {
     }
 
     pub fn set_graph(&mut self, graph: &'g G) {
+    /// Set the graph
         self.graph = Some(graph);
     }
 
@@ -689,6 +690,8 @@ impl<'g, G: DirectedGraph> HawickJamesSimpleCycles<'g, G> {
     }
 
     pub fn clear_path_limit(&mut self) {
+    /// This is the default behaviour of the algorithm. It will keep looking as long as there are
+    /// paths available.
         self.has_limit = false;
     }
 

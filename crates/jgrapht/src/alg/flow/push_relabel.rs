@@ -91,6 +91,7 @@ impl<'g, G: Graph> PushRelabelMFImpl<'g, G> {
         }
     }
 
+    /// Initialization
     fn initialize(&mut self, source: usize, sink: usize) {
         let n = self.n;
         self.active_vertices.clear();

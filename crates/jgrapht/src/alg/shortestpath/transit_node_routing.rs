@@ -319,6 +319,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for TransitNodeRoutingShortestPath<'_, '
     }
 }
 
+/// Computes a path which consists of `first`, `second` and `third` paths.
 fn merge_paths<V: Clone, E: Clone>(
     first: &GraphWalk<V, E>,
     second: &GraphWalk<V, E>,

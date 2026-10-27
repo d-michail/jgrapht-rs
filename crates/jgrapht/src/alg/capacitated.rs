@@ -933,6 +933,7 @@ impl<'g, G: Graph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G> {
         Ok((affected_labels, affected_vertices))
     }
 
+    /// Updates the map containing the MSTs for every subset of the partition.
     fn calculate_spanning_trees(
         &self,
         current: &Solution<G::Vertex>,

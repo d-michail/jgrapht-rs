@@ -59,6 +59,7 @@ pub struct HamiltonianPathSearchResult<V, E> {
 }
 
 impl<V, E> HamiltonianPathSearchResult<V, E> {
+    /// Creates a result for a successful search.
     pub fn found(path: GraphWalk<V, E>, states_expanded: u64) -> Self {
         HamiltonianPathSearchResult {
             status: SearchStatus::PathFound,
@@ -67,6 +68,7 @@ impl<V, E> HamiltonianPathSearchResult<V, E> {
         }
     }
 
+    /// Creates a result for an exhaustive search that proved no Hamiltonian path exists.
     pub fn proven_absent(states_expanded: u64) -> Self {
         HamiltonianPathSearchResult {
             status: SearchStatus::ProvenAbsent,
@@ -75,6 +77,7 @@ impl<V, E> HamiltonianPathSearchResult<V, E> {
         }
     }
 
+    /// Creates a result for a search that was stopped by a state limit before completing.
     pub fn aborted(states_expanded: u64) -> Self {
         HamiltonianPathSearchResult {
             status: SearchStatus::Aborted,
@@ -118,6 +121,7 @@ impl<V, E> HamiltonianPathSearchResult<V, E> {
 ///
 /// `HamiltonianPathAlgorithm`.
 pub trait HamiltonianPathAlgorithm<G: Graph> {
+    /// Returns the Hamiltonian path if the search found one.
     fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>>;
 }
 
@@ -643,6 +647,9 @@ impl BacktrackingHamiltonianPath {
             return false;
         }
         let mut leaves = 0;
+    /// Cheap necessary conditions for the existence of a Hamiltonian path in an undirected graph.
+    /// Returns `false` if the graph trivially has no Hamiltonian path, `true`
+    /// otherwise. A `true` result does not guarantee a path exists.
         for v in graph.vertices() {
             if Self::effective_undirected_degree(graph, v) == 1 {
                 leaves += 1;
@@ -661,6 +668,11 @@ impl BacktrackingHamiltonianPath {
     ) -> bool {
         bcc.cutpoints()
             .iter()
+    /// Necessary condition: in the block-cut tree of an undirected graph, every cut vertex must
+    /// belong to at most two biconnected blocks. A cut vertex incident to more than two blocks
+    /// disconnects the graph into more than two components on removal, but a Hamiltonian path
+    /// uses at most two edges at any internal vertex, so it cannot weave through more than two
+    /// such components.
             .all(|cut| bcc.blocks_of(cut).map(|b| b.len() <= 2).unwrap_or(true))
     }
 
@@ -669,6 +681,12 @@ impl BacktrackingHamiltonianPath {
         bcc: &BiconnectivityInspector<'_, G>,
     ) -> bool {
         let bridges = bcc.bridges();
+    /// Necessary condition: in the bridge tree (where 2-edge-connected components are nodes and
+    /// bridges are edges) every component must have at most two incident bridges. A Hamiltonian
+    /// path passing through a 2-edge-connected component enters and leaves it at most once, so
+    /// it can use at most two of the component's incident bridges. This prune catches some
+    /// graphs the cut-vertex check misses, in particular those where each bridge attaches to a
+    /// different vertex inside a single component.
         if bridges.len() <= 2 {
             return true; // the bridge tree then has degree <= 2 everywhere
         }
@@ -741,6 +759,8 @@ impl BacktrackingHamiltonianPath {
             .edges_of(v).unwrap()
             .filter(|e| graph.opposite_vertex(e, v).is_some_and(|o| o != v))
             .count()
+    /// Degree of `v` in an undirected graph, ignoring self-loops since they cannot
+    /// participate in a simple path.
     }
 
     fn extend(
@@ -749,6 +769,9 @@ impl BacktrackingHamiltonianPath {
         path_idx: &mut [usize],
         visited: &mut [bool],
         depth: usize,
+    /// Recursive DFS extension. Returns `true` and leaves `pathIdx` filled with a
+    /// Hamiltonian vertex sequence as soon as one is discovered. Applies reachability pruning
+    /// and minimum-remaining-values candidate ordering.
         n: usize,
     ) -> bool {
         if self.aborted {
@@ -808,6 +831,12 @@ impl BacktrackingHamiltonianPath {
         start: usize,
         remaining: usize,
     ) -> bool {
+    /// Returns `true` when every still-unvisited vertex is reachable from `start`
+    /// through unvisited vertices using the supplied adjacency (which respects edge direction in
+    /// directed graphs). Returning `false` proves the current branch cannot be completed
+    /// into a Hamiltonian path. The check itself never causes a false negative because Hamiltonian
+    /// path existence from the current endpoint requires every remaining vertex to be reachable
+    /// from it.
         if remaining == 0 {
             return true;
         }
@@ -843,6 +872,8 @@ impl BacktrackingHamiltonianPath {
 }
 
 impl<G: Graph> HamiltonianPathAlgorithm<G> for BacktrackingHamiltonianPath {
+    /// Counts the unvisited neighbours of `v` reachable in one step along the supplied
+    /// adjacency.
     fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         self.search(graph, 0)
     }

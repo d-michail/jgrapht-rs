@@ -129,10 +129,12 @@ impl<'g, G: Graph> IsomorphicGraphMapping<'g, G> {
         self.backward.keys()
     }
 
+    /// Checks if a vertex $v$ from the first graph has a corresponding vertex in the second graph
     pub fn has_vertex_correspondence(&self, v: &G::Vertex) -> bool {
         self.forward.contains_key(v)
     }
 
+    /// Checks if a edge e from the first graph has a corresponding edge in the second graph
     pub fn has_edge_correspondence(&self, e: &G::Edge) -> bool {
         self.edge_correspondence(e, true).is_some()
     }
@@ -196,6 +198,8 @@ impl<'g, G: Graph> IsomorphicGraphMapping<'g, G> {
         }
     }
 
+    /// Computes an identity automorphism (i.e. a self-mapping of a graph in which each vertex also
+    /// maps to itself).
     pub fn identity(graph: &'g G) -> Self {
         let map: IndexMap<_, _> = graph.vertices().map(|v| (v.clone(), v.clone())).collect();
         IsomorphicGraphMapping {

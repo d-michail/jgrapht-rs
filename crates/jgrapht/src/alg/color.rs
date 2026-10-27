@@ -734,6 +734,7 @@ impl<'g, G: UndirectedGraph> ChordalGraphColoring<'g, G> {
     }
 
     fn lazy_compute_coloring(&mut self) {
+    /// Lazily computes the coloring of the graph.
         if self.coloring.is_none() && self.chordality_inspector.is_chordal() {
             let perfect_elimination_order: Vec<G::Vertex> = self
                 .chordality_inspector

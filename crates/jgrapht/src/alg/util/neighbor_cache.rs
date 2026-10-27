@@ -129,6 +129,8 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
         }
     }
 
+    /// Returns the unique predecessors of the given vertex if it exists in the cache, otherwise it
+    /// is initialized.
     pub fn predecessors_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
         Self::check(g, v)?;
         if !self.predecessors.contains_key(v) {
@@ -141,6 +143,8 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
         Ok(&self.predecessors[v])
     }
 
+    /// Returns the unique successors of the given vertex if it exists in the cache, otherwise it is
+    /// initialized.
     pub fn successors_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
         Self::check(g, v)?;
         if !self.successors.contains_key(v) {
@@ -153,6 +157,8 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
         Ok(&self.successors[v])
     }
 
+    /// Returns the unique neighbors of the given vertex if it exists in the cache, otherwise it is
+    /// initialized.
     pub fn neighbors_of<G: Graph<Vertex = V>>(&mut self, g: &G, v: &V) -> Result<&Neighbors<V>> {
         Self::check(g, v)?;
         if !self.neighbors.contains_key(v) {

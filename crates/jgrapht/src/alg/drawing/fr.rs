@@ -75,6 +75,7 @@ impl FRQuadTree {
         0
     }
 
+    /// Insert a new point.
     pub fn insert(&mut self, p: Point2D) -> Result<()> {
         let mut cur = 0;
         loop {
@@ -129,6 +130,7 @@ impl FRQuadTree {
         }
     }
 
+    /// Check if a node is a leaf.
     pub fn is_leaf(&self, n: NodeId) -> bool {
         self.nodes[n].points.is_some()
     }
@@ -137,6 +139,7 @@ impl FRQuadTree {
         self.nodes[n].boxx
     }
 
+    /// Check if the node contains any points.
     pub fn has_points(&self, n: NodeId) -> bool {
         match &self.nodes[n].points {
             Some(p) => !p.is_empty(),
@@ -290,10 +293,12 @@ impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
         self.saved_comparisons
     }
 
+    /// Calculate the attractive force.
     fn attractive_force(&self, d: f64) -> f64 {
         d * d / self.optimal_distance
     }
 
+    /// Calculate the repulsive force.
     fn repulsive_force(&self, d: f64) -> f64 {
         self.optimal_distance * self.optimal_distance / d
     }

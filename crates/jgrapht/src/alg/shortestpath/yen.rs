@@ -147,6 +147,17 @@ impl<'g, G: Graph, P: PathValidator<G>> YenShortestPathIterator<'g, G, P> {
         Some(self.candidates.remove(index))
     }
 
+    /// Builds unique loopless deviations from the given path in the `graph`. First receives
+    /// the deviation vertex of the current path as well as sets of vertices and edges to be masked
+    /// during the computations. Then creates an instance of the `MaskSubgraph` and builds a
+    /// reversed shortest paths tree starting at `sink` in it. Finally builds new candidate
+    /// paths by deviating from the vertices of the provided `path`. Puts only those candidates
+    /// in the `candidatesList`, which deviate from `path` between $firstDeviation$ and
+    /// $lastDeviation$. $firstDeviation$ and $lastDeviation$ are obtainer from
+    /// `firstDeviations` and `lastDeviations` correspondingly.
+    ///
+    /// For more information on this step refer to the article with the original description of the
+    /// algorithm.
     fn add_deviations(&mut self, parent: &GraphWalk<G::Vertex, G::Edge>) -> Result<()> {
         for spur_index in 0..parent.edges.len() {
             let spur = &parent.vertices[spur_index];
@@ -249,6 +260,9 @@ impl<'g, G: Graph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, P> {
         Self { graph, validator }
     }
 
+    /// Computes `k` shortest loopless paths between `source` and `sink`. If the
+    /// overall number of such paths is denoted by $n$, the method returns $m = min\{k, n\}$ such
+    /// paths. The paths are produced in sorted order by weights.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -687,3 +701,11 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
 fn approx_eq(a: f64, b: f64) -> bool {
     (a - b).abs() <= 1e-12 * a.abs().max(b.abs()).max(1.0)
 }
+    /// Compute the set of edges that standard Yen would ban at `spurIndex` given the
+    /// current `accepted` list. An edge is banned iff there exists a previously accepted
+    /// path whose first `spurIndex+1` vertices match `parentVertices` and whose
+    /// `spurIndex`-th edge would otherwise be the next edge of the spur.
+    /// True iff the spur node has at least one outgoing edge that survives the current bans
+    /// (banned-vertex set + banned-edge set). When this is false the spur is provably impossible
+    /// and the task can be skipped exactly — adding more bans later can only remove legal edges,
+    /// never add them, so a "false" verdict here is stable through the rest of the run.

@@ -32,6 +32,18 @@ use std::collections::{HashMap, VecDeque};
 pub struct DagAllPathsCounter;
 
 impl DagAllPathsCounter {
+    /// Count the number of simple directed paths from `source` to `target` in the given
+    /// directed acyclic graph.
+    ///
+    /// Edge case semantics:
+    ///
+    /// - If `source` or `target` is not contained in the graph, throws
+    /// `IllegalArgumentException`.
+    /// - If `source.equals(target)`, the empty path (length 0) is counted as one path and
+    /// paths that leave `source` and return to it cannot exist in a DAG, thus the result is
+    /// 1.
+    /// - If there is no path from `source` to `target`, returns
+    /// `BigInteger#ZERO`.
     pub fn count_all_paths<G: DirectedGraph>(
         graph: &G,
         source: &G::Vertex,

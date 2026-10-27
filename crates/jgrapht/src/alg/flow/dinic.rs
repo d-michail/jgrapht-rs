@@ -80,6 +80,12 @@ impl<'g, G: Graph> DinicMFImpl<'g, G> {
         Ok(self.net.max_flow_value)
     }
 
+    /// Creates a level graph. We can split all vertices of the graph in disjoint sets. In the same
+    /// set will lie vertices with equal distance from the source. It's obvious that level network
+    /// cannot contain edges $i \to j$, where $i$ and $j$ are two vertices for which holds: $|i.level
+    /// - j.level| > 1$. It follows from a property of the shortest paths. Level graph contains only
+    /// edges that lead from level $i$ to the level $i + 1$. Thus level graph does not contain
+    /// backward edges or edges that lead from $i$-th level to $i$-th.
     fn bfs(&mut self) -> bool {
         let (s, t) = (self.net.source, self.net.sink);
         self.level = vec![-1; self.net.vs.len()];
@@ -99,6 +105,10 @@ impl<'g, G: Graph> DinicMFImpl<'g, G> {
         self.level[t] != -1
     }
 
+    /// Finds a blocking flow in the network. For each vertex we have a pointer on the first edge
+    /// which we can use to reach the sink. If we can't reach the sink using current edge, we
+    /// increment the pointer. So on each iteration we either saturate at least one edge or we
+    /// increment pointer.
     fn dfs(&mut self, v: usize, flow: f64) -> f64 {
         if self.net.comparator.compare(0.0, flow) == 0 {
             return flow;
@@ -124,6 +134,8 @@ impl<'g, G: Graph> DinicMFImpl<'g, G> {
         0.0
     }
 
+    /// Runs Dinic algorithm with scaling. Construct a level graph, then find blocking flow and
+    /// finally increase the flow.
     fn dinic(&mut self) {
         while self.bfs() {
             self.index = vec![0; self.net.vs.len()];

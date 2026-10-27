@@ -57,6 +57,7 @@ impl<'g, G: UndirectedGraph> ChordalGraphIndependentSetFinder<'g, G> {
         }
     }
 
+    /// Lazily computes a maximum independent set of the inspected `graph`.
     fn lazy_compute_maximum_independent_set(&mut self) {
         if self.maximum_independent_set.is_none() && self.chordality_inspector.is_chordal() {
             // iterate the order from the end to the beginning; choose vertices that don't have

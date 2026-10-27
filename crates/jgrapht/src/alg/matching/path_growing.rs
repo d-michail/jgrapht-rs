@@ -82,6 +82,8 @@ impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
         }
     }
 
+    /// Compute all vertices that have positive degree by iterating over the edges on purpose. This
+    /// keeps the complexity to $O(m)$ where $m$ is the number of edges.
     fn init_visible_vertices(&self) -> IndexSet<G::Vertex> {
         let mut visible_vertex = IndexSet::new();
         for e in self.graph.edges() {
@@ -225,6 +227,7 @@ impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
 }
 
 impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for PathGrowingWeightedMatching<'_, G> {
+    /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum weighted matching.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         if self.use_heuristics {
             self.run_with_heuristics()

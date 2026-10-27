@@ -87,6 +87,7 @@ impl<'g, G: Graph> BipartitePartitioning<'g, G> {
         }
     }
 
+    /// Test whether the input graph is bipartite.
     pub fn is_bipartite(&mut self) -> bool {
         if props::is_empty(self.graph) {
             return true;

@@ -148,6 +148,8 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         }
     }
 
+    /// Check whether the inspected `graph` is weakly chordal. Note: this value is computed
+    /// lazily.
     pub fn is_weakly_chordal(&mut self) -> bool {
         self.lazy_compute_weak_chordality()
     }
@@ -158,6 +160,7 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         self.certificate.as_ref()
     }
 
+    /// Lazily tests the weak chordality of the `graph` and returns the computed value.
     fn lazy_compute_weak_chordality(&mut self) -> bool {
         if let Some(r) = self.weakly_chordal {
             return r;
@@ -226,6 +229,9 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         GraphWalk::new(vertices, Vec::new(), 0.0)
     }
 
+    /// Computes the global separator list of the `graph`. More precisely, for every edge $e$
+    /// in the $G = (V, E)$ computes list of minimal separators $S_e$ in the neighborhood of $e$ and
+    /// then concatenates these lists. Note: the result may contain duplicates
     fn compute_global_separator_list(&self) -> Vec<SeparatorWithEdge> {
         let mut global = Vec::new();
         for &(source, target) in &self.adj.edges {
@@ -237,6 +243,10 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         global
     }
 
+    /// Reformats the list o `separators` so that is can be conveniently used by this
+    /// inspector. More precisely, in every separator from the list of minimal separators in the
+    /// neighborhood of the `edge` substitutes all vertices for their indices in the numeration
+    /// defined by `vertices`. Pairs every separator with the `edge`.
     fn reformat_separator_list(
         &self,
         separators: &[HashSet<usize>],
@@ -315,6 +325,8 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         separators.extend(main_queue);
     }
 
+    /// Compares two separators for inequality. Labeling of the vertices in the separators isn't
+    /// considered
     fn unequal_separators(sep1: &Separator, sep2: &Separator) -> bool {
         if sep1.len() == sep2.len() {
             sep1.iter().zip(sep2).any(|(a, b)| a.0 != b.0)
@@ -412,6 +424,10 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         None
     }
 
+    /// Finds an anti-hole in the inspected `graph`. Vertices `source` and
+    /// `targetInSeparator` specify an edge, which belongs to the anti-hole in the complement
+    /// of the `graph`. Then the hole in the complement of the graph is computed in the graph's
+    /// complement in the same way a hole is computed in the `graph`.
     fn find_anti_hole(&mut self, source: usize, target_in_separator: usize) {
         let complement = self.adj.complement();
         // the complement edge joining `source` and `target_in_separator`, as stored
@@ -485,6 +501,10 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         )
     }
 
+    /// Starts the iterative depth-first traversal from `sourInSep` vertex. Tries to build a
+    /// cycle with the vertices, which aren't adjacent to the `tar` and `sour`. This
+    /// condition is used in order to ensure that the cycle contains a hole, to which it is later
+    /// minimized.
     fn find_cycle(
         visited: &mut HashSet<usize>,
         adj: &Adj,
@@ -517,6 +537,8 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         cycle
     }
 
+    /// Minimizes the `cycle` so that it contains a hole in the `graph`. Vertices
+    /// `tar`, `tarInSep`, `sour` and `sourInSep` belong to the final result.
     fn minimize_cycle(
         adj: &Adj,
         cycle: &[usize],
@@ -578,6 +600,9 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         separators
     }
 
+    /// Performs iterative depth-first search starting from the `startVertex` in the
+    /// `graph`. Adds every encountered red vertex to the resulting separator. Doesn't process
+    /// red vertices. Marks all white vertices with black color.
     fn get_separator(adj: &Adj, start_vertex: usize, dfs_map: &mut [u8]) -> HashSet<usize> {
         let mut stack = vec![start_vertex];
         let mut separator = HashSet::new();
@@ -596,6 +621,8 @@ impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
         separator
     }
 
+    /// Returns a set of vertices that are neighbors of the source of the specified edge or of the
+    /// target of specified edge. The endpoints of the specified edge aren't included in the result.
     fn neighborhood_set_of(adj: &Adj, source: usize, target: usize) -> HashSet<usize> {
         let mut neighborhood: HashSet<usize> = HashSet::new();
         neighborhood.extend(adj.neighbors[source].iter().copied());

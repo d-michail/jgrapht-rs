@@ -404,6 +404,11 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
         self.connected_sets.as_ref().unwrap()
     }
 
+    /// Test if the inspected graph is connected. A graph is connected when there is a path between
+    /// every pair of vertices. In a connected graph, there are no unreachable vertices. When the
+    /// inspected graph is a *directed* graph, this method returns true if and only if the
+    /// inspected graph is *weakly* connected. An empty graph is *not* considered
+    /// connected.
     pub fn is_connected<G: Graph<Vertex = V>>(&mut self, g: &G) -> bool {
         self.lazy_find(g).iter().flatten().count() == 1
     }
@@ -424,10 +429,16 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
         Ok(set)
     }
 
+    /// Returns a list of `Set` s, where each set contains all vertices that are in the same
+    /// maximally connected component. All graph vertices occur in exactly one set. For more on
+    /// maximally connected component, see
+    /// [http://www.nist.gov/dads/HTML/maximallyConnectedComponent.html](http://www.nist.gov/dads/HTML/maximallyConnectedComponent.html).
     pub fn connected_sets<G: Graph<Vertex = V>>(&mut self, g: &G) -> Vec<HashSet<V>> {
         self.lazy_find(g).iter().flatten().cloned().collect()
     }
 
+    /// Tests whether two vertices lay respectively in the same connected component (undirected
+    /// graph), or in the same weakly connected component (directed graph).
     pub fn path_exists<G: Graph<Vertex = V>>(&mut self, g: &G, s: &V, t: &V) -> Result<bool> {
         Ok(self.connected_set_of(g, s)?.contains(t))
     }
@@ -736,6 +747,7 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
             bridges: Vec<E>,
         }
         fn build_block<E>(st: &mut State<E>, cut: i64) {
+        /// Each time a cutpoint is discovered, this method computes the biconnected component
             let mut comp = Vec::new();
             while let Some(&(s, t)) = st.stack.last() {
                 if st.disc[s] < cut && st.disc[t] < cut {
@@ -911,10 +923,17 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
     }
 
     pub fn is_biconnected(&self) -> bool {
+    /// Tests if the inspected graph is biconnected. A biconnected graph is a connected graph on two
+    /// or more vertices having no cutpoints.
         self.graph.vertex_count() >= 2 && self.blocks.len() == 1
     }
 
     pub fn is_connected(&self) -> bool {
+    /// Test if the inspected graph is connected. A graph is connected when, while ignoring edge
+    /// directionality, there exists a path between every pair of vertices. In a connected graph,
+    /// there are no unreachable vertices. When the inspected graph is a *directed* graph, this
+    /// method returns true if and only if the inspected graph is *weakly* connected. An empty
+    /// graph is *not* considered connected.
         self.connected_sets.len() == 1
     }
 }
@@ -1007,6 +1026,7 @@ impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
     }
 
     pub fn is_cutpoint(&self, v: &V) -> bool {
+    /// Returns `true` if the vertex is a cutpoint, `false` otherwise.
         self.cutpoints.contains(v)
     }
 }
@@ -1152,10 +1172,12 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
     }
 
     pub fn is_k_edge_connected(&mut self, k: usize) -> bool {
+    /// Return if the graph is `k` edge connected
         k <= self.edge_connectivity()
     }
 
     pub fn is_k_vertex_connected(&mut self, k: usize) -> Result<bool> {
+    /// Return if the graph is `k` vertex connected
         Ok(k <= self.vertex_connectivity()?)
     }
 

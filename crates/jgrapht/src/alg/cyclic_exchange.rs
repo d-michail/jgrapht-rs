@@ -221,6 +221,8 @@ fn dominated_k<V: Clone + Eq + Hash>(path: &LabeledPath<V>, k: &PathIndex<V>) ->
     false
 }
 
+/// Adds a path and removes the path, which has the same tail, head and label set, to the data
+/// structure `paths`, which contains all paths indexed by their head, tail and label set.
 fn update_path_index<V: Clone + Eq + Hash>(paths: &mut PathIndex<V>, path: LabeledPath<V>) {
     paths.insert(key_of(&path, &path.labels), path);
 }

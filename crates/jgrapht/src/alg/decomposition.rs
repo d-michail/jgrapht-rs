@@ -219,6 +219,11 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
         self.vertex_map[v]
     }
 
+    /// An iterative dfs implementation for computing the paths.
+    ///
+    /// For each node u we have to execute two sequences of operations: 1: before the 'recursive'
+    /// call (the then part of the if-statement) 2: after the 'recursive' call (the else part of the
+    /// if-statement)
     fn dfs_iterative(&mut self, root: usize, c: usize, length_path: &mut Vec<usize>) {
         let mut explored = vec![false; self.index_list.len()];
         let mut stack = vec![root];
@@ -468,6 +473,7 @@ where
 
     pub fn decompose(
         &self,
+    /// Perform the decomposition, using a pre-calculated bipartite matching
         matching: &Matching<G::Vertex, G::Edge>,
         fine: bool,
     ) -> Result<DmDecomposition<G::Vertex>> {
