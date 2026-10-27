@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1489 | 342 | 117 | 376 | 13 | 19 | 422 | 200 |
+| `jgrapht` | 1488 | 342 | 117 | 375 | 13 | 19 | 422 | 200 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -40,7 +40,7 @@ Each needs an owner in R3/R5/R6.
 | `jgrapht/src/alg/matching/blossom/perfect.rs` | `KolmogorovWeightedPerfectMatching::get_dual_solution` | `-1` |
 | `jgrapht/src/alg/matching/blossom/perfect.rs` | `KolmogorovWeightedPerfectMatching::get_error` | `-1` |
 | `jgrapht/src/alg/metrics.rs` | `girth` | `usize::MAX` |
-| `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::with_algorithm` | `INFINITY` |
+| `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::new` | `INFINITY` |
 | `jgrapht/src/alg/scoring.rs` | `betweenness_centrality` | `INFINITY` |
 | `jgrapht/src/alg/scoring.rs` | `ApBetweennessCentrality::with_precision` | `INFINITY` |
 | `jgrapht/src/alg/shortestpath/alt.rs` | `ALTAdmissibleHeuristic::cost_estimate` | `INFINITY` |
@@ -804,7 +804,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::new` | Result | `crate::Result<Self>` |
 | `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::radius` | state query | `f64` |
 | `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::vertex_eccentricity_map` | state query | `Vec<(V, f64)>` |
-| `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::with_algorithm` | Result | `crate::Result<Self>` |
 | `jgrapht/src/alg/partition.rs` | `bipartite_partition` | Option | `Option<(Vec<G::Vertex>, Vec<G::Vertex>)>` |
 | `jgrapht/src/alg/partition.rs` | `is_bipartite` | infallible | `bool` |
 | `jgrapht/src/alg/partition.rs` | `BipartitePartitioning::is_bipartite` | infallible | `bool` |

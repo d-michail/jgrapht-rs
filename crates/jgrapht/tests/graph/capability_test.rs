@@ -84,3 +84,107 @@ fn parallel_edges_are_each_yielded() {
     assert_eq!(OutgoingGraph::out_degree_of(&g, &0), 2);
     assert_eq!(IncomingGraph::in_degree_of(&g, &1), 2);
 }
+
+mod base_graph_parity {
+    use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
+    use jgrapht::graph::{DiGraph, FastutilMapGraph, Graph, GraphMut, UGraph};
+    use jgrapht::graph::{Directed, Undirected};
+
+    /// The capability traits must agree with the fallible `Graph` methods, element by element and
+    /// in the same order, for every vertex including absent ones.
+    fn check<G>(g: &G, absent: G::Vertex)
+    where
+        G: IncidenceGraph,
+        G::Edge: std::fmt::Debug,
+    {
+        let vs: Vec<_> = g.vertices().cloned().chain([absent]).collect();
+        for v in &vs {
+            let old_all: Vec<_> = Graph::edges_of(g, v).unwrap().cloned().collect();
+            let old_in: Vec<_> = Graph::in_edges_of(g, v).unwrap().cloned().collect();
+            let old_out: Vec<_> = Graph::out_edges_of(g, v).unwrap().cloned().collect();
+            assert_eq!(
+                IncidenceGraph::edges_of(g, v).cloned().collect::<Vec<_>>(),
+                old_all
+            );
+            assert_eq!(
+                IncomingGraph::in_edges_of(g, v)
+                    .cloned()
+                    .collect::<Vec<_>>(),
+                old_in
+            );
+            assert_eq!(
+                OutgoingGraph::out_edges_of(g, v)
+                    .cloned()
+                    .collect::<Vec<_>>(),
+                old_out
+            );
+            assert_eq!(
+                IncidenceGraph::degree_of(g, v),
+                Graph::degree_of(g, v).unwrap()
+            );
+            assert_eq!(
+                IncomingGraph::in_degree_of(g, v),
+                Graph::in_degree_of(g, v).unwrap()
+            );
+            assert_eq!(
+                OutgoingGraph::out_degree_of(g, v),
+                Graph::out_degree_of(g, v).unwrap()
+            );
+            if !g.contains_vertex(v) {
+                assert!(old_all.is_empty() && IncidenceGraph::degree_of(g, v) == 0);
+            }
+        }
+    }
+
+    fn populate<G: GraphMut<Vertex = i32>>(g: &mut G) {
+        for v in 0..5 {
+            g.add_vertex(v);
+        }
+        for (u, v) in [
+            (0, 1),
+            (1, 2),
+            (2, 0),
+            (2, 2),
+            (0, 1),
+            (3, 4),
+            (4, 3),
+            (3, 3),
+        ] {
+            g.add_edge(&u, &v).unwrap();
+        }
+    }
+
+    #[test]
+    fn directed_pseudograph() {
+        let mut g = DiGraph::<i32>::pseudo();
+        populate(&mut g);
+        check(&g, 99);
+        assert_eq!(IncidenceGraph::degree_of(&g, &2), 4); // 1->2, 2->0, loop 2->2 (twice)
+    }
+
+    #[test]
+    fn undirected_pseudograph() {
+        let mut g = UGraph::<i32>::pseudo();
+        populate(&mut g);
+        check(&g, 99);
+        assert_eq!(IncidenceGraph::degree_of(&g, &3), 4); // two edges to 4, loop counts twice
+        assert_eq!(IncomingGraph::in_degree_of(&g, &3), 4);
+        assert_eq!(OutgoingGraph::out_degree_of(&g, &3), 4);
+    }
+
+    #[test]
+    fn map_backed_graphs() {
+        let mut d = FastutilMapGraph::<i32, _, Directed>::with_graph_type_and_lookup(
+            jgrapht::GraphType::pseudograph().directed(true),
+            true,
+        );
+        populate(&mut d);
+        check(&d, 99);
+        let mut u = FastutilMapGraph::<i32, _, Undirected>::with_graph_type_and_lookup(
+            jgrapht::GraphType::pseudograph(),
+            false,
+        );
+        populate(&mut u);
+        check(&u, 99);
+    }
+}

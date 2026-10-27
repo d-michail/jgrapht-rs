@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use super::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use super::{DirectedGraph, Graph, GraphMut, UndirectedGraph};
 use crate::{GraphError, GraphType, Result};
 use indexmap::{IndexMap, IndexSet};
@@ -299,44 +300,19 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> Graph for Base
             .map(|r| if self.ty.weighted { r.weight } else { 1.0 })
     }
     fn edges_of(&self, v: &V) -> Result<impl Iterator<Item = &E>> {
-        // JGraphT order: incoming edges first, then outgoing edges (self-loops only once)
-        let a = self.vertices.get(v);
-        let inc = a.into_iter().flat_map(|a| a.inc.iter());
-        let out = a
-            .into_iter()
-            .flat_map(|a| a.out.iter())
-            .filter(move |e| !D::DIRECTED || self.edges[*e].src != self.edges[*e].tgt);
-        Ok(inc.chain(out))
+        Ok(IncidenceGraph::edges_of(self, v))
     }
     fn in_edges_of(&self, v: &V) -> Result<impl Iterator<Item = &E>> {
-        let a = self.vertices.get(v);
-        // undirected graphs keep every incident edge in `out`
-        let (inc, out) = if D::DIRECTED {
-            (a.map(|a| &a.inc), None)
-        } else {
-            (None, a.map(|a| &a.out))
-        };
-        Ok(inc
-            .into_iter()
-            .flat_map(|s| s.iter())
-            .chain(out.into_iter().flat_map(|s| s.iter())))
+        Ok(IncomingGraph::in_edges_of(self, v))
     }
     fn out_edges_of(&self, v: &V) -> Result<impl Iterator<Item = &E>> {
         Ok(self.out_edges(v))
     }
     fn in_degree_of(&self, v: &V) -> Result<usize> {
-        match self.vertices.get(v) {
-            None => Ok(0),
-            Some(a) if D::DIRECTED => Ok(a.inc.len()),
-            Some(_) => self.degree_of(v),
-        }
+        Ok(IncomingGraph::in_degree_of(self, v))
     }
     fn out_degree_of(&self, v: &V) -> Result<usize> {
-        match self.vertices.get(v) {
-            None => Ok(0),
-            Some(a) if D::DIRECTED => Ok(a.out.len()),
-            Some(_) => self.degree_of(v),
-        }
+        Ok(OutgoingGraph::out_degree_of(self, v))
     }
     fn edges_between<'a>(&'a self, u: &'a V, v: &'a V) -> impl Iterator<Item = &'a E> {
         if let Some(index) = &self.endpoint_index {
@@ -356,6 +332,60 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> Graph for Base
                 }
             })) as Box<dyn Iterator<Item = &'a E> + 'a>
         }
+    }
+}
+
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> OutgoingGraph
+    for BaseGraph<V, E, D, S>
+{
+    fn out_edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
+        self.out_edges(v)
+    }
+    fn out_degree_of(&self, v: &V) -> usize {
+        match self.vertices.get(v) {
+            None => 0,
+            Some(a) if D::DIRECTED => a.out.len(),
+            Some(_) => IncidenceGraph::degree_of(self, v),
+        }
+    }
+}
+
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> IncomingGraph
+    for BaseGraph<V, E, D, S>
+{
+    fn in_edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
+        let a = self.vertices.get(v);
+        // undirected graphs keep every incident edge in `out`
+        let (inc, out) = if D::DIRECTED {
+            (a.map(|a| &a.inc), None)
+        } else {
+            (None, a.map(|a| &a.out))
+        };
+        inc.into_iter()
+            .flat_map(|s| s.iter())
+            .chain(out.into_iter().flat_map(|s| s.iter()))
+    }
+    fn in_degree_of(&self, v: &V) -> usize {
+        match self.vertices.get(v) {
+            None => 0,
+            Some(a) if D::DIRECTED => a.inc.len(),
+            Some(_) => IncidenceGraph::degree_of(self, v),
+        }
+    }
+}
+
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> IncidenceGraph
+    for BaseGraph<V, E, D, S>
+{
+    fn edges_of(&self, v: &V) -> impl Iterator<Item = &E> {
+        // JGraphT order: incoming edges first, then outgoing edges (self-loops only once)
+        let a = self.vertices.get(v);
+        let inc = a.into_iter().flat_map(|a| a.inc.iter());
+        let out = a
+            .into_iter()
+            .flat_map(|a| a.out.iter())
+            .filter(move |e| !D::DIRECTED || self.edges[*e].src != self.edges[*e].tgt);
+        inc.chain(out)
     }
 }
 
