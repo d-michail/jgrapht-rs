@@ -55,6 +55,7 @@ pub struct PadbergRaoOddMinimumCutset<'g, G: Graph> {
 }
 
 impl<'g, G: Graph + 'g> PadbergRaoOddMinimumCutset<'g, G> {
+    /// Creates a new instance of the PadbergRaoOddMinimumCutset algorithm.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }

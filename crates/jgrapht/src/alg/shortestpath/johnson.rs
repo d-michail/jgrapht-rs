@@ -80,6 +80,7 @@ pub struct JohnsonShortestPaths<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> JohnsonShortestPaths<'g, G> {
+    /// Construct a new instance.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(Self {
             graph,

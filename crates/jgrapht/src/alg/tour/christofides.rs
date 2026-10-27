@@ -68,12 +68,14 @@ use std::collections::HashSet;
 /// weights and the triangle inequality are part of the caller's metric-instance contract.
 #[derive(Default)]
 pub struct ChristofidesThreeHalvesApproxMetricTSP;
+    /// Constructs a new instance.
 
 impl ChristofidesThreeHalvesApproxMetricTSP {
     pub fn new() -> Self {
         Self
     }
 }
+    /// Computes a $3/2$-approximate tour.
     /// Computes a $3/2$-approximate tour.
 
 impl<G: Graph> HamiltonianCycleAlgorithm<G> for ChristofidesThreeHalvesApproxMetricTSP {

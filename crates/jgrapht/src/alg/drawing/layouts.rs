@@ -75,6 +75,7 @@ pub struct CircularLayoutAlgorithm2D<V> {
 }
 
 impl<V> CircularLayoutAlgorithm2D<V> {
+    /// Create a new layout algorithm
     pub fn new(radius: f64) -> Result<Self> {
         if tolerance().compare(radius, 0.0) <= 0 {
             return Err(GraphError::InvalidArgument(
@@ -149,6 +150,7 @@ impl RandomLayoutAlgorithm2D<JavaRandom> {
 }
 
 impl<R: RandomSource> RandomLayoutAlgorithm2D<R> {
+    /// Create a new layout algorithm
     pub fn new(rng: R) -> Self {
         RandomLayoutAlgorithm2D { rng }
     }
@@ -184,6 +186,7 @@ pub struct RescaleLayoutAlgorithm2D {
 }
 
 impl RescaleLayoutAlgorithm2D {
+    /// Create a new layout algorithm
     pub fn new(scale: f64) -> Result<Self> {
         if scale <= 0.0 {
             return Err(GraphError::InvalidArgument("Scale must be positive".into()));
@@ -285,6 +288,7 @@ impl<V> Default for TwoLayeredBipartiteLayout2D<V> {
 }
 
 impl<V> TwoLayeredBipartiteLayout2D<V> {
+    /// Create a new layout
     pub fn new() -> Self {
         Self::default()
     }

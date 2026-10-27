@@ -141,6 +141,8 @@ pub struct GreedyWeightedMatching<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> GreedyWeightedMatching<'g, G> {
+    /// Create and execute a new instance of the greedy maximum weight matching algorithm. Floating
+    /// point values are compared using `DEFAULT_EPSILON` tolerance.
     pub fn new(graph: &'g G, normalize_edge_costs: bool) -> Result<Self> {
         Self::with_epsilon(graph, normalize_edge_costs, DEFAULT_EPSILON)
     }

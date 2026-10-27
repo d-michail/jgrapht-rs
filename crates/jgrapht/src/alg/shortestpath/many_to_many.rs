@@ -50,6 +50,8 @@ pub struct DefaultManyToManyShortestPaths<'g, G: Graph + 'g> {
 }
 
 impl<'g, G: Graph + 'g> DefaultManyToManyShortestPaths<'g, G> {
+    /// Constructs a new instance of the algorithm for a given `graph`. The `function` is
+    /// defaulted to returning `BidirectionalDijkstraShortestPath`.
     pub fn new(graph: &'g G) -> Self {
         Self {
             graph,
@@ -155,6 +157,7 @@ pub struct DijkstraManyToManyShortestPaths<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> DijkstraManyToManyShortestPaths<'g, G> {
+    /// Constructs an instance of the algorithm for a given `graph`.
     pub fn new(graph: &'g G) -> Self {
         Self { graph }
     }

@@ -235,6 +235,7 @@ pub struct GreedyColoring<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> GreedyColoring<'g, G> {
+    /// Construct a new coloring algorithm.
     pub fn new(graph: &'g G) -> Self {
         GreedyColoring { graph }
     }
@@ -264,6 +265,7 @@ pub struct LargestDegreeFirstColoring<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> LargestDegreeFirstColoring<'g, G> {
+    /// Construct a new coloring algorithm.
     pub fn new(graph: &'g G) -> Self {
         LargestDegreeFirstColoring { graph }
     }
@@ -312,6 +314,7 @@ pub struct SmallestDegreeLastColoring<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> SmallestDegreeLastColoring<'g, G> {
+    /// Construct a new coloring algorithm.
     pub fn new(graph: &'g G) -> Self {
         SmallestDegreeLastColoring { graph }
     }
@@ -372,6 +375,7 @@ pub struct RandomGreedyColoring<'g, G: Graph, R> {
 }
 
 impl<'g, G: Graph, R: RandomSource> RandomGreedyColoring<'g, G, R> {
+    /// Construct a new coloring algorithm.
     pub fn new(graph: &'g G, rng: R) -> Self {
         RandomGreedyColoring {
             graph,
@@ -421,6 +425,7 @@ pub struct SaturationDegreeColoring<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> SaturationDegreeColoring<'g, G> {
+    /// Construct a new coloring algorithm.
     pub fn new(graph: &'g G) -> Self {
         SaturationDegreeColoring { graph }
     }
@@ -625,6 +630,7 @@ impl BrownState<'_> {
 }
 
 impl<V: Clone + Eq + Hash> BrownBacktrackColoring<V> {
+    /// Construct a new Brown backtracking algorithm.
     pub fn new<G: Graph<Vertex = V>>(graph: &G) -> Self {
         let vertex_list: Vec<V> = graph.vertices().cloned().collect();
         let index: HashMap<&V, usize> = vertex_list
@@ -722,6 +728,8 @@ pub struct ChordalGraphColoring<'g, G: UndirectedGraph> {
 
 impl<'g, G: UndirectedGraph> ChordalGraphColoring<'g, G> {
     pub fn new(graph: &'g G) -> Self {
+    /// Creates a new ChordalGraphColoring instance. The `ChordalityInspector` used in this
+    /// implementation uses the default `MaximumCardinalityIterator` iterator.
         Self::with_order(graph, IterationOrder::Mcs)
     }
 

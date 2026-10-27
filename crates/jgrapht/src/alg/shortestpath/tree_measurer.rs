@@ -26,6 +26,7 @@ pub struct TreeMeasurer<'g, G> {
 }
 
 impl<'g, G: Graph> TreeMeasurer<'g, G> {
+    /// Constructs a new instance of TreeMeasurer.
     pub fn new(graph: &'g G) -> Self {
         Self { graph }
     }

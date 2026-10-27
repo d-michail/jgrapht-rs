@@ -89,6 +89,7 @@ pub struct GusfieldEquivalentFlowTree<'g, G: Graph> {
 }
 
 impl<'g, G: Graph + 'g> GusfieldEquivalentFlowTree<'g, G> {
+    /// Constructs a new GusfieldEquivalentFlowTree instance.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
@@ -254,6 +255,7 @@ pub struct GusfieldGomoryHuCutTree<'g, G: Graph> {
 }
 
 impl<'g, G: Graph + 'g> GusfieldGomoryHuCutTree<'g, G> {
+    /// Constructs a new GusfieldEquivalentFlowTree instance.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }

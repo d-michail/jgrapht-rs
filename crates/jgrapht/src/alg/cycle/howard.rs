@@ -70,6 +70,7 @@ pub struct HowardMinimumMeanCycle<'g, G: DirectedGraph, S = GabowStrongConnectiv
 }
 
 impl<'g, G: DirectedGraph> HowardMinimumMeanCycle<'g, G> {
+    /// Constructs an instance of the algorithm for the given `graph`.
     pub fn new(graph: &'g G) -> Self {
         Self::with_maximum_iterations(graph, usize::MAX)
     }

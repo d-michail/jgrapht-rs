@@ -79,6 +79,7 @@ pub struct BipartitePartitioning<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> BipartitePartitioning<'g, G> {
+    /// Constructs a new bipartite partitioning.
     pub fn new(graph: &'g G) -> Self {
         BipartitePartitioning {
             graph,

@@ -48,6 +48,7 @@ pub struct FRQuadTree {
 pub type NodeId = usize;
 
 impl FRQuadTree {
+    /// Create a new tree for a certain area.
     pub fn new(boxx: Box2D) -> Self {
         FRQuadTree {
             nodes: vec![QNode {
@@ -233,6 +234,7 @@ pub const DEFAULT_NORMALIZATION_FACTOR: f64 = 0.5;
 pub const DEFAULT_THETA_FACTOR: f64 = 0.5;
 
 impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
+    /// Create a new layout algorithm
     pub fn new(iterations: usize, normalization_factor: f64, rng: R) -> Self {
         Self::with_tolerance(
             iterations,

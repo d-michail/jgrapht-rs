@@ -58,6 +58,9 @@ pub struct PathGrowingWeightedMatching<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> PathGrowingWeightedMatching<'g, G> {
+    /// Construct a new instance of the path growing algorithm. Floating point values are compared
+    /// using `DEFAULT_EPSILON` tolerance. By default two additional linear time heuristics
+    /// are used in order to improve the quality of the matchings.
     pub fn new(graph: &'g G) -> Result<Self> {
         Self::with_options(graph, DEFAULT_USE_HEURISTICS, DEFAULT_EPSILON)
     }

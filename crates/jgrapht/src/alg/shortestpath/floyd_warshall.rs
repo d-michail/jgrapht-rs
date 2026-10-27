@@ -98,6 +98,7 @@ pub struct FloydWarshallShortestPaths<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> FloydWarshallShortestPaths<'g, G> {
+    /// Create a new instance of the Floyd-Warshall all-pairs shortest path algorithm.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(Self {
             graph,

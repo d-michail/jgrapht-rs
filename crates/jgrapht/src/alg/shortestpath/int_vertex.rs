@@ -67,6 +67,7 @@ impl<'g, G: Graph> IntVertexDijkstraShortestPath<'g, G>
 where
     G::Vertex: IntVertex,
 {
+    /// Constructs a new instance of the algorithm for a given graph.
     pub fn new(graph: &'g G) -> Self {
         Self { graph }
     }

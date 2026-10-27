@@ -36,6 +36,9 @@ pub struct DijkstraClosestFirstIterator<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
+    /// Creates a new iterator for the specified graph. Iteration will start at the specified start
+    /// vertex and will be limited to the connected component that includes that vertex. This
+    /// iterator will use pairing heap as a default heap implementation.
     pub fn new(graph: &'g G, source: &G::Vertex) -> Result<Self> {
         Self::with_radius(graph, source, f64::INFINITY)
     }

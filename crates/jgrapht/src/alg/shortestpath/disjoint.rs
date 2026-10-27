@@ -356,6 +356,7 @@ pub struct SuurballeKDisjointShortestPaths<'g, G> {
 }
 
 impl<'g, G: DirectedGraph> SuurballeKDisjointShortestPaths<'g, G> {
+    /// Creates a new instance of the algorithm.
     pub fn new(graph: &'g G) -> Self {
         Self { graph }
     }
@@ -391,6 +392,7 @@ pub struct BhandariKDisjointShortestPaths<'g, G> {
 }
 
 impl<'g, G: DirectedGraph> BhandariKDisjointShortestPaths<'g, G> {
+    /// Creates a new instance of the algorithm.
     pub fn new(graph: &'g G) -> Self {
         Self { graph }
     }

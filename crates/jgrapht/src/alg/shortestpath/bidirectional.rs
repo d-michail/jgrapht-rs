@@ -80,6 +80,7 @@ pub struct BidirectionalDijkstraShortestPath<'g, G> {
 }
 
 impl<'g, G: Graph> BidirectionalDijkstraShortestPath<'g, G> {
+    /// Constructs a new instance for a specified graph.
     pub fn new(graph: &'g G) -> Self {
         Self {
             graph,

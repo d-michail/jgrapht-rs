@@ -31,6 +31,7 @@ pub struct FixedSizeIntegerQueue {
 }
 
 impl FixedSizeIntegerQueue {
+    /// Create a queue of fixed size.
     pub fn new(capacity: usize) -> Self {
         assert!(capacity > 0);
         FixedSizeIntegerQueue {

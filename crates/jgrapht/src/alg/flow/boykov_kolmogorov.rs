@@ -85,6 +85,8 @@ pub struct BoykovKolmogorovMFImpl<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> BoykovKolmogorovMFImpl<'g, G> {
+    /// Creates a new algorithm instance with the specified `network`. The created algorithm
+    /// uses default epsilon.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }

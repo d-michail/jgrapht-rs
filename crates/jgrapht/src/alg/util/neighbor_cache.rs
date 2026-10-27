@@ -106,6 +106,7 @@ impl<V: Eq + Hash + Clone> Default for NeighborCache<V> {
 }
 
 impl<V: Eq + Hash + Clone> NeighborCache<V> {
+    /// Constructor
     pub fn new() -> Self {
         NeighborCache {
             successors: HashMap::new(),

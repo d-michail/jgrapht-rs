@@ -663,6 +663,7 @@ impl HawickJamesState<'_> {
 
 impl<'g, G: DirectedGraph> HawickJamesSimpleCycles<'g, G> {
     pub fn new() -> Self {
+    /// Create a simple cycle finder with an unspecified graph.
         Self::default()
     }
 

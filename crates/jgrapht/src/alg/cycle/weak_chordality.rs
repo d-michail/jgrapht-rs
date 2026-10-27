@@ -113,6 +113,7 @@ pub struct WeakChordalityInspector<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> WeakChordalityInspector<'g, G> {
+    /// Creates a weak chordality inspector for the `graph`
     pub fn new(graph: &'g G) -> Self {
         let vertices: Vec<G::Vertex> = graph.vertices().cloned().collect();
         let index: std::collections::HashMap<&G::Vertex, usize> =

@@ -152,6 +152,7 @@ pub struct UndirectedModularityMeasurer<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> UndirectedModularityMeasurer<'g, G> {
+    /// Construct a new measurer
     pub fn new(graph: &'g G) -> Result<Self> {
         props::require_undirected(graph)?;
         let mut degrees = HashMap::new();
@@ -240,6 +241,7 @@ pub struct GirvanNewmanClustering<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> GirvanNewmanClustering<'g, G> {
+    /// Create a new clustering algorithm.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         Self::with_options(graph, k, OverflowStrategy::ThrowExceptionOnOverflow, None)
     }
@@ -319,6 +321,7 @@ pub struct KSpanningTreeClustering<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> KSpanningTreeClustering<'g, G> {
+    /// Create a new clustering algorithm.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         props::require_undirected(graph)?;
         if k < 1 || k > graph.vertex_count() {
@@ -380,6 +383,7 @@ pub struct NaiveGreedyModularityAlgorithm<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> NaiveGreedyModularityAlgorithm<'g, G> {
+    /// Create a new Naive Greedy clustering algorithm.
     pub fn new(graph: &'g G) -> Result<Self> {
         props::require_undirected(graph)?;
         Ok(NaiveGreedyModularityAlgorithm { graph })
@@ -462,6 +466,7 @@ pub struct GreedyModularityAlgorithm<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> GreedyModularityAlgorithm<'g, G> {
+    /// Create a new clustering algorithm.
     pub fn new(graph: &'g G) -> Self {
         GreedyModularityAlgorithm {
             graph,

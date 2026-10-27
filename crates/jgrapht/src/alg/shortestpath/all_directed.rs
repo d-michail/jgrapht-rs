@@ -80,6 +80,7 @@ pub struct AllDirectedPaths<'g, G: DirectedGraph, P = AllowAllPaths> {
 }
 
 impl<'g, G: DirectedGraph> AllDirectedPaths<'g, G, AllowAllPaths> {
+    /// Create a new instance.
     pub fn new(graph: &'g G) -> Self {
         Self {
             graph,

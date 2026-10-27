@@ -35,6 +35,7 @@ pub struct UnionFind<T: Eq + Hash + Clone> {
 }
 
 impl<T: Eq + Hash + Clone> UnionFind<T> {
+    /// Creates a UnionFind instance with all the elements in separate sets.
     pub fn new(elements: impl IntoIterator<Item = T>) -> Self {
         let mut uf = UnionFind {
             parent: IndexMap::new(),

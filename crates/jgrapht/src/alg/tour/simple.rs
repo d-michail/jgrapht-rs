@@ -44,6 +44,7 @@ pub struct RandomTourTSP<R = StdRng> {
 }
 
 impl RandomTourTSP<StdRng> {
+    /// Construct with default random number generator
     pub fn new() -> Self {
         RandomTourTSP {
             rng: StdRng::from_os_rng(),
@@ -114,6 +115,7 @@ pub struct NearestNeighborHeuristicTSP<V, R = StdRng> {
 }
 
 impl<V> NearestNeighborHeuristicTSP<V, StdRng> {
+    /// Constructor. By default a random vertex is chosen to start.
     pub fn new() -> Self {
         Self::with_rng(StdRng::from_os_rng())
     }
@@ -218,6 +220,7 @@ fn nearest_neighbor<G: Graph>(
 pub struct TwoApproxMetricTSP;
 
 impl TwoApproxMetricTSP {
+    /// Constructs a new instance.
     pub fn new() -> Self {
         TwoApproxMetricTSP
     }
@@ -273,6 +276,7 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for TwoApproxMetricTSP {
 pub struct GreedyHeuristicTSP;
 
 impl GreedyHeuristicTSP {
+    /// Constructs a new instance.
     pub fn new() -> Self {
         GreedyHeuristicTSP
     }
@@ -350,6 +354,7 @@ pub struct HeldKarpTSP;
 const MIN_VALUE: f64 = f64::from_bits(1);
 
 impl HeldKarpTSP {
+    /// Constructs a new instance.
     pub fn new() -> Self {
         HeldKarpTSP
     }
@@ -474,6 +479,7 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for HeldKarpTSP {
 pub struct PalmerHamiltonianCycle;
 
 impl PalmerHamiltonianCycle {
+    /// Constructs a new instance.
     pub fn new() -> Self {
         PalmerHamiltonianCycle
     }

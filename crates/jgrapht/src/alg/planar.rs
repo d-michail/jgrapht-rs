@@ -275,6 +275,8 @@ pub struct BoyerMyrvoldPlanarityInspector<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
+    /// Creates new instance of the planarity testing algorithm for the `graph`. The input
+    /// graph can't be null.
     pub fn new(graph: &'g G) -> Self {
         BoyerMyrvoldPlanarityInspector {
             graph,

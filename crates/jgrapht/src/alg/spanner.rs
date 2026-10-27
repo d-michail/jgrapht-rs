@@ -114,6 +114,7 @@ pub struct GreedyMultiplicativeSpanner<'g, G: Graph> {
 impl<'g, G: Graph> GreedyMultiplicativeSpanner<'g, G> {
     const MAX_K: usize = 1 << 29;
 
+    /// Constructs instance to compute a $(2k-1)$-spanner of an undirected graph.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         if graph.graph_type().directed {
             return Err(GraphError::InvalidArgument(

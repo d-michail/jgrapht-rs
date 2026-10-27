@@ -183,6 +183,10 @@ pub struct HeavyPathDecomposition<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
+    /// Create an instance with a reference to the tree that we will decompose and to the root of the
+    /// tree.
+    ///
+    /// Note: The constructor will NOT check if the input graph is a valid tree.
     pub fn new(tree: &'g G, root: G::Vertex) -> Result<Self> {
         Self::with_roots(tree, [root])
     }
@@ -450,6 +454,8 @@ where
 {
     pub fn new(
         graph: &'g G,
+    /// Construct the algorithm for a given bipartite graph $G=(V_1,V_2,E)$ and it's partitions $V_1$
+    /// and $V_2$, where $V_1\cap V_2=\emptyset$.
         partition1: HashSet<G::Vertex>,
         partition2: HashSet<G::Vertex>,
     ) -> Self {
@@ -473,6 +479,7 @@ where
 
     pub fn decompose(
         &self,
+    /// Perform the decomposition, using a pre-calculated bipartite matching
     /// Perform the decomposition, using a pre-calculated bipartite matching
         matching: &Matching<G::Vertex, G::Edge>,
         fine: bool,

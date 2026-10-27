@@ -235,6 +235,7 @@ impl Run {
     }
 }
 
+    /// Constructs a new Hierholzer Eulerian cycle algorithm.
 impl HierholzerEulerianCycle {
     pub fn new() -> Self {
         HierholzerEulerianCycle
@@ -299,6 +300,7 @@ impl HierholzerEulerianCycle {
     }
 }
 
+    /// Compute an Eulerian cycle of a graph.
     /// Compute an Eulerian cycle of a graph.
 impl<G: Graph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
     fn get_eulerian_cycle(&mut self, g: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {

@@ -55,6 +55,7 @@ pub struct PushRelabelMFImpl<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> PushRelabelMFImpl<'g, G> {
+    /// Construct a new push-relabel algorithm.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }

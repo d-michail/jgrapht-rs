@@ -44,6 +44,8 @@ pub struct GraphMeasurer<V> {
 }
 
 impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
+    /// Constructs a new instance of GraphMeasurer. `FloydWarshallShortestPaths` is used as the
+    /// default shortest path algorithm.
     pub fn new<G: Graph<Vertex = V>>(g: &G) -> crate::Result<Self> {
         let ap = floyd_warshall(g)?;
         let vertices: Vec<V> = g.vertices().cloned().collect();

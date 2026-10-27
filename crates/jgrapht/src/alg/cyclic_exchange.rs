@@ -82,6 +82,7 @@ impl<'g, G: DirectedGraph> AhujaOrlinSharmaCyclicExchangeLocalAugmentation<'g, G
 where
     G::Vertex: Eq + Hash,
 {
+    /// Constructs an algorithm with given inputs
     pub fn new(
         graph: &'g G,
         length_bound: usize,

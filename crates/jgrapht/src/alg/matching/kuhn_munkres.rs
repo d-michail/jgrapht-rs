@@ -49,6 +49,7 @@ pub struct KuhnMunkresMinimalWeightBipartitePerfectMatching<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> KuhnMunkresMinimalWeightBipartitePerfectMatching<'g, G> {
+    /// Construct a new instance of the algorithm.
     pub fn new(
         graph: &'g G,
         partition1: IndexSet<G::Vertex>,

@@ -63,6 +63,7 @@ enum AugmentedEdge<V, E> {
 pub struct ChinesePostman;
 
 impl ChinesePostman {
+    /// Constructs a new Chinese Postman solver.
     pub fn new() -> Self {
         Self
     }

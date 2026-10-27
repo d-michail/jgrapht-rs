@@ -1088,6 +1088,7 @@ impl<V, E> Default for BergeGraphInspector<V, E> {
 }
 
 impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGraphInspector<V, E> {
+    /// Constructs a new Berge graph inspector.
     pub fn new() -> Self {
         Self::default()
     }

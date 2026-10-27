@@ -224,6 +224,7 @@ pub struct BronKerboschCliqueFinder<'g, G: Graph> {
 
 impl<'g, G: Graph> BronKerboschCliqueFinder<'g, G> {
     pub fn new(graph: &'g G) -> Self {
+    /// Constructs a new clique finder.
         BronKerboschCliqueFinder {
             base: BronKerboschBase::new(graph, None),
         }
@@ -328,6 +329,7 @@ pub struct PivotBronKerboschCliqueFinder<'g, G: Graph> {
 
 impl<'g, G: Graph> PivotBronKerboschCliqueFinder<'g, G> {
     pub fn new(graph: &'g G) -> Self {
+    /// Constructs a new clique finder.
         PivotBronKerboschCliqueFinder {
             base: BronKerboschBase::new(graph, None),
         }
@@ -362,6 +364,7 @@ impl<'g, G: Graph> PivotBronKerboschCliqueFinder<'g, G> {
 
     fn find_cliques(
         &mut self,
+    /// Recursive implementation of the Bron-Kerbosch with pivot.
     /// Recursive implementation of the Bron-Kerbosch with pivot.
         p: &mut IndexSet<G::Vertex>,
         r: &IndexSet<G::Vertex>,
@@ -453,6 +456,7 @@ pub struct DegeneracyBronKerboschCliqueFinder<'g, G: Graph> {
 
 impl<'g, G: Graph> DegeneracyBronKerboschCliqueFinder<'g, G> {
     pub fn new(graph: &'g G) -> Self {
+    /// Constructs a new clique finder.
         DegeneracyBronKerboschCliqueFinder {
             inner: PivotBronKerboschCliqueFinder::new(graph),
         }
@@ -527,6 +531,8 @@ pub struct ChordalGraphMaxCliqueFinder<'g, G: UndirectedGraph> {
 
 impl<'g, G: UndirectedGraph> ChordalGraphMaxCliqueFinder<'g, G> {
     pub fn new(graph: &'g G) -> Self {
+    /// Creates a new ChordalGraphMaxCliqueFinder instance. The `ChordalityInspector` used in
+    /// this implementation uses the default `MaximumCardinalityIterator` iterator.
         Self::with_order(graph, IterationOrder::Mcs)
     }
 
@@ -540,6 +546,7 @@ impl<'g, G: UndirectedGraph> ChordalGraphMaxCliqueFinder<'g, G> {
     }
 
     fn lazy_compute_maximum_clique(&mut self) {
+    /// Lazily computes some maximum clique of the `graph`.
         if self.maximum_clique.is_none() && self.is_chordal {
     /// Lazily computes some maximum clique of the `graph`.
             let mut cgc = ChordalGraphColoring::with_order(self.graph, self.iteration_order);
@@ -604,6 +611,8 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
         props::require_undirected(graph)?;
         Ok(CliqueMinimalSeparatorDecomposition {
             graph,
+    /// Setup a clique minimal separator decomposition on undirected graph `g`. Loops and
+    /// multiple (parallel) edges are removed, i.e. the graph is transformed to a simple graph.
             chordal_graph: None,
             fill_edges: Vec::new(),
             meo: Vec::new(),
@@ -631,6 +640,9 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
         if self.chordal_graph.is_some() {
             return;
         }
+    /// Compute the minimal triangulation of the graph. Implementation of Algorithm MCS-M+ as
+    /// described in Berry et al. (2010), DOI:10.3390/a3020197
+    /// [http://www.mdpi.com/1999-4893/3/2/197](http://www.mdpi.com/1999-4893/3/2/197)
         let mut chordal = crate::UGraph::<G::Vertex>::simple();
         chordal.add_vertices(self.graph.vertices().cloned());
     /// Compute the minimal triangulation of the graph. Implementation of Algorithm MCS-M+ as
@@ -702,6 +714,9 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
     }
 
     fn compute_atoms(&mut self) {
+    /// Compute the unique decomposition of the input graph $G$ (atoms of $G$). Implementation of
+    /// algorithm Atoms as described in Berry et al. (2010), DOI:10.3390/a3020197,
+    /// [http://www.mdpi.com/1999-4893/3/2/197](http://www.mdpi.com/1999-4893/3/2/197)
         if self.atoms.is_some() {
             return;
         }
@@ -761,6 +776,7 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
 
     fn simple_copy_of_ugraph(g: &crate::UGraph<G::Vertex>) -> crate::UGraph<G::Vertex> {
         g.clone()
+    /// Check if the graph is chordal.
     }
 
     pub fn is_chordal(&mut self) -> bool {

@@ -67,6 +67,8 @@ pub struct YenShortestPathIterator<'g, G: Graph, P = AllowAllPaths> {
 }
 
 impl<'g, G: Graph> YenShortestPathIterator<'g, G, AllowAllPaths> {
+    /// Constructs an instance of the algorithm for given `graph`, `source` and
+    /// `sink`.
     pub fn new(graph: &'g G, source: &G::Vertex, sink: &G::Vertex) -> Result<Self> {
         Self::with_validator(graph, source, sink, AllowAllPaths)
     }
@@ -247,6 +249,7 @@ pub struct YenKShortestPath<'g, G: Graph, P = AllowAllPaths> {
 }
 
 impl<'g, G: Graph> YenKShortestPath<'g, G, AllowAllPaths> {
+    /// Constructs an instance of the algorithm for the given `graph`.
     pub fn new(graph: &'g G) -> Self {
         Self {
             graph,

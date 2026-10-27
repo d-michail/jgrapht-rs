@@ -101,6 +101,8 @@ impl<'g, G: Graph + 'g> Strategy<'g, G> for ProbeStrategy<'g, G> {
 }
 
 impl<'g, G: DirectedGraph + 'g> CycleDetector<'g, G> {
+    /// Creates a cycle detector for the specified graph. Currently only directed graphs are
+    /// supported.
     pub fn new(graph: &'g G) -> Self {
         CycleDetector { graph }
     }

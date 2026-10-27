@@ -446,6 +446,7 @@ pub struct EdgeBetweennessCentrality<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
+    /// Construct a new instance.
     pub fn new(graph: &'g G) -> Result<Self, GraphError> {
         Self::with_options(graph, OverflowStrategy::IgnoreOverflow, None)
     }
@@ -719,6 +720,8 @@ pub struct ClosenessCentrality<V> {
 }
 
 impl<V: Eq + std::hash::Hash + Clone> ClosenessCentrality<V> {
+    /// Construct a new instance. By default the centrality is normalized and computed using outgoing
+    /// paths.
     pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
         Self::with_options(g, false, true)
     }
@@ -781,6 +784,8 @@ pub struct HarmonicCentrality<V> {
 }
 
 impl<V: Eq + std::hash::Hash + Clone> HarmonicCentrality<V> {
+    /// Construct a new instance. By default the centrality is normalized and computed using outgoing
+    /// paths.
     pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
         Self::with_options(g, false, true)
     }
@@ -841,6 +846,7 @@ pub struct Coreness<V> {
 }
 
 impl<V: Eq + std::hash::Hash + Clone> Coreness<V> {
+    /// Constructor
     pub fn new<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
         crate::graph::props::require_undirected(g)?;
         if !crate::graph::props::is_simple(g) {
@@ -898,6 +904,7 @@ pub struct ClusteringCoefficient<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> ClusteringCoefficient<'g, G> {
+    /// Construct a new instance
     pub fn new(graph: &'g G) -> Self {
         let scores = graph
             .vertices()
@@ -1020,6 +1027,7 @@ pub struct EigenvectorCentrality<V> {
 }
 
 impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
+    /// Create and execute an instance of EigenvectorCentrality
     pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
         Self::with_options(g, MAX_ITERATIONS_DEFAULT, TOLERANCE_DEFAULT).expect("default options")
     }
@@ -1105,6 +1113,7 @@ pub struct KatzCentrality<V> {
 }
 
 impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
+    /// Create and execute an instance of KatzCentrality.
     pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
         Self::with_damping(g, 0.01).expect("default options")
     }
@@ -1200,6 +1209,7 @@ pub struct PageRank<V> {
 }
 
 impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
+    /// Create and execute an instance of PageRank.
     pub fn new<G: Graph<Vertex = V>>(g: &G) -> Self {
         Self::with_options(g, 0.85, MAX_ITERATIONS_DEFAULT, TOLERANCE_DEFAULT)
             .expect("default options")
@@ -1313,6 +1323,7 @@ pub struct BetweennessCentrality<V> {
 }
 
 impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
+    /// Construct a new instance.
     pub fn new<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
         Self::with_options(g, false, OverflowStrategy::IgnoreOverflow)
     }
@@ -1568,6 +1579,7 @@ fn ap_divide(lhs: &ApFloat, rhs: &ApFloat, precision: usize) -> Result<ApFloat, 
 }
 
 impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
+    /// Construct a new instance.
     pub fn new<G: Graph<Vertex = V>>(g: &G) -> Result<Self, GraphError> {
         Self::with_normalize(g, false)
     }

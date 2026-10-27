@@ -33,6 +33,7 @@ pub struct BfsShortestPath<'g, G>(pub &'g G);
 pub type BFSShortestPath<'g, G> = BfsShortestPath<'g, G>;
 
 impl<'g, G> BfsShortestPath<'g, G> {
+    /// Construct a new instance.
     pub fn new(graph: &'g G) -> Self {
         Self(graph)
     }

@@ -211,6 +211,7 @@ pub struct MapLayoutModel2D<V: Eq + Hash> {
 }
 
 impl<V: Eq + Hash> MapLayoutModel2D<V> {
+    /// Create a new model.
     pub fn new(area: Box2D) -> Self {
         MapLayoutModel2D {
             area,
@@ -272,6 +273,7 @@ pub struct ListenableLayoutModel2D<V, M: LayoutModel2D<V>> {
 }
 
 impl<V, M: LayoutModel2D<V>> ListenableLayoutModel2D<V, M> {
+    /// Create a new model
     pub fn new(model: M) -> Self {
         ListenableLayoutModel2D {
             model,

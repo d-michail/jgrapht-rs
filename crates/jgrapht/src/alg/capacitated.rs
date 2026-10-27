@@ -414,6 +414,7 @@ pub struct EsauWilliamsCapacitatedMinimumSpanningTree<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
+    /// Constructs an Esau-Williams GRASP algorithm instance.
     pub fn new(
         graph: &'g G,
         root: G::Vertex,

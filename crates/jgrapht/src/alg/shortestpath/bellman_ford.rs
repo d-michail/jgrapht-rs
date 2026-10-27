@@ -34,6 +34,8 @@ pub struct NegativeCycleDetected<V, E> {
 }
 
 impl<V, E> NegativeCycleDetected<V, E> {
+    /// Constructs a new exception with `null` as its detail message. The cause is not
+    /// initialized, and may subsequently be initialized by a call to `initCause`.
     pub fn new(cycle: GraphWalk<V, E>) -> Self {
         Self { cycle }
     }
@@ -118,6 +120,7 @@ pub struct BellmanFord<'g, G> {
 pub type BellmanFordShortestPath<'g, G> = BellmanFord<'g, G>;
 
 impl<'g, G> BellmanFord<'g, G> {
+    /// Construct a new instance.
     pub fn new(graph: &'g G) -> Self {
         Self {
             graph,

@@ -185,6 +185,9 @@ fn validate_tree<G: Graph>(tree: &G, root: &G::Vertex) -> Result<()> {
 }
 
 impl<'g, G: Graph> AHURootedTreeIsomorphismInspector<'g, G> {
+    /// Construct a new AHU rooted tree isomorphism inspector.
+    ///
+    /// Note: The constructor does NOT check if the input trees are valid.
     pub fn new(tree1: &'g G, root1: &G::Vertex, tree2: &'g G, root2: &G::Vertex) -> Result<Self> {
         validate_tree(tree1, root1)?;
         validate_tree(tree2, root2)?;
@@ -302,6 +305,9 @@ fn tree_center(adj: &[Vec<usize>]) -> Vec<usize> {
 }
 
 impl<'g, G: Graph> AHUUnrootedTreeIsomorphismInspector<'g, G> {
+    /// Construct a new AHU unrooted tree isomorphism inspector.
+    ///
+    /// Note: The constructor does NOT check if the input trees are valid.
     pub fn new(tree1: &'g G, tree2: &'g G) -> Result<Self> {
         validate_unrooted(tree1)?;
         validate_unrooted(tree2)?;
@@ -405,6 +411,9 @@ fn validate_forest<G: Graph>(forest: &G, roots: &[G::Vertex]) -> Result<()> {
 }
 
 impl<'g, G: Graph> AHUForestIsomorphismInspector<'g, G> {
+    /// Construct a new AHU rooted forest isomorphism inspector.
+    ///
+    /// Note: The constructor does NOT check if the input forests are valid trees.
     pub fn new(
         forest1: &'g G,
         roots1: impl IntoIterator<Item = G::Vertex>,

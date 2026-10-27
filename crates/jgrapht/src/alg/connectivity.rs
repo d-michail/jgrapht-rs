@@ -363,6 +363,7 @@ impl<V: Eq + Hash + Clone> Default for ConnectivityInspector<V> {
 }
 
 impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
+    /// Creates a connectivity inspector for the specified graph.
     pub fn new() -> Self {
         ConnectivityInspector {
             connected_sets: None,
@@ -536,6 +537,7 @@ pub struct GabowStrongConnectivityInspector<'g, G: DirectedGraph> {
 }
 
 impl<'g, G: DirectedGraph> GabowStrongConnectivityInspector<'g, G> {
+    /// Constructor
     pub fn new(graph: &'g G) -> Self {
         let ix = Indexed::new(graph);
         let n = ix.n();
@@ -613,6 +615,7 @@ pub struct KosarajuStrongConnectivityInspector<'g, G: DirectedGraph> {
 }
 
 impl<'g, G: DirectedGraph> KosarajuStrongConnectivityInspector<'g, G> {
+    /// Constructor
     pub fn new(graph: &'g G) -> Self {
         enum Entry {
             Visit(usize),
@@ -721,6 +724,7 @@ pub struct BiconnectivityInspector<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
+    /// Constructs a new BiconnectivityInspector
     pub fn new(graph: &'g G) -> Self {
         let vs: Vec<G::Vertex> = graph.vertices().cloned().collect();
         let n = vs.len();
@@ -970,6 +974,7 @@ pub struct BlockCutpointGraph<V: Eq + Hash> {
 
 impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
     pub fn new<G: Graph<Vertex = V>>(graph: &G) -> Self {
+    /// Constructs a Block-Cutpoint graph
         let bi = BiconnectivityInspector::new(graph);
         let block_count = bi.blocks().len();
         let mut nodes: Vec<HashSet<V>> = bi.blocks().to_vec();
@@ -1085,6 +1090,7 @@ pub struct KConnectivityFlowAlgorithm<'g, G: Graph> {
 
 impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
     pub fn new(graph: &'g G) -> Self {
+    /// Constructs a k-connectivity algorithm for the given graph. This
         Self::with_flow(
             graph,
             |g, s, t| {

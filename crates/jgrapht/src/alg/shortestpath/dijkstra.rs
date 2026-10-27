@@ -39,6 +39,8 @@ pub struct Dijkstra<'g, G, H = PairingHeap<OrderedF64, usize>> {
 pub type DijkstraShortestPath<'g, G, H = PairingHeap<OrderedF64, usize>> = Dijkstra<'g, G, H>;
 
 impl<'g, G: Graph> Dijkstra<'g, G> {
+    /// Constructs a new instance of the algorithm for a given graph. The constructed algorithm will
+    /// use pairing heap as a default heap implementation.
     pub fn new(g: &'g G) -> Self {
         Self::with_heap(g)
     }

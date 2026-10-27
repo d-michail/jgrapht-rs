@@ -46,6 +46,8 @@ pub struct DinicMFImpl<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> DinicMFImpl<'g, G> {
+    /// Constructor. Constructs a new network on which we will calculate the maximum flow, using
+    /// Dinic algorithm.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }

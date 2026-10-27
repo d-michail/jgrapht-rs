@@ -45,6 +45,8 @@ pub struct ChordalGraphIndependentSetFinder<'g, G: UndirectedGraph> {
 }
 
 impl<'g, G: UndirectedGraph> ChordalGraphIndependentSetFinder<'g, G> {
+    /// Creates a new ChordalGraphIndependentSetFinder instance. The `ChordalityInspector` used
+    /// in this implementation uses the default `MaximumCardinalityIterator` iterator.
     pub fn new(graph: &'g G) -> Self {
         Self::with_order(graph, IterationOrder::Mcs)
     }

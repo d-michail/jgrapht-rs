@@ -231,6 +231,7 @@ pub struct DagHamiltonianPath;
 impl DagHamiltonianPath {
     pub fn new() -> Self {
         DagHamiltonianPath
+    /// Constructs a new instance.
     }
 }
 
@@ -364,6 +365,8 @@ impl HeldKarpHamiltonianPath {
 
     pub fn new() -> Self {
         HeldKarpHamiltonianPath {
+    /// Constructs a new instance with the default vertex ceiling
+    /// (`DEFAULT_MAX_VERTICES`).
             max_vertices: Self::DEFAULT_MAX_VERTICES,
             states_expanded: 0,
         }
@@ -566,6 +569,7 @@ pub struct BacktrackingHamiltonianPath {
 impl BacktrackingHamiltonianPath {
     pub fn new() -> Self {
         Self::default()
+    /// Constructs a new instance.
     }
 
     /// The number of states expanded by the last search.
@@ -647,6 +651,9 @@ impl BacktrackingHamiltonianPath {
 
     fn cheap_undirected_prechecks<G: Graph>(graph: &G) -> bool {
         if !ConnectivityInspector::new().is_connected(graph) {
+    /// Cheap necessary conditions for the existence of a Hamiltonian path in an undirected graph.
+    /// Returns `false` if the graph trivially has no Hamiltonian path, `true`
+    /// otherwise. A `true` result does not guarantee a path exists.
             return false;
         }
         let mut leaves = 0;

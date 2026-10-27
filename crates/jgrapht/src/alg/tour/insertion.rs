@@ -276,6 +276,7 @@ impl<G: Graph> Default for FarthestInsertionHeuristicTSP<G> {
 }
 
 impl<G: Graph> FarthestInsertionHeuristicTSP<G> {
+    /// Constructor. By default a sub-tour is chosen based on the longest edge
     pub fn new() -> Self {
         Self::default()
     }
