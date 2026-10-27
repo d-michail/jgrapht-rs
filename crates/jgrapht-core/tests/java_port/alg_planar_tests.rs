@@ -167,3 +167,43 @@ fn agrees_with_the_left_right_test_on_random_graphs() {
         "mixed instances expected, got {planar} planar"
     );
 }
+
+/// Scaling check: the running time must stay about linear on large planar graphs.
+#[test]
+fn scales_linearly_on_grids() {
+    use std::time::Instant;
+    let grid = |side: i32| {
+        let mut g = UGraph::<i32>::simple();
+        g.add_vertices(0..side * side);
+        for r in 0..side {
+            for c in 0..side {
+                let v = r * side + c;
+                if c + 1 < side {
+                    g.add_edge(&v, &(v + 1)).unwrap();
+                }
+                if r + 1 < side {
+                    g.add_edge(&v, &(v + side)).unwrap();
+                }
+                if r + 1 < side && c + 1 < side {
+                    g.add_edge(&v, &(v + side + 1)).unwrap();
+                }
+            }
+        }
+        g
+    };
+    let mut times = Vec::new();
+    for side in [100, 200, 400] {
+        let g = grid(side);
+        let start = Instant::now();
+        let mut inspector = BoyerMyrvoldPlanarityInspector::new(&g);
+        assert!(inspector.is_planar());
+        assert_eq!(
+            inspector.embedding().unwrap().iter().count(),
+            g.vertex_count()
+        );
+        times.push(start.elapsed().as_secs_f64());
+    }
+    // 16 times the vertices between the first and last run; a quadratic algorithm would need
+    // about 256 times the time
+    assert!(times[2] < times[0].max(0.002) * 60.0, "times: {times:?}");
+}

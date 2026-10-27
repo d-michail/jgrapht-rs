@@ -9,7 +9,159 @@ use crate::graph::{Graph, GraphExt};
 use crate::view::AsSubgraph;
 use crate::{GraphError, Result};
 use indexmap::IndexMap;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
+
+/// A circular doubly linked list living in a [`Pool`]; constant time splicing and removal by
+/// handle, as with Java's `DoublyLinkedList`.
+#[derive(Clone, Copy)]
+struct List {
+    head: usize,
+    size: usize,
+}
+
+impl List {
+    const EMPTY: List = List {
+        head: usize::MAX,
+        size: 0,
+    };
+    fn is_empty(&self) -> bool {
+        self.size == 0
+    }
+}
+
+/// Storage for the nodes of all lists: a link has a value (an edge or node index) and neighbours.
+#[derive(Default)]
+struct Pool {
+    prev: Vec<usize>,
+    next: Vec<usize>,
+    val: Vec<usize>,
+}
+
+impl Pool {
+    fn new_link(&mut self, val: usize) -> usize {
+        self.val.push(val);
+        self.prev.push(NIL);
+        self.next.push(NIL);
+        self.val.len() - 1
+    }
+
+    /// Appends a value; returns its handle.
+    fn push_back(&mut self, l: &mut List, val: usize) -> usize {
+        let n = self.new_link(val);
+        if l.size == 0 {
+            self.prev[n] = n;
+            self.next[n] = n;
+            l.head = n;
+        } else {
+            let h = l.head;
+            let t = self.prev[h];
+            self.next[t] = n;
+            self.prev[n] = t;
+            self.next[n] = h;
+            self.prev[h] = n;
+        }
+        l.size += 1;
+        n
+    }
+
+    fn push_front(&mut self, l: &mut List, val: usize) -> usize {
+        let n = self.push_back(l, val);
+        l.head = n;
+        n
+    }
+
+    fn front(&self, l: &List) -> usize {
+        self.val[l.head]
+    }
+
+    fn back(&self, l: &List) -> usize {
+        self.val[self.prev[l.head]]
+    }
+
+    /// Removes the link `n` from `l`.
+    fn remove(&mut self, l: &mut List, n: usize) {
+        if l.size == 1 {
+            l.head = NIL;
+        } else {
+            let (p, nx) = (self.prev[n], self.next[n]);
+            self.next[p] = nx;
+            self.prev[nx] = p;
+            if l.head == n {
+                l.head = nx;
+            }
+        }
+        l.size -= 1;
+        self.prev[n] = NIL;
+        self.next[n] = NIL;
+    }
+
+    /// Moves all of `b` behind `a`, or in front of it when `at_front`.
+    fn splice(&mut self, a: &mut List, b: &mut List, at_front: bool) {
+        if b.size == 0 {
+            return;
+        }
+        if a.size == 0 {
+            *a = *b;
+        } else {
+            let (ah, bh) = (a.head, b.head);
+            let (at, bt) = (self.prev[ah], self.prev[bh]);
+            self.next[at] = bh;
+            self.prev[bh] = at;
+            self.next[bt] = ah;
+            self.prev[ah] = bt;
+            a.size += b.size;
+            if at_front {
+                a.head = bh;
+            }
+        }
+        *b = List::EMPTY;
+    }
+
+    /// Reverses the list (linear, like Java's `invert`).
+    fn reverse(&mut self, l: &mut List) {
+        if l.size < 2 {
+            return;
+        }
+        let new_head = self.prev[l.head];
+        let mut current = l.head;
+        loop {
+            let next = self.next[current];
+            self.next[current] = self.prev[current];
+            self.prev[current] = next;
+            current = next;
+            if current == l.head {
+                break;
+            }
+        }
+        l.head = new_head;
+    }
+
+    fn to_vec(&self, l: &List) -> Vec<usize> {
+        let mut out = Vec::with_capacity(l.size);
+        if l.size > 0 {
+            let mut c = l.head;
+            loop {
+                out.push(self.val[c]);
+                c = self.next[c];
+                if c == l.head {
+                    break;
+                }
+            }
+        }
+        out
+    }
+
+    fn retain(&mut self, l: &mut List, keep: impl Fn(usize) -> bool) {
+        let mut c = l.head;
+        for _ in 0..l.size {
+            let next = self.next[c];
+            if !keep(self.val[c]) {
+                self.remove(l, c);
+            }
+            c = next;
+        }
+    }
+}
 
 type NodeId = usize;
 type EdgeId = usize;
@@ -39,12 +191,13 @@ struct PNode<V> {
     edge_to_embed: EdgeId,
     initial_component_root: NodeId,
     outer: [NodeId; 2],
-    separated: Vec<NodeId>,
-    pertinent: VecDeque<NodeId>,
+    separated: List,
+    pertinent: List,
+    list_node: usize,
     tree_edges: Vec<EdgeId>,
     down_edges: Vec<EdgeId>,
     back_edges: Vec<EdgeId>,
-    embedded: VecDeque<EdgeId>,
+    embedded: List,
 }
 
 #[derive(Clone, Copy)]
@@ -74,6 +227,7 @@ pub struct BoyerMyrvoldPlanarityInspector<'g, G: Graph> {
     graph: &'g G,
     n: usize,
     arena: Vec<PNode<G::Vertex>>,
+    pool: Pool,
     edges: Vec<PEdge<G::Edge>>,
     /// The non-root nodes, ordered by lowpoint after `orient`.
     nodes: Vec<NodeId>,
@@ -93,6 +247,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
             graph,
             n: graph.vertex_count(),
             arena: Vec::new(),
+            pool: Pool::default(),
             edges: Vec::new(),
             nodes: Vec::new(),
             dfs_tree_roots: Vec::new(),
@@ -138,9 +293,9 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         parent_edge: EdgeId,
         root_vertex: bool,
     ) -> NodeId {
-        let mut embedded = VecDeque::new();
+        let mut embedded = List::EMPTY;
         if parent_edge != NIL {
-            embedded.push_back(parent_edge);
+            self.pool.push_back(&mut embedded, parent_edge);
         }
         self.arena.push(PNode {
             graph_vertex,
@@ -157,8 +312,9 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
             edge_to_embed: NIL,
             initial_component_root: NIL,
             outer: [NIL, NIL],
-            separated: Vec::new(),
-            pertinent: VecDeque::new(),
+            separated: List::EMPTY,
+            pertinent: List::EMPTY,
+            list_node: NIL,
             tree_edges: Vec::new(),
             down_edges: Vec::new(),
             back_edges: Vec::new(),
@@ -323,7 +479,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
                 let pe = self.arena[node].parent_edge;
                 if pe != NIL {
                     let parent = self.edges[pe].source;
-                    self.arena[parent].separated.push(node);
+                    let handle = self.pool.push_back(&mut self.arena[parent].separated, node);
+                    self.arena[node].list_node = handle;
                 }
             }
         }
@@ -349,9 +506,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         let n = &self.arena[x];
         let bound = self.arena[node].dfs_index;
         n.least_ancestor < bound
-            || n.separated
-                .first()
-                .is_some_and(|&c| self.arena[c].lowpoint < bound)
+            || (!n.separated.is_empty()
+                && self.arena[self.pool.front(&n.separated)].lowpoint < bound)
     }
 
     fn is_internally_active_wrt(&self, x: NodeId, node: NodeId) -> bool {
@@ -445,14 +601,30 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
     }
 
     fn circ_edge_to_next(&self, c: &Circ) -> EdgeId {
-        let first = *self.arena[c.prev].embedded.front().unwrap();
+        let first = self.emb_front(c.prev);
         let target = self.to_existing(c.current);
         let source = self.to_existing(c.prev);
         if self.opposite(first, source) == target {
             first
         } else {
-            *self.arena[c.prev].embedded.back().unwrap()
+            self.emb_back(c.prev)
         }
+    }
+
+    fn emb_front(&self, x: NodeId) -> EdgeId {
+        self.pool.front(&self.arena[x].embedded)
+    }
+
+    fn emb_back(&self, x: NodeId) -> EdgeId {
+        self.pool.back(&self.arena[x].embedded)
+    }
+
+    fn emb_vec(&self, x: NodeId) -> Vec<EdgeId> {
+        self.pool.to_vec(&self.arena[x].embedded)
+    }
+
+    fn separated_vec(&self, x: NodeId) -> Vec<NodeId> {
+        self.pool.to_vec(&self.arena[x].separated)
     }
 
     // ----- embedding primitives -----------------------------------------------------------------
@@ -462,24 +634,24 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         if self.is_root(prev) {
             prev = self.parent_of(prev);
         }
-        let first = *self.arena[x].embedded.front().unwrap();
+        let first = self.emb_front(x);
         if self.opposite(first, x) == prev {
-            self.arena[x].embedded.push_front(edge);
+            self.pool.push_front(&mut self.arena[x].embedded, edge);
         } else {
-            self.arena[x].embedded.push_back(edge);
+            self.pool.push_back(&mut self.arena[x].embedded, edge);
         }
     }
 
     fn merge_child_edges(
         &mut self,
         x: NodeId,
-        mut edges: VecDeque<EdgeId>,
+        mut edges: List,
         v_in: usize,
         v_out: usize,
         parent_next: NodeId,
         parent_edge: EdgeId,
     ) {
-        let first = *self.arena[x].embedded.front().unwrap();
+        let first = self.emb_front(x);
         let along_parent_traversal = self.opposite(first, x) != parent_next;
         let (mut action_append, mut invert) = (false, false);
         if v_in == 0 {
@@ -505,14 +677,10 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
         if invert {
             self.edges[parent_edge].sign = -1;
-            edges.make_contiguous().reverse();
+            self.pool.reverse(&mut edges);
         }
-        if action_append {
-            self.arena[x].embedded.append(&mut edges);
-        } else {
-            edges.append(&mut self.arena[x].embedded);
-            self.arena[x].embedded = edges;
-        }
+        self.pool
+            .splice(&mut self.arena[x].embedded, &mut edges, !action_append);
     }
 
     fn merge_biconnected_component(&mut self) {
@@ -523,11 +691,11 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
         let root = info.parent;
         let virtual_root_child = self.edges[self.arena[virtual_root].parent_edge].target;
-        self.arena[root].pertinent.retain(|&r| r != virtual_root);
-        self.arena[root]
-            .separated
-            .retain(|&r| r != virtual_root_child);
-        let child_edges = std::mem::take(&mut self.arena[virtual_root].embedded);
+        let handle = self.arena[virtual_root].list_node;
+        self.pool.remove(&mut self.arena[root].pertinent, handle);
+        let handle = self.arena[virtual_root_child].list_node;
+        self.pool.remove(&mut self.arena[root].separated, handle);
+        let child_edges = std::mem::replace(&mut self.arena[virtual_root].embedded, List::EMPTY);
         let parent_edge = self.arena[virtual_root].parent_edge;
         self.merge_child_edges(
             root,
@@ -550,9 +718,9 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         child_prev: NodeId,
     ) -> Circ {
         if entry_dir == 0 {
-            self.arena[root].embedded.push_back(edge);
+            self.pool.push_back(&mut self.arena[root].embedded, edge);
         } else {
-            self.arena[root].embedded.push_front(edge);
+            self.pool.push_front(&mut self.arena[root].embedded, edge);
         }
         let child = self.edges[edge].source;
         self.node_embed_back_edge(child, edge, child_prev);
@@ -574,12 +742,12 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         let parent = self.parent_of(component_root);
         let short_circuit = self.new_short_circuit(current, parent);
         if entry_dir == 0 {
-            self.arena[component_root].embedded.push_back(short_circuit);
+            self.pool
+                .push_back(&mut self.arena[component_root].embedded, short_circuit);
             self.arena[component_root].outer[0] = current;
         } else {
-            self.arena[component_root]
-                .embedded
-                .push_front(short_circuit);
+            self.pool
+                .push_front(&mut self.arena[component_root].embedded, short_circuit);
             self.arena[component_root].outer[1] = current;
         }
         self.node_embed_back_edge(current, short_circuit, prev);
@@ -646,9 +814,15 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
                 let new_start = self.edges[pe].source;
                 if new_start != end {
                     if self.arena[root_child].lowpoint < self.arena[end].dfs_index {
-                        self.arena[new_start].pertinent.push_back(root);
+                        let h = self
+                            .pool
+                            .push_back(&mut self.arena[new_start].pertinent, root);
+                        self.arena[root].list_node = h;
                     } else {
-                        self.arena[new_start].pertinent.push_front(root);
+                        let h = self
+                            .pool
+                            .push_front(&mut self.arena[new_start].pertinent, root);
+                        self.arena[root].list_node = h;
                     }
                 } else {
                     break;
@@ -686,7 +860,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
                 }
                 if !self.arena[current].pertinent.is_empty() {
                     let parent_entry_dir = current_dir;
-                    let root = *self.arena[current].pertinent.front().unwrap();
+                    let root = self.pool.front(&self.arena[current].pertinent);
                     let ccw = self.active_successor(root, component_root, 0);
                     let ccw_active = self.circ_current(&ccw);
                     let cw = self.active_successor(root, component_root, 1);
@@ -777,10 +951,10 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         let mut stack = vec![(dfs_tree_root, 1i32)];
         while let Some((current, sign)) = stack.pop() {
             if sign < 0 {
-                self.arena[current].embedded.make_contiguous().reverse();
+                self.pool.reverse(&mut self.arena[current].embedded);
             }
             self.remove_short_circuit_edges(current);
-            for node in self.arena[current].separated.clone() {
+            for node in self.separated_vec(current) {
                 let pe = self.arena[node].parent_edge;
                 self.edges[pe].sign = sign;
             }
@@ -792,7 +966,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
 
     fn remove_short_circuit_edges(&mut self, x: NodeId) {
         let edges = &self.edges;
-        self.arena[x].embedded.retain(|&e| !edges[e].short_circuit);
+        self.pool
+            .retain(&mut self.arena[x].embedded, |e| !edges[e].short_circuit);
     }
 
     fn lazy_compute_embedding(&mut self) {
@@ -804,15 +979,17 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
         let mut map: IndexMap<G::Vertex, Vec<G::Edge>> = IndexMap::new();
         for node in self.nodes.clone() {
-            for child in self.arena[node].separated.clone() {
+            for child in self.separated_vec(node) {
                 let virtual_root = self.arena[child].initial_component_root;
-                let mut moved = std::mem::take(&mut self.arena[virtual_root].embedded);
-                self.arena[node].embedded.append(&mut moved);
+                let mut moved =
+                    std::mem::replace(&mut self.arena[virtual_root].embedded, List::EMPTY);
+                self.pool
+                    .splice(&mut self.arena[node].embedded, &mut moved, false);
             }
-            let list: Vec<G::Edge> = self.arena[node]
-                .embedded
-                .iter()
-                .filter_map(|&e| self.edges[e].graph_edge.clone())
+            let list: Vec<G::Edge> = self
+                .emb_vec(node)
+                .into_iter()
+                .filter_map(|e| self.edges[e].graph_edge.clone())
                 .collect();
             map.insert(self.arena[node].graph_vertex.clone().unwrap(), list);
         }
@@ -845,7 +1022,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         current: NodeId,
         is_needed: &dyn Fn(&Self, EdgeId) -> bool,
     ) -> Option<EdgeId> {
-        for &node in &self.arena[current].separated {
+        for node in self.separated_vec(current) {
             if let Some(r) = self.search_subtree_dfs(node, is_needed) {
                 return Some(r);
             }
@@ -952,7 +1129,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
                 stack.push((current, prev_edge, true));
                 edges.push(prev_edge);
                 // reverse circular iteration over the embedded edges, starting at `prev_edge`
-                let embedded: Vec<EdgeId> = self.arena[current].embedded.iter().copied().collect();
+                let embedded: Vec<EdgeId> = self.emb_vec(current);
                 let pos = embedded
                     .iter()
                     .position(|&e| e == prev_edge)
@@ -978,7 +1155,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         let mut c = self.iterator(component_root, 0);
         let mut current = self.circ_next(&mut c);
         while current != w {
-            let first = *self.arena[current].embedded.front().unwrap();
+            let first = self.emb_front(current);
             if self.find_path_dfs(current, first, &Finish::NegativeBoundary, &mut result) {
                 return result;
             }
@@ -1032,12 +1209,12 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
     }
 
     fn fix_boundary_order(&mut self, component_root: NodeId) {
-        if self.arena[component_root].embedded.len() < 2 {
+        if self.arena[component_root].embedded.size < 2 {
             return;
         }
         let component_parent = self.parent_of(component_root);
-        let edge_to_next = *self.arena[component_root].embedded.back().unwrap();
-        let edge_to_prev = *self.arena[component_root].embedded.front().unwrap();
+        let edge_to_next = self.emb_back(component_root);
+        let edge_to_prev = self.emb_front(component_root);
         let next = self.opposite(edge_to_next, component_parent);
         let prev = self.opposite(edge_to_prev, component_parent);
         self.arena[component_root].outer = [next, prev];
@@ -1045,8 +1222,8 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         self.arena[prev].outer[0] = component_root;
         let mut current = self.arena[component_root].outer[0];
         loop {
-            let edge_to_next = *self.arena[current].embedded.back().unwrap();
-            let edge_to_prev = *self.arena[current].embedded.front().unwrap();
+            let edge_to_next = self.emb_back(current);
+            let edge_to_prev = self.emb_front(current);
             let next = self.opposite(edge_to_next, current);
             let prev = self.opposite(edge_to_prev, current);
             if prev != component_parent {
@@ -1137,7 +1314,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
 
     fn find_failed_edge(&self, v: NodeId) -> Option<EdgeId> {
         if self.stack.is_empty() {
-            for &child in &self.arena[v].separated {
+            for child in self.separated_vec(v) {
                 let component_root = self.arena[child].initial_component_root;
                 if let Some(r) = self.check_component_for_failed_edge(component_root, v) {
                     return Some(r);
