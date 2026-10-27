@@ -8,7 +8,6 @@ edition = "2024"
 rust-version = "1.88"
 license = "Apache-2.0 OR EPL-2.0 OR LGPL-2.1-or-later"
 repository = "https://github.com/d-michail/jgrapht-rs"
-homepage = "https://github.com/d-michail/jgrapht-rs"
 readme = "README.md"
 keywords = ["graph", "algorithms", "network", "jgrapht"]
 categories = ["algorithms", "data-structures"]

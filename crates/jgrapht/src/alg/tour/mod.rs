@@ -1,6 +1,6 @@
 //! Travelling salesman heuristics, exact solvers and Hamiltonian path search.
 //!
-//! The Java-style classes live in the sibling modules and share the helpers of [`base`].
+//! The Java-style classes live in sibling modules and share private implementation helpers.
 
 mod base;
 mod christofides;

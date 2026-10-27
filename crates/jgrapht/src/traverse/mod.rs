@@ -4,8 +4,8 @@
 //! [`ClosestFirstIterator`], [`TopologicalOrderIterator`], [`LexBreadthFirstIterator`],
 //! [`MaximumCardinalityIterator`], [`DegeneracyOrderingIterator`] and
 //! [`RandomWalkVertexIterator`] — report traversal events to [`TraversalListener`]s and visit
-//! vertices in exactly JGraphT's order. The lightweight iterators in [`simple`] (`Bfs`, `Dfs`, ...)
-//! are used internally by algorithms.
+//! vertices in exactly JGraphT's order. The lightweight iterators (`Bfs`, `Dfs`, ...) are used
+//! internally by algorithms.
 
 mod cross;
 mod events;

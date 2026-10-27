@@ -150,7 +150,7 @@ impl<'g, G: Graph + 'g> Advance<'g, G::Vertex> for TopologicalAdvance<'g, G> {
 
 /// Topological order of a directed acyclic graph (sources first, FIFO among ready vertices, or
 /// by a comparator using `java.util.PriorityQueue` semantics). A cycle ends the iteration early
-/// and sets [`TopologicalAdvance::is_cyclic`].
+/// and records whether traversal stopped on a cycle in its ordering state.
 pub type TopologicalOrderIterator<'g, G> = Ordered<'g, G, TopologicalAdvance<'g, G>>;
 
 impl<'g, G: DirectedGraph + 'g> TopologicalOrderIterator<'g, G> {
