@@ -51,6 +51,9 @@ fn assert_main_path<G: Graph<Vertex = &'static str, Edge = DefaultEdge>>(graph: 
             *graph.get_edge(&"2", &"4").unwrap(),
         ]
     );
+
+    let materialized = algorithm.single_source(&"3").unwrap();
+    assert_eq!(materialized.path(&"4").unwrap(), path);
 }
 
 #[test]

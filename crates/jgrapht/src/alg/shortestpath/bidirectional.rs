@@ -6,6 +6,40 @@ use crate::{GraphError, Result};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
+fn materialize_single_source<G, F>(
+    graph: &G,
+    source: &G::Vertex,
+    mut path_to: F,
+) -> Result<SingleSourcePaths<G::Vertex, G::Edge>>
+where
+    G: Graph,
+    F: FnMut(&G::Vertex) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>>,
+{
+    if !graph.contains_vertex(source) {
+        return Err(GraphError::VertexNotFound);
+    }
+    let mut paths = SingleSourcePaths {
+        source: source.clone(),
+        dist: HashMap::new(),
+        pred: HashMap::new(),
+    };
+    for target in graph.vertices() {
+        let Some(path) = path_to(target)? else {
+            continue;
+        };
+        paths.dist.insert(target.clone(), path.weight);
+        if let (Some(edge), Some(parent)) = (
+            path.edges.last(),
+            path.vertices.get(path.vertices.len().saturating_sub(2)),
+        ) {
+            paths
+                .pred
+                .insert(target.clone(), (edge.clone(), parent.clone()));
+        }
+    }
+    Ok(paths)
+}
+
 /// Bidirectional Dijkstra: a forward search from the source and a backward search (over
 /// incoming edges) from the sink, stopped when the frontiers can no longer improve the best
 /// meeting point. Requires non-negative weights.
@@ -37,10 +71,8 @@ impl<'g, G: Graph> BidirectionalDijkstraShortestPath<'g, G> {
 }
 
 impl<G: Graph> ShortestPathAlgorithm<G> for BidirectionalDijkstraShortestPath<'_, G> {
-    fn single_source(&self, _source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
-        Err(GraphError::Unsupported(
-            "bidirectional algorithms answer point-to-point queries only".into(),
-        ))
+    fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
+        materialize_single_source(self.graph, source, |target| self.path(source, target))
     }
 
     fn path(
@@ -73,10 +105,8 @@ impl<'g, G: Graph, F: Fn(&G::Vertex, &G::Vertex) -> f64> BidirectionalAStarShort
 impl<G: Graph, F: Fn(&G::Vertex, &G::Vertex) -> f64> ShortestPathAlgorithm<G>
     for BidirectionalAStarShortestPath<'_, G, F>
 {
-    fn single_source(&self, _source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
-        Err(GraphError::Unsupported(
-            "bidirectional algorithms answer point-to-point queries only".into(),
-        ))
+    fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
+        materialize_single_source(self.graph, source, |target| self.path(source, target))
     }
 
     fn path(

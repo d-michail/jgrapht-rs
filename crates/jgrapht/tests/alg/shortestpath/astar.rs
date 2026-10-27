@@ -2,9 +2,9 @@ use jgrapht::alg::shortestpath::AStarShortestPath;
 use jgrapht::{DiGraph, GraphMut, GraphMutExt, UGraph};
 use std::collections::HashMap;
 
-type Node = (usize, usize);
+pub(super) type Node = (usize, usize);
 
-const LABYRINTH_1: [&str; 15] = [
+pub(super) const LABYRINTH_1: [&str; 15] = [
     ". . . . . . . . . . . . . . . . . . . . . ####. . . . . . .",
     ". . . . . . . . . . . . . . . . . . . . . ####. . . . . . .",
     ". . . . . . . . . . . . . . . . . . . . . ####. . . . . . .",
@@ -22,7 +22,7 @@ const LABYRINTH_1: [&str; 15] = [
     "S . . . . . . . . . . . . ####. . . . . . . . . . . . . . .",
 ];
 
-const LABYRINTH_2: [&str; 15] = [
+pub(super) const LABYRINTH_2: [&str; 15] = [
     ". . . . . . . . . . . . . . . . . . . . . ####. . . . . . .",
     ". . . . . . . . . . . . . . . . . . . . . ####. . . . . . .",
     ". . . . . . . . . . . . . . . . . . . . . ####. . . . . . .",
@@ -40,7 +40,7 @@ const LABYRINTH_2: [&str; 15] = [
     "S . . . . . . . . . . . . ####. . . . . . . . . . . . . . .",
 ];
 
-fn labyrinth(rows: &[&str]) -> (UGraph<Node>, Node, Node) {
+pub(super) fn labyrinth(rows: &[&str]) -> (UGraph<Node>, Node, Node) {
     let mut graph = UGraph::<Node>::simple().weighted();
     let mut nodes = HashMap::new();
     let mut source = None;
@@ -71,7 +71,7 @@ fn labyrinth(rows: &[&str]) -> (UGraph<Node>, Node, Node) {
     (graph, source.unwrap(), target.unwrap())
 }
 
-fn manhattan(source: &Node, target: &Node) -> f64 {
+pub(super) fn manhattan(source: &Node, target: &Node) -> f64 {
     (source.0.abs_diff(target.0) + source.1.abs_diff(target.1)) as f64
 }
 

@@ -14,6 +14,8 @@ mod astar;
 mod basic_classes;
 #[path = "shortestpath/bellman_ford.rs"]
 mod bellman_ford;
+#[path = "shortestpath/bidirectional_astar.rs"]
+mod bidirectional_astar;
 #[path = "shortestpath/bidirectional_dijkstra.rs"]
 mod bidirectional_dijkstra;
 #[path = "shortestpath/bounded_pruned_yen.rs"]
