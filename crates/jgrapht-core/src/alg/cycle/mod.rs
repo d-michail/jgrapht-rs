@@ -4,6 +4,7 @@
 //! in [`legacy`] and re-exported; the JGraphT classes live in the sibling modules.
 
 mod basis;
+mod chordality;
 mod detector;
 mod eulerian;
 mod howard;
@@ -14,6 +15,7 @@ pub use basis::{
     CycleBasis, CycleBasisAlgorithm, PatonCycleBase, QueueBFSFundamentalCycleBasis,
     StackBFSFundamentalCycleBasis,
 };
+pub use chordality::{ChordalityInspector, IterationOrder};
 pub use detector::{CycleDetector, simple_cycle_to_graph_path};
 pub use eulerian::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
 pub use howard::{HowardMinimumMeanCycle, MinimumCycleMeanAlgorithm};

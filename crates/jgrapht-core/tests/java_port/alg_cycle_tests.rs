@@ -3376,3 +3376,368 @@ mod howard_minimum_mean_cycle_test {
         );
     }
 }
+
+// ChordalityInspectorTest
+
+mod chordality_inspector_test {
+    use super::*;
+    use crate::common::construct_graph;
+    use jgrapht::alg::cycle::{ChordalityInspector, IterationOrder};
+    use jgrapht::generate::named::{self, build};
+    use jgrapht::graph::GraphExt;
+
+    const ORDERS: [IterationOrder; 2] = [IterationOrder::Mcs, IterationOrder::LexBfs];
+
+    fn undirected(edges: &[&[i32]]) -> UGraph<i32> {
+        let mut g = UGraph::<i32>::with_loops().weighted();
+        construct_graph(&mut g, edges);
+        g
+    }
+
+    fn pseudograph(edges: &[&[i32]]) -> UGraph<i32> {
+        let mut g = UGraph::<i32>::pseudo().weighted();
+        construct_graph(&mut g, edges);
+        g
+    }
+
+    fn assert_is_hole<G: Graph>(graph: &G, path: &GraphWalk<G::Vertex, G::Edge>) {
+        let cycle = path.vertex_list();
+        assert!(cycle.len() > 4);
+        for i in 0..cycle.len() - 1 {
+            assert!(graph.contains_edge_between(&cycle[i], &cycle[i + 1]));
+        }
+        for i in 0..cycle.len() - 2 {
+            for j in 0..cycle.len() - 2 {
+                if i.abs_diff(j) > 1 {
+                    assert!(!graph.contains_edge_between(&cycle[i], &cycle[j]));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn iteration_order() {
+        for order in ORDERS {
+            let graph = UGraph::<i32>::with_loops();
+            assert_eq!(
+                order,
+                ChordalityInspector::with_order(&graph, order).iteration_order()
+            );
+        }
+    }
+
+    #[test]
+    fn get_chordless_cycle() {
+        let mut graph = UGraph::<i32>::with_loops();
+        let upper_bound = 100;
+        for i in 0..upper_bound {
+            graph.add_vertex(i);
+            graph.add_vertex(i + 1);
+            graph.add_edge(&i, &(i + 1)).unwrap();
+        }
+        graph.add_edge(&0, &upper_bound).unwrap();
+        let mut inspector = ChordalityInspector::new(&graph);
+        let path = inspector.get_hole().expect("a hole").clone();
+        assert_is_hole(&graph, &path);
+    }
+
+    #[test]
+    fn perfect_elimination_order() {
+        for order in ORDERS {
+            let graph = undirected(&[&[1, 2], &[1, 3], &[2, 3], &[2, 4], &[3, 4]]);
+            let mut inspector = ChordalityInspector::with_order(&graph, order);
+            let order1 = inspector
+                .get_perfect_elimination_order()
+                .expect("chordal")
+                .to_vec();
+            assert!(inspector.get_hole().is_none());
+            // the result is cached, so asking again gives the same order
+            let order2 = inspector
+                .get_perfect_elimination_order()
+                .expect("chordal")
+                .to_vec();
+            assert_eq!(order1, order2);
+            assert!(inspector.get_hole().is_none());
+        }
+    }
+
+    #[test]
+    fn is_chordal1() {
+        let graph = UGraph::<i32>::with_loops();
+        let mut inspector = ChordalityInspector::new(&graph);
+        assert!(inspector.is_chordal());
+        assert!(inspector.get_perfect_elimination_order().is_some());
+    }
+
+    fn chordal(graph: &UGraph<i32>) {
+        let mut inspector = ChordalityInspector::new(graph);
+        assert!(inspector.is_chordal());
+        assert!(inspector.get_hole().is_none());
+        assert!(inspector.get_perfect_elimination_order().is_some());
+    }
+
+    fn not_chordal<G: Graph>(graph: &G)
+    where
+        G: jgrapht::graph::UndirectedGraph,
+    {
+        let mut inspector = ChordalityInspector::new(graph);
+        assert!(!inspector.is_chordal());
+        let path = inspector.get_hole().expect("a hole").clone();
+        assert_is_hole(graph, &path);
+        assert!(inspector.get_perfect_elimination_order().is_none());
+    }
+    #[test]
+    fn is_chordal2() {
+        chordal(&undirected(&[&[1, 2], &[1, 3], &[2, 3], &[2, 4], &[3, 4]]));
+    }
+
+    #[test]
+    fn is_chordal3() {
+        chordal(&undirected(&[
+            &[1, 2],
+            &[2, 3],
+            &[3, 1],
+            &[4, 5],
+            &[5, 6],
+            &[6, 4],
+        ]));
+    }
+
+    #[test]
+    fn is_chordal4() {
+        chordal(&undirected(&[
+            &[1, 2],
+            &[1, 3],
+            &[2, 3],
+            &[3, 4],
+            &[3, 5],
+            &[4, 5],
+            &[5, 6],
+            &[5, 7],
+            &[6, 7],
+            &[7, 8],
+            &[7, 9],
+            &[8, 9],
+            &[9, 1],
+            &[10, 1],
+            &[3, 7],
+            &[1, 7],
+        ]));
+    }
+
+    #[test]
+    fn is_chordal5() {
+        not_chordal(&undirected(&[
+            &[1, 2],
+            &[2, 3],
+            &[3, 4],
+            &[4, 1],
+            &[1, 5],
+            &[5, 2],
+            &[2, 6],
+            &[6, 3],
+            &[3, 7],
+            &[7, 4],
+            &[4, 8],
+            &[8, 1],
+            &[5, 6],
+            &[6, 7],
+            &[7, 8],
+            &[8, 5],
+            &[5, 7],
+            &[6, 8],
+        ]));
+    }
+
+    #[test]
+    fn is_chordal6() {
+        chordal(&pseudograph(&[
+            &[1, 1],
+            &[1, 2],
+            &[1, 2],
+            &[1, 3],
+            &[3, 1],
+            &[2, 3],
+        ]));
+    }
+
+    #[test]
+    fn is_chordal7() {
+        not_chordal(&pseudograph(&[
+            &[1, 1],
+            &[1, 2],
+            &[2, 1],
+            &[2, 2],
+            &[3, 3],
+            &[4, 4],
+            &[2, 3],
+            &[2, 3],
+            &[3, 4],
+            &[4, 5],
+            &[5, 2],
+        ]));
+    }
+
+    #[test]
+    fn is_chordal8() {
+        not_chordal(&build(named::ellingham_horton78()));
+    }
+
+    #[test]
+    fn is_chordal9() {
+        not_chordal(&build(named::gosset()));
+    }
+
+    #[test]
+    fn is_chordal10() {
+        not_chordal(&build(named::klein3_regular()));
+    }
+
+    #[test]
+    fn is_chordal11() {
+        not_chordal(&build(named::schlafli()));
+    }
+
+    #[test]
+    fn is_chordal12() {
+        not_chordal(&build(named::bucky_ball()));
+    }
+
+    #[test]
+    fn is_perfect_elimination_order1() {
+        for it in ORDERS {
+            let graph = undirected(&[&[1, 2], &[1, 3], &[1, 4], &[2, 4], &[3, 4]]);
+            let order = [1, 2, 3, 4];
+            assert!(
+                !ChordalityInspector::with_order(&graph, it).is_perfect_elimination_order(&order)
+            );
+        }
+    }
+
+    #[test]
+    fn is_perfect_elimination_order2() {
+        for it in ORDERS {
+            let graph = undirected(&[&[1, 2], &[1, 4], &[2, 3], &[3, 4]]);
+            let order = [1, 2, 4, 3];
+            // not a perfect elimination order: cycle 1->2->3->4->1 has no chord
+            assert!(
+                !ChordalityInspector::with_order(&graph, it).is_perfect_elimination_order(&order)
+            );
+            let mut graph = graph;
+            graph.add_edge(&2, &4).unwrap();
+            // valid: no induced cycles of length > 3
+            assert!(
+                ChordalityInspector::with_order(&graph, it).is_perfect_elimination_order(&order)
+            );
+        }
+    }
+
+    #[test]
+    fn is_perfect_elimination_order3() {
+        for it in ORDERS {
+            let graph = undirected(&[
+                &[1, 2],
+                &[1, 3],
+                &[1, 4],
+                &[2, 3],
+                &[3, 4],
+                &[3, 5],
+                &[3, 6],
+                &[4, 5],
+                &[5, 6],
+                &[6, 7],
+                &[6, 8],
+                &[6, 9],
+                &[7, 8],
+                &[8, 9],
+                &[8, 10],
+                &[9, 10],
+            ]);
+            let order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+            assert!(
+                ChordalityInspector::with_order(&graph, it).is_perfect_elimination_order(&order)
+            );
+        }
+    }
+
+    #[test]
+    fn is_perfect_elimination_order4() {
+        for it in ORDERS {
+            let graph = undirected(&[
+                &[1, 2],
+                &[1, 3],
+                &[1, 4],
+                &[2, 3],
+                &[3, 4],
+                &[3, 5],
+                &[3, 6],
+                &[3, 7],
+                &[4, 5],
+                &[5, 6],
+                &[5, 7],
+                &[6, 7],
+                &[6, 8],
+                &[7, 9],
+                &[7, 10],
+                &[7, 11],
+                &[9, 10],
+                &[9, 11],
+                &[9, 12],
+                &[10, 11],
+                &[11, 12],
+            ]);
+            let order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+            assert!(
+                ChordalityInspector::with_order(&graph, it).is_perfect_elimination_order(&order)
+            );
+        }
+    }
+
+    #[test]
+    fn is_perfect_elimination_order5() {
+        for it in ORDERS {
+            let graph = undirected(&[
+                &[1, 2],
+                &[1, 3],
+                &[2, 3],
+                &[2, 4],
+                &[3, 4],
+                &[3, 5],
+                &[4, 5],
+                &[4, 6],
+                &[5, 6],
+            ]);
+            let order = [1, 2, 5, 6, 4, 3];
+            assert!(
+                !ChordalityInspector::with_order(&graph, it).is_perfect_elimination_order(&order)
+            );
+        }
+    }
+
+    #[test]
+    fn is_perfect_elimination_order6() {
+        for it in ORDERS {
+            let graph = undirected(&[
+                &[1, 2],
+                &[2, 3],
+                &[2, 4],
+                &[3, 4],
+                &[4, 5],
+                &[4, 6],
+                &[5, 6],
+                &[6, 7],
+                &[6, 8],
+                &[7, 8],
+                &[8, 9],
+                &[8, 10],
+                &[9, 10],
+                &[10, 1],
+                &[10, 2],
+            ]);
+            let order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+            assert!(
+                !ChordalityInspector::with_order(&graph, it).is_perfect_elimination_order(&order)
+            );
+        }
+    }
+}
