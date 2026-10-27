@@ -35,6 +35,12 @@ pub fn vertex_degree_comparator<G: IncidenceGraph>(
     move |a, b| g.degree_of(a).cmp(&g.degree_of(b))
 }
 
+/// Dense, index-based snapshot of a graph: vertices and edges numbered in iteration order, with
+/// adjacency lists of `(neighbour, edge index)`.
+///
+/// Building it relies on the [`Graph`] integrity contract: every edge has endpoints that are
+/// vertices and a weight. A graph that breaks the contract makes [`Indexed::new`] panic with a
+/// message naming the contract; no valid graph can trigger it.
 pub struct Indexed<'g, G: Graph> {
     pub g: &'g G,
     pub vs: Vec<&'g G::Vertex>,
@@ -60,12 +66,20 @@ impl<'g, G: Graph> Indexed<'g, G> {
         let mut out = vec![Vec::new(); n];
         let mut inn = vec![Vec::new(); n];
         for e in g.edges() {
-            let (s, t) = g.edge_endpoints(e).expect("edge endpoints");
-            let (s, t) = (idx[s], idx[t]);
+            let (s, t) = g
+                .edge_endpoints(e)
+                .expect("Graph integrity: every edge has a source and a target");
+            let (s, t) = (
+                *idx.get(s).expect("Graph integrity: edge endpoints are vertices"),
+                *idx.get(t).expect("Graph integrity: edge endpoints are vertices"),
+            );
             let k = es.len();
             es.push(e);
             ends.push((s, t));
-            w.push(g.edge_weight(e).unwrap_or(1.0));
+            w.push(
+                g.edge_weight(e)
+                    .expect("Graph integrity: every edge has a weight"),
+            );
             out[s].push((t, k));
             if directed {
                 inn[t].push((s, k));

@@ -195,7 +195,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/tree_connectivity/sequence.rs` | `SequenceArena::remove_min` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/tree_connectivity/sequence.rs` | `SequenceArena::split_after` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/tree_connectivity/sequence.rs` | `SequenceArena::split_before` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/util.rs` | `Indexed::new` | 0 unwrap, 1 expect/panic/assert |
+| `jgrapht/src/alg/util.rs` | `Indexed::new` | 0 unwrap, 4 expect/panic/assert |
 | `jgrapht/src/alg/util/queue.rs` | `FixedSizeIntegerQueue::enqueue` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/util/queue.rs` | `FixedSizeIntegerQueue::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/util/union_find.rs` | `UnionFind::sets` | 0 unwrap, 1 expect/panic/assert |
@@ -208,9 +208,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_graph_reversed` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/graph/mod.rs` | `graph_hash` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/graph/mod.rs` | `graph_to_string` | 0 unwrap, 2 expect/panic/assert |
-| `jgrapht/src/graph/props.rs` | `is_dag` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/props.rs` | `is_forest` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/graph/props.rs` | `is_k33_subdivision` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/traverse/cross.rs` | `BreadthFirstIterator::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/traverse/cross.rs` | `DepthFirstIterator::new` | 0 unwrap, 1 expect/panic/assert |

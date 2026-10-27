@@ -224,6 +224,9 @@ impl FullFixture {
     }
 }
 
+impl jgrapht::graph::DirectedGraph for OutgoingFixture {}
+impl jgrapht::graph::DirectedGraph for FullFixture {}
+
 impl OutgoingGraph for OutgoingFixture {
     fn out_edges_of(&self, v: &u32) -> impl Iterator<Item = &u32> {
         self.0.outgoing(*v)

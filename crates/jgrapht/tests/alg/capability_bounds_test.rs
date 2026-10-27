@@ -55,3 +55,65 @@ fn reverse_aware_algorithms_accept_lazy_and_full_indexes() {
     assert_eq!(topological_sort(&lazy).unwrap().len(), 4);
     assert_eq!(topological_sort(&full).unwrap().len(), 4);
 }
+
+mod connectivity_and_partitioning {
+    use jgrapht::Graph;
+    use jgrapht::alg::connectivity::{
+        biconnectivity, condensation, connected_components, strongly_connected_components,
+    };
+    use jgrapht::alg::partition::{bipartite_partition, is_bipartite};
+    use jgrapht::graph::sparse::{FullIncoming, LazyIncoming, NoIncoming, SparseIntDirectedGraph};
+
+    /// Two directed 3-cycles joined by one edge, plus an isolated vertex.
+    const EDGES: [(usize, usize); 7] = [(0, 1), (1, 2), (2, 0), (3, 4), (4, 5), (5, 3), (2, 3)];
+
+    fn sorted(mut components: Vec<Vec<usize>>) -> Vec<Vec<usize>> {
+        for c in &mut components {
+            c.sort();
+        }
+        components.sort();
+        components
+    }
+
+    #[test]
+    fn component_algorithms_run_on_outgoing_only_graphs() {
+        let no = SparseIntDirectedGraph::<NoIncoming>::from_edges(7, &EDGES).unwrap();
+        let full = SparseIntDirectedGraph::<FullIncoming>::from_edges(7, &EDGES).unwrap();
+
+        assert_eq!(
+            sorted(strongly_connected_components(&no)),
+            [vec![0, 1, 2], vec![3, 4, 5], vec![6]]
+        );
+        assert_eq!(
+            sorted(strongly_connected_components(&no)),
+            sorted(strongly_connected_components(&full))
+        );
+        assert_eq!(
+            sorted(connected_components(&no)),
+            sorted(connected_components(&full))
+        );
+        let (dag, members) = condensation(&no);
+        assert_eq!(members.len(), 3);
+        assert_eq!(dag.vertex_count(), 3);
+        assert_eq!(
+            biconnectivity(&no).blocks.len(),
+            biconnectivity(&full).blocks.len()
+        );
+    }
+
+    #[test]
+    fn bipartite_partitioning_agrees_between_lazy_and_full_indexes() {
+        let square = [(0, 1), (1, 2), (2, 3), (3, 0)];
+        let triangle = [(0, 1), (1, 2), (2, 0)];
+        let lazy = SparseIntDirectedGraph::<LazyIncoming>::from_edges(4, &square).unwrap();
+        let full = SparseIntDirectedGraph::<FullIncoming>::from_edges(4, &square).unwrap();
+        assert!(is_bipartite(&lazy) && is_bipartite(&full));
+        assert_eq!(
+            bipartite_partition(&lazy).map(|(a, b)| (sorted(vec![a]), sorted(vec![b]))),
+            bipartite_partition(&full).map(|(a, b)| (sorted(vec![a]), sorted(vec![b])))
+        );
+        let odd = SparseIntDirectedGraph::<FullIncoming>::from_edges(3, &triangle).unwrap();
+        assert!(!is_bipartite(&odd));
+        assert!(bipartite_partition(&odd).is_none());
+    }
+}

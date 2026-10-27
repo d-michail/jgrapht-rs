@@ -20,7 +20,7 @@ use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 
-/// `Ok(g)` if the graph is weighted, otherwise an error carrying JGraphT's message.
+/// `Ok(g)` if the graph is weighted, otherwise `InvalidGraph(GraphProperty::Weighted)`.
 pub fn require_weighted<G: Graph>(g: &G) -> Result<&G> {
     if g.graph_type().weighted {
         Ok(g)
@@ -28,6 +28,7 @@ pub fn require_weighted<G: Graph>(g: &G) -> Result<&G> {
         Err(GraphError::InvalidGraph(crate::GraphProperty::Weighted))
     }
 }
+/// `Ok(g)` if the graph is directed, otherwise `InvalidGraph(GraphProperty::Directed)`.
 pub fn require_directed<G: Graph>(g: &G) -> Result<&G> {
     if g.graph_type().directed {
         Ok(g)
@@ -35,6 +36,7 @@ pub fn require_directed<G: Graph>(g: &G) -> Result<&G> {
         Err(GraphError::InvalidGraph(crate::GraphProperty::Directed))
     }
 }
+/// `Ok(g)` if the graph is undirected, otherwise `InvalidGraph(GraphProperty::Undirected)`.
 pub fn require_undirected<G: Graph>(g: &G) -> Result<&G> {
     if !g.graph_type().directed {
         Ok(g)
@@ -155,7 +157,14 @@ pub fn is_forest<G: Graph>(g: &G) -> bool {
     }
     let mut components = g.vertex_count();
     for e in g.edges() {
-        let (s, t) = g.edge_endpoints(e).unwrap();
+        // an edge whose endpoints are missing or not vertices breaks the `Graph` integrity
+        // contract; such a graph is not a forest
+        let Some((s, t)) = g.edge_endpoints(e) else {
+            return false;
+        };
+        if !parent.contains_key(s) || !parent.contains_key(t) {
+            return false;
+        }
         let (a, b) = (find(&mut parent, s), find(&mut parent, t));
         if a != b {
             parent.insert(a, b);
@@ -185,8 +194,11 @@ pub fn is_dag<G: DirectedGraph + IncomingGraph + OutgoingGraph>(g: &G) -> bool {
     while let Some(v) = q.pop_front() {
         n += 1;
         for s in g.successors_of(v) {
-            let d = indeg.get_mut(s).unwrap();
-            *d -= 1;
+            // a successor that is not a vertex violates the `Graph` integrity contract; skip it
+            let Some(d) = indeg.get_mut(s) else {
+                continue;
+            };
+            *d = d.saturating_sub(1);
             if *d == 0 {
                 q.push_back(s);
             }
@@ -196,7 +208,7 @@ pub fn is_dag<G: DirectedGraph + IncomingGraph + OutgoingGraph>(g: &G) -> bool {
 }
 
 /// More edges than `max_degree * floor(n / 2)` (a sufficient condition for chromatic index
-/// `max_degree + 1`). Panics-free: an empty graph is not overfull.
+/// `max_degree + 1`). An empty graph is not overfull.
 pub fn is_overfull<G: IncidenceGraph>(g: &G) -> bool {
     let Some(max_degree) = g.vertices().map(|v| g.degree_of(v)).max() else {
         return false;
@@ -346,14 +358,18 @@ pub fn is_k33_subdivision<G: IncidenceGraph>(g: &G) -> bool {
     if degree3.len() != 6 {
         return false;
     }
-    let last = degree3.pop().unwrap();
+    let Some(last) = degree3.pop() else {
+        return false;
+    };
     let reachable = reachable_with_degree(g, last, 3);
     if reachable.len() != 3 {
         return false;
     }
     degree3.retain(|v| !reachable.contains(v));
-    reachable == reachable_with_degree(g, degree3[0], 3)
-        && reachable == reachable_with_degree(g, degree3[1], 3)
+    let [a, b] = degree3[..] else {
+        return false;
+    };
+    reachable == reachable_with_degree(g, a, 3) && reachable == reachable_with_degree(g, b, 3)
 }
 
 /// A subdivision of K5.

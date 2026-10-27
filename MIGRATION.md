@@ -60,6 +60,12 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 11: predicates and utilities
+
+No signature changed. `graph::props` predicates return `false` (or skip the offending edge) for a
+graph whose edges have missing endpoints instead of panicking; `Indexed::new` and the algorithms
+built on it still require the `Graph` integrity contract and say so in their panic message.
+
 ## Step 10: path iterators
 
 * `YenShortestPathIterator` is `Iterator<Item = Result<GraphWalk<..>>>`. It used to store an error
