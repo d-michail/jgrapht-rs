@@ -42,8 +42,8 @@ impl WeightCombiner {
 /// Read-only union of two graphs over the same vertex and edge types (`AsGraphUnion`). Shared
 /// vertices/edges are merged. Uniting a directed with an undirected graph gives a *mixed* graph.
 pub struct GraphUnion<A, B> {
-    a: A,
-    b: B,
+    pub(super) a: A,
+    pub(super) b: B,
     combiner: WeightCombiner,
 }
 

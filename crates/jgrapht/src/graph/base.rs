@@ -411,7 +411,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> GraphMut
         if !self.vertices.contains_key(v) {
             return false;
         }
-        let incident: Vec<E> = self.edges_of(v).unwrap().cloned().collect();
+        let incident: Vec<E> = Graph::edges_of(self, v).unwrap().cloned().collect();
         for e in &incident {
             self.remove_edge(e);
         }

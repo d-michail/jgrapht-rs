@@ -102,6 +102,21 @@ impl<G: Graph> Graph for Listenable<G> {
     fn edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
         self.graph.edges_of(v)
     }
+    fn in_edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
+        self.graph.in_edges_of(v)
+    }
+    fn out_edges_of(&self, v: &G::Vertex) -> Result<impl Iterator<Item = &G::Edge>> {
+        self.graph.out_edges_of(v)
+    }
+    fn in_degree_of(&self, v: &G::Vertex) -> Result<usize> {
+        self.graph.in_degree_of(v)
+    }
+    fn out_degree_of(&self, v: &G::Vertex) -> Result<usize> {
+        self.graph.out_degree_of(v)
+    }
+    fn degree_of(&self, v: &G::Vertex) -> Result<usize> {
+        self.graph.degree_of(v)
+    }
     fn edges_between<'a>(
         &'a self,
         u: &'a G::Vertex,
@@ -110,6 +125,7 @@ impl<G: Graph> Graph for Listenable<G> {
         self.graph.edges_between(u, v)
     }
 }
+crate::view::forward_incidence!([G: Graph] Listenable<G>, G, self => self.graph);
 impl<G: DirectedGraph> DirectedGraph for Listenable<G> {}
 impl<G: UndirectedGraph> UndirectedGraph for Listenable<G> {}
 

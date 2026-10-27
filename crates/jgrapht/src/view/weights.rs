@@ -24,7 +24,7 @@ use std::collections::HashMap;
 /// report the base graph's weight. [`GraphMut::set_edge_weight`] records the weight in the overlay
 /// and, with `write_through`, also in the base graph.
 pub struct AsWeighted<'f, G: Graph> {
-    graph: G,
+    pub(super) graph: G,
     weights: RefCell<HashMap<G::Edge, f64>>,
     function: Option<Box<dyn Fn(&G::Edge) -> f64 + 'f>>,
     cache: bool,

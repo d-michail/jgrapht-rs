@@ -92,31 +92,49 @@ mod base_graph_parity {
 
     /// The capability traits must agree with the fallible `Graph` methods, element by element and
     /// in the same order, for every vertex including absent ones.
-    fn check<G>(g: &G, absent: G::Vertex)
+    pub(crate) fn check<G>(g: &G, absent: G::Vertex)
     where
         G: IncidenceGraph,
-        G::Edge: std::fmt::Debug,
+        G::Edge: std::fmt::Debug + Ord,
     {
+        check_with(g, absent, true)
+    }
+
+    /// Like [`check`], but compares incident edges as sorted lists. For views whose `Graph`
+    /// impl derives in/out edges from `edges_of`, the old order differs incidentally.
+    pub(crate) fn check_unordered<G>(g: &G, absent: G::Vertex)
+    where
+        G: IncidenceGraph,
+        G::Edge: std::fmt::Debug + Ord,
+    {
+        check_with(g, absent, false)
+    }
+
+    fn check_with<G>(g: &G, absent: G::Vertex, ordered: bool)
+    where
+        G: IncidenceGraph,
+        G::Edge: std::fmt::Debug + Ord,
+    {
+        let same = |mut new: Vec<G::Edge>, mut old: Vec<G::Edge>| {
+            if !ordered {
+                new.sort();
+                old.sort();
+            }
+            assert_eq!(new, old);
+        };
         let vs: Vec<_> = g.vertices().cloned().chain([absent]).collect();
         for v in &vs {
             let old_all: Vec<_> = Graph::edges_of(g, v).unwrap().cloned().collect();
             let old_in: Vec<_> = Graph::in_edges_of(g, v).unwrap().cloned().collect();
             let old_out: Vec<_> = Graph::out_edges_of(g, v).unwrap().cloned().collect();
-            assert_eq!(
-                IncidenceGraph::edges_of(g, v).cloned().collect::<Vec<_>>(),
-                old_all
+            same(
+                IncidenceGraph::edges_of(g, v).cloned().collect(),
+                old_all.clone(),
             );
-            assert_eq!(
-                IncomingGraph::in_edges_of(g, v)
-                    .cloned()
-                    .collect::<Vec<_>>(),
-                old_in
-            );
-            assert_eq!(
-                OutgoingGraph::out_edges_of(g, v)
-                    .cloned()
-                    .collect::<Vec<_>>(),
-                old_out
+            same(IncomingGraph::in_edges_of(g, v).cloned().collect(), old_in);
+            same(
+                OutgoingGraph::out_edges_of(g, v).cloned().collect(),
+                old_out,
             );
             assert_eq!(
                 IncidenceGraph::degree_of(g, v),
@@ -136,7 +154,7 @@ mod base_graph_parity {
         }
     }
 
-    fn populate<G: GraphMut<Vertex = i32>>(g: &mut G) {
+    pub(crate) fn populate<G: GraphMut<Vertex = i32>>(g: &mut G) {
         for v in 0..5 {
             g.add_vertex(v);
         }
@@ -252,5 +270,114 @@ mod sparse_type_state {
         assert_eq!(OutgoingGraph::out_degree_of(&no, &1), 1);
         requires_incoming(&full);
         assert_eq!(IncomingGraph::in_degree_of(&full, &2), 1);
+    }
+}
+
+mod view_parity {
+    use super::base_graph_parity::{check, check_unordered, populate};
+    use jgrapht::event::Listenable;
+    use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
+    use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph, SparseIntUndirectedGraph};
+    use jgrapht::graph::{DiGraph, Graph, UGraph};
+    use jgrapht::view::{
+        AsSubgraph, AsUndirected, AsUnweighted, AsWeighted, EdgeReversed, GraphUnion, MaskSubgraph,
+        Unmodifiable,
+    };
+    use std::collections::HashMap;
+
+    fn directed() -> DiGraph<i32> {
+        let mut g = DiGraph::<i32>::pseudo();
+        populate(&mut g);
+        g
+    }
+
+    fn undirected() -> UGraph<i32> {
+        let mut g = UGraph::<i32>::pseudo();
+        populate(&mut g);
+        g
+    }
+
+    #[test]
+    fn forwarding_wrappers() {
+        let mut g = directed();
+        check(&&g, 99);
+        check(&Unmodifiable(&g), 99);
+        check(&AsUnweighted(&g), 99);
+        check(&AsWeighted::new(&g, HashMap::new()), 99);
+        check(&Listenable::new(&g), 99);
+        check(&&mut g, 99);
+    }
+
+    #[test]
+    fn edge_reversed_swaps_incoming_and_outgoing() {
+        let g = directed();
+        let r = EdgeReversed(&g);
+        check(&r, 99);
+        for v in 0..5 {
+            assert_eq!(
+                IncomingGraph::in_edges_of(&r, &v).collect::<Vec<_>>(),
+                OutgoingGraph::out_edges_of(&g, &v).collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn as_undirected_makes_every_edge_incident_both_ways() {
+        let g = directed();
+        let u = AsUndirected(&g);
+        check(&u, 99);
+        for v in 0..5 {
+            assert_eq!(
+                OutgoingGraph::out_edges_of(&u, &v).collect::<Vec<_>>(),
+                IncidenceGraph::edges_of(&g, &v).collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn subgraphs_filter_incidence() {
+        for g in [directed()] {
+            check_unordered(&AsSubgraph::induced(&g, [0, 1, 2]), 99);
+            check_unordered(&AsSubgraph::all(&g), 99);
+            check_unordered(&MaskSubgraph::new(&g, |v: &i32| *v == 1, |_| false), 99);
+            let s = AsSubgraph::induced(&g, [0, 1]);
+            assert!(IncidenceGraph::edges_of(&s, &2).next().is_none());
+            assert!(
+                IncidenceGraph::edges_of(&s, &0).all(|e| s.edge_target(e).is_some_and(|t| *t <= 1))
+            );
+        }
+        let u = undirected();
+        check_unordered(&AsSubgraph::induced(&u, [3, 4]), 99);
+        check_unordered(&MaskSubgraph::new(&u, |v: &i32| *v == 0, |_| false), 99);
+    }
+
+    #[test]
+    fn union_deduplicates_shared_edges() {
+        let g = directed();
+        let union = GraphUnion::new(&g, &g);
+        check_unordered(&union, 99);
+        assert_eq!(
+            IncidenceGraph::edges_of(&union, &2).count(),
+            IncidenceGraph::edges_of(&g, &2).count()
+        );
+    }
+
+    #[test]
+    fn sparse_undirected_graphs() {
+        let g = SparseIntUndirectedGraph::new(4, &[(0, 1), (1, 1), (2, 3), (0, 1)]).unwrap();
+        check(&g, 99);
+        assert_eq!(IncidenceGraph::degree_of(&g, &1), 4);
+        assert_eq!(IncomingGraph::in_degree_of(&g, &1), 4);
+        assert_eq!(IncidenceGraph::edges_of(&g, &1).count(), 3);
+    }
+
+    /// `EdgeReversed` of an outgoing-only graph is incoming-only: the capability moves with it.
+    #[test]
+    fn edge_reversed_no_incoming_is_incoming_only() {
+        fn needs_incoming<G: IncomingGraph>(_: &G) {}
+        let g = SparseIntDirectedGraph::<NoIncoming>::from_edges(3, &[(0, 1), (1, 2)]).unwrap();
+        let r = EdgeReversed(&g);
+        needs_incoming(&r);
+        assert_eq!(IncomingGraph::in_degree_of(&r, &1), 1);
     }
 }

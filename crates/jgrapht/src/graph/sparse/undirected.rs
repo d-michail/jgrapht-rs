@@ -14,6 +14,7 @@
 
 use super::{CsrBooleanMatrix, collect_endpoints, identity_ids};
 use crate::graph::Graph;
+use crate::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::{GraphError, GraphType, Result};
 
 /// `IncidenceMatrixSparseUndirectedSpecifics`: one incidence CSR matrix (vertex by edge id) in
@@ -112,12 +113,7 @@ macro_rules! undirected_graph_impl {
             /// Incident edges in increasing id order; a self-loop appears once (its two
             /// incidence entries are adjacent).
             fn edges_of(&self, v: &usize) -> Result<impl Iterator<Item = &usize>> {
-                let row = self.core.row(*v);
-                Ok(row
-                    .iter()
-                    .enumerate()
-                    .filter(move |&(i, &e)| i == 0 || row[i - 1] != e)
-                    .map(|(_, e)| e))
+                Ok(IncidenceGraph::edges_of(self, v))
             }
 
             fn edges_between<'a>(
@@ -144,6 +140,40 @@ macro_rules! undirected_graph_impl {
         }
 
         impl crate::graph::UndirectedGraph for $graph {}
+
+        // Every edge of an undirected graph both leaves and enters each of its endpoints.
+        impl OutgoingGraph for $graph {
+            fn out_edges_of(&self, v: &usize) -> impl Iterator<Item = &usize> {
+                IncidenceGraph::edges_of(self, v)
+            }
+            fn out_degree_of(&self, v: &usize) -> usize {
+                self.core.row(*v).len()
+            }
+        }
+
+        impl IncomingGraph for $graph {
+            fn in_edges_of(&self, v: &usize) -> impl Iterator<Item = &usize> {
+                IncidenceGraph::edges_of(self, v)
+            }
+            fn in_degree_of(&self, v: &usize) -> usize {
+                self.core.row(*v).len()
+            }
+        }
+
+        impl IncidenceGraph for $graph {
+            /// Incident edges in increasing id order; a self-loop appears once (its two
+            /// incidence entries are adjacent).
+            fn edges_of(&self, v: &usize) -> impl Iterator<Item = &usize> {
+                let row = self.core.row(*v);
+                row.iter()
+                    .enumerate()
+                    .filter(move |&(i, &e)| i == 0 || row[i - 1] != e)
+                    .map(|(_, e)| e)
+            }
+            fn degree_of(&self, v: &usize) -> usize {
+                self.core.row(*v).len()
+            }
+        }
     };
 }
 

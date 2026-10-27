@@ -23,7 +23,7 @@ const UNMODIFIABLE: &str = "this graph is unmodifiable";
 /// `MaskSubgraph`: `true` means masked). An edge is hidden if it is masked or either endpoint is.
 /// The view is unmodifiable; only edge weights can be written through to the base.
 pub struct MaskSubgraph<G, FV, FE> {
-    graph: G,
+    pub(super) graph: G,
     vertex_mask: FV,
     edge_mask: FE,
 }
@@ -36,10 +36,10 @@ impl<G: Graph, FV: Fn(&G::Vertex) -> bool, FE: Fn(&G::Edge) -> bool> MaskSubgrap
             edge_mask,
         }
     }
-    fn vertex_ok(&self, v: &G::Vertex) -> bool {
+    pub(super) fn vertex_ok(&self, v: &G::Vertex) -> bool {
         self.graph.contains_vertex(v) && !(self.vertex_mask)(v)
     }
-    fn edge_ok(&self, e: &G::Edge) -> bool {
+    pub(super) fn edge_ok(&self, e: &G::Edge) -> bool {
         match (self.graph.edge_source(e), self.graph.edge_target(e)) {
             (Some(s), Some(t)) => {
                 !(self.edge_mask)(e) && !(self.vertex_mask)(s) && !(self.vertex_mask)(t)
@@ -152,9 +152,9 @@ impl<G: GraphMut, FV: Fn(&G::Vertex) -> bool, FE: Fn(&G::Edge) -> bool> GraphMut
 /// Changes to this subgraph never touch the base; elements removed from the base are not tracked
 /// (the view borrows the base, so it cannot change underneath it).
 pub struct AsSubgraph<G: Graph> {
-    base: G,
-    vertices: IndexSet<G::Vertex>,
-    edges: IndexSet<G::Edge>,
+    pub(super) base: G,
+    pub(super) vertices: IndexSet<G::Vertex>,
+    pub(super) edges: IndexSet<G::Edge>,
 }
 
 impl<G: Graph> AsSubgraph<G> {

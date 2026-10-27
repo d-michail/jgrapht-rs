@@ -18,6 +18,7 @@
 //! the view write through to the base (mutable references implement the graph traits too), the way
 //! JGraphT's delegating graphs do.
 
+mod capability;
 mod subgraph;
 mod union;
 mod weights;
@@ -90,6 +91,7 @@ macro_rules! forward_graph {
     };
 }
 pub(crate) use forward_graph;
+pub(crate) use capability::forward_incidence;
 
 /// Forwards mutation to an inner graph.
 macro_rules! forward_graph_mut {
@@ -161,6 +163,19 @@ impl<G: DirectedGraph> DirectedGraph for Unmodifiable<G> {}
 impl<G: UndirectedGraph> UndirectedGraph for Unmodifiable<G> {}
 
 /// Directed graph with every edge reversed. Mutations write through with endpoints swapped.
+///
+/// Incidence capabilities are swapped too: the reverse of an outgoing-only graph can enumerate
+/// incoming edges only, so it is rejected where outgoing edges are required.
+///
+/// ```compile_fail,E0277
+/// use jgrapht::graph::capability::OutgoingGraph;
+/// use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph};
+/// use jgrapht::view::EdgeReversed;
+///
+/// fn needs_outgoing<G: OutgoingGraph>(_: &G) {}
+/// let g = SparseIntDirectedGraph::<NoIncoming>::from_edges(2, &[(0, 1)]).unwrap();
+/// needs_outgoing(&EdgeReversed(&g));
+/// ```
 #[derive(Debug, Clone)]
 pub struct EdgeReversed<G>(pub G);
 

@@ -117,6 +117,8 @@ impl<G: Graph, F> Graph for WithVertexFactory<'_, G, F> {
         out_degree_of, degree_of, edges_between);
 }
 
+crate::view::forward_incidence!([G: Graph, F] WithVertexFactory<'_, G, F>, G, self => *self.g);
+
 impl<G: GraphMut, F: FnMut(usize) -> G::Vertex> GraphMut for WithVertexFactory<'_, G, F> {
     fn add_vertex(&mut self, v: G::Vertex) -> bool {
         self.g.add_vertex(v)
