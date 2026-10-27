@@ -95,7 +95,8 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
   Twenty-one focused tests pass, including all nine Java fractional-initializer cases, exhaustive
   complete and sparse exact-oracle sweeps across all 24 option combinations for both objectives,
   no-solution cases, parallel edges, and self-loops. The remaining F3 work is the full Java public
-  fixture corpus and any defects it exposes.
+  fixture corpus and any defects it exposes. Public fixture progress: 16/52 perfect-matching cases
+  and 5/19 general-matching cases pass for every option/objective combination.
 
 **F4. Dependents of Blossom V.** `ChristofidesThreeHalvesApproxMetricTSP` (uses `KolmogorovWeightedPerfectMatching` on the odd-degree vertices; port the Java class and its tests, then delete `christofides_tour` in `tour/legacy.rs`, C6) and `ChinesePostman` (class and tests, C15).
 

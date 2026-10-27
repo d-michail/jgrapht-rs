@@ -1,4 +1,4 @@
-//! Ports of the tests of `org.jgrapht.alg.matching` (without the Blossom V package):
+//! Ports of the tests of `org.jgrapht.alg.matching`, including the public Blossom V fixtures:
 //! `GreedyMaximumCardinalityMatchingTest`, `ApproximateWeightedMatchingTest` with its subclasses,
 //! `MaximumCardinalityBipartiteMatchingTest` (Hopcroft–Karp),
 //! `MaximumWeightBipartiteMatchingTest`, `KuhnMunkresMinimalWeightBipartitePerfectMatchingTest`,
@@ -1599,4 +1599,359 @@ mod sparse_edmonds_maximum_cardinality_matching_test {
     large_test!(test_graph8, GRAPH8, 86);
     large_test!(test_graph9, GRAPH9, 75);
     large_test!(test_graph10, GRAPH10, 66);
+}
+
+mod blossom_v_public_tests {
+    use super::*;
+    use jgrapht::alg::matching::blossom::{
+        BlossomVOptions, KolmogorovWeightedMatching, KolmogorovWeightedPerfectMatching,
+        ObjectiveSense,
+    };
+
+    type WeightedEdges = &'static [(i32, i32, f64)];
+
+    fn weighted_graph(edges: WeightedEdges) -> UG {
+        let mut graph = UG::simple().weighted();
+        for &(source, target, weight) in edges {
+            graph.add_vertex(source);
+            graph.add_vertex(target);
+            graph.add_weighted_edge(&source, &target, weight).unwrap();
+        }
+        graph
+    }
+
+    fn check_perfect(edges: WeightedEdges, minimum: f64, maximum: f64) {
+        let graph = weighted_graph(edges);
+        for options in BlossomVOptions::all_options() {
+            for (objective, expected) in [
+                (ObjectiveSense::Minimize, minimum),
+                (ObjectiveSense::Maximize, maximum),
+            ] {
+                let mut algorithm = KolmogorovWeightedPerfectMatching::with_options_and_objective(
+                    &graph, options, objective,
+                )
+                .unwrap();
+                let matching = algorithm.get_matching().unwrap();
+                assert!(matching.is_perfect());
+                assert_eq!(matching.weight(), expected);
+                assert!(algorithm.test_optimality().unwrap());
+            }
+        }
+    }
+
+    fn check_general(edges: WeightedEdges, minimum: f64, maximum: f64) {
+        let graph = weighted_graph(edges);
+        for options in BlossomVOptions::all_options() {
+            for (objective, expected) in [
+                (ObjectiveSense::Minimize, minimum),
+                (ObjectiveSense::Maximize, maximum),
+            ] {
+                let mut algorithm = KolmogorovWeightedMatching::with_options_and_objective(
+                    &graph, options, objective,
+                )
+                .unwrap();
+                assert_eq!(algorithm.get_matching().unwrap().weight(), expected);
+                assert!(algorithm.test_optimality().unwrap());
+            }
+        }
+    }
+
+    #[test]
+    fn kolmogorov_weighted_perfect_matching_java_cases_0_through_15() {
+        let cases: &[(WeightedEdges, f64, f64)] = &[
+            (
+                &[
+                    (0, 1, 8.),
+                    (0, 2, 10.),
+                    (1, 2, 8.),
+                    (0, 3, 11.),
+                    (1, 3, 5.),
+                    (2, 5, 3.),
+                    (1, 5, 6.),
+                    (2, 4, 3.),
+                    (4, 5, 1.),
+                    (1, 6, 5.),
+                    (3, 6, 4.),
+                    (3, 7, 5.),
+                    (6, 7, 2.),
+                    (5, 7, 6.),
+                    (4, 7, 7.),
+                    (1, 7, 5.),
+                ],
+                18.,
+                27.,
+            ),
+            (&[(1, 2, 5.)], 5., 5.),
+            (
+                &[(1, 2, 8.), (2, 3, 8.), (3, 4, 8.), (4, 1, 8.), (2, 4, 2.)],
+                16.,
+                16.,
+            ),
+            (&[(1, 3, 11.), (1, 4, 8.), (2, 3, 8.), (2, 4, 2.)], 13., 16.),
+            (
+                &[
+                    (0, 3, 7.),
+                    (0, 4, 5.),
+                    (0, 5, 2.),
+                    (1, 3, 1.),
+                    (1, 4, 3.),
+                    (1, 5, 4.),
+                    (2, 3, 7.),
+                    (2, 4, 10.),
+                    (2, 5, 7.),
+                ],
+                12.,
+                21.,
+            ),
+            (
+                &[
+                    (0, 3, 7.),
+                    (0, 4, 3.),
+                    (0, 5, 9.),
+                    (1, 3, 8.),
+                    (1, 4, 2.),
+                    (1, 5, 9.),
+                    (2, 3, 6.),
+                    (2, 4, 1.),
+                    (2, 5, 10.),
+                ],
+                17.,
+                21.,
+            ),
+            (
+                &[
+                    (0, 1, 2.),
+                    (0, 2, 5.),
+                    (0, 3, 1.),
+                    (1, 2, 5.),
+                    (1, 3, 2.),
+                    (2, 3, 1.),
+                ],
+                3.,
+                7.,
+            ),
+            (
+                &[
+                    (0, 1, 1.),
+                    (0, 2, 4.),
+                    (0, 3, 7.),
+                    (0, 4, 10.),
+                    (1, 2, 5.),
+                    (1, 3, 7.),
+                    (1, 4, 10.),
+                    (2, 3, 10.),
+                    (2, 4, 2.),
+                    (3, 4, 3.),
+                    (2, 5, 8.),
+                ],
+                12.,
+                25.,
+            ),
+            (
+                &[
+                    (0, 1, 1.),
+                    (0, 2, 6.),
+                    (0, 3, 1.),
+                    (0, 4, 1.),
+                    (1, 2, 6.),
+                    (1, 3, 6.),
+                    (1, 4, 5.),
+                    (2, 3, 7.),
+                    (2, 4, 8.),
+                    (3, 4, 8.),
+                    (0, 5, 8.),
+                ],
+                20.,
+                22.,
+            ),
+            (
+                &[
+                    (0, 1, 4.),
+                    (0, 2, 4.),
+                    (0, 3, 6.),
+                    (0, 4, 8.),
+                    (1, 2, 8.),
+                    (1, 3, 10.),
+                    (1, 4, 8.),
+                    (2, 3, 4.),
+                    (2, 4, 9.),
+                    (3, 4, 4.),
+                    (0, 5, 9.),
+                ],
+                21.,
+                28.,
+            ),
+            (
+                &[
+                    (0, 1, 5.),
+                    (0, 2, 1.),
+                    (0, 3, 8.),
+                    (0, 4, 1.),
+                    (1, 2, 2.),
+                    (1, 3, 8.),
+                    (1, 4, 1.),
+                    (2, 3, 8.),
+                    (2, 4, 5.),
+                    (3, 4, 10.),
+                    (0, 5, 8.),
+                ],
+                17.,
+                21.,
+            ),
+            (
+                &[
+                    (0, 1, 2.),
+                    (0, 2, 6.),
+                    (0, 3, 3.),
+                    (0, 4, 2.),
+                    (1, 2, 7.),
+                    (1, 3, 7.),
+                    (1, 4, 7.),
+                    (2, 3, 4.),
+                    (2, 4, 4.),
+                    (3, 4, 2.),
+                    (0, 5, 2.),
+                ],
+                11.,
+                13.,
+            ),
+            (
+                &[
+                    (2, 0, 5.),
+                    (2, 1, 9.),
+                    (3, 0, 2.),
+                    (3, 1, 6.),
+                    (3, 2, 7.),
+                    (4, 0, 3.),
+                    (4, 1, 5.),
+                    (4, 2, 5.),
+                    (4, 3, 7.),
+                    (5, 4, 6.),
+                ],
+                17.,
+                17.,
+            ),
+            (
+                &[
+                    (1, 0, 9.),
+                    (2, 0, 8.),
+                    (2, 1, 3.),
+                    (3, 0, 5.),
+                    (3, 1, 4.),
+                    (3, 2, 10.),
+                    (4, 0, 3.),
+                    (4, 1, 2.),
+                    (4, 2, 4.),
+                    (4, 3, 8.),
+                    (5, 1, 4.),
+                ],
+                13.,
+                20.,
+            ),
+            (
+                &[
+                    (1, 0, 8.),
+                    (2, 0, 7.),
+                    (2, 1, 10.),
+                    (3, 0, 8.),
+                    (3, 1, 5.),
+                    (3, 2, 3.),
+                    (4, 0, 9.),
+                    (4, 1, 5.),
+                    (4, 2, 4.),
+                    (4, 3, 10.),
+                    (5, 1, 4.),
+                ],
+                16.,
+                21.,
+            ),
+        ];
+        for &(edges, minimum, maximum) in cases {
+            check_perfect(edges, minimum, maximum);
+        }
+
+        let empty = UG::simple().weighted();
+        for options in BlossomVOptions::all_options() {
+            let mut algorithm =
+                KolmogorovWeightedPerfectMatching::with_options(&empty, options).unwrap();
+            assert_eq!(algorithm.get_matching().unwrap().weight(), 0.0);
+            assert!(algorithm.test_optimality().unwrap());
+        }
+    }
+
+    #[test]
+    fn kolmogorov_weighted_matching_java_cases_1_through_5() {
+        let cases: &[(WeightedEdges, f64, f64)] = &[
+            (&[(0, 1, -1.), (1, 2, 1.), (2, 3, -1.), (3, 0, 1.)], -2., 2.),
+            (
+                &[
+                    (0, 1, 3.),
+                    (1, 2, 2.),
+                    (2, 3, 1.),
+                    (3, 0, 5.),
+                    (0, 2, 15.),
+                    (1, 3, -15.),
+                ],
+                -15.,
+                15.,
+            ),
+            (&[(2, 0, -2.), (1, 2, 2.), (0, 1, 3.)], -2., 3.),
+            (
+                &[
+                    (9, 4, 4.),
+                    (7, 9, 4.),
+                    (4, 7, -4.),
+                    (6, 4, -2.),
+                    (9, 6, 2.),
+                    (8, 9, -2.),
+                    (6, 8, 1.),
+                    (4, 5, 3.),
+                    (6, 3, 3.),
+                    (1, 6, 6.),
+                    (3, 4, 1.),
+                    (4, 2, -5.),
+                    (3, 2, 5.),
+                    (0, 2, -1.),
+                    (8, 1, 7.),
+                    (0, 1, -6.),
+                    (3, 0, -5.),
+                    (1, 3, -3.),
+                    (5, 7, -2.),
+                    (2, 5, 4.),
+                    (7, 2, -6.),
+                ],
+                -16.,
+                19.,
+            ),
+            (
+                &[
+                    (9, 5, 4.),
+                    (8, 9, -4.),
+                    (8, 5, -4.),
+                    (5, 7, 4.),
+                    (6, 7, 2.),
+                    (5, 6, -4.),
+                    (8, 4, 4.),
+                    (3, 8, -4.),
+                    (5, 2, 3.),
+                    (7, 9, 2.),
+                    (5, 0, -5.),
+                    (4, 5, -3.),
+                    (4, 0, 5.),
+                    (1, 0, -5.),
+                    (2, 6, 1.),
+                    (0, 2, -5.),
+                    (4, 1, 2.),
+                    (3, 4, -1.),
+                    (1, 3, 2.),
+                    (0, 6, 6.),
+                ],
+                -14.,
+                17.,
+            ),
+        ];
+        for &(edges, minimum, maximum) in cases {
+            check_general(edges, minimum, maximum);
+        }
+    }
 }
