@@ -140,4 +140,10 @@ the upstream test classes, while `crates/jgrapht/tests/STATUS.md` and
 
 ## License
 
-Licensed under Apache-2.0 OR EPL-2.0 OR LGPL-2.1-or-later, as declared by the crate manifests.
+This project is a port of [JGraphT](https://github.com/jgrapht/jgrapht) and, like upstream, is
+licensed under your choice of either the [Eclipse Public License 2.0](license-EPL.txt) or the
+[GNU Lesser General Public License v2.1 or later](license-LGPL.txt)
+(`SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later`).
+
+Copyright in ported material remains with the original JGraphT authors; see
+[CONTRIBUTORS.md](CONTRIBUTORS.md) and [NOTICE](NOTICE).

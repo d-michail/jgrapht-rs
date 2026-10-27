@@ -1,3 +1,17 @@
+// (C) Copyright 2003-2026, by John V Sichi and JGraphT Contributors.
+// Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
+//
+// See the CONTRIBUTORS.md file distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0, or the GNU Lesser General Public
+// License v2.1 or later which is available at
+// http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
+
 //! Ports of the `org.jgrapht.alg.tour` tests: the Hamiltonian path searches (Backtracking, Held–Karp,
 //! DAG), the TSP heuristics (nearest neighbour, nearest and farthest insertion, greedy, two-approx,
 //! 2-opt, Palmer) and the exact Held–Karp tour, plus the geometric smoke tests.
