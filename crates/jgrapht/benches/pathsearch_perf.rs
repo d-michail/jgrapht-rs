@@ -1,10 +1,11 @@
 //! Ports of the k-shortest-path (`KShortestPathsPerformance`, `BoundedPrunedYen...`), delta
-//! stepping, `AllDirectedPaths`, DAG, Hamiltonian-path and Blossom V performance tests.
+//! stepping, `AllDirectedPaths` (including sandwich pruning), DAG, Hamiltonian-path and Blossom V
+//! performance tests.
 
 mod common;
 
 use common::*;
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use jgrapht::alg::matching::MatchingAlgorithm;
 use jgrapht::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
 use jgrapht::alg::shortestpath::{
@@ -107,6 +108,65 @@ fn all_directed_paths(c: &mut Criterion) {
     });
 }
 
+fn sandwich_prune(c: &mut Criterion) {
+    let mut group = c.benchmark_group("all_directed_paths/sandwich_prune");
+
+    const CHAIN_LEN: usize = 20;
+    for garden_size in [500, 1_000, 2_000] {
+        let mut graph = DiGraph::<usize>::simple();
+        graph.add_vertices(0..CHAIN_LEN + garden_size);
+        for vertex in 0..CHAIN_LEN - 1 {
+            graph.add_edge(&vertex, &(vertex + 1)).unwrap();
+        }
+        let target = CHAIN_LEN - 1;
+        for garden_vertex in CHAIN_LEN..CHAIN_LEN + garden_size {
+            graph.add_edge(&garden_vertex, &target).unwrap();
+        }
+        for forward_pruning in [false, true] {
+            let mut algorithm = AllDirectedPaths::new(&graph);
+            algorithm.set_forward_pruning(forward_pruning);
+            group.bench_with_input(
+                BenchmarkId::new(format!("win/pruning={forward_pruning}"), garden_size),
+                &garden_size,
+                |b, _| {
+                    b.iter(|| {
+                        black_box(
+                            algorithm
+                                .get_all_paths(&0, &target, true, Some(CHAIN_LEN + 5))
+                                .unwrap(),
+                        )
+                    })
+                },
+            );
+        }
+    }
+
+    const N: usize = 20;
+    let mut graph = DiGraph::<usize>::simple();
+    graph.add_vertices(0..N);
+    for source in 0..N {
+        for target in 0..N {
+            if source != target {
+                graph.add_edge(&source, &target).unwrap();
+            }
+        }
+    }
+    for forward_pruning in [false, true] {
+        let mut algorithm = AllDirectedPaths::new(&graph);
+        algorithm.set_forward_pruning(forward_pruning);
+        group.bench_function(format!("loss/pruning={forward_pruning}"), |b| {
+            b.iter(|| {
+                black_box(
+                    algorithm
+                        .get_all_paths(&0, &(N - 1), true, Some(3))
+                        .unwrap(),
+                )
+            })
+        });
+    }
+    group.finish();
+}
+
 fn dag(c: &mut Criterion) {
     let n = 5_000;
     c.bench_function("dag/build_and_topological_sort", |b| {
@@ -174,6 +234,6 @@ fn blossom_v(c: &mut Criterion) {
 criterion_group! {
     name = benches;
     config = Criterion::default().sample_size(10);
-    targets = k_shortest_paths, delta_stepping, all_directed_paths, dag, hamiltonian_path, blossom_v
+    targets = k_shortest_paths, delta_stepping, all_directed_paths, sandwich_prune, dag, hamiltonian_path, blossom_v
 }
 criterion_main!(benches);
