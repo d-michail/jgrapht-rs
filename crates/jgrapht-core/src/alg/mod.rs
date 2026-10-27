@@ -33,4 +33,5 @@ pub mod steiner;
 pub mod tour;
 pub mod transform;
 pub mod transitive;
+pub mod tree_connectivity;
 pub mod util;

@@ -155,3 +155,50 @@ impl<V: Eq + Hash> Clustering<V> {
 pub trait ClusteringAlgorithm<V: Eq + Hash + Clone> {
     fn clustering(&self) -> Result<Clustering<V>>;
 }
+
+/// Algorithms computing the strongly connected components of a directed graph
+/// (`StrongConnectivityAlgorithm`). Results are computed when the algorithm is constructed.
+pub trait StrongConnectivityAlgorithm {
+    type G: crate::graph::DirectedGraph;
+
+    fn graph(&self) -> &Self::G;
+    /// The vertex sets of the strongly connected components.
+    fn strongly_connected_sets(&self) -> &[HashSet<<Self::G as Graph>::Vertex>];
+
+    fn is_strongly_connected(&self) -> bool {
+        self.strongly_connected_sets().len() == 1
+    }
+
+    /// The components as induced subgraphs, in the order of
+    /// [`strongly_connected_sets`](Self::strongly_connected_sets).
+    fn strongly_connected_components(&self) -> Vec<crate::view::AsSubgraph<&Self::G>> {
+        self.strongly_connected_sets()
+            .iter()
+            .map(|s| crate::view::AsSubgraph::induced(self.graph(), s.iter().cloned()))
+            .collect()
+    }
+
+    /// The condensation: vertex `i` stands for component `i` of
+    /// [`strongly_connected_sets`](Self::strongly_connected_sets).
+    fn condensation(&self) -> crate::DiGraph<usize> {
+        use crate::GraphMut;
+        let sets = self.strongly_connected_sets();
+        let g = self.graph();
+        let mut comp_of = std::collections::HashMap::new();
+        let mut c = crate::DiGraph::<usize>::simple();
+        for (i, s) in sets.iter().enumerate() {
+            c.add_vertex(i);
+            for v in s {
+                comp_of.insert(v, i);
+            }
+        }
+        for e in g.edges() {
+            let a = comp_of[g.edge_source(e).unwrap()];
+            let b = comp_of[g.edge_target(e).unwrap()];
+            if a != b {
+                let _ = c.add_edge(&a, &b);
+            }
+        }
+        c
+    }
+}

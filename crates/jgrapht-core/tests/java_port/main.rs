@@ -8,6 +8,7 @@
 mod alg_clique_tests;
 mod alg_clustering_tests;
 mod alg_color_tests;
+mod alg_connectivity_tests;
 mod alg_decomposition_tests;
 mod alg_lca_tests;
 mod alg_linkprediction_tests;
