@@ -245,22 +245,32 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for FarthestInsertionHeuristicTSP<G>
             }
         }
 
-        let initial: Vec<G::Vertex> = match &self.initial_subtour {
-            Some(s) if !s.vertex_list().is_empty() => s.vertex_list().to_vec(),
-            _ => {
-                let longest = longest_edge.ok_or_else(|| {
-                    GraphError::InvalidArgument("no edge with a positive weight".into())
-                })?;
-                let (v, u) = graph.edge_endpoints(longest).expect("edge of the graph");
-                vec![v.clone(), u.clone()]
-            }
-        };
+        if self
+            .initial_subtour
+            .as_ref()
+            .is_none_or(|subtour| subtour.vertex_list().is_empty())
+        {
+            let longest = longest_edge.ok_or_else(|| {
+                GraphError::InvalidArgument("graph contains no usable edge".into())
+            })?;
+            let (v, u) = graph.edge_endpoints(longest).expect("edge of the graph");
+            self.initial_subtour = Some(GraphWalk::from_vertex_list(
+                graph,
+                vec![v.clone(), u.clone()],
+                -1.0,
+            )?);
+        }
+        let initial = self
+            .initial_subtour
+            .as_ref()
+            .expect("initialized above")
+            .vertex_list();
 
         // initPartialTour
         let mut tour = vec![0usize; n + 1];
         let mut visited = std::collections::HashSet::new();
         let mut i = 0;
-        for v in &initial {
+        for v in initial {
             let iv = vertex_map[v];
             visited.insert(iv);
             tour[i] = iv;

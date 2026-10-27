@@ -1427,6 +1427,41 @@ mod farthest_insertion_heuristic_tsp_test {
             .unwrap();
         assert_hamiltonian(&g, &tour);
     }
+
+    #[test]
+    fn default_subtour_persists_across_calls() {
+        // The first graph selects 0--4 (weight 15) as the default initial sub-tour.
+        let first = dist5();
+        let second = matrix_graph(&[
+            &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            &[1, 0, 10, 11, 12, 13, 14, 15, 16, 17],
+            &[2, 10, 0, 18, 19, 20, 21, 22, 23, 24],
+            &[3, 11, 18, 0, 25, 26, 27, 28, 29, 30],
+            &[4, 12, 19, 25, 0, 31, 32, 33, 34, 35],
+            &[5, 13, 20, 26, 31, 0, 36, 37, 38, 39],
+            &[6, 14, 21, 27, 32, 36, 0, 40, 41, 42],
+            &[7, 15, 22, 28, 33, 37, 40, 0, 43, 44],
+            &[8, 16, 23, 29, 34, 38, 41, 43, 0, 45],
+            &[9, 17, 24, 30, 35, 39, 42, 44, 45, 0],
+        ]);
+
+        let mut reused = FarthestInsertionHeuristicTSP::new();
+        reused.get_tour(&first).unwrap();
+        let reused_tour = reused.get_tour(&second).unwrap().unwrap();
+
+        let retained = GraphWalk::from_vertex_list(&second, vec![0, 4], -1.0).unwrap();
+        let expected = FarthestInsertionHeuristicTSP::with_subtour(retained)
+            .get_tour(&second)
+            .unwrap()
+            .unwrap();
+        let fresh = FarthestInsertionHeuristicTSP::new()
+            .get_tour(&second)
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(reused_tour.vertex_list(), expected.vertex_list());
+        assert_ne!(reused_tour.vertex_list(), fresh.vertex_list());
+    }
 }
 
 // NearestNeighborHeuristicTSPTest and GeometricTSPTest
