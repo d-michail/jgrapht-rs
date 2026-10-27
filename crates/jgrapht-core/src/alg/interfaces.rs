@@ -1,6 +1,7 @@
 //! Traits and result types shared by several algorithms (JGraphT's `alg.interfaces`).
 //! More are added as the algorithm families that need them are ported.
 
+use super::cover::VertexCover;
 use crate::Result;
 use crate::graph::Graph;
 use crate::walk::GraphWalk;
@@ -116,4 +117,9 @@ pub trait MaximalCliqueEnumerationAlgorithm<V: Eq + Hash + Clone> {
         let max = all.iter().map(HashSet::len).max().unwrap_or(0);
         Ok(all.iter().filter(|c| c.len() == max).collect())
     }
+}
+
+/// Computes a vertex cover (`VertexCoverAlgorithm`).
+pub trait VertexCoverAlgorithm<V: Clone> {
+    fn vertex_cover(&self) -> Result<VertexCover<V>>;
 }

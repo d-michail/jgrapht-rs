@@ -11,6 +11,7 @@ mod alg_lca_tests;
 mod alg_linkprediction_tests;
 mod alg_small_tests;
 mod alg_util_tests;
+mod alg_vertexcover_tests;
 mod common;
 
 mod directed_acyclic_graph_test;
@@ -27,3 +28,4 @@ mod netgen_tests;
 mod simple_directed_graph_test;
 mod traverse_tests;
 mod util_tests;
+mod vertex_cover_data;
