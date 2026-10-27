@@ -258,4 +258,4 @@ impl<'g, G: IncidenceGraph> PushRelabelMFImpl<'g, G> {
     }
 }
 
-flow_algorithm_api!(PushRelabelMFImpl);
+flow_algorithm_api!(PushRelabelMFImpl, crate::graph::IncidenceGraph);

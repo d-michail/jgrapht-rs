@@ -60,6 +60,23 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 14: matching, tours, spanning, flow
+
+* `UndirectedGraph` is required (was a run-time `InvalidGraph(Undirected)`) by: the dense and
+  sparse Edmonds, Hopcroft-Karp, greedy, Kolmogorov (weighted and perfect) and maximum-weight
+  bipartite matchers; the Gusfield equivalent-flow and Gomory-Hu trees; `PadbergRaoOddMinimumCutset`;
+  every metric TSP heuristic (`tour::base` and its users); the vertex-cover algorithms that check
+  it; the k-center algorithms (`CentersLocationAlgorithm::centers` now takes
+  `UndirectedGraph + OutgoingGraph`); and `StoerWagnerMinimumCut`. Passing a directed graph no
+  longer compiles. `MinimumCostFlow` still checks the direction at run time and returns
+  `InvalidGraph(Directed)`.
+* `DinicMFImpl`, `EdmondsKarpMFImpl` and `BoykovKolmogorovMFImpl` accept any `OutgoingGraph`.
+* Typed errors: `InvalidParameter` for `k` (centers, spanners), `passes`, `max_vertices`,
+  `max_states`, `terminals` and the Steiner terminal limit; `InvalidGraph(Connected)` for
+  disconnected Steiner and capacitated-spanning-tree input; `Infeasible` when no capacitated
+  spanning tree exists; `InvalidWeight(NotFinite | NaN)` for bipartite-matching weights;
+  `InvalidGraph(AtLeastTwoVertices)` for Gusfield.
+
 ## Step 13: cycles, isomorphism, trees
 
 * `AHUUnrootedTreeIsomorphismInspector`, `CliqueMinimalSeparatorDecomposition` and `PatonCycleBase`

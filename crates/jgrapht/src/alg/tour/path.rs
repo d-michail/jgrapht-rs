@@ -396,15 +396,16 @@ impl HeldKarpHamiltonianPath {
 
     pub fn with_max_vertices(max_vertices: usize) -> Result<Self> {
         if max_vertices < 1 {
-            return Err(GraphError::InvalidArgument(format!(
-                "maxVertices must be at least 1, got {max_vertices}"
-            )));
+            return Err(GraphError::InvalidParameter {
+                name: "max_vertices",
+                requirement: crate::ParameterRequirement::AtLeast(1),
+            });
         }
         if max_vertices > Self::HARD_MAX_VERTICES {
-            return Err(GraphError::InvalidArgument(format!(
-                "maxVertices must be at most {} (the int-bitmask hard limit); got {max_vertices}",
-                Self::HARD_MAX_VERTICES
-            )));
+            return Err(GraphError::InvalidParameter {
+                name: "max_vertices",
+                requirement: crate::ParameterRequirement::AtMost(Self::HARD_MAX_VERTICES as u64),
+            });
         }
         Ok(HeldKarpHamiltonianPath {
             max_vertices,
@@ -627,9 +628,7 @@ impl BacktrackingHamiltonianPath {
         max_states: u64,
     ) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         if max_states == 0 {
-            return Err(GraphError::InvalidArgument(
-                "maxStates must be positive, got 0".into(),
-            ));
+            return Err(GraphError::must_be_positive("max_states"));
         }
         self.search(graph, max_states)
     }

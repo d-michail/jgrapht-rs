@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::OutgoingGraph;
 use super::base::{
     HamiltonianCycleAlgorithm, HamiltonianCycleImprovementAlgorithm, check_graph,
@@ -62,7 +63,7 @@ struct State<V> {
     rev_index: Vec<V>,
 }
 
-impl<'a, G: OutgoingGraph + 'a + OutgoingGraph> TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
     /// One pass from a random tour.
     pub fn new() -> Self {
         Self::with_passes(1)
@@ -92,9 +93,10 @@ impl<'a, G: OutgoingGraph + 'a + OutgoingGraph> TwoOptHeuristicTSP<'a, G> {
         min_cost_improvement: f64,
     ) -> Result<Self> {
         if passes < 1 {
-            return Err(GraphError::InvalidArgument(
-                "passes must be at least one".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "passes",
+                requirement: crate::ParameterRequirement::AtLeast(1),
+            });
         }
         Ok(TwoOptHeuristicTSP {
             passes,
@@ -204,13 +206,13 @@ impl<'a, G: OutgoingGraph + 'a + OutgoingGraph> TwoOptHeuristicTSP<'a, G> {
     }
 }
 
-impl<'a, G: OutgoingGraph + 'a> Default for TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: UndirectedGraph + OutgoingGraph + 'a> Default for TwoOptHeuristicTSP<'a, G> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, G: OutgoingGraph + 'a + OutgoingGraph> HamiltonianCycleAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
     /// Computes a 2-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -231,7 +233,7 @@ impl<'a, G: OutgoingGraph + 'a + OutgoingGraph> HamiltonianCycleAlgorithm<G> for
     }
 }
 
-impl<'a, G: OutgoingGraph + 'a> HamiltonianCycleImprovementAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: UndirectedGraph + OutgoingGraph + 'a> HamiltonianCycleImprovementAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
     /// Try to improve a tour by running the 2-opt heuristic.
     fn improve_tour(
         &mut self,

@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::OutgoingGraph;
 use crate::graph::capability::IncidenceGraph;
 use super::base::{HamiltonianCycleAlgorithm, check_graph, singleton_tour, vertex_list_to_tour};
@@ -76,7 +77,7 @@ impl ChristofidesThreeHalvesApproxMetricTSP {
     }
 }
 
-impl<G: OutgoingGraph> HamiltonianCycleAlgorithm<G> for ChristofidesThreeHalvesApproxMetricTSP {
+impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for ChristofidesThreeHalvesApproxMetricTSP {
     /// Computes a $3/2$-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
         check_graph(graph)?;

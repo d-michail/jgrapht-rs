@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
@@ -29,13 +30,11 @@ type Handle<V> = <Heap<V> as AddressableHeap<DBig, V>>::Handle;
 /// representation, at unlimited precision so that sums and differences are exact.
 fn big_decimal(value: f64) -> Result<DBig> {
     if !value.is_finite() {
-        return Err(GraphError::InvalidArgument(format!(
-            "Infinite or NaN: {value}"
-        )));
+        return Err(GraphError::InvalidWeight(crate::WeightProblem::NotFinite));
     }
     Ok(format!("{value}")
         .parse::<DBig>()
-        .map_err(|_| GraphError::InvalidArgument(format!("Not a number: {value}")))?
+        .map_err(|_| GraphError::InvalidWeight(crate::WeightProblem::NaN))?
         .with_precision(0)
         .value())
 }
@@ -77,14 +76,13 @@ pub struct MaximumWeightBipartiteMatching<'g, G: Graph> {
     matching_weight: DBig,
 }
 
-impl<'g, G: IncidenceGraph> MaximumWeightBipartiteMatching<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g, G> {
     /// Fails if the graph is not undirected.
     pub fn new(
         graph: &'g G,
         partition1: IndexSet<G::Vertex>,
         partition2: IndexSet<G::Vertex>,
     ) -> Result<Self> {
-        props::require_undirected(graph)?;
         Ok(MaximumWeightBipartiteMatching {
             graph,
             partition1,
@@ -296,7 +294,7 @@ impl<'g, G: IncidenceGraph> MaximumWeightBipartiteMatching<'g, G> {
         Ok(())
     }
 }
-impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for MaximumWeightBipartiteMatching<'_, G> {
+impl<G: UndirectedGraph + IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for MaximumWeightBipartiteMatching<'_, G> {
     /// Compute a matching for a given graph.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;

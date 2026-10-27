@@ -12,11 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use crate::alg::util::FixedSizeIntegerQueue;
 use crate::error::Result;
-use crate::graph::{Graph, GraphExt, props};
+use crate::graph::{Graph, GraphExt};
 use indexmap::IndexSet;
 use std::collections::HashMap;
 
@@ -63,7 +64,7 @@ struct State<'a, G: Graph> {
     queue: FixedSizeIntegerQueue,
 }
 
-impl<'g, G: IncidenceGraph> HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G> {
     /// `partition1` and `partition2` are the two sides of the bipartition. Fails if the graph is
     /// not undirected.
     pub fn new(
@@ -71,7 +72,6 @@ impl<'g, G: IncidenceGraph> HopcroftKarpMaximumCardinalityBipartiteMatching<'g, 
         partition1: impl IntoIterator<Item = G::Vertex>,
         partition2: impl IntoIterator<Item = G::Vertex>,
     ) -> Result<Self> {
-        props::require_undirected(graph)?;
         let p1: Vec<G::Vertex> = partition1.into_iter().collect();
         let p2: Vec<G::Vertex> = partition2.into_iter().collect();
         // Ensure that partition1 is smaller or equal in size compared to partition 2

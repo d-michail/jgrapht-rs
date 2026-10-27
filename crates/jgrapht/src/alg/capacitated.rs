@@ -157,10 +157,7 @@ impl<'g, G: IncidenceGraph> Problem<'g, G> {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
         }
         if !ConnectivityInspector::new().is_connected(graph) {
-            return Err(GraphError::InvalidArgument(
-                "Graph must be connected. Otherwise, there is no capacitated minimum spanning tree."
-                    .into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Connected));
         }
         for v in graph.vertices() {
             if *v != root {
@@ -170,10 +167,7 @@ impl<'g, G: IncidenceGraph> Problem<'g, G> {
                     ));
                 };
                 if d > capacity {
-                    return Err(GraphError::InvalidArgument(
-                        "Demands must not be greater than the capacity. Otherwise, there is no capacitated minimum spanning tree."
-                            .into(),
-                    ));
+                    return Err(GraphError::Infeasible);
                 }
             }
         }
@@ -611,10 +605,7 @@ impl<'g, G: IncidenceGraph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
         self.executed = true;
         let p = &self.problem;
         if !cmst.is_capacitated_spanning_tree(p.graph, &p.root, p.capacity, &p.demands) {
-            return Err(GraphError::InvalidArgument(
-                "This graph does not have a capacitated minimum spanning tree with the given capacity and demands."
-                    .into(),
-            ));
+            return Err(GraphError::Infeasible);
         }
         Ok(cmst)
     }

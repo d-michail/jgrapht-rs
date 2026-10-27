@@ -12,13 +12,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use super::greedy::GreedyMaximumCardinalityMatching;
 use crate::alg::connectivity::ConnectivityInspector;
 use crate::alg::util::{FixedSizeIntegerQueue, UnionFind};
 use crate::error::Result;
-use crate::graph::{Graph, GraphExt, props};
+use crate::graph::{Graph, GraphExt};
 use crate::view::AsSubgraph;
 use indexmap::IndexSet;
 use std::collections::{HashMap, HashSet};
@@ -190,7 +191,7 @@ pub struct DenseEdmondsMaximumCardinalityMatching<'g, G: Graph> {
     w_ancestors: HashSet<usize>,
 }
 
-impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> DenseEdmondsMaximumCardinalityMatching<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> DenseEdmondsMaximumCardinalityMatching<'g, G> {
     /// Uses `GreedyMaximumCardinalityMatching` (unsorted) as the initializer. Fails if the graph is
     /// not undirected.
     pub fn new(graph: &'g G) -> Result<Self> {
@@ -203,7 +204,6 @@ impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> DenseEdmondsMaximumCardinality
         graph: &'g G,
         initializer: Option<Box<dyn MatchingAlgorithm<G::Vertex, G::Edge> + 'g>>,
     ) -> Result<Self> {
-        props::require_undirected(graph)?;
         Ok(DenseEdmondsMaximumCardinalityMatching {
             graph,
             initializer,
@@ -469,7 +469,7 @@ impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> DenseEdmondsMaximumCardinality
     }
 }
 
-impl<'g, G: IncidenceGraph + 'g> MatchingAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MatchingAlgorithm<G::Vertex, G::Edge>
     for DenseEdmondsMaximumCardinalityMatching<'g, G>
 {
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {

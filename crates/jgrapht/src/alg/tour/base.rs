@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::GraphExt;
-use crate::graph::IncidenceGraph;
 use crate::graph::OutgoingGraph;
 use crate::error::{GraphError, Result};
 use crate::graph::Graph;
-use crate::graph::props::{is_complete, require_undirected};
+use crate::graph::props::{is_complete};
 use crate::traverse::DepthFirstIterator;
 use crate::walk::GraphWalk;
 use std::collections::HashSet;
@@ -85,7 +85,7 @@ pub(crate) fn closed_vertex_list_to_tour<G: Graph>(
 }
 
 /// `edgeSetToTour`: walks the edges of `tour` depth first.
-pub(crate) fn edge_set_to_tour<G: IncidenceGraph>(
+pub(crate) fn edge_set_to_tour<G: OutgoingGraph>(
     tour: &HashSet<G::Edge>,
     graph: &G,
 ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
@@ -109,8 +109,7 @@ pub(crate) fn require_not_empty<G: Graph>(graph: &G) -> Result<()> {
 }
 
 /// `checkGraph`: undirected, non-empty and complete.
-pub(crate) fn check_graph<G: OutgoingGraph>(graph: &G) -> Result<()> {
-    require_undirected(graph)?;
+pub(crate) fn check_graph<G: UndirectedGraph + OutgoingGraph>(graph: &G) -> Result<()> {
     require_not_empty(graph)?;
     if !is_complete(graph) {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::Complete));

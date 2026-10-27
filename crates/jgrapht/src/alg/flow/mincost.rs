@@ -463,9 +463,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
     {
         let graph = problem.graph();
         if !graph.graph_type().directed {
-            return Err(GraphError::InvalidArgument(
-                "The algorithm doesn't support undirected flow networks".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Directed));
         }
         self.n = graph.vertex_count();
         self.calculate_minimum_cost_flow(problem)?;

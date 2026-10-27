@@ -14,6 +14,7 @@
 
 //! Vertex cover.
 
+use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
 use super::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
 use super::partition::two_color;
@@ -141,7 +142,7 @@ pub fn clarkson_vertex_cover<G: Graph>(
 }
 
 /// Exact minimum vertex cover of a bipartite graph (König's theorem).
-pub fn bipartite_vertex_cover<G: IncidenceGraph>(g: &G) -> Result<VertexCover<G::Vertex>> {
+pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(g: &G) -> Result<VertexCover<G::Vertex>> {
     let ix = Indexed::new(g);
     let side = two_color(&ix)
         .ok_or(GraphError::InvalidGraph(crate::GraphProperty::Bipartite))?;
@@ -211,7 +212,7 @@ pub fn is_vertex_cover<G: Graph>(g: &G, vs: &[G::Vertex]) -> bool {
 // self-loops are accepted. Weights default to 1 per vertex.
 
 use super::interfaces::VertexCoverAlgorithm;
-use crate::graph::{GraphExt, props};
+use crate::graph::{GraphExt};
 use crate::util::OrderedF64;
 use indexmap::IndexMap;
 use std::collections::{BTreeSet, HashMap};
@@ -312,11 +313,9 @@ macro_rules! weighted_cover_class {
 
         impl<'g, G: IncidenceGraph> $name<'g, G> {
             pub fn new(graph: &'g G) -> Result<Self> {
-                props::require_undirected(graph)?;
                 Ok($name { graph, weights: unit_weights(graph) })
             }
             pub fn with_weights(graph: &'g G, weights: HashMap<G::Vertex, f64>) -> Result<Self> {
-                props::require_undirected(graph)?;
                 Ok($name { graph, weights })
             }
         }
@@ -393,9 +392,8 @@ pub struct EdgeBasedTwoApproxVcImpl<'g, G: Graph> {
     graph: &'g G,
 }
 
-impl<'g, G: IncidenceGraph> EdgeBasedTwoApproxVcImpl<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> EdgeBasedTwoApproxVcImpl<'g, G> {
     pub fn new(graph: &'g G) -> Result<Self> {
-        props::require_undirected(graph)?;
         Ok(EdgeBasedTwoApproxVcImpl { graph })
     }
 }

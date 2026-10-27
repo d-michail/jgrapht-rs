@@ -118,9 +118,7 @@ impl<'g, G: Graph> GreedyMultiplicativeSpanner<'g, G> {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
         }
         if k == 0 {
-            return Err(GraphError::InvalidArgument(
-                "k should be positive in (2k-1)-spanner construction".into(),
-            ));
+            return Err(GraphError::must_be_positive("k"));
         }
         Ok(GreedyMultiplicativeSpanner {
             graph,

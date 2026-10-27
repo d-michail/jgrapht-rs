@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::OutgoingGraph;
 use crate::graph::IncidenceGraph;
 use super::base::{
@@ -66,7 +67,7 @@ impl<R: RandomSource> RandomTourTSP<R> {
     }
 }
 
-impl<G: OutgoingGraph, R: RandomSource> HamiltonianCycleAlgorithm<G> for RandomTourTSP<R> {
+impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgorithm<G> for RandomTourTSP<R> {
     /// Computes a tour using the greedy heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -155,7 +156,7 @@ impl<V, R> NearestNeighborHeuristicTSP<V, R> {
     }
 }
 
-impl<G: OutgoingGraph, R: RandomSource> HamiltonianCycleAlgorithm<G>
+impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgorithm<G>
     for NearestNeighborHeuristicTSP<G::Vertex, R>
 {
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
@@ -228,7 +229,7 @@ impl TwoApproxMetricTSP {
     }
 }
 
-impl<G: OutgoingGraph> HamiltonianCycleAlgorithm<G> for TwoApproxMetricTSP {
+impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for TwoApproxMetricTSP {
     /// Computes a 2-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -284,7 +285,7 @@ impl GreedyHeuristicTSP {
     }
 }
 
-impl<G: OutgoingGraph + IncidenceGraph> HamiltonianCycleAlgorithm<G> for GreedyHeuristicTSP {
+impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for GreedyHeuristicTSP {
     /// Computes a tour using the greedy heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;

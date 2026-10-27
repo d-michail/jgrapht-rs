@@ -12,11 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
 use super::base::{MaximumFlow, MaximumFlowAlgorithm, MinimumSTCutAlgorithm};
 use super::{DEFAULT_EPSILON, PushRelabelMFImpl};
 use crate::error::{GraphError, Result};
-use crate::graph::props::require_undirected;
 use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
 use indexmap::IndexSet;
 use std::collections::{HashMap, VecDeque};
@@ -34,9 +34,7 @@ fn unsupported<T>() -> Result<T> {
 /// Shared set-up of the two Gusfield algorithms: the vertex order and index map.
 fn index_vertices<G: Graph>(network: &G) -> Result<(Vec<G::Vertex>, HashMap<G::Vertex, usize>)> {
     if network.vertex_count() < 2 {
-        return Err(GraphError::InvalidArgument(
-            "Graph must have at least 2 vertices".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::AtLeastTwoVertices));
     }
     let vertex_list: Vec<G::Vertex> = network.vertices().cloned().collect();
     let index_map = vertex_list
@@ -89,7 +87,7 @@ pub struct GusfieldEquivalentFlowTree<'g, G: Graph> {
     flow_matrix: Vec<Vec<f64>>,
 }
 
-impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> GusfieldEquivalentFlowTree<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldEquivalentFlowTree<'g, G> {
     /// Constructs a new GusfieldEquivalentFlowTree instance.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
@@ -107,7 +105,6 @@ impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> GusfieldEquivalentFlowTree<'g,
         network: &'g G,
         minimum_st_cut_algorithm: CutAlgorithm<'g, G>,
     ) -> Result<Self> {
-        require_undirected(network)?;
         let (vertex_list, index_map) = index_vertices(network)?;
         Ok(GusfieldEquivalentFlowTree {
             n: vertex_list.len(),
@@ -173,7 +170,7 @@ impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> GusfieldEquivalentFlowTree<'g,
     }
 }
 
-impl<'g, G: IncidenceGraph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
     for GusfieldEquivalentFlowTree<'g, G>
 {
     fn maximum_flow(
@@ -255,7 +252,7 @@ pub struct GusfieldGomoryHuCutTree<'g, G: Graph> {
     cut_cache: Option<IndexSet<G::Edge>>,
 }
 
-impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> GusfieldGomoryHuCutTree<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomoryHuCutTree<'g, G> {
     /// Constructs a new GusfieldEquivalentFlowTree instance.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
@@ -273,7 +270,6 @@ impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> GusfieldGomoryHuCutTree<'g, G>
         network: &'g G,
         minimum_st_cut_algorithm: CutAlgorithm<'g, G>,
     ) -> Result<Self> {
-        require_undirected(network)?;
         let (vertex_list, index_map) = index_vertices(network)?;
         Ok(GusfieldGomoryHuCutTree {
             network,
@@ -407,7 +403,7 @@ impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> GusfieldGomoryHuCutTree<'g, G>
     }
 }
 
-impl<'g, G: IncidenceGraph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
     for GusfieldGomoryHuCutTree<'g, G>
 {
     fn maximum_flow(
@@ -442,7 +438,7 @@ impl<'g, G: IncidenceGraph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
     }
 }
 
-impl<'g, G: IncidenceGraph + 'g> MinimumSTCutAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MinimumSTCutAlgorithm<G::Vertex, G::Edge>
     for GusfieldGomoryHuCutTree<'g, G>
 {
     fn calculate_min_cut(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {

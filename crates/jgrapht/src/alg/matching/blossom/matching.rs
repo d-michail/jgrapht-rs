@@ -12,12 +12,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use super::{BLOSSOM_V_EPSILON, KolmogorovWeightedPerfectMatching};
 use super::{BlossomVOptions, ObjectiveSense};
 use crate::GraphType;
 use crate::alg::matching::{Matching, MatchingAlgorithm};
 use crate::error::Result;
-use crate::graph::{BaseGraph, Graph, GraphExt, GraphMut, UGraph, Undirected, props};
+use crate::graph::{BaseGraph, Graph, GraphExt, GraphMut, UGraph, Undirected};
 use indexmap::IndexSet;
 
 /// This class computes weighted matchings in general graphs. Depending on the constructor parameter
@@ -39,7 +40,7 @@ pub struct KolmogorovWeightedMatching<'g, G: Graph> {
     error: Option<f64>,
 }
 
-impl<'g, G: Graph> KolmogorovWeightedMatching<'g, G> {
+impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     /// Constructs a maximum-weight matching algorithm with default Blossom V options.
     pub fn new(graph: &'g G) -> Result<Self> {
         Self::with_options_and_objective(
@@ -65,7 +66,6 @@ impl<'g, G: Graph> KolmogorovWeightedMatching<'g, G> {
         options: BlossomVOptions,
         objective_sense: ObjectiveSense,
     ) -> Result<Self> {
-        props::require_undirected(graph)?;
         Ok(Self {
             graph,
             options,
@@ -163,7 +163,7 @@ impl<'g, G: Graph> KolmogorovWeightedMatching<'g, G> {
     }
 }
 
-impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for KolmogorovWeightedMatching<'_, G> {
+impl<G: UndirectedGraph> MatchingAlgorithm<G::Vertex, G::Edge> for KolmogorovWeightedMatching<'_, G> {
     /// Computes and returns a matching of maximum or minimum weight in the `initialGraph`
     /// depending on the goal of the algorithm.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {

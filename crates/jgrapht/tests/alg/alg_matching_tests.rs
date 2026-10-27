@@ -587,7 +587,7 @@ mod no_heuristics_path_growing_weighted_matching_test {
 mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
     use super::*;
 
-    fn algorithm<'g, G: Graph<Vertex = i32> + IncidenceGraph>(
+    fn algorithm<'g, G: jgrapht::UndirectedGraph<Vertex = i32> + IncidenceGraph>(
         graph: &'g G,
         partition1: impl IntoIterator<Item = i32>,
         partition2: impl IntoIterator<Item = i32>,
@@ -596,7 +596,7 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
     }
 
     /// `verifyMatching` of the base class: also certified maximum by `DenseEdmonds`.
-    fn verify<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(g: &G, m: &M, cardinality: usize) {
+    fn verify<G: jgrapht::UndirectedGraph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(g: &G, m: &M, cardinality: usize) {
         verify_matching(g, m, cardinality);
         let mut matcher = DenseEdmondsMaximumCardinalityMatching::new(g).unwrap();
         assert!(matcher.is_maximum_matching(m).unwrap());

@@ -33,9 +33,14 @@ fn check<G: Graph>(g: &G, terminals: &[G::Vertex]) -> Result<()> {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
     }
     if terminals.is_empty() || terminals.iter().any(|t| !g.contains_vertex(t)) {
-        return Err(GraphError::InvalidArgument(
-            "terminals must be a non-empty set of graph vertices".into(),
-        ));
+        return Err(if terminals.is_empty() {
+            GraphError::InvalidParameter {
+                name: "terminals",
+                requirement: crate::ParameterRequirement::NonEmpty,
+            }
+        } else {
+            GraphError::VertexNotFound
+        });
     }
     Ok(())
 }
@@ -70,9 +75,7 @@ pub fn kmb_steiner_tree<G: OutgoingGraph>(g: &G, terminals: &[G::Vertex]) -> Res
             }
         }
         if best.0.is_infinite() {
-            return Err(GraphError::InvalidArgument(
-                "terminals are not connected".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Connected));
         }
         in_tree[best.2] = true;
         let path = sp[best.1].path(terms[best.2]).expect("finite distance");
@@ -122,9 +125,10 @@ pub fn dreyfus_wagner_weight<G: Graph>(g: &G, terminals: &[G::Vertex]) -> Result
     terms.dedup();
     let k = terms.len();
     if k > 16 {
-        return Err(GraphError::InvalidArgument(
-            "too many terminals for the exact algorithm".into(),
-        ));
+        return Err(GraphError::InvalidParameter {
+            name: "terminals",
+            requirement: crate::ParameterRequirement::AtMost(16),
+        });
     }
     if k == 1 {
         return Ok(0.0);
@@ -176,9 +180,7 @@ pub fn dreyfus_wagner_weight<G: Graph>(g: &G, terminals: &[G::Vertex]) -> Result
     }
     let w = dp[full - 1][terms[0]];
     if w.is_infinite() {
-        return Err(GraphError::InvalidArgument(
-            "terminals are not connected".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::Connected));
     }
     Ok(w)
 }

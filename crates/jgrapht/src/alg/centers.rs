@@ -14,6 +14,7 @@
 
 //! Facility location: k-center.
 
+use crate::graph::UndirectedGraph;
 use crate::graph::OutgoingGraph;
 use super::interfaces::CentersLocationAlgorithm;
 use super::util::Indexed;
@@ -34,9 +35,14 @@ pub fn greedy_k_center<G: Graph>(g: &G, k: usize, weighted: bool) -> Result<(Vec
     let ix = Indexed::new(g);
     let n = ix.n();
     if k == 0 || k > n {
-        return Err(GraphError::InvalidArgument(
-            "k must be between 1 and the number of vertices".into(),
-        ));
+        return Err(GraphError::InvalidParameter {
+            name: "k",
+            requirement: if k == 0 {
+                crate::ParameterRequirement::AtLeast(1)
+            } else {
+                crate::ParameterRequirement::AtMost(n as u64)
+            },
+        });
     }
     let dists = |s: usize| -> Vec<f64> {
         let mut dist = vec![f64::INFINITY; n];
@@ -150,8 +156,7 @@ impl<V: Eq + Hash + Clone, R: RandomSource> GonHeuristic<V, R> {
 }
 
 /// Checks that graph is undirected, complete, and non-empty
-fn check_graph<G: OutgoingGraph>(graph: &G) -> Result<()> {
-    props::require_undirected(graph)?;
+fn check_graph<G: UndirectedGraph + OutgoingGraph>(graph: &G) -> Result<()> {
     if graph.vertex_count() == 0 {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
     }
@@ -163,19 +168,23 @@ fn check_graph<G: OutgoingGraph>(graph: &G) -> Result<()> {
 
 impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonHeuristic<V, R> {
     /// Computes the set of $k$ centers by using the Gon heuristic.
-    fn centers<G: OutgoingGraph<Vertex = V>>(&mut self, graph: &G, k: usize) -> Result<IndexSet<V>> {
+    fn centers<G: OutgoingGraph<Vertex = V> + UndirectedGraph>(&mut self, graph: &G, k: usize) -> Result<IndexSet<V>> {
         check_graph(graph)?;
         let n = graph.vertex_count();
         if n == k {
             return Ok(graph.vertices().cloned().collect());
         }
         if n < k {
-            return Err(GraphError::InvalidArgument(
-                "The number of vertices in the graph must be at least k".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "k",
+                requirement: crate::ParameterRequirement::AtMost(n as u64),
+            });
         }
         if k == 0 {
-            return Err(GraphError::InvalidArgument("k must be at least 1".into()));
+            return Err(GraphError::InvalidParameter {
+                name: "k",
+                requirement: crate::ParameterRequirement::AtLeast(1),
+            });
         }
         if self.initial_centers.as_ref().is_none_or(|c| c.is_empty()) {
             // no initial set of centers: choose the first center randomly

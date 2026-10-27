@@ -14,6 +14,7 @@
 
 //! Tree decompositions via elimination-ordering heuristics.
 
+use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
 use crate::graph::capability::OutgoingGraph;
 use super::util::Indexed;
@@ -480,7 +481,7 @@ pub struct DulmageMendelsohnDecomposition<'g, G: Graph> {
     partition2: HashSet<G::Vertex>,
 }
 
-impl<'g, G: IncidenceGraph> DulmageMendelsohnDecomposition<'g, G>
+impl<'g, G: IncidenceGraph + UndirectedGraph> DulmageMendelsohnDecomposition<'g, G>
 where
     G::Vertex: Eq + Hash,
 {

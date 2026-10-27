@@ -254,3 +254,89 @@ mod cycles_isomorphism_trees {
         assert_eq!(on_no, on_full);
     }
 }
+
+mod flow_matching_tours {
+    use jgrapht::alg::flow::{
+        BoykovKolmogorovMFImpl, DinicMFImpl, EdmondsKarpMFImpl, MaximumFlowAlgorithm,
+        PushRelabelMFImpl,
+    };
+    use jgrapht::alg::matching::{GreedyMaximumCardinalityMatching, MatchingAlgorithm};
+    use jgrapht::graph::sparse::{
+        FullIncoming, LazyIncoming, NoIncoming, SparseIntDirectedWeightedGraph,
+        SparseIntUndirectedGraph,
+    };
+
+    /// 0 -> 1 -> 3, 0 -> 2 -> 3 and a cross edge 1 -> 2; the maximum flow is 5.
+    const NETWORK: [(usize, usize, f64); 5] = [
+        (0, 1, 3.0),
+        (0, 2, 2.0),
+        (1, 3, 2.0),
+        (2, 3, 3.0),
+        (1, 2, 1.0),
+    ];
+
+    #[test]
+    fn augmenting_path_flows_run_without_an_incoming_index() {
+        let no = SparseIntDirectedWeightedGraph::<NoIncoming>::from_edges(4, &NETWORK).unwrap();
+        let full = SparseIntDirectedWeightedGraph::<FullIncoming>::from_edges(4, &NETWORK).unwrap();
+        let on_no = [
+            DinicMFImpl::new(&no)
+                .unwrap()
+                .maximum_flow_value(&0, &3)
+                .unwrap(),
+            EdmondsKarpMFImpl::new(&no)
+                .unwrap()
+                .maximum_flow_value(&0, &3)
+                .unwrap(),
+            BoykovKolmogorovMFImpl::new(&no)
+                .unwrap()
+                .maximum_flow_value(&0, &3)
+                .unwrap(),
+        ];
+        let on_full = [
+            DinicMFImpl::new(&full)
+                .unwrap()
+                .maximum_flow_value(&0, &3)
+                .unwrap(),
+            EdmondsKarpMFImpl::new(&full)
+                .unwrap()
+                .maximum_flow_value(&0, &3)
+                .unwrap(),
+            BoykovKolmogorovMFImpl::new(&full)
+                .unwrap()
+                .maximum_flow_value(&0, &3)
+                .unwrap(),
+        ];
+        assert_eq!(on_no, [5.0; 3]);
+        assert_eq!(on_no, on_full);
+    }
+
+    #[test]
+    fn push_relabel_needs_an_incoming_index() {
+        let lazy = SparseIntDirectedWeightedGraph::<LazyIncoming>::from_edges(4, &NETWORK).unwrap();
+        let full = SparseIntDirectedWeightedGraph::<FullIncoming>::from_edges(4, &NETWORK).unwrap();
+        for value in [
+            PushRelabelMFImpl::new(&lazy)
+                .unwrap()
+                .maximum_flow_value(&0, &3)
+                .unwrap(),
+            PushRelabelMFImpl::new(&full)
+                .unwrap()
+                .maximum_flow_value(&0, &3)
+                .unwrap(),
+        ] {
+            assert_eq!(value, 5.0);
+        }
+    }
+
+    #[test]
+    fn undirected_only_matching_takes_sparse_undirected_graphs() {
+        let g = SparseIntUndirectedGraph::new(4, &[(0, 1), (1, 2), (2, 3)]).unwrap();
+        let matching = GreedyMaximumCardinalityMatching::new(&g, false)
+            .unwrap()
+            .get_matching()
+            .unwrap();
+        assert_eq!(matching.len(), 2);
+        // a directed graph is a compile error: the matchers take an `UndirectedGraph`
+    }
+}

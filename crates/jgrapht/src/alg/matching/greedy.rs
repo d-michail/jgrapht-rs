@@ -12,10 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
 use super::base::{DEFAULT_EPSILON, Matching, MatchingAlgorithm};
 use crate::error::Result;
-use crate::graph::{Graph, GraphExt, props};
+use crate::graph::{Graph, GraphExt};
 use crate::util::ToleranceDoubleComparator;
 use indexmap::IndexSet;
 use std::cmp::Ordering;
@@ -46,10 +47,9 @@ pub struct GreedyMaximumCardinalityMatching<'g, G: Graph> {
     sort: bool,
 }
 
-impl<'g, G: Graph> GreedyMaximumCardinalityMatching<'g, G> {
+impl<'g, G: UndirectedGraph> GreedyMaximumCardinalityMatching<'g, G> {
     /// Fails if the graph is not undirected.
     pub fn new(graph: &'g G, sort: bool) -> Result<Self> {
-        props::require_undirected(graph)?;
         Ok(GreedyMaximumCardinalityMatching { graph, sort })
     }
 }

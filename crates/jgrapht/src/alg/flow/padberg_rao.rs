@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
 use super::base::MinimumSTCutAlgorithm;
 use super::{DEFAULT_EPSILON, GusfieldGomoryHuCutTree, PushRelabelMFImpl};
 use crate::alg::connectivity::ConnectivityInspector;
 use crate::error::{GraphError, Result};
-use crate::graph::props::require_undirected;
 use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, UGraph};
 use indexmap::IndexSet;
 use std::collections::VecDeque;
@@ -55,7 +55,7 @@ pub struct PadbergRaoOddMinimumCutset<'g, G: Graph> {
     source_partition_minimum_cut: Option<IndexSet<G::Vertex>>,
 }
 
-impl<'g, G: Graph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g, G> {
+impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g, G> {
     /// Creates a new instance of the PadbergRaoOddMinimumCutset algorithm.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
@@ -73,7 +73,6 @@ impl<'g, G: Graph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g, G> {
         network: &'g G,
         minimum_st_cut_algorithm: Box<dyn MinimumSTCutAlgorithm<G::Vertex, G::Edge> + 'g>,
     ) -> Result<Self> {
-        require_undirected(network)?;
         Ok(PadbergRaoOddMinimumCutset {
             network,
             odd_vertices: IndexSet::new(),

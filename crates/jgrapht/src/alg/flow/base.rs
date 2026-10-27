@@ -13,7 +13,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use crate::graph::GraphExt;
-use crate::graph::IncidenceGraph;
 use crate::graph::OutgoingGraph;
 use crate::error::{GraphError, Result};
 use crate::util::ToleranceDoubleComparator;
@@ -102,7 +101,7 @@ pub(crate) struct Arc {
 
 /// `MaximumFlowAlgorithmBase`: the residual network built from the input graph, plus the cut and
 /// flow-map queries that all algorithms share. Vertices and arcs are addressed by index.
-pub(crate) struct FlowNet<'g, G: IncidenceGraph> {
+pub(crate) struct FlowNet<'g, G: OutgoingGraph> {
     pub graph: &'g G,
     pub directed: bool,
     pub comparator: ToleranceDoubleComparator,
@@ -126,7 +125,7 @@ pub(crate) struct FlowNet<'g, G: IncidenceGraph> {
     cut_edges: Option<IndexSet<G::Edge>>,
 }
 
-impl<'g, G: OutgoingGraph + IncidenceGraph> FlowNet<'g, G> {
+impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     pub fn new(graph: &'g G, epsilon: f64) -> Result<Self> {
         let vs: Vec<&G::Vertex> = graph.vertices().collect();
         let es: Vec<&G::Edge> = graph.edges().collect();
@@ -429,8 +428,8 @@ impl<'g, G: OutgoingGraph + IncidenceGraph> FlowNet<'g, G> {
 /// Implements [`MaximumFlowAlgorithm`] and [`MinimumSTCutAlgorithm`] for an algorithm struct with a
 /// `net: FlowNet` field and a `calculate(&mut self, &V, &V) -> Result<f64>` method.
 macro_rules! flow_algorithm_api {
-    ($name:ident) => {
-        impl<'g, G: $crate::graph::IncidenceGraph> $name<'g, G> {
+    ($name:ident, $bound:path) => {
+        impl<'g, G: $bound> $name<'g, G> {
             /// The source of the last computation.
             pub fn current_source(&self) -> Option<&G::Vertex> {
                 (self.net.max_flow_value >= 0.0).then(|| self.net.vs[self.net.source])
@@ -447,7 +446,7 @@ macro_rules! flow_algorithm_api {
             }
         }
 
-        impl<'g, G: $crate::graph::IncidenceGraph> $crate::alg::flow::MaximumFlowAlgorithm<G::Vertex, G::Edge>
+        impl<'g, G: $bound> $crate::alg::flow::MaximumFlowAlgorithm<G::Vertex, G::Edge>
             for $name<'g, G>
         {
             fn maximum_flow(
@@ -475,7 +474,7 @@ macro_rules! flow_algorithm_api {
             }
         }
 
-        impl<'g, G: $crate::graph::IncidenceGraph> $crate::alg::flow::MinimumSTCutAlgorithm<G::Vertex, G::Edge>
+        impl<'g, G: $bound> $crate::alg::flow::MinimumSTCutAlgorithm<G::Vertex, G::Edge>
             for $name<'g, G>
         {
             fn calculate_min_cut(

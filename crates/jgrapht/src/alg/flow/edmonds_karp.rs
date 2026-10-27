@@ -12,7 +12,6 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use crate::graph::OutgoingGraph;
 use super::DEFAULT_EPSILON;
 use super::base::{FlowNet, flow_algorithm_api};
@@ -56,14 +55,14 @@ use std::collections::{HashSet, VecDeque};
 ///
 /// `EdmondsKarpMFImpl`: shortest augmenting paths found by breadth-first search, `O(V E²)`.
 /// All shortest paths of a round are augmented together.
-pub struct EdmondsKarpMFImpl<'g, G: IncidenceGraph> {
+pub struct EdmondsKarpMFImpl<'g, G: OutgoingGraph> {
     net: FlowNet<'g, G>,
     visited: Vec<bool>,
     /// last arc(s) of the shortest path(s) used to reach each vertex
     last_arcs: Vec<Option<Vec<usize>>>,
 }
 
-impl<'g, G: OutgoingGraph + IncidenceGraph> EdmondsKarpMFImpl<'g, G> {
+impl<'g, G: OutgoingGraph> EdmondsKarpMFImpl<'g, G> {
     /// Constructs `MaximumFlow` instance to work with *a copy of* `network`.
     /// Current source and sink are set to `null`. If `network` is weighted, then
     /// capacities are weights, otherwise all capacities are equal to one. Doubles are compared using
@@ -191,4 +190,4 @@ impl<'g, G: OutgoingGraph + IncidenceGraph> EdmondsKarpMFImpl<'g, G> {
     }
 }
 
-flow_algorithm_api!(EdmondsKarpMFImpl);
+flow_algorithm_api!(EdmondsKarpMFImpl, crate::graph::OutgoingGraph);

@@ -157,13 +157,6 @@ mod christofides_three_halves_approx_metric_tsp_test {
 
     #[test]
     fn rejects_directed_empty_and_incomplete_graphs() {
-        let mut directed = Dg::simple().weighted();
-        directed.add_vertices([1, 2]);
-        directed.add_weighted_edge(&1, &2, 5.0).unwrap();
-        assert!(ChristofidesThreeHalvesApproxMetricTSP::new()
-            .get_tour(&directed)
-            .is_err());
-
         assert!(ChristofidesThreeHalvesApproxMetricTSP::new()
             .get_tour(&Ug::simple().weighted())
             .is_err());
@@ -998,12 +991,6 @@ mod two_approx_metric_tsp_test {
         assert!(2.0 * mst_weight(&g) >= tour.weight());
     }
 
-    #[test]
-    fn invalid_instance_directed() {
-        let mut g = DiGraph::<String>::simple();
-        g.add_vertex(s("A"));
-        assert!(TwoApproxMetricTSP::new().get_tour(&g).is_err());
-    }
 
     #[test]
     fn invalid_instance_not_complete() {
@@ -1041,11 +1028,6 @@ mod two_opt_heuristic_tsp_test {
         assert!(2.0 * mst_weight(&g) >= tour.weight());
     }
 
-    #[test]
-    fn invalid_instance_directed() {
-        let g = DiGraph::<String>::simple();
-        assert!(TwoOptHeuristicTSP::new().get_tour(&g).is_err());
-    }
 
     #[test]
     fn invalid_instance_not_complete() {
@@ -1424,14 +1406,6 @@ mod palmer_hamiltonian_cycle_test {
 mod farthest_insertion_heuristic_tsp_test {
     use super::*;
 
-    #[test]
-    fn directed_graph() {
-        let mut g = DiGraph::<i32>::with_loops().weighted();
-        g.add_vertex(1);
-        g.add_vertex(2);
-        g.add_weighted_edge(&1, &2, 5.0).unwrap();
-        assert!(FarthestInsertionHeuristicTSP::new().get_tour(&g).is_err());
-    }
 
     #[test]
     fn empty_graph() {

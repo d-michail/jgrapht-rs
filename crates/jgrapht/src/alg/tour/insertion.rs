@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::OutgoingGraph;
 use super::base::{
     HamiltonianCycleAlgorithm, check_graph, closed_vertex_list_to_tour, singleton_tour,
@@ -220,7 +221,7 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
     }
 }
 
-impl<G: OutgoingGraph> HamiltonianCycleAlgorithm<G> for NearestInsertionHeuristicTSP<G> {
+impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for NearestInsertionHeuristicTSP<G> {
     /// Computes a tour using the nearest insertion heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -289,7 +290,7 @@ impl<G: Graph> FarthestInsertionHeuristicTSP<G> {
     }
 }
 
-impl<G: OutgoingGraph> HamiltonianCycleAlgorithm<G> for FarthestInsertionHeuristicTSP<G> {
+impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for FarthestInsertionHeuristicTSP<G> {
     /// Computes a tour using the farthest insertion heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;

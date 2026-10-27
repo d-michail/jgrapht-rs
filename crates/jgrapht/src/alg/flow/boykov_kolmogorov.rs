@@ -12,7 +12,6 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use crate::graph::OutgoingGraph;
 use super::DEFAULT_EPSILON;
 use super::base::{FlowNet, flow_algorithm_api};
@@ -76,7 +75,7 @@ struct AdoptionParent {
 ///
 /// `BoykovKolmogorovMFImpl`: two search trees (from the source and from the sink) that are grown,
 /// augmented along and repaired, `O(V² E |C|)` in theory and fast on vision-style graphs.
-pub struct BoykovKolmogorovMFImpl<'g, G: IncidenceGraph> {
+pub struct BoykovKolmogorovMFImpl<'g, G: OutgoingGraph> {
     net: FlowNet<'g, G>,
     data: Vec<VertexData>,
     current_timestamp: u64,
@@ -85,7 +84,7 @@ pub struct BoykovKolmogorovMFImpl<'g, G: IncidenceGraph> {
     child_orphans: VecDeque<usize>,
 }
 
-impl<'g, G: OutgoingGraph + IncidenceGraph> BoykovKolmogorovMFImpl<'g, G> {
+impl<'g, G: OutgoingGraph> BoykovKolmogorovMFImpl<'g, G> {
     /// Creates a new algorithm instance with the specified `network`. The created algorithm
     /// uses default epsilon.
     pub fn new(network: &'g G) -> Result<Self> {
@@ -520,4 +519,4 @@ impl<'g, G: OutgoingGraph + IncidenceGraph> BoykovKolmogorovMFImpl<'g, G> {
     }
 }
 
-flow_algorithm_api!(BoykovKolmogorovMFImpl);
+flow_algorithm_api!(BoykovKolmogorovMFImpl, crate::graph::OutgoingGraph);

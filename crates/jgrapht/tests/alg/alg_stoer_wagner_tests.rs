@@ -177,13 +177,9 @@ fn test_min_cut_small() {
     assert_one_of(mincut.min_cut(), &["v1"], &["v2"]);
 }
 
-/// Not in Java: directed graphs, negative weights and loops are rejected.
+/// Not in Java: negative weights and loops are rejected (a directed graph does not compile).
 #[test]
 fn rejects_invalid_input() {
-    let mut d = DiGraph::<u32>::simple();
-    d.add_edge_with_vertices(1, 2).unwrap();
-    assert!(StoerWagnerMinimumCut::new(&d).is_err());
-
     let g = weighted(&["a", "b"], &[("a", "b", -1.0)]);
     assert!(StoerWagnerMinimumCut::new(&g).is_err());
 

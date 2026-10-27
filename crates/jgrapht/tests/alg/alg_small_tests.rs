@@ -609,12 +609,6 @@ mod gon_algorithm_test {
         GonHeuristic::with_rng(StdRng::from_os_rng())
     }
 
-    #[test]
-    fn test_directed_graph() {
-        let mut graph = DiGraph::<i32>::simple().weighted();
-        graph.add_edge_with_vertices(1, 2).unwrap();
-        assert!(gon().centers(&graph, 1).is_err());
-    }
 
     #[test]
     fn test_empty_graph() {

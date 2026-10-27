@@ -12,12 +12,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use super::greedy::GreedyMaximumCardinalityMatching;
 use crate::alg::util::FixedSizeIntegerQueue;
 use crate::error::Result;
-use crate::graph::{Graph, GraphExt, props};
+use crate::graph::{Graph, GraphExt};
 use indexmap::IndexSet;
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -408,7 +409,7 @@ pub struct SparseEdmondsMaximumCardinalityMatching<'g, G: Graph> {
     odd_set_cover: Option<HashMap<G::Vertex, i64>>,
 }
 
-impl<'g, G: Graph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinalityMatching<'g, G> {
+impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinalityMatching<'g, G> {
     /// Uses `GreedyMaximumCardinalityMatching` (unsorted) as the initializer. Fails if the graph is
     /// not undirected.
     pub fn new(graph: &'g G) -> Result<Self> {
@@ -421,7 +422,6 @@ impl<'g, G: Graph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinalityMatching
         graph: &'g G,
         initializer: Option<Box<dyn MatchingAlgorithm<G::Vertex, G::Edge> + 'g>>,
     ) -> Result<Self> {
-        props::require_undirected(graph)?;
         Ok(SparseEdmondsMaximumCardinalityMatching {
             graph,
             initializer,
