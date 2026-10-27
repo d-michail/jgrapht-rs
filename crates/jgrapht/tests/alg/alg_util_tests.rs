@@ -193,7 +193,7 @@ mod union_find_test {
 
 mod neighbor_cache_test {
     use super::*;
-    use jgrapht::graph::sparse::{IncomingEdgesSupport, SparseIntDirectedGraph};
+    use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph};
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -312,11 +312,7 @@ mod neighbor_cache_test {
 
     #[test]
     fn unsupported_incidence_is_returned_as_an_error() {
-        let graph = SparseIntDirectedGraph::with_incoming_support(
-            2,
-            &[(0, 1)],
-            IncomingEdgesSupport::NoIncomingEdges,
-        )
+        let graph = SparseIntDirectedGraph::<NoIncoming>::from_edges(2, &[(0, 1)])
         .unwrap();
         let mut cache = NeighborCache::new();
 

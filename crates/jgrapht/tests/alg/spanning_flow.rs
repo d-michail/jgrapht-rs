@@ -153,13 +153,9 @@ fn max_flow_algorithms() {
 
 #[test]
 fn flow_incidence_errors_are_returned() {
-    use jgrapht::graph::sparse::{IncomingEdgesSupport, SparseIntDirectedWeightedGraph};
+    use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedWeightedGraph};
 
-    let graph = SparseIntDirectedWeightedGraph::with_incoming_support(
-        2,
-        &[(0, 1, 1.0)],
-        IncomingEdgesSupport::NoIncomingEdges,
-    )
+    let graph = SparseIntDirectedWeightedGraph::<NoIncoming>::from_edges(2, &[(0, 1, 1.0)])
     .unwrap();
     let result = PushRelabelMFImpl::new(&graph).unwrap().maximum_flow(&0, &1);
 

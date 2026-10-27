@@ -1547,13 +1547,13 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/graph/sparse/csr.rs` | `CsrBooleanMatrix::non_zeros` | state query | `usize` |
 | `jgrapht/src/graph/sparse/csr.rs` | `CsrBooleanMatrix::non_zeros_of` | state query | `&[usize]` |
 | `jgrapht/src/graph/sparse/csr.rs` | `CsrBooleanMatrix::rows` | state query | `usize` |
+| `jgrapht/src/graph/sparse/directed.rs` | `SparseIntDirectedGraph::from_edges` | Result | `Result<Self>` |
 | `jgrapht/src/graph/sparse/directed.rs` | `SparseIntDirectedGraph::from_iter` | Result | `Result<Self>` |
 | `jgrapht/src/graph/sparse/directed.rs` | `SparseIntDirectedGraph::new` | Result | `Result<Self>` |
-| `jgrapht/src/graph/sparse/directed.rs` | `SparseIntDirectedGraph::with_incoming_support` | Result | `Result<Self>` |
+| `jgrapht/src/graph/sparse/directed.rs` | `SparseIntDirectedWeightedGraph::from_edges` | Result | `Result<Self>` |
 | `jgrapht/src/graph/sparse/directed.rs` | `SparseIntDirectedWeightedGraph::from_iter` | Result | `Result<Self>` |
 | `jgrapht/src/graph/sparse/directed.rs` | `SparseIntDirectedWeightedGraph::new` | Result | `Result<Self>` |
 | `jgrapht/src/graph/sparse/directed.rs` | `SparseIntDirectedWeightedGraph::set_edge_weight` | Result | `Result<()>` |
-| `jgrapht/src/graph/sparse/directed.rs` | `SparseIntDirectedWeightedGraph::with_incoming_support` | Result | `Result<Self>` |
 | `jgrapht/src/graph/sparse/undirected.rs` | `SparseIntUndirectedGraph::from_iter` | Result | `Result<Self>` |
 | `jgrapht/src/graph/sparse/undirected.rs` | `SparseIntUndirectedGraph::new` | Result | `Result<Self>` |
 | `jgrapht/src/graph/sparse/undirected.rs` | `SparseIntUndirectedWeightedGraph::from_iter` | Result | `Result<Self>` |

@@ -17,16 +17,12 @@ use jgrapht::alg::shortestpath::{
     BoundedPrunedYenKShortestPath, DijkstraManyToManyShortestPaths, EppsteinShortestPathIterator,
     ShortestPathAlgorithm,
 };
-use jgrapht::graph::sparse::{IncomingEdgesSupport, SparseIntDirectedGraph};
+use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph};
 use jgrapht::graph::{DirectedGraph, Graph, GraphExt};
 use jgrapht::{GraphError, GraphType, Result};
 
-fn no_incoming_graph() -> SparseIntDirectedGraph {
-    SparseIntDirectedGraph::with_incoming_support(
-        4,
-        &[(0, 1), (1, 2), (0, 2), (2, 3)],
-        IncomingEdgesSupport::NoIncomingEdges,
-    )
+fn no_incoming_graph() -> SparseIntDirectedGraph<NoIncoming> {
+    SparseIntDirectedGraph::<NoIncoming>::from_edges(4, &[(0, 1), (1, 2), (0, 2), (2, 3)])
     .unwrap()
 }
 
@@ -53,7 +49,7 @@ fn reverse_searches_propagate_missing_incoming_index() {
 /// Eppstein accepts only simple directed graphs, while the sparse backend deliberately reports
 /// pseudograph capabilities. This wrapper narrows only the advertised type so the regression can
 /// exercise Eppstein's reverse-tree construction against the same missing incoming index.
-struct SimpleSparse(SparseIntDirectedGraph);
+struct SimpleSparse(SparseIntDirectedGraph<NoIncoming>);
 
 impl Graph for SimpleSparse {
     type Vertex = usize;

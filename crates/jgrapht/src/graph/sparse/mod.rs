@@ -24,7 +24,10 @@ mod directed;
 mod undirected;
 
 pub use csr::CsrBooleanMatrix;
-pub use directed::{IncomingEdgesSupport, SparseIntDirectedGraph, SparseIntDirectedWeightedGraph};
+pub use directed::{
+    FullIncoming, HasIncoming, IncomingMode, LazyIncoming, NoIncoming, SparseIntDirectedGraph,
+    SparseIntDirectedWeightedGraph,
+};
 pub use undirected::{SparseIntUndirectedGraph, SparseIntUndirectedWeightedGraph};
 
 use crate::{GraphError, Result};

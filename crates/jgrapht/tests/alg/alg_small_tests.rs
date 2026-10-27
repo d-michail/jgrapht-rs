@@ -33,7 +33,7 @@ use std::collections::HashSet;
 
 mod line_graph_converter_test {
     use super::*;
-    use jgrapht::graph::sparse::{IncomingEdgesSupport, SparseIntDirectedGraph};
+    use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph};
 
     #[test]
     fn test_empty_graph() {
@@ -133,11 +133,7 @@ mod line_graph_converter_test {
 
     #[test]
     fn unsupported_incoming_edges_are_returned_as_an_error() {
-        let graph = SparseIntDirectedGraph::with_incoming_support(
-            2,
-            &[(0, 1)],
-            IncomingEdgesSupport::NoIncomingEdges,
-        )
+        let graph = SparseIntDirectedGraph::<NoIncoming>::from_edges(2, &[(0, 1)])
         .unwrap();
         let mut target = DiGraph::<usize>::simple();
 

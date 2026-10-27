@@ -14,22 +14,56 @@
 
 use super::{CsrBooleanMatrix, collect_endpoints, identity_ids};
 use crate::graph::Graph;
+use crate::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::{GraphError, GraphType, Result};
+use std::marker::PhantomData;
 use std::sync::OnceLock;
 
 const NO_INCOMING: &str = "this graph does not support incoming edges";
 
-/// Which incoming-edge index a [`SparseIntDirectedGraph`] builds.
-#[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum IncomingEdgesSupport {
-    /// `degree_of`, `edges_of`, `in_degree_of` and `in_edges_of` return `Unsupported`.
-    NoIncomingEdges,
-    /// The incoming index is built on first use.
-    LazyIncomingEdges,
-    /// The incoming index is built by the constructor.
-    FullIncomingEdges,
+mod sealed {
+    pub trait Sealed {}
 }
+
+/// Which incoming-edge index a [`SparseIntDirectedGraph`] keeps; one of [`NoIncoming`],
+/// [`LazyIncoming`] and [`FullIncoming`]. Sealed.
+pub trait IncomingMode: sealed::Sealed + std::fmt::Debug + Send + Sync + 'static {
+    /// Whether the graph can answer incoming-edge queries at all.
+    const SUPPORTED: bool;
+    /// Whether the constructor builds the incoming index (otherwise it is built on first use).
+    const EAGER: bool;
+}
+
+/// An [`IncomingMode`] with an incoming index: [`LazyIncoming`] or [`FullIncoming`]. Graphs in
+/// these modes implement [`IncomingGraph`] and [`IncidenceGraph`].
+pub trait HasIncoming: IncomingMode {}
+
+/// No incoming-edge index: the graph is [`OutgoingGraph`] only, and passing it to an algorithm that
+/// needs incoming edges is a compile error. (The still-present fallible `Graph` incidence methods
+/// return `Unsupported`.)
+#[derive(Debug, Clone, Copy)]
+pub enum NoIncoming {}
+/// The incoming index is built on first use.
+#[derive(Debug, Clone, Copy)]
+pub enum LazyIncoming {}
+/// The incoming index is built by the constructor.
+#[derive(Debug, Clone, Copy)]
+pub enum FullIncoming {}
+
+macro_rules! incoming_mode {
+    ($mode:ty, $supported:expr, $eager:expr) => {
+        impl sealed::Sealed for $mode {}
+        impl IncomingMode for $mode {
+            const SUPPORTED: bool = $supported;
+            const EAGER: bool = $eager;
+        }
+    };
+}
+incoming_mode!(NoIncoming, false, false);
+incoming_mode!(LazyIncoming, true, false);
+incoming_mode!(FullIncoming, true, true);
+impl HasIncoming for LazyIncoming {}
+impl HasIncoming for FullIncoming {}
 
 /// `NoIncomingNoReindexSparseDirectedSpecifics` and `IncomingNoReindexSparseDirectedSpecifics`:
 /// an outgoing CSR matrix (vertex by edge id) and, when supported, an incoming one.
@@ -41,15 +75,13 @@ struct DirectedCore {
     target: Vec<usize>,
     out_matrix: CsrBooleanMatrix,
     in_matrix: OnceLock<CsrBooleanMatrix>,
-    incoming: bool,
 }
 
 impl DirectedCore {
-    fn new(
+    fn new<I: IncomingMode>(
         num_vertices: usize,
         num_edges: usize,
         edges: impl IntoIterator<Item = (usize, usize)>,
-        support: IncomingEdgesSupport,
     ) -> Result<Self> {
         let (source, target) = collect_endpoints(num_vertices, num_edges, edges)?;
         let outgoing: Vec<_> = source.iter().copied().zip(0..).collect();
@@ -61,9 +93,8 @@ impl DirectedCore {
             target,
             out_matrix,
             in_matrix: OnceLock::new(),
-            incoming: support != IncomingEdgesSupport::NoIncomingEdges,
         };
-        if support == IncomingEdgesSupport::FullIncomingEdges {
+        if I::EAGER {
             core.in_matrix();
         }
         Ok(core)
@@ -76,14 +107,6 @@ impl DirectedCore {
             CsrBooleanMatrix::new(self.num_vertices, self.source.len(), &incoming)
                 .expect("endpoints were validated")
         })
-    }
-
-    fn require_incoming(&self) -> Result<()> {
-        if self.incoming {
-            Ok(())
-        } else {
-            Err(GraphError::Unsupported(NO_INCOMING.into()))
-        }
     }
 
     fn has_vertex(&self, v: usize) -> bool {
@@ -102,13 +125,13 @@ impl DirectedCore {
         self.row(&self.out_matrix, v)
     }
 
-    fn in_edges(&self, v: usize) -> Result<&[usize]> {
-        self.require_incoming()?;
-        Ok(if self.has_vertex(v) {
+    /// Incoming edges of `v`, building the index if needed. Only called for modes that have one.
+    fn in_edges(&self, v: usize) -> &[usize] {
+        if self.has_vertex(v) {
             self.in_matrix().non_zeros_of(v)
         } else {
             &[]
-        })
+        }
     }
 
     fn graph_type(&self, weighted: bool) -> GraphType {
@@ -120,8 +143,8 @@ impl DirectedCore {
 }
 
 macro_rules! directed_graph_impl {
-    ($graph:ty, $weighted:expr, $weight:expr) => {
-        impl Graph for $graph {
+    ($graph:ident, $weighted:expr, $weight:expr) => {
+        impl<I: IncomingMode> Graph for $graph<I> {
             type Vertex = usize;
             type Edge = usize;
 
@@ -168,12 +191,14 @@ macro_rules! directed_graph_impl {
 
             /// Outgoing edges followed by incoming ones; a self-loop appears once.
             ///
-            /// Fails for [`IncomingEdgesSupport::NoIncomingEdges`].
+            /// Fails for [`NoIncoming`].
             fn edges_of(&self, v: &usize) -> Result<impl Iterator<Item = &usize>> {
+                if !I::SUPPORTED {
+                    return Err(GraphError::Unsupported(NO_INCOMING.into()));
+                }
                 let core = &self.core;
-                let incoming = core.in_edges(*v)?;
                 Ok(core.out_edges(*v).iter().chain(
-                    incoming
+                    core.in_edges(*v)
                         .iter()
                         .filter(move |&&e| core.source[e] != core.target[e]),
                 ))
@@ -198,7 +223,10 @@ macro_rules! directed_graph_impl {
             }
 
             fn in_edges_of(&self, v: &usize) -> Result<impl Iterator<Item = &usize>> {
-                Ok(self.core.in_edges(*v)?.iter())
+                if !I::SUPPORTED {
+                    return Err(GraphError::Unsupported(NO_INCOMING.into()));
+                }
+                Ok(self.core.in_edges(*v).iter())
             }
 
             fn out_edges_of(&self, v: &usize) -> Result<impl Iterator<Item = &usize>> {
@@ -206,42 +234,97 @@ macro_rules! directed_graph_impl {
             }
 
             fn in_degree_of(&self, v: &usize) -> Result<usize> {
-                Ok(self.core.in_edges(*v)?.len())
+                if !I::SUPPORTED {
+                    return Err(GraphError::Unsupported(NO_INCOMING.into()));
+                }
+                Ok(self.core.in_edges(*v).len())
             }
 
             fn out_degree_of(&self, v: &usize) -> Result<usize> {
                 Ok(self.core.out_edges(*v).len())
             }
 
-            /// Fails for [`IncomingEdgesSupport::NoIncomingEdges`].
+            /// Fails for [`NoIncoming`].
             fn degree_of(&self, v: &usize) -> Result<usize> {
-                Ok(self.core.in_edges(*v)?.len() + self.core.out_edges(*v).len())
+                if !I::SUPPORTED {
+                    return Err(GraphError::Unsupported(NO_INCOMING.into()));
+                }
+                Ok(self.core.in_edges(*v).len() + self.core.out_edges(*v).len())
             }
         }
 
-        impl crate::graph::DirectedGraph for $graph {}
+        impl<I: IncomingMode> crate::graph::DirectedGraph for $graph<I> {}
+
+        impl<I: IncomingMode> OutgoingGraph for $graph<I> {
+            fn out_edges_of(&self, v: &usize) -> impl Iterator<Item = &usize> {
+                self.core.out_edges(*v).iter()
+            }
+
+            fn out_degree_of(&self, v: &usize) -> usize {
+                self.core.out_edges(*v).len()
+            }
+        }
+
+        impl<I: HasIncoming> IncomingGraph for $graph<I> {
+            fn in_edges_of(&self, v: &usize) -> impl Iterator<Item = &usize> {
+                self.core.in_edges(*v).iter()
+            }
+
+            fn in_degree_of(&self, v: &usize) -> usize {
+                self.core.in_edges(*v).len()
+            }
+        }
+
+        impl<I: HasIncoming> IncidenceGraph for $graph<I> {
+            fn edges_of(&self, v: &usize) -> impl Iterator<Item = &usize> {
+                let core = &self.core;
+                core.out_edges(*v).iter().chain(
+                    core.in_edges(*v)
+                        .iter()
+                        .filter(move |&&e| core.source[e] != core.target[e]),
+                )
+            }
+
+            fn degree_of(&self, v: &usize) -> usize {
+                self.core.in_edges(*v).len() + self.core.out_edges(*v).len()
+            }
+        }
     };
 }
 
 /// `SparseIntDirectedGraph`: directed multigraph with loops on vertices `0..n`; edge `i` is the
 /// `i`-th pair given to the constructor.
+///
+/// The type parameter selects the incoming-edge index; see [`IncomingMode`]. The default,
+/// [`FullIncoming`], implements every incidence capability; `SparseIntDirectedGraph::<NoIncoming>`
+/// is cheaper but only implements [`OutgoingGraph`]:
+///
+/// ```compile_fail,E0277
+/// use jgrapht::graph::capability::IncomingGraph;
+/// use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph};
+///
+/// fn needs_incoming<G: IncomingGraph>(_: &G) {}
+/// let g = SparseIntDirectedGraph::<NoIncoming>::from_edges(2, &[(0, 1)]).unwrap();
+/// needs_incoming(&g);
+/// ```
 #[derive(Debug)]
-pub struct SparseIntDirectedGraph {
+pub struct SparseIntDirectedGraph<I: IncomingMode = FullIncoming> {
     core: DirectedCore,
+    mode: PhantomData<I>,
 }
 
 impl SparseIntDirectedGraph {
-    /// Full incoming-edge support.
+    /// Full incoming-edge support. Use [`SparseIntDirectedGraph::from_edges`] with an explicit
+    /// [`IncomingMode`] for the other modes.
     pub fn new(num_vertices: usize, edges: &[(usize, usize)]) -> Result<Self> {
-        Self::with_incoming_support(num_vertices, edges, IncomingEdgesSupport::FullIncomingEdges)
+        Self::from_edges(num_vertices, edges)
     }
+}
 
-    pub fn with_incoming_support(
-        num_vertices: usize,
-        edges: &[(usize, usize)],
-        support: IncomingEdgesSupport,
-    ) -> Result<Self> {
-        Self::from_iter(num_vertices, edges.len(), edges.iter().copied(), support)
+impl<I: IncomingMode> SparseIntDirectedGraph<I> {
+    /// Builds the graph from an edge slice.
+    pub fn from_edges(num_vertices: usize, edges: &[(usize, usize)]) -> Result<Self> {
+        Self::from_iter(num_vertices, edges.len(), edges.iter().copied())
     }
 
     /// Builds the graph from an edge stream that must yield exactly `num_edges` pairs.
@@ -249,10 +332,10 @@ impl SparseIntDirectedGraph {
         num_vertices: usize,
         num_edges: usize,
         edges: impl IntoIterator<Item = (usize, usize)>,
-        support: IncomingEdgesSupport,
     ) -> Result<Self> {
         Ok(Self {
-            core: DirectedCore::new(num_vertices, num_edges, edges, support)?,
+            core: DirectedCore::new::<I>(num_vertices, num_edges, edges)?,
+            mode: PhantomData,
         })
     }
 }
@@ -263,41 +346,44 @@ directed_graph_impl!(SparseIntDirectedGraph, false, |g: &Self, e: usize| {
 
 /// `SparseIntDirectedWeightedGraph`: as [`SparseIntDirectedGraph`] with one weight per edge.
 #[derive(Debug)]
-pub struct SparseIntDirectedWeightedGraph {
+pub struct SparseIntDirectedWeightedGraph<I: IncomingMode = FullIncoming> {
     core: DirectedCore,
     weights: Vec<f64>,
+    mode: PhantomData<I>,
 }
 
 impl SparseIntDirectedWeightedGraph {
+    /// Full incoming-edge support.
     pub fn new(num_vertices: usize, edges: &[(usize, usize, f64)]) -> Result<Self> {
-        Self::with_incoming_support(num_vertices, edges, IncomingEdgesSupport::FullIncomingEdges)
+        Self::from_edges(num_vertices, edges)
     }
+}
 
-    pub fn with_incoming_support(
-        num_vertices: usize,
-        edges: &[(usize, usize, f64)],
-        support: IncomingEdgesSupport,
-    ) -> Result<Self> {
-        Self::from_iter(num_vertices, edges.len(), edges.iter().copied(), support)
+impl<I: IncomingMode> SparseIntDirectedWeightedGraph<I> {
+    /// Builds the graph from an edge slice.
+    pub fn from_edges(num_vertices: usize, edges: &[(usize, usize, f64)]) -> Result<Self> {
+        Self::from_iter(num_vertices, edges.len(), edges.iter().copied())
     }
 
     pub fn from_iter(
         num_vertices: usize,
         num_edges: usize,
         edges: impl IntoIterator<Item = (usize, usize, f64)>,
-        support: IncomingEdgesSupport,
     ) -> Result<Self> {
         let mut weights = Vec::with_capacity(num_edges);
-        let core = DirectedCore::new(
+        let core = DirectedCore::new::<I>(
             num_vertices,
             num_edges,
             edges.into_iter().map(|(s, t, w)| {
                 weights.push(w);
                 (s, t)
             }),
-            support,
         )?;
-        Ok(Self { core, weights })
+        Ok(Self {
+            core,
+            weights,
+            mode: PhantomData,
+        })
     }
 
     /// `setEdgeWeight`: the one mutation these graphs allow.

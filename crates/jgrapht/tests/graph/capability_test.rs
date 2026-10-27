@@ -188,3 +188,69 @@ mod base_graph_parity {
         check(&u, 99);
     }
 }
+
+mod sparse_type_state {
+    use super::{reachable, total_degree};
+    use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
+    use jgrapht::graph::sparse::{
+        FullIncoming, LazyIncoming, NoIncoming, SparseIntDirectedGraph,
+        SparseIntDirectedWeightedGraph,
+    };
+
+    const EDGES: [(usize, usize); 5] = [(0, 1), (1, 2), (2, 0), (2, 2), (0, 1)];
+
+    fn requires_incoming<G: IncomingGraph>(_: &G) {}
+
+    #[test]
+    fn no_incoming_is_outgoing_only_and_still_traversable() {
+        let g = SparseIntDirectedGraph::<NoIncoming>::from_edges(3, &EDGES).unwrap();
+        assert_eq!(OutgoingGraph::out_degree_of(&g, &0), 2);
+        assert_eq!(OutgoingGraph::out_edges_of(&g, &9).count(), 0);
+        // `reachable` is bounded by `OutgoingGraph<Vertex = u32>`; use a usize twin here.
+        let mut seen = vec![0usize];
+        let mut i = 0;
+        while i < seen.len() {
+            let v = seen[i];
+            i += 1;
+            for e in OutgoingGraph::out_edges_of(&g, &v) {
+                let t = *jgrapht::graph::GraphExt::edge_endpoints(&g, e).unwrap().1;
+                if !seen.contains(&t) {
+                    seen.push(t);
+                }
+            }
+        }
+        assert_eq!(seen, vec![0, 1, 2]);
+        let _ = reachable::<crate::common::fixtures::FullFixture>;
+    }
+
+    #[test]
+    fn lazy_and_full_agree_with_each_other() {
+        let lazy = SparseIntDirectedGraph::<LazyIncoming>::from_edges(3, &EDGES).unwrap();
+        let full = SparseIntDirectedGraph::new(3, &EDGES).unwrap();
+        requires_incoming(&lazy);
+        requires_incoming(&full);
+        for v in 0..4 {
+            assert_eq!(
+                IncomingGraph::in_edges_of(&lazy, &v).collect::<Vec<_>>(),
+                IncomingGraph::in_edges_of(&full, &v).collect::<Vec<_>>()
+            );
+            assert_eq!(
+                IncidenceGraph::edges_of(&lazy, &v).collect::<Vec<_>>(),
+                IncidenceGraph::edges_of(&full, &v).collect::<Vec<_>>()
+            );
+        }
+        assert_eq!(total_degree(&full), 2 * EDGES.len());
+        assert_eq!(IncomingGraph::in_degree_of(&full, &1), 2);
+        assert_eq!(IncidenceGraph::degree_of(&full, &2), 4);
+    }
+
+    #[test]
+    fn weighted_variants_follow_the_same_pattern() {
+        let w = [(0, 1, 1.0), (1, 2, 2.0)];
+        let no = SparseIntDirectedWeightedGraph::<NoIncoming>::from_edges(3, &w).unwrap();
+        let full = SparseIntDirectedWeightedGraph::new(3, &w).unwrap();
+        assert_eq!(OutgoingGraph::out_degree_of(&no, &1), 1);
+        requires_incoming(&full);
+        assert_eq!(IncomingGraph::in_degree_of(&full, &2), 1);
+    }
+}

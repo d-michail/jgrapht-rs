@@ -10,17 +10,13 @@ use jgrapht::alg::matching::{
 use jgrapht::alg::scoring::{EigenvectorCentrality, KatzCentrality, PageRank};
 use jgrapht::alg::shortestpath::{AllDirectedPaths, DagAllPathsCounter};
 use jgrapht::alg::tour::{DagHamiltonianPath, HamiltonianPathAlgorithm};
-use jgrapht::graph::sparse::{IncomingEdgesSupport, SparseIntDirectedGraph};
+use jgrapht::graph::sparse::{NoIncoming, SparseIntDirectedGraph};
 use jgrapht::graph::{DirectedExt, GraphExt};
 use jgrapht::traverse::TopologicalOrderIterator;
 use jgrapht::{GraphError, Result};
 
-fn no_incoming_graph() -> SparseIntDirectedGraph {
-    SparseIntDirectedGraph::with_incoming_support(
-        4,
-        &[(0, 1), (0, 2), (1, 2), (2, 3)],
-        IncomingEdgesSupport::NoIncomingEdges,
-    )
+fn no_incoming_graph() -> SparseIntDirectedGraph<NoIncoming> {
+    SparseIntDirectedGraph::<NoIncoming>::from_edges(4, &[(0, 1), (0, 2), (1, 2), (2, 3)])
     .unwrap()
 }
 
