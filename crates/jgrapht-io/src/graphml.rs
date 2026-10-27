@@ -2,11 +2,11 @@
 
 use crate::exporter::format_f64;
 use crate::{
-    Attribute, AttributeMap, AttributeType, BaseExporter, GraphExporter, GraphImporter,
-    IntegerIdProvider, IoError, Result,
+    Attribute, AttributeMap, AttributeType, BaseExporter, EventDrivenImporter, GraphExporter,
+    GraphImporter, ImportEvent, IntegerIdProvider, IoError, Result,
 };
 use indexmap::IndexMap;
-use jgrapht::{Graph, GraphMut};
+use jgrapht::{DefaultEdge, Graph, GraphMut};
 use quick_xml::Reader;
 use quick_xml::events::{BytesStart, Event};
 use std::collections::HashMap;
@@ -66,20 +66,52 @@ struct ParsedNode {
 
 #[derive(Debug)]
 struct ParsedEdge {
+    id: Option<String>,
     source: String,
     target: String,
     attributes: AttributeMap,
 }
 
-fn parse<R: Read>(input: R) -> Result<(Vec<ParsedNode>, Vec<ParsedEdge>)> {
+#[derive(Debug)]
+struct ParsedDocument {
+    graph_attributes: AttributeMap,
+    nodes: Vec<ParsedNode>,
+    edges: Vec<ParsedEdge>,
+}
+
+fn element_attributes(
+    reader: &Reader<BufReader<impl Read>>,
+    element: &BytesStart<'_>,
+    excluded: &[&[u8]],
+) -> Result<AttributeMap> {
+    let mut result = AttributeMap::new();
+    for item in element.attributes() {
+        let item =
+            item.map_err(|error| IoError::Import(format!("invalid XML attribute: {error}")))?;
+        if excluded.contains(&item.key.local_name().as_ref()) {
+            continue;
+        }
+        let name = String::from_utf8_lossy(item.key.local_name().as_ref()).into_owned();
+        let value = item
+            .decoded_and_normalized_value(quick_xml::XmlVersion::Implicit1_0, reader.decoder())
+            .map_err(|error| IoError::Import(format!("invalid XML attribute value: {error}")))?;
+        result.insert(name, Attribute::from(value.into_owned()));
+    }
+    Ok(result)
+}
+
+fn parse<R: Read>(input: R) -> Result<ParsedDocument> {
     let mut reader = Reader::from_reader(BufReader::new(input));
     reader.config_mut().trim_text(true);
     let mut buffer = Vec::new();
     let mut keys = HashMap::<String, Key>::new();
     let mut nodes = Vec::new();
     let mut edges = Vec::new();
-    let mut node: Option<ParsedNode> = None;
-    let mut edge: Option<ParsedEdge> = None;
+    let mut node_stack = Vec::<ParsedNode>::new();
+    let mut edge_stack = Vec::<ParsedEdge>::new();
+    let mut graph_attributes = AttributeMap::new();
+    let mut root_seen = false;
+    let mut graph_seen = false;
     let mut key_id: Option<String> = None;
     let mut data_key: Option<String> = None;
     let mut text = String::new();
@@ -90,6 +122,8 @@ fn parse<R: Read>(input: R) -> Result<(Vec<ParsedNode>, Vec<ParsedEdge>)> {
             .map_err(|error| IoError::Import(format!("GraphML XML error: {error}")))?
         {
             Event::Start(element) => match element.local_name().as_ref() {
+                b"graphml" => root_seen = true,
+                b"graph" => graph_seen = true,
                 b"key" => {
                     let id = xml_attr(&reader, &element, b"id")?
                         .ok_or_else(|| IoError::Import("GraphML key is missing id".into()))?;
@@ -117,23 +151,25 @@ fn parse<R: Read>(input: R) -> Result<(Vec<ParsedNode>, Vec<ParsedEdge>)> {
                     in_default = true;
                     text.clear();
                 }
-                b"node" => {
-                    node = Some(ParsedNode {
-                        id: xml_attr(&reader, &element, b"id")?
-                            .ok_or_else(|| IoError::Import("GraphML node is missing id".into()))?,
-                        attributes: IndexMap::new(),
-                    })
-                }
-                b"edge" => {
-                    edge = Some(ParsedEdge {
-                        source: xml_attr(&reader, &element, b"source")?.ok_or_else(|| {
-                            IoError::Import("GraphML edge is missing source".into())
-                        })?,
-                        target: xml_attr(&reader, &element, b"target")?.ok_or_else(|| {
-                            IoError::Import("GraphML edge is missing target".into())
-                        })?,
-                        attributes: IndexMap::new(),
-                    })
+                b"node" => node_stack.push(ParsedNode {
+                    id: xml_attr(&reader, &element, b"id")?
+                        .ok_or_else(|| IoError::Import("GraphML node is missing id".into()))?,
+                    attributes: element_attributes(&reader, &element, &[b"id"])?,
+                }),
+                b"edge" => edge_stack.push(ParsedEdge {
+                    id: xml_attr(&reader, &element, b"id")?,
+                    source: xml_attr(&reader, &element, b"source")?
+                        .ok_or_else(|| IoError::Import("GraphML edge is missing source".into()))?,
+                    target: xml_attr(&reader, &element, b"target")?
+                        .ok_or_else(|| IoError::Import("GraphML edge is missing target".into()))?,
+                    attributes: element_attributes(
+                        &reader,
+                        &element,
+                        &[b"id", b"source", b"target"],
+                    )?,
+                }),
+                b"hyperedge" | b"port" => {
+                    return Err(IoError::Import("unsupported GraphML element".into()));
                 }
                 b"data" => {
                     data_key = xml_attr(&reader, &element, b"key")?;
@@ -142,6 +178,8 @@ fn parse<R: Read>(input: R) -> Result<(Vec<ParsedNode>, Vec<ParsedEdge>)> {
                 _ => {}
             },
             Event::Empty(element) => match element.local_name().as_ref() {
+                b"graphml" => root_seen = true,
+                b"graph" => graph_seen = true,
                 b"key" => {
                     let id = xml_attr(&reader, &element, b"id")?
                         .ok_or_else(|| IoError::Import("GraphML key is missing id".into()))?;
@@ -167,15 +205,23 @@ fn parse<R: Read>(input: R) -> Result<(Vec<ParsedNode>, Vec<ParsedEdge>)> {
                 b"node" => nodes.push(ParsedNode {
                     id: xml_attr(&reader, &element, b"id")?
                         .ok_or_else(|| IoError::Import("GraphML node is missing id".into()))?,
-                    attributes: IndexMap::new(),
+                    attributes: element_attributes(&reader, &element, &[b"id"])?,
                 }),
                 b"edge" => edges.push(ParsedEdge {
+                    id: xml_attr(&reader, &element, b"id")?,
                     source: xml_attr(&reader, &element, b"source")?
                         .ok_or_else(|| IoError::Import("GraphML edge is missing source".into()))?,
                     target: xml_attr(&reader, &element, b"target")?
                         .ok_or_else(|| IoError::Import("GraphML edge is missing target".into()))?,
-                    attributes: IndexMap::new(),
+                    attributes: element_attributes(
+                        &reader,
+                        &element,
+                        &[b"id", b"source", b"target"],
+                    )?,
                 }),
+                b"hyperedge" | b"port" => {
+                    return Err(IoError::Import("unsupported GraphML element".into()));
+                }
                 _ => {}
             },
             Event::Text(value) => {
@@ -204,67 +250,97 @@ fn parse<R: Read>(input: R) -> Result<(Vec<ParsedNode>, Vec<ParsedEdge>)> {
                             default: None,
                         });
                         let attribute = Attribute::new(text.clone(), key.kind);
-                        if let Some(node) = node.as_mut() {
-                            node.attributes.insert(key.name, attribute);
-                        } else if let Some(edge) = edge.as_mut() {
+                        if let Some(edge) = edge_stack.last_mut() {
                             edge.attributes.insert(key.name, attribute);
+                        } else if let Some(node) = node_stack.last_mut() {
+                            node.attributes.insert(key.name, attribute);
+                        } else {
+                            graph_attributes.insert(key.name, attribute);
                         }
                     }
                 }
                 b"node" => {
-                    if let Some(mut value) = node.take() {
-                        for key in keys
-                            .values()
-                            .filter(|key| matches!(key.target.as_str(), "node" | "all"))
-                        {
-                            if let Some(default) = &key.default {
-                                value
-                                    .attributes
-                                    .entry(key.name.clone())
-                                    .or_insert_with(|| Attribute::new(default, key.kind));
-                            }
-                        }
+                    if let Some(value) = node_stack.pop() {
                         nodes.push(value);
                     }
                 }
                 b"edge" => {
-                    if let Some(mut value) = edge.take() {
-                        for key in keys
-                            .values()
-                            .filter(|key| matches!(key.target.as_str(), "edge" | "all"))
-                        {
-                            if let Some(default) = &key.default {
-                                value
-                                    .attributes
-                                    .entry(key.name.clone())
-                                    .or_insert_with(|| Attribute::new(default, key.kind));
-                            }
-                        }
+                    if let Some(value) = edge_stack.pop() {
                         edges.push(value);
                     }
                 }
                 _ => {}
             },
             Event::Eof => break,
+            Event::DocType(_) => {
+                return Err(IoError::Import(
+                    "GraphML document types are not supported".into(),
+                ));
+            }
             _ => {}
         }
         buffer.clear();
     }
-    Ok((nodes, edges))
+    if !root_seen || !graph_seen {
+        return Err(IoError::Import("input is not a GraphML graph".into()));
+    }
+    for node in &mut nodes {
+        for key in keys
+            .values()
+            .filter(|key| matches!(key.target.as_str(), "node" | "all"))
+        {
+            if let Some(default) = &key.default {
+                node.attributes
+                    .entry(key.name.clone())
+                    .or_insert_with(|| Attribute::new(default, key.kind));
+            }
+        }
+    }
+    for edge in &mut edges {
+        for key in keys
+            .values()
+            .filter(|key| matches!(key.target.as_str(), "edge" | "all"))
+        {
+            if let Some(default) = &key.default {
+                edge.attributes
+                    .entry(key.name.clone())
+                    .or_insert_with(|| Attribute::new(default, key.kind));
+            }
+        }
+    }
+    Ok(ParsedDocument {
+        graph_attributes,
+        nodes,
+        edges,
+    })
 }
 
 type VertexFactory<V> = Box<dyn FnMut(&str, &AttributeMap) -> V>;
+type EdgeFactory<E> = Box<dyn FnMut(&AttributeMap) -> E>;
+type GraphAttributeConsumer = Box<dyn FnMut(&str, &Attribute) -> Result<()>>;
+type VertexAttributeConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
+type EdgeAttributeConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()>>;
 
-pub struct GraphMlImporter<V> {
+pub struct GraphMlImporter<V, E = DefaultEdge> {
     vertex_factory: Option<VertexFactory<V>>,
+    edge_factory: Option<EdgeFactory<E>>,
     edge_weight_attribute: String,
+    schema_validation: bool,
+    graph_attribute_consumer: Option<GraphAttributeConsumer>,
+    vertex_attribute_consumer: Option<VertexAttributeConsumer<V>>,
+    edge_attribute_consumer: Option<EdgeAttributeConsumer<E>>,
 }
 
-impl<V> GraphMlImporter<V> {
+impl<V, E> GraphMlImporter<V, E> {
     pub fn new() -> Self {
         Self {
             vertex_factory: None,
+            edge_factory: None,
             edge_weight_attribute: "weight".into(),
+            schema_validation: true,
+            graph_attribute_consumer: None,
+            vertex_attribute_consumer: None,
+            edge_attribute_consumer: None,
         }
     }
     pub fn set_vertex_factory(&mut self, mut factory: impl FnMut(&str) -> V + 'static) {
@@ -279,23 +355,59 @@ impl<V> GraphMlImporter<V> {
     pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) {
         self.edge_weight_attribute = name.into();
     }
+    pub fn set_edge_with_attributes_factory(
+        &mut self,
+        factory: impl FnMut(&AttributeMap) -> E + 'static,
+    ) {
+        self.edge_factory = Some(Box::new(factory));
+    }
+    pub fn set_schema_validation(&mut self, enabled: bool) {
+        self.schema_validation = enabled;
+    }
+    pub const fn schema_validation(&self) -> bool {
+        self.schema_validation
+    }
+    pub fn set_graph_attribute_consumer(
+        &mut self,
+        consumer: impl FnMut(&str, &Attribute) -> Result<()> + 'static,
+    ) {
+        self.graph_attribute_consumer = Some(Box::new(consumer));
+    }
+    pub fn set_vertex_attribute_consumer(
+        &mut self,
+        consumer: impl FnMut(&V, &str, &Attribute) -> Result<()> + 'static,
+    ) {
+        self.vertex_attribute_consumer = Some(Box::new(consumer));
+    }
+    pub fn set_edge_attribute_consumer(
+        &mut self,
+        consumer: impl FnMut(&E, &str, &Attribute) -> Result<()> + 'static,
+    ) {
+        self.edge_attribute_consumer = Some(Box::new(consumer));
+    }
 }
 
-impl<V> Default for GraphMlImporter<V> {
+impl<V, E> Default for GraphMlImporter<V, E> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<V, G> GraphImporter<G> for GraphMlImporter<V>
+impl<V, E, G> GraphImporter<G> for GraphMlImporter<V, E>
 where
-    G: GraphMut<Vertex = V>,
+    G: GraphMut<Vertex = V, Edge = E>,
     V: Clone,
+    E: Clone,
 {
     fn import_graph<R: Read>(&mut self, graph: &mut G, input: R) -> Result<()> {
-        let (nodes, edges) = parse(input)?;
+        let document = parse(input)?;
+        if let Some(consumer) = self.graph_attribute_consumer.as_mut() {
+            for (name, value) in &document.graph_attributes {
+                consumer(name, value)?;
+            }
+        }
         let mut vertices = HashMap::new();
-        for node in nodes {
+        for node in document.nodes {
             if vertices.contains_key(&node.id) {
                 return Err(IoError::Import(format!(
                     "duplicate GraphML node id {:?}",
@@ -313,18 +425,43 @@ where
             } else {
                 graph.add_new_vertex()?
             };
+            if let Some(consumer) = self.vertex_attribute_consumer.as_mut() {
+                consumer(&vertex, "ID", &Attribute::from(node.id.clone()))?;
+                for (name, value) in &node.attributes {
+                    consumer(&vertex, name, value)?;
+                }
+            }
             vertices.insert(node.id, vertex);
         }
-        for edge in edges {
-            let from = vertices.get(&edge.source).ok_or_else(|| {
-                IoError::Import(format!("GraphML source {:?} does not exist", edge.source))
-            })?;
-            let to = vertices.get(&edge.target).ok_or_else(|| {
-                IoError::Import(format!("GraphML target {:?} does not exist", edge.target))
-            })?;
-            let inserted = graph
-                .add_edge(from, to)?
-                .ok_or_else(|| IoError::Import("graph rejected GraphML edge".into()))?;
+        for edge in document.edges {
+            for id in [&edge.source, &edge.target] {
+                if !vertices.contains_key(id) {
+                    let vertex = if let Some(factory) = self.vertex_factory.as_mut() {
+                        factory(id, &AttributeMap::new())
+                    } else {
+                        graph.new_vertex()?
+                    };
+                    if !graph.add_vertex(vertex.clone()) {
+                        return Err(IoError::Import(
+                            "GraphML vertex factory produced duplicate".into(),
+                        ));
+                    }
+                    if let Some(consumer) = self.vertex_attribute_consumer.as_mut() {
+                        consumer(&vertex, "ID", &Attribute::from(id.clone()))?;
+                    }
+                    vertices.insert(id.clone(), vertex);
+                }
+            }
+            let (from, to) = (&vertices[&edge.source], &vertices[&edge.target]);
+            let inserted = if let Some(factory) = self.edge_factory.as_mut() {
+                let value = factory(&edge.attributes);
+                graph
+                    .add_edge_with(from, to, value.clone())?
+                    .then_some(value)
+            } else {
+                graph.add_edge(from, to)?
+            }
+            .ok_or_else(|| IoError::Import("graph rejected GraphML edge".into()))?;
             if graph.graph_type().weighted
                 && let Some(weight) = edge.attributes.get(&self.edge_weight_attribute)
             {
@@ -335,6 +472,14 @@ where
                         .parse()
                         .map_err(|_| IoError::Import("invalid GraphML edge weight".into()))?,
                 )?;
+            }
+            if let Some(consumer) = self.edge_attribute_consumer.as_mut() {
+                if let Some(id) = &edge.id {
+                    consumer(&inserted, "ID", &Attribute::from(id.clone()))?;
+                }
+                for (name, value) in &edge.attributes {
+                    consumer(&inserted, name, value)?;
+                }
             }
         }
         Ok(())
@@ -352,6 +497,38 @@ fn escape_xml(value: &str) -> String {
 pub struct GraphMlExporter<V, E> {
     base: BaseExporter<V, E>,
     export_edge_weights: bool,
+    export_vertex_labels: bool,
+    export_edge_labels: bool,
+    vertex_label_attribute: String,
+    edge_label_attribute: String,
+    edge_weight_attribute: String,
+    registered_attributes: IndexMap<String, RegisteredAttribute>,
+    next_attribute: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttributeCategory {
+    Graph,
+    Node,
+    Edge,
+    All,
+}
+impl AttributeCategory {
+    const fn as_str(self) -> &'static str {
+        match self {
+            Self::Graph => "graph",
+            Self::Node => "node",
+            Self::Edge => "edge",
+            Self::All => "all",
+        }
+    }
+}
+#[derive(Debug, Clone)]
+struct RegisteredAttribute {
+    key: String,
+    category: AttributeCategory,
+    kind: AttributeType,
+    default: Option<String>,
 }
 
 impl<V, E> GraphMlExporter<V, E>
@@ -362,11 +539,111 @@ where
         let mut ids = IntegerIdProvider::new();
         Self {
             base: BaseExporter::new(move |vertex| ids.id(vertex)),
-            export_edge_weights: true,
+            export_edge_weights: false,
+            export_vertex_labels: false,
+            export_edge_labels: false,
+            vertex_label_attribute: "VertexLabel".into(),
+            edge_label_attribute: "EdgeLabel".into(),
+            edge_weight_attribute: "weight".into(),
+            registered_attributes: IndexMap::new(),
+            next_attribute: 0,
         }
+    }
+    pub fn with_vertex_id_provider(provider: impl FnMut(&V) -> String + 'static) -> Self {
+        let mut result = Self::new();
+        result.base.set_vertex_id_provider(provider);
+        result
+    }
+    pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
+        self.base.set_edge_id_provider(provider);
+    }
+    pub fn set_graph_attribute_provider(&mut self, provider: impl Fn() -> AttributeMap + 'static) {
+        self.base.set_graph_attribute_provider(provider);
+    }
+    pub fn set_vertex_attribute_provider(
+        &mut self,
+        provider: impl Fn(&V) -> AttributeMap + 'static,
+    ) {
+        self.base.set_vertex_attribute_provider(provider);
+    }
+    pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
+        self.base.set_edge_attribute_provider(provider);
     }
     pub fn set_export_edge_weights(&mut self, enabled: bool) {
         self.export_edge_weights = enabled;
+    }
+    pub fn set_export_vertex_labels(&mut self, enabled: bool) {
+        self.export_vertex_labels = enabled;
+    }
+    pub fn set_export_edge_labels(&mut self, enabled: bool) {
+        self.export_edge_labels = enabled;
+    }
+    pub fn set_vertex_label_attribute_name(&mut self, name: impl Into<String>) -> Result<()> {
+        let name = name.into();
+        self.ensure_not_registered(&name)?;
+        self.vertex_label_attribute = name;
+        Ok(())
+    }
+    pub fn set_edge_label_attribute_name(&mut self, name: impl Into<String>) -> Result<()> {
+        let name = name.into();
+        self.ensure_not_registered(&name)?;
+        self.edge_label_attribute = name;
+        Ok(())
+    }
+    pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) -> Result<()> {
+        let name = name.into();
+        self.ensure_not_registered(&name)?;
+        self.edge_weight_attribute = name;
+        Ok(())
+    }
+    fn ensure_not_registered(&self, name: &str) -> Result<()> {
+        if self.registered_attributes.contains_key(name) {
+            Err(IoError::Export(format!(
+                "GraphML attribute {name:?} is already registered"
+            )))
+        } else {
+            Ok(())
+        }
+    }
+    fn reserved(&self, name: &str) -> bool {
+        name == self.vertex_label_attribute
+            || name == self.edge_label_attribute
+            || name == self.edge_weight_attribute
+    }
+    pub fn register_attribute(
+        &mut self,
+        name: impl Into<String>,
+        category: AttributeCategory,
+        kind: AttributeType,
+        default: Option<String>,
+    ) -> Result<()> {
+        let name = name.into();
+        if self.reserved(&name) {
+            return Err(IoError::Export(format!(
+                "reserved GraphML attribute {name:?}"
+            )));
+        }
+        let key = format!("key{}", self.next_attribute);
+        self.next_attribute += 1;
+        self.registered_attributes.insert(
+            name,
+            RegisteredAttribute {
+                key,
+                category,
+                kind,
+                default,
+            },
+        );
+        Ok(())
+    }
+    pub fn unregister_attribute(&mut self, name: &str) -> Result<()> {
+        if self.reserved(name) {
+            return Err(IoError::Export(format!(
+                "reserved GraphML attribute {name:?}"
+            )));
+        }
+        self.registered_attributes.shift_remove(name);
+        Ok(())
     }
 }
 impl<V, E> Default for GraphMlExporter<V, E>
@@ -388,56 +665,340 @@ where
         writeln!(output, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")?;
         writeln!(
             output,
-            "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\">"
+            "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">"
         )?;
+        if self.export_vertex_labels {
+            write_key(
+                &mut output,
+                "vertex_label_key",
+                "node",
+                &self.vertex_label_attribute,
+                AttributeType::String,
+                None,
+            )?;
+        }
+        if self.export_edge_labels {
+            write_key(
+                &mut output,
+                "edge_label_key",
+                "edge",
+                &self.edge_label_attribute,
+                AttributeType::String,
+                None,
+            )?;
+        }
         if self.export_edge_weights {
-            writeln!(
-                output,
-                "  <key id=\"edge_weight\" for=\"edge\" attr.name=\"weight\" attr.type=\"double\"/>"
+            write_key(
+                &mut output,
+                "edge_weight_key",
+                "edge",
+                &self.edge_weight_attribute,
+                AttributeType::Double,
+                Some("1.0"),
+            )?;
+        }
+        for (name, details) in &self.registered_attributes {
+            write_key(
+                &mut output,
+                &details.key,
+                details.category.as_str(),
+                name,
+                details.kind,
+                details.default.as_deref(),
             )?;
         }
         writeln!(
             output,
-            "  <graph id=\"G\" edgedefault=\"{}\">",
+            "  <graph edgedefault=\"{}\">",
             if graph.graph_type().directed {
                 "directed"
             } else {
                 "undirected"
             }
         )?;
+        let graph_attributes = self.base.graph_attributes().unwrap_or_default();
+        let mut graph_data = Vec::new();
+        collect_registered(
+            &mut graph_data,
+            &graph_attributes,
+            &self.registered_attributes,
+            AttributeCategory::Graph,
+        );
+        for (key, value) in graph_data {
+            writeln!(
+                output,
+                "    <data key=\"{}\">{}</data>",
+                escape_xml(&key),
+                escape_xml(&value)
+            )?;
+        }
         let mut ids = IndexMap::new();
         for vertex in graph.vertices() {
             let id = self.base.vertex_id(vertex)?;
             ids.insert(vertex.clone(), id.clone());
-            writeln!(output, "    <node id=\"{}\"/>", escape_xml(&id))?;
+            let attrs = self.base.vertex_attributes(vertex).unwrap_or_default();
+            let mut data = Vec::new();
+            if self.export_vertex_labels {
+                data.push((
+                    "vertex_label_key".to_owned(),
+                    attrs
+                        .get(&self.vertex_label_attribute)
+                        .map_or_else(|| id.to_string(), |a| a.value().to_owned()),
+                ));
+            }
+            collect_registered(
+                &mut data,
+                &attrs,
+                &self.registered_attributes,
+                AttributeCategory::Node,
+            );
+            write_component(
+                &mut output,
+                "node",
+                &format!("id=\"{}\"", escape_xml(&id)),
+                &data,
+            )?;
         }
-        for (index, edge) in graph.edges().enumerate() {
+        for edge in graph.edges() {
             let source = graph
                 .edge_source(edge)
                 .ok_or_else(|| IoError::Export("edge has no source".into()))?;
             let target = graph
                 .edge_target(edge)
                 .ok_or_else(|| IoError::Export("edge has no target".into()))?;
+            let attrs = self.base.edge_attributes(edge).unwrap_or_default();
+            let mut data = Vec::new();
+            if self.export_edge_labels {
+                data.push((
+                    "edge_label_key".to_owned(),
+                    attrs
+                        .get(&self.edge_label_attribute)
+                        .map_or_else(String::new, |a| a.value().to_owned()),
+                ));
+            }
             if self.export_edge_weights {
-                writeln!(
-                    output,
-                    "    <edge id=\"e{}\" source=\"{}\" target=\"{}\"><data key=\"edge_weight\">{}</data></edge>",
-                    index + 1,
-                    escape_xml(&ids[source]),
-                    escape_xml(&ids[target]),
-                    format_f64(graph.edge_weight(edge).unwrap_or(1.0))
-                )?;
-            } else {
-                writeln!(
-                    output,
-                    "    <edge id=\"e{}\" source=\"{}\" target=\"{}\"/>",
-                    index + 1,
+                let weight = graph.edge_weight(edge).unwrap_or(1.0);
+                if weight != 1.0 {
+                    data.push(("edge_weight_key".to_owned(), format_f64(weight)));
+                }
+            }
+            collect_registered(
+                &mut data,
+                &attrs,
+                &self.registered_attributes,
+                AttributeCategory::Edge,
+            );
+            let edge_id = self
+                .base
+                .edge_id(edge)
+                .map(|id| format!("id=\"{}\" ", escape_xml(&id)))
+                .unwrap_or_default();
+            write_component(
+                &mut output,
+                "edge",
+                &format!(
+                    "{edge_id}source=\"{}\" target=\"{}\"",
                     escape_xml(&ids[source]),
                     escape_xml(&ids[target])
-                )?;
-            }
+                ),
+                &data,
+            )?;
         }
         writeln!(output, "  </graph>\n</graphml>")?;
         Ok(())
+    }
+}
+
+fn write_key<W: Write>(
+    output: &mut W,
+    id: &str,
+    category: &str,
+    name: &str,
+    kind: AttributeType,
+    default: Option<&str>,
+) -> Result<()> {
+    let attrs = format!(
+        "id=\"{}\" for=\"{}\" attr.name=\"{}\" attr.type=\"{}\"",
+        escape_xml(id),
+        category,
+        escape_xml(name),
+        kind
+    );
+    if let Some(default) = default {
+        writeln!(
+            output,
+            "  <key {attrs}><default>{}</default></key>",
+            escape_xml(default)
+        )?;
+    } else {
+        writeln!(output, "  <key {attrs}/>")?;
+    }
+    Ok(())
+}
+
+fn collect_registered(
+    data: &mut Vec<(String, String)>,
+    attrs: &AttributeMap,
+    registered: &IndexMap<String, RegisteredAttribute>,
+    category: AttributeCategory,
+) {
+    for (name, details) in registered {
+        if !matches!(details.category, AttributeCategory::All) && details.category != category {
+            continue;
+        }
+        if let Some(value) = attrs.get(name)
+            && details.default.as_deref() != Some(value.value())
+        {
+            data.push((details.key.clone(), value.value().to_owned()));
+        }
+    }
+}
+
+fn write_component<W: Write>(
+    output: &mut W,
+    element: &str,
+    attributes: &str,
+    data: &[(String, String)],
+) -> Result<()> {
+    if data.is_empty() {
+        writeln!(output, "    <{element} {attributes}/>")?;
+    } else {
+        writeln!(output, "    <{element} {attributes}>")?;
+        for (key, value) in data {
+            writeln!(
+                output,
+                "      <data key=\"{}\">{}</data>",
+                escape_xml(key),
+                escape_xml(value)
+            )?;
+        }
+        writeln!(output, "    </{element}>")?;
+    }
+    Ok(())
+}
+
+pub type GraphMlEdge = (String, String, Option<f64>);
+
+pub struct GraphMlEventDrivenImporter {
+    edge_weight_attribute: String,
+    schema_validation: bool,
+}
+impl GraphMlEventDrivenImporter {
+    pub fn new() -> Self {
+        Self {
+            edge_weight_attribute: "weight".into(),
+            schema_validation: true,
+        }
+    }
+    pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) {
+        self.edge_weight_attribute = name.into();
+    }
+    pub fn set_schema_validation(&mut self, enabled: bool) {
+        self.schema_validation = enabled;
+    }
+    pub const fn schema_validation(&self) -> bool {
+        self.schema_validation
+    }
+}
+impl Default for GraphMlEventDrivenImporter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl EventDrivenImporter for GraphMlEventDrivenImporter {
+    type Vertex = String;
+    type Edge = GraphMlEdge;
+    fn import_events<R, F>(&mut self, input: R, mut emit: F) -> Result<()>
+    where
+        R: Read,
+        F: FnMut(ImportEvent<Self::Vertex, Self::Edge>) -> Result<()>,
+    {
+        emit(ImportEvent::Start)?;
+        let document = parse(input)?;
+        for (name, value) in document.graph_attributes {
+            emit(ImportEvent::GraphAttribute(name, value))?;
+        }
+        for node in document.nodes {
+            emit(ImportEvent::Vertex(node.id.clone()))?;
+            emit(ImportEvent::VertexAttribute(
+                node.id.clone(),
+                "ID".into(),
+                Attribute::from(node.id.clone()),
+            ))?;
+            for (name, value) in node.attributes {
+                emit(ImportEvent::VertexAttribute(node.id.clone(), name, value))?;
+            }
+        }
+        for edge in document.edges {
+            let weight = edge
+                .attributes
+                .get(&self.edge_weight_attribute)
+                .and_then(|a| a.value().parse().ok());
+            let value = (edge.source, edge.target, weight);
+            emit(ImportEvent::Edge(value.clone()))?;
+            if let Some(id) = edge.id {
+                emit(ImportEvent::EdgeAttribute(
+                    value.clone(),
+                    "ID".into(),
+                    Attribute::from(id),
+                ))?;
+            }
+            for (name, attribute) in edge.attributes {
+                emit(ImportEvent::EdgeAttribute(value.clone(), name, attribute))?;
+            }
+        }
+        emit(ImportEvent::End)
+    }
+}
+
+pub type SimpleGraphMlImporter<V, E = DefaultEdge> = GraphMlImporter<V, E>;
+pub type SimpleGraphMlEventDrivenImporter = GraphMlEventDrivenImporter;
+
+pub struct SimpleGraphMlEdgeListImporter {
+    edge_weight_attribute: String,
+    schema_validation: bool,
+}
+impl SimpleGraphMlEdgeListImporter {
+    pub fn new() -> Self {
+        Self {
+            edge_weight_attribute: "weight".into(),
+            schema_validation: true,
+        }
+    }
+    pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) {
+        self.edge_weight_attribute = name.into();
+    }
+    pub fn set_schema_validation(&mut self, enabled: bool) {
+        self.schema_validation = enabled;
+    }
+}
+impl Default for SimpleGraphMlEdgeListImporter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl EventDrivenImporter for SimpleGraphMlEdgeListImporter {
+    type Vertex = usize;
+    type Edge = (usize, usize, Option<f64>);
+    fn import_events<R, F>(&mut self, input: R, mut emit: F) -> Result<()>
+    where
+        R: Read,
+        F: FnMut(ImportEvent<Self::Vertex, Self::Edge>) -> Result<()>,
+    {
+        emit(ImportEvent::Start)?;
+        let document = parse(input)?;
+        let mut ids = HashMap::<String, usize>::new();
+        for edge in document.edges {
+            let next = ids.len();
+            let source = *ids.entry(edge.source).or_insert(next);
+            let next = ids.len();
+            let target = *ids.entry(edge.target).or_insert(next);
+            let weight = edge
+                .attributes
+                .get(&self.edge_weight_attribute)
+                .and_then(|a| a.value().parse().ok());
+            emit(ImportEvent::Edge((source, target, weight)))?;
+        }
+        emit(ImportEvent::End)
     }
 }

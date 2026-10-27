@@ -35,6 +35,7 @@ fn exports_and_reimports_graphml() {
     let edge = graph.add_edge(&1, &2).unwrap().unwrap();
     graph.set_edge_weight(&edge, 3.0).unwrap();
     let mut exporter: GraphMlExporter<usize, DefaultEdge> = GraphMlExporter::new();
+    exporter.set_export_edge_weights(true);
     let xml = exporter.export_to_string(&graph).unwrap();
     assert!(xml.contains("edgedefault=\"directed\""));
     assert!(xml.contains(">3.0</data>"));
