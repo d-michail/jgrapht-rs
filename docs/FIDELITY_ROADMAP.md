@@ -40,7 +40,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 | C2 | **done** `flow/legacy.rs`: `max_flow`, `edmonds_karp`, `dinic`, `push_relabel`, `minimum_st_cut`, `gomory_hu_tree` (deleted; Goldberg and k-connectivity now use `PushRelabelMFImpl` and `EdmondsKarpMFImpl`, the old `goldberg_densest_subgraph` is gone) | the class implementations in `flow/` | |
 | C3 | **done** `flow/legacy.rs` (deleted): `min_cost_flow` (SPFA successive shortest paths) and its owned `MinimumCostFlowProblem` struct; NETGEN now returns `MinimumCostFlowProblemImpl`, and the spanning-flow test uses `CapacityScalingMinimumCostFlow` | `CapacityScalingMinimumCostFlow` | |
 | C4 | **done** `flow/legacy.rs`: `stoer_wagner` (deleted, callers use B1) | B1 | |
-| C5 | `tour/legacy.rs` (nearest neighbour, insertion, double tree, 2-opt, Held–Karp) | the tour classes | |
+| C5 | **done** `tour/legacy.rs` (nearest neighbour, insertion, double tree, 2-opt, Held–Karp removed; callers use the tour classes, and the non-Java cheapest-insertion variant was deleted) | the tour classes | |
 | C6 | `tour/legacy.rs`: `christofides_tour` **[needs 1g]** | `ChristofidesThreeHalvesApproxMetricTSP` on the Java matching | |
 | C7 | **done** `cycle/legacy.rs` (`has_cycle`, `simple_cycles`, `cycle_basis`, `cycle_to_walk`; deleted, callers use `CycleDetector`, `JohnsonSimpleCycles` and the cycle-basis classes) | `CycleDetector`, the simple-cycle classes, cycle-basis classes | |
 | C8 | **done** `hamiltonian.rs` (deleted; its one test now uses `BacktrackingHamiltonianPath`, Java has no general exact Hamiltonian cycle search) | `tour` Hamiltonian-path/cycle classes | |

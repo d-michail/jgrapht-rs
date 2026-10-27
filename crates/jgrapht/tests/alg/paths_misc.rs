@@ -225,7 +225,7 @@ fn christofides_is_within_bound() {
         }
         let c = christofides_tour(&g).unwrap();
         assert!(c.is_valid(&g) && c.length() == 9);
-        let opt = held_karp_tour(&g).unwrap();
+        let opt = HeldKarpTSP::new().get_tour(&g).unwrap().unwrap();
         assert!(c.weight >= opt.weight - 1e-9 && c.weight <= 1.5 * opt.weight + 1e-9);
     }
 }

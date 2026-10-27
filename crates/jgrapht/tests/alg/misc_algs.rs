@@ -98,7 +98,7 @@ fn tours() {
             g.add_weighted_edge(&i, &j, w).unwrap();
         }
     }
-    let opt = held_karp_tour(&g).unwrap();
+    let opt = HeldKarpTSP::new().get_tour(&g).unwrap().unwrap();
     assert!(opt.is_valid(&g));
     assert_eq!(
         (
@@ -109,17 +109,30 @@ fn tours() {
         (8, Some(0), Some(0))
     );
     for t in [
-        nearest_neighbor_tour(&g).unwrap(),
-        insertion_tour(&g, Insertion::Nearest).unwrap(),
-        insertion_tour(&g, Insertion::Farthest).unwrap(),
-        insertion_tour(&g, Insertion::Cheapest).unwrap(),
-        double_tree_tour(&g).unwrap(),
+        NearestNeighborHeuristicTSP::with_first(0)
+            .get_tour(&g)
+            .unwrap()
+            .unwrap(),
+        NearestInsertionHeuristicTSP::new()
+            .get_tour(&g)
+            .unwrap()
+            .unwrap(),
+        FarthestInsertionHeuristicTSP::new()
+            .get_tour(&g)
+            .unwrap()
+            .unwrap(),
+        TwoApproxMetricTSP::new().get_tour(&g).unwrap().unwrap(),
     ] {
         assert!(t.is_valid(&g));
         assert_eq!(t.length(), 8);
         assert!(t.weight >= opt.weight - 1e-9);
-        let improved = two_opt(&g, &t).unwrap();
+        let improved = TwoOptHeuristicTSP::new().improve_tour(&g, &t).unwrap();
         assert!(improved.weight <= t.weight + 1e-9 && improved.weight >= opt.weight - 1e-9);
     }
-    assert!(held_karp_tour(&build(UGraph::<usize>::simple(), Linear(4))).is_err());
+    assert!(
+        HeldKarpTSP::new()
+            .get_tour(&build(UGraph::<usize>::simple(), Linear(4)))
+            .unwrap()
+            .is_none()
+    );
 }

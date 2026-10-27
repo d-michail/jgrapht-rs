@@ -1,8 +1,7 @@
 //! Travelling salesman heuristics, exact solvers and Hamiltonian path search.
 //!
-//! The function-style helpers (`nearest_neighbor_tour`, `held_karp_tour`, ...) are kept in
-//! [`legacy`] and re-exported; the JGraphT classes live in the sibling modules and share the
-//! helpers of [`base`].
+//! The Java-style classes live in the sibling modules and share the helpers of [`base`]. The
+//! temporary [`christofides_tour`] helper remains until the Blossom V matching port is complete.
 
 mod base;
 mod insertion;
