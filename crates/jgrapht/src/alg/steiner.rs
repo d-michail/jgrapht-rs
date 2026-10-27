@@ -68,7 +68,7 @@ pub fn kmb_steiner_tree<G: OutgoingGraph>(g: &G, terminals: &[G::Vertex]) -> Res
         let mut best = (f64::INFINITY, 0, 0);
         for a in (0..k).filter(|&a| in_tree[a]) {
             for b in (0..k).filter(|&b| !in_tree[b]) {
-                let d = sp[a].weight(terms[b]);
+                let d = sp[a].weight(terms[b]).unwrap_or(f64::INFINITY);
                 if d < best.0 {
                     best = (d, a, b);
                 }

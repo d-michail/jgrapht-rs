@@ -37,17 +37,12 @@ impl<V: Clone + Eq + Hash, E: Clone> ListSingleSourcePaths<V, E> {
         &self.source
     }
 
-    pub fn weight(&self, target: &V) -> f64 {
-        self.paths.get(target).map_or_else(
-            || {
-                if target == &self.source {
-                    0.0
-                } else {
-                    f64::INFINITY
-                }
-            },
-            |path| path.weight,
-        )
+    /// Weight of the path to `target`; `None` if `target` is not reachable.
+    pub fn weight(&self, target: &V) -> Option<f64> {
+        self.paths
+            .get(target)
+            .map(|path| path.weight)
+            .or_else(|| (target == &self.source).then_some(0.0))
     }
 
     pub fn path(&self, target: &V) -> Option<GraphWalk<V, E>> {
@@ -83,9 +78,9 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> SingleSourcePaths<V, E> {
     pub fn distance_and_predecessor_map(&self) -> (&HashMap<V, f64>, &HashMap<V, (E, V)>) {
         (&self.dist, &self.pred)
     }
-    /// Path weight, `f64::INFINITY` if `v` is unreachable.
-    pub fn weight(&self, v: &V) -> f64 {
-        self.dist.get(v).copied().unwrap_or(f64::INFINITY)
+    /// Path weight; `None` if `v` is unreachable.
+    pub fn weight(&self, v: &V) -> Option<f64> {
+        self.dist.get(v).copied()
     }
 
     pub fn is_reachable(&self, v: &V) -> bool {
@@ -122,9 +117,10 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> AllPairsPaths<V, E> {
     pub fn from_source(&self, s: &V) -> Option<&SingleSourcePaths<V, E>> {
         self.by_source.get(s)
     }
-    /// `f64::INFINITY` when `t` is unreachable from `s` (or `s` is unknown).
-    pub fn weight(&self, s: &V, t: &V) -> f64 {
-        self.by_source.get(s).map_or(f64::INFINITY, |p| p.weight(t))
+    /// Weight of the shortest path from `s` to `t`; `None` when `t` is unreachable from `s` (or
+    /// `s` is unknown).
+    pub fn weight(&self, s: &V, t: &V) -> Option<f64> {
+        self.by_source.get(s)?.weight(t)
     }
     pub fn path(&self, s: &V, t: &V) -> Option<GraphWalk<V, E>> {
         self.by_source.get(s)?.path(t)

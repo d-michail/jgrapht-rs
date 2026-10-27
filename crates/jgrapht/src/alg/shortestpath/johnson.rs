@@ -121,9 +121,9 @@ impl<G: Graph> ShortestPathAlgorithm<G> for JohnsonShortestPaths<'_, G> {
         Ok(self.paths.path(source, target))
     }
 
-    /// Get the weight of the shortest path from a source vertex to a sink vertex. Returns
-    /// `Double#POSITIVE_INFINITY` if no path exists.
-    fn path_weight(&self, source: &G::Vertex, target: &G::Vertex) -> Result<f64> {
+    /// Get the weight of the shortest path from a source vertex to a sink vertex; `None` if no
+    /// path exists.
+    fn path_weight(&self, source: &G::Vertex, target: &G::Vertex) -> Result<Option<f64>> {
         if !self.graph.contains_vertex(source) || !self.graph.contains_vertex(target) {
             return Err(GraphError::VertexNotFound);
         }

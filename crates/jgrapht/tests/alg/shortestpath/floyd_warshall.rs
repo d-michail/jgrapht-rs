@@ -75,7 +75,7 @@ fn test_weighted_edges() {
     let edge = graph.add_weighted_edge(&"a", &"b", 5.0).unwrap().unwrap();
     let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
 
-    assert_eq!(floyd_warshall.path_weight(&"a", &"b").unwrap(), 5.0);
+    assert_eq!(floyd_warshall.path_weight(&"a", &"b").unwrap(), Some(5.0));
     let path = floyd_warshall.path(&"a", &"b").unwrap().unwrap();
     assert_eq!(path.edge_list(), [edge]);
     assert_eq!(path.start_vertex(), Some(&"a"));
@@ -125,7 +125,7 @@ fn pseudograph_test_1() {
     for (source, weights) in expected {
         let paths = floyd_warshall.single_source(&source).unwrap();
         for (target, weight) in (1..=4).zip(weights) {
-            assert_eq!(paths.weight(&target), weight);
+            assert_eq!(paths.weight(&target), Some(weight).filter(|w: &f64| w.is_finite()));
         }
         assert!(paths.path(&source).unwrap().edge_list().is_empty());
     }
@@ -188,10 +188,10 @@ fn pseudograph_test_get_path_weight() {
     let (graph, _) = parallel_fixture();
     let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
 
-    assert_eq!(floyd_warshall.path_weight(&2, &1).unwrap(), f64::INFINITY);
-    assert_eq!(floyd_warshall.path_weight(&2, &2).unwrap(), 0.0);
-    assert_eq!(floyd_warshall.path_weight(&2, &3).unwrap(), -5.0);
-    assert_eq!(floyd_warshall.path_weight(&2, &4).unwrap(), -105.0);
+    assert_eq!(floyd_warshall.path_weight(&2, &1).unwrap(), None);
+    assert_eq!(floyd_warshall.path_weight(&2, &2).unwrap(), Some(0.0));
+    assert_eq!(floyd_warshall.path_weight(&2, &3).unwrap(), Some(-5.0));
+    assert_eq!(floyd_warshall.path_weight(&2, &4).unwrap(), Some(-105.0));
 }
 
 #[test]
@@ -214,8 +214,8 @@ fn pseudograph_test_loops() {
         assert!(path.edge_list().is_empty());
         assert_eq!(path.vertex_list(), [vertex]);
     }
-    assert_eq!(floyd_warshall.path_weight(&1, &2).unwrap(), 5.0);
-    assert_eq!(floyd_warshall.path_weight(&2, &1).unwrap(), 15.0);
+    assert_eq!(floyd_warshall.path_weight(&1, &2).unwrap(), Some(5.0));
+    assert_eq!(floyd_warshall.path_weight(&2, &1).unwrap(), Some(15.0));
 }
 
 fn random_pseudograph<G>(mut graph: G, seed: u64)
@@ -248,7 +248,9 @@ where
             .unwrap();
         let floyd_paths = floyd_warshall.single_source(source).unwrap();
         for target in graph.vertices() {
-            assert!((dijkstra.weight(target) - floyd_paths.weight(target)).abs() < 1e-9);
+            assert!(
+                (dijkstra.weight(target).unwrap() - floyd_paths.weight(target).unwrap()).abs() < 1e-9
+            );
             assert_eq!(
                 floyd_paths.path(target).map(|path| path.edge_list().to_vec()),
                 floyd_warshall

@@ -108,14 +108,11 @@ fn dijkstra_classic() {
     assert_eq!(p.weight(), 20.0);
     assert!(p.is_valid(&g));
     assert_eq!(Dijkstra::new(&g).path(&5, &1).unwrap(), None);
-    assert_eq!(
-        Dijkstra::new(&g).path_weight(&5, &1).unwrap(),
-        f64::INFINITY
-    );
+    assert_eq!(Dijkstra::new(&g).path_weight(&5, &1).unwrap(), None);
     let ss = Dijkstra::<_, FibonacciHeap<_, _>>::with_heap(&g)
         .single_source(&1)
         .unwrap();
-    assert_eq!(ss.weight(&4), 20.0);
+    assert_eq!(ss.weight(&4), Some(20.0));
     assert!(
         Dijkstra::new(&g)
             .radius(10.0)
@@ -136,7 +133,7 @@ fn dijkstra_classic() {
 fn negative_weights() {
     let g = weighted_di(&[(1, 2, 4.0), (1, 3, 5.0), (3, 2, -3.0)]);
     assert!(Dijkstra::new(&g).single_source(&1).is_err());
-    assert_eq!(BellmanFord::new(&g).path_weight(&1, &2).unwrap(), 2.0);
+    assert_eq!(BellmanFord::new(&g).path_weight(&1, &2).unwrap(), Some(2.0));
     let cyc = weighted_di(&[(1, 2, 1.0), (2, 3, -2.0), (3, 1, 0.5)]);
     assert_eq!(
         BellmanFord::new(&cyc).single_source(&1).err(),
@@ -151,14 +148,14 @@ fn negative_weights() {
         Some(GraphError::NegativeCycle)
     );
     let ap = JohnsonShortestPaths::new(&g).unwrap().all_pairs().clone();
-    assert_eq!(ap.weight(&1, &2), 2.0);
+    assert_eq!(ap.weight(&1, &2), Some(2.0));
     assert_eq!(ap.path(&1, &2).unwrap().vertex_list(), [1, 3, 2]);
 }
 
 #[test]
 fn bfs_and_astar() {
     let g = sample();
-    assert_eq!(BfsShortestPath(&g).path_weight(&1, &5).unwrap(), 2.0);
+    assert_eq!(BfsShortestPath(&g).path_weight(&1, &5).unwrap(), Some(2.0));
     let a = AStar::new(&g, |_, _| 0.0).path(&1, &5).unwrap().unwrap();
     assert_eq!(a.weight(), 20.0);
     // grid with manhattan heuristic

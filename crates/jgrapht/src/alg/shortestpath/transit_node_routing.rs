@@ -346,7 +346,10 @@ where
         let targets = access(&forward_access);
         let paths = many_to_many.many_to_many([vertex.clone()], targets.iter().cloned())?;
         let pruned = pruned_access_vertices(&targets, transit_paths, |a, b| {
-            let (w1, w2) = (paths.weight(&vertex, a), paths.weight(&vertex, b));
+            let (w1, w2) = (
+                paths.weight(&vertex, a).unwrap_or(f64::INFINITY),
+                paths.weight(&vertex, b).unwrap_or(f64::INFINITY),
+            );
             (w1, w2, true)
         });
         let forward_vertices = targets
@@ -364,7 +367,10 @@ where
         let sources = access(&backward_access);
         let paths = many_to_many.many_to_many(sources.iter().cloned(), [vertex.clone()])?;
         let pruned = pruned_access_vertices(&sources, transit_paths, |a, b| {
-            let (w1, w2) = (paths.weight(a, &vertex), paths.weight(b, &vertex));
+            let (w1, w2) = (
+                paths.weight(a, &vertex).unwrap_or(f64::INFINITY),
+                paths.weight(b, &vertex).unwrap_or(f64::INFINITY),
+            );
             (w1, w2, false)
         });
         let backward_vertices = sources
@@ -437,9 +443,9 @@ fn pruned_access_vertices<V: Clone + Eq + std::hash::Hash, E: Clone>(
             if v1 != v2 && !result.contains(v2) {
                 let (w1, w2, forward) = weights(v1, v2);
                 let prune = if forward {
-                    w1 + transit_paths.weight(v1, v2) <= w2
+                    w1 + transit_paths.weight(v1, v2).unwrap_or(f64::INFINITY) <= w2
                 } else {
-                    transit_paths.weight(v2, v1) + w1 <= w2
+                    transit_paths.weight(v2, v1).unwrap_or(f64::INFINITY) + w1 <= w2
                 };
                 if prune {
                     result.insert(v2.clone());
@@ -654,24 +660,24 @@ where
         Ok(Some(merge_paths(&first.path, second, &third.path)))
     }
 
-    /// Computes the weight of a shortest path between `source` and `sink`, infinity if there is
+    /// Computes the weight of a shortest path between `source` and `sink`, `None` if there is
     /// none.
-    pub fn path_weight(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
+    pub fn path_weight(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<Option<f64>> {
         let routing = self.routing()?;
         let h = routing.contraction_hierarchy();
         let (source_id, sink_id) = Self::ids(routing, source, sink)?;
         if routing.locality_filter().is_local(source, sink) {
             return Ok(ContractionHierarchyBidirectionalDijkstra::new(h)
                 .path(source, sink)?
-                .map_or(f64::INFINITY, |p| p.weight));
+                .map(|p| p.weight));
         }
         Ok(
-            Self::min_weight_access_vertices(routing, source_id, sink_id).map_or(
-                f64::INFINITY,
+            Self::min_weight_access_vertices(routing, source_id, sink_id).and_then(
                 |(first, third)| {
-                    first.path.weight
-                        + routing.transit_paths().weight(&first.vertex, &third.vertex)
-                        + third.path.weight
+                    routing
+                        .transit_paths()
+                        .weight(&first.vertex, &third.vertex)
+                        .map(|middle| first.path.weight + middle + third.path.weight)
                 },
             ),
         )
@@ -704,7 +710,10 @@ where
         for first in routing.access_vertices().forward(source) {
             for third in routing.access_vertices().backward(sink) {
                 let weight = first.path.weight
-                    + routing.transit_paths().weight(&first.vertex, &third.vertex)
+                    + routing
+                        .transit_paths()
+                        .weight(&first.vertex, &third.vertex)
+                        .unwrap_or(f64::INFINITY)
                     + third.path.weight;
                 if weight < minimum_weight {
                     minimum_weight = weight;
@@ -755,7 +764,7 @@ where
         TransitNodeRoutingShortestPath::path(self, source, sink)
     }
 
-    fn path_weight(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
+    fn path_weight(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<Option<f64>> {
         TransitNodeRoutingShortestPath::path_weight(self, source, sink)
     }
 }

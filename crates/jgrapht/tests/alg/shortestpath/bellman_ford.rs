@@ -107,7 +107,7 @@ fn test_undirected() {
         ("v4", 10.0),
         ("v5", 15.0),
     ] {
-        assert_eq!(paths.weight(&vertex), weight);
+        assert_eq!(paths.weight(&vertex), Some(weight).filter(|w: &f64| w.is_finite()));
     }
 }
 
@@ -134,7 +134,7 @@ fn test_no_path() {
         .get_paths(&"a")
         .unwrap();
 
-    assert_eq!(paths.weight(&"b"), f64::INFINITY);
+    assert_eq!(paths.weight(&"b"), None);
     assert!(paths.path(&"b").is_none());
 }
 
@@ -173,7 +173,7 @@ fn test_wikipedia_example_bellman_ford() {
         ("x", -7.0),
         ("z", 0.0),
     ] {
-        assert_eq!(paths.weight(&vertex), weight);
+        assert_eq!(paths.weight(&vertex), Some(weight).filter(|w: &f64| w.is_finite()));
     }
 }
 
@@ -296,7 +296,7 @@ fn test_negative_cycle_with_max_hops() {
         .unwrap()
         .get_paths(&1)
         .unwrap();
-    assert_eq!(paths.weight(&3), 2.0);
+    assert_eq!(paths.weight(&3), Some(2.0));
 
     let error = BellmanFordShortestPath::with_options(&graph, 1e-16, 4)
         .unwrap()

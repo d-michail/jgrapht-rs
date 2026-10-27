@@ -131,7 +131,7 @@ fn assert_path(
     weight: f64,
     vertices: &[usize],
 ) {
-    assert!((paths.weight(&source, &target) - weight).abs() < 1e-9);
+    assert!((paths.weight(&source, &target).unwrap() - weight).abs() < 1e-9);
     assert_eq!(
         paths.path(&source, &target).unwrap().vertex_list(),
         vertices,
@@ -150,7 +150,7 @@ fn no_path(kind: Kind) {
     let mut graph = DiGraph::<usize>::multi().weighted();
     graph.add_vertices([1, 2]);
     let paths = compute(kind, &graph, [1], [2]).unwrap();
-    assert_eq!(paths.weight(&1, &2), f64::INFINITY);
+    assert_eq!(paths.weight(&1, &2), None);
     assert!(paths.path(&1, &2).is_none());
 }
 
@@ -258,7 +258,7 @@ fn assert_correct_paths<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingG
             let expected_path = expected.path(target);
             let actual_path = paths.path(source, target).cloned();
             match (expected_path, actual_path) {
-                (None, None) => assert_eq!(paths.weight(source, target), f64::INFINITY),
+                (None, None) => assert_eq!(paths.weight(source, target), None),
                 (Some(expected), Some(actual)) => {
                     assert!((expected.weight() - actual.weight()).abs() < 1e-9);
                     assert_eq!(expected.vertex_list(), actual.vertex_list());
@@ -416,7 +416,7 @@ mod dijkstra_many_to_many {
         graph.add_vertices([1, 2, 3]);
         let paths = compute(Kind::Dijkstra, &graph, [1], [2, 3]).unwrap();
         for target in [2, 3] {
-            assert_eq!(paths.weight(&1, &target), f64::INFINITY);
+            assert_eq!(paths.weight(&1, &target), None);
             assert!(paths.path(&1, &target).is_none());
         }
     }

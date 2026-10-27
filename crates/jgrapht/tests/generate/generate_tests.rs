@@ -279,13 +279,13 @@ mod named_graph_generator_test {
         assert_eq!((g.vertex_count(), g.edge_count()), (vertices, edges));
         let gm = GraphMeasurer::new(g).unwrap();
         assert!(
-            (gm.radius() - radius).abs() < 1e-8,
-            "radius {} vs {radius}",
+            (gm.radius().unwrap() - radius).abs() < 1e-8,
+            "radius {:?} vs {radius}",
             gm.radius()
         );
         assert!(
-            (gm.diameter() - diameter).abs() < 1e-8,
-            "diameter {} vs {diameter}",
+            (gm.diameter().unwrap() - diameter).abs() < 1e-8,
+            "diameter {:?} vs {diameter}",
             gm.diameter()
         );
         assert_eq!(girth(g), girth_);
@@ -610,7 +610,7 @@ mod named_graph_generator_test {
                 gm.diameter(),
                 girth(&g)
             ),
-            (8, 12, 3.0, 3.0, Some(4))
+            (8, 12, Some(3.0), Some(3.0), Some(4))
         );
         assert!(is_bipartite(&g) && is_cubic(&g));
     }
@@ -724,7 +724,10 @@ mod windmill_graphs_generator_test {
         let g = build(named::butterfly());
         assert_eq!((g.vertex_count(), g.edge_count()), (5, 6));
         let gm = GraphMeasurer::new(&g).unwrap();
-        assert_eq!((gm.radius(), gm.diameter(), girth(&g)), (1.0, 2.0, Some(3)));
+        assert_eq!(
+            (gm.radius(), gm.diameter(), girth(&g)),
+            (Some(1.0), Some(2.0), Some(3))
+        );
         assert!(is_eulerian(&g));
     }
     #[test]

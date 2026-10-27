@@ -95,9 +95,9 @@ fn ch_many_to_many_materializes_requested_product() {
     let paths = CHManyToManyShortestPaths::new(&hierarchy)
         .many_to_many([1, 7, 9], [3, 5])
         .unwrap();
-    assert_eq!(paths.weight(&1, &3), 2.0);
+    assert_eq!(paths.weight(&1, &3), Some(2.0));
     assert_eq!(paths.path(&7, &5).unwrap().vertex_list(), [7, 4, 5]);
-    assert_eq!(paths.weight(&9, &3), f64::INFINITY);
+    assert_eq!(paths.weight(&9, &3), None);
 }
 
 #[test]
@@ -127,7 +127,7 @@ fn contraction_hierarchy_matches_dijkstra_on_random_graphs() {
                 let actual = query.path(&source, &target).unwrap();
                 assert_eq!(
                     actual.as_ref().map_or(f64::INFINITY, GraphWalk::weight),
-                    expected.weight(&target),
+                    expected.weight(&target).unwrap_or(f64::INFINITY),
                     "seed={seed}, {source}->{target}"
                 );
                 if let Some(path) = actual {

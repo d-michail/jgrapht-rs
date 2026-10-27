@@ -75,14 +75,14 @@ fn list_single_source_paths_test_paths() {
     let paths = ListSingleSourcePaths::new(0, materialized);
 
     assert_eq!(paths.source(), &0);
-    assert_eq!(paths.weight(&0), 0.0);
+    assert_eq!(paths.weight(&0), Some(0.0));
     assert_eq!(paths.path(&0).unwrap().vertex_list(), [0]);
     for (target, expected_path) in (1..50).zip(expected) {
         let actual = paths.path(&target).unwrap();
-        assert_eq!(paths.weight(&target), expected_path.weight());
+        assert_eq!(paths.weight(&target), Some(expected_path.weight()));
         assert_eq!(actual.edge_list(), expected_path.edge_list());
     }
-    assert_eq!(paths.weight(&50), f64::INFINITY);
+    assert_eq!(paths.weight(&50), None);
     assert!(paths.path(&50).is_none());
 }
 
@@ -109,13 +109,13 @@ fn tree_single_source_paths_test_paths() {
 
     assert_eq!(paths.source(), &1);
     assert_eq!(paths.path(&1).unwrap().vertex_list(), [1]);
-    assert_eq!(paths.weight(&1), 0.0);
+    assert_eq!(paths.weight(&1), Some(0.0));
     assert_eq!(paths.path(&2).unwrap().edge_list(), [e12[0]]);
-    assert_eq!(paths.weight(&2), -5.0);
+    assert_eq!(paths.weight(&2), Some(-5.0));
     assert_eq!(paths.path(&3).unwrap().edge_list(), [e12[0], e23[2]]);
-    assert_eq!(paths.weight(&3), -10.0);
+    assert_eq!(paths.weight(&3), Some(-10.0));
     assert_eq!(paths.path(&4).unwrap().edge_list(), [e12[0], e23[2], e34[0]]);
-    assert_eq!(paths.weight(&4), -110.0);
+    assert_eq!(paths.weight(&4), Some(-110.0));
 }
 
 fn all_pairs_shortest_paths(seed: i64) {
@@ -143,10 +143,16 @@ fn all_pairs_shortest_paths(seed: i64) {
 
         for source in 0..20 {
             for target in 0..20 {
-                let expected = dijkstra.path_weight(&source, &target).unwrap();
+                let expected = dijkstra
+                    .path_weight(&source, &target)
+                    .unwrap()
+                    .unwrap_or(f64::INFINITY);
                 assert_same_weight(
                     expected,
-                    bidirectional.path_weight(&source, &target).unwrap(),
+                    bidirectional
+                        .path_weight(&source, &target)
+                        .unwrap()
+                        .unwrap_or(f64::INFINITY),
                 );
                 assert_same_weight(
                     expected,

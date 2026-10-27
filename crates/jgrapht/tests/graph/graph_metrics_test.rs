@@ -33,13 +33,13 @@ fn test_graph_diameter() {
     g.add_vertices([0, 1]);
     g.add_weighted_edge(&0, &1, 10.0).unwrap();
     g.add_weighted_edge(&1, &0, 12.0).unwrap();
-    assert!((diameter(&g) - 12.0).abs() < EPSILON);
+    assert!((GraphMeasurer::new(&g).unwrap().diameter().unwrap() - 12.0).abs() < EPSILON);
 }
 
 #[test]
 fn test_graph_radius() {
     let g = UGraph::<i32>::simple();
-    assert!((radius(&g) - 0.0).abs() < EPSILON);
+    assert!((GraphMeasurer::new(&g).unwrap().radius().unwrap() - 0.0).abs() < EPSILON);
 }
 
 #[test]

@@ -3600,7 +3600,13 @@ mod howard_minimum_mean_cycle_test {
         let mut mmc = HowardMinimumMeanCycle::new(&graph);
         let actual_path = mmc.get_cycle();
         let actual_mean = mmc.get_cycle_mean();
-        assert!((expected_mean - actual_mean).abs() <= 1e-9 || expected_mean == actual_mean);
+        match (expected_mean.is_finite(), actual_mean) {
+            (true, Some(actual)) => assert!((expected_mean - actual).abs() <= 1e-9),
+            (false, None) => {}
+            (expected_is_finite, actual) => {
+                panic!("expected finite mean: {expected_is_finite}, got {actual:?}")
+            }
+        }
         assert_eq!(expected_path, actual_path);
     }
 

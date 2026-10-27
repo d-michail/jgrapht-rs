@@ -30,7 +30,7 @@ fn test_empty_graph() {
     let paths = BidirectionalAStarShortestPath::new(&graph, |_: &&str, _: &&str| 0.0)
         .single_source(&"S")
         .unwrap();
-    assert_eq!(paths.weight(&"S"), 0.0);
+    assert_eq!(paths.weight(&"S"), Some(0.0));
     assert_eq!(paths.path(&"S").unwrap().vertex_list(), ["S"]);
 }
 

@@ -96,14 +96,14 @@ fn test_vertex_eccentricity_g2() {
 #[test]
 fn test_diameter_empty_graph() {
     let g = UGraph::<i32>::simple();
-    assert_eq!(GraphMeasurer::new(&g).unwrap().diameter(), 0.0);
+    assert_eq!(GraphMeasurer::new(&g).unwrap().diameter(), Some(0.0));
 }
 
 #[test]
 fn test_diameter_disconnected_graph() {
     let mut g = UGraph::<i32>::simple();
     g.add_vertices([0, 1]);
-    assert!(GraphMeasurer::new(&g).unwrap().diameter().is_infinite());
+    assert!(GraphMeasurer::new(&g).unwrap().diameter().is_none());
 }
 
 #[test]
@@ -111,7 +111,7 @@ fn test_diameter_directed_graph1() {
     let mut g = DiGraph::<i32>::simple().weighted();
     g.add_vertices([0, 1]);
     g.add_weighted_edge(&0, &1, 10.0).unwrap();
-    assert!(GraphMeasurer::new(&g).unwrap().diameter().is_infinite());
+    assert!(GraphMeasurer::new(&g).unwrap().diameter().is_none());
 }
 
 #[test]
@@ -120,20 +120,20 @@ fn test_diameter_directed_graph2() {
     g.add_vertices([0, 1]);
     g.add_weighted_edge(&0, &1, 10.0).unwrap();
     g.add_weighted_edge(&1, &0, 12.0).unwrap();
-    assert!((GraphMeasurer::new(&g).unwrap().diameter() - 12.0).abs() < EPSILON);
+    assert!((GraphMeasurer::new(&g).unwrap().diameter().unwrap() - 12.0).abs() < EPSILON);
 }
 
 #[test]
 fn test_radius_empty_graph() {
     let g = UGraph::<i32>::simple();
-    assert_eq!(GraphMeasurer::new(&g).unwrap().radius(), 0.0);
+    assert_eq!(GraphMeasurer::new(&g).unwrap().radius(), Some(0.0));
 }
 
 #[test]
 fn test_radius_disconnected_graph() {
     let mut g = UGraph::<i32>::simple();
     g.add_vertices([0, 1]);
-    assert!(GraphMeasurer::new(&g).unwrap().radius().is_infinite());
+    assert!(GraphMeasurer::new(&g).unwrap().radius().is_none());
 }
 
 #[test]

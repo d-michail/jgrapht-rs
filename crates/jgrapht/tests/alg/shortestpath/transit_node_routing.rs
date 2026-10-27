@@ -274,8 +274,8 @@ mod shortest_path {
         assert_eq!(walk(3, 2), Some((vec![3, 2], vec![edge3], 1.0)));
         assert_eq!(walk(1, 3), Some((vec![1, 2, 3], vec![edge1, edge2], 3.0)));
         assert_eq!(walk(3, 1), None);
-        assert_eq!(sp.path_weight(&1, &3).unwrap(), 3.0);
-        assert_eq!(sp.path_weight(&3, &1).unwrap(), f64::INFINITY);
+        assert_eq!(sp.path_weight(&1, &3).unwrap(), Some(3.0));
+        assert_eq!(sp.path_weight(&3, &1).unwrap(), None);
     }
 
     #[test]

@@ -62,7 +62,9 @@ impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
         let mut pair_weight = vec![vec![0.0; n]; n];
         for (i, row) in pair_weight.iter_mut().enumerate() {
             for (j, w) in row.iter_mut().enumerate() {
-                *w = algorithm.path_weight(&vertices[i], &vertices[j])?;
+                *w = algorithm
+                    .path_weight(&vertices[i], &vertices[j])?
+                    .unwrap_or(f64::INFINITY);
             }
         }
         let directed = g.graph_type().directed;
@@ -97,16 +99,18 @@ impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
     /// graph. The diameter of a graph is defined as $\max_{v\in V}\epsilon(v)$, where $\epsilon(v)$
     /// is the eccentricity of vertex $v$. In other words, this method computes the 'longest shortest
     /// path'. Two special cases exist. If the graph has no vertices, the diameter is 0. If the graph
-    /// is disconnected, the diameter is `Double#POSITIVE_INFINITY`.
-    pub fn diameter(&self) -> f64 {
-        self.diameter
+    /// is disconnected, the diameter is unbounded and this returns `None` (JGraphT returns
+    /// `Double#POSITIVE_INFINITY`).
+    pub fn diameter(&self) -> Option<f64> {
+        self.diameter.is_finite().then_some(self.diameter)
     }
     /// Compute the [radius](http://mathworld.wolfram.com/GraphRadius.html) of the graph.
     /// The radius of a graph is defined as $\min_{v\in V}\epsilon(v)$, where $\epsilon(v)$ is the
     /// eccentricity of vertex $v$. Two special cases exist. If the graph has no vertices, the radius
-    /// is 0. If the graph is disconnected, the diameter is `Double#POSITIVE_INFINITY`.
-    pub fn radius(&self) -> f64 {
-        self.radius
+    /// is 0. If the graph is disconnected, the radius is unbounded and this returns `None` (JGraphT
+    /// returns `Double#POSITIVE_INFINITY`).
+    pub fn radius(&self) -> Option<f64> {
+        self.radius.is_finite().then_some(self.radius)
     }
     /// Eccentricity of every vertex, in vertex order.
     pub fn vertex_eccentricity_map(&self) -> Vec<(V, f64)> {
@@ -139,35 +143,6 @@ impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
             .map(|i| self.vertices[i].clone())
             .collect()
     }
-}
-
-/// Eccentricities (`INFINITY` if some vertex is unreachable).
-pub fn eccentricities<G: OutgoingGraph>(g: &G) -> HashMap<G::Vertex, f64> {
-    GraphMeasurer::new(g)
-        .map(|m| m.vertex_eccentricity_map().into_iter().collect())
-        .unwrap_or_default()
-}
-
-/// Largest eccentricity; `0.0` for the empty graph.
-pub fn diameter<G: OutgoingGraph>(g: &G) -> f64 {
-    GraphMeasurer::new(g).map_or(f64::NEG_INFINITY, |m| m.diameter())
-}
-
-/// Smallest eccentricity; `0.0` for the empty graph.
-pub fn radius<G: OutgoingGraph>(g: &G) -> f64 {
-    GraphMeasurer::new(g).map_or(f64::NEG_INFINITY, |m| m.radius())
-}
-
-pub fn center<G: OutgoingGraph>(g: &G) -> Vec<G::Vertex> {
-    GraphMeasurer::new(g)
-        .map(|m| m.graph_center())
-        .unwrap_or_default()
-}
-
-pub fn periphery<G: OutgoingGraph>(g: &G) -> Vec<G::Vertex> {
-    GraphMeasurer::new(g)
-        .map(|m| m.graph_periphery())
-        .unwrap_or_default()
 }
 
 /// Length of the shortest cycle, `None` for acyclic graphs. Self-loops give 1; parallel edges in

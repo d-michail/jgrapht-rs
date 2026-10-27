@@ -122,7 +122,10 @@ fn spanner_stretch() {
         );
         for a in 0..14 {
             for b in 0..14 {
-                assert!(sp.weight(&a, &b) <= (2 * k - 1) as f64 * full.weight(&a, &b) + 1e-9);
+                assert!(
+                    sp.weight(&a, &b).unwrap_or(f64::INFINITY)
+                        <= (2 * k - 1) as f64 * full.weight(&a, &b).unwrap_or(f64::INFINITY) + 1e-9
+                );
             }
         }
     }
@@ -182,7 +185,7 @@ fn k_center_is_two_approximation() {
             (0..10)
                 .map(|v| {
                     cs.iter()
-                        .map(|&c| all.weight(&c, &v))
+                        .map(|&c| all.weight(&c, &v).unwrap_or(f64::INFINITY))
                         .fold(f64::INFINITY, f64::min)
                 })
                 .fold(0.0, f64::max)

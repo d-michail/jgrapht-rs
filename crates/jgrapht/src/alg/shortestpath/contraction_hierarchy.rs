@@ -1098,10 +1098,9 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone> ManyToManyPaths<V, E> {
     pub fn path(&self, source: &V, target: &V) -> Option<&GraphWalk<V, E>> {
         self.paths.get(&(source.clone(), target.clone()))
     }
-    /// Path weight, or infinity when unreachable.
-    pub fn weight(&self, source: &V, target: &V) -> f64 {
-        self.path(source, target)
-            .map_or(f64::INFINITY, |p| p.weight)
+    /// Path weight; `None` when `target` is unreachable from `source`.
+    pub fn weight(&self, source: &V, target: &V) -> Option<f64> {
+        self.path(source, target).map(|p| p.weight)
     }
 }
 

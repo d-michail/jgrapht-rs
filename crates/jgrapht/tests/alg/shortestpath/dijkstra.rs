@@ -103,7 +103,7 @@ fn test_shortest_path_tree() {
         ("v4", 3.0),
         ("v5", f64::INFINITY),
     ] {
-        assert_eq!(paths.weight(&vertex), weight);
+        assert_eq!(paths.weight(&vertex), Some(weight).filter(|w: &f64| w.is_finite()));
     }
 
     let p11 = paths.path(&"v1").unwrap();
@@ -140,7 +140,7 @@ fn test_get_path_weight() {
         ("v4", 3.0),
         ("v5", f64::INFINITY),
     ] {
-        assert_eq!(algorithm.path_weight(&"v1", &target).unwrap(), weight);
+        assert_eq!(algorithm.path_weight(&"v1", &target).unwrap(), Some(weight).filter(|w: &f64| w.is_finite()));
     }
 }
 

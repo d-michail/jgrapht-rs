@@ -60,6 +60,19 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 19: no infinity for "unreachable"
+
+| Before | After |
+|---|---|
+| `algorithm.path_weight(s, t)? == f64::INFINITY` | `algorithm.path_weight(s, t)? == None` (`Result<Option<f64>>`) |
+| `paths.weight(&v)` on `SingleSourcePaths`, `ListSingleSourcePaths` (infinity if unreachable) | `Option<f64>` |
+| `all_pairs.weight(&s, &t)`, `many_to_many.weight(&s, &t)` | `Option<f64>` |
+| `GraphMeasurer::diameter()` / `radius()` (`+inf` for a disconnected graph) | `Option<f64>`, `None` when disconnected |
+| `MinimumCycleMeanAlgorithm::get_cycle_mean()` (`+inf` without a cycle) | `Option<f64>` |
+| `metrics::diameter(g)`, `radius(g)`, `eccentricities(g)`, `center(g)`, `periphery(g)` (swallowed errors) | removed; use `GraphMeasurer::new(g)?` and its accessors |
+
+Where you need arithmetic over distances, `unwrap_or(f64::INFINITY)` recovers the old value.
+
 ## Step 18: planarity, centers, certificates
 
 * Planarity: `inspector.is_planar()` is unchanged. `embedding()` (an error for a non-planar graph)

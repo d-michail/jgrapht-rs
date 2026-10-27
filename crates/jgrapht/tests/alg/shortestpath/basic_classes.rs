@@ -32,13 +32,13 @@ fn java_class_names_share_the_shortest_path_contract() {
         DijkstraShortestPath::new(&graph)
             .path_weight(&1, &4)
             .unwrap(),
-        3.0
+        Some(3.0)
     );
     assert_eq!(
         BellmanFordShortestPath::new(&graph)
             .path_weight(&1, &4)
             .unwrap(),
-        3.0
+        Some(3.0)
     );
 }
 
@@ -49,7 +49,7 @@ fn floyd_warshall_hops_and_path_count() {
     assert_eq!(paths.shortest_paths_count(), 6);
     assert_eq!(paths.first_hop(&1, &4), Some(2));
     assert_eq!(paths.last_hop(&1, &4), Some(3));
-    assert_eq!(paths.path_weight(&1, &4).unwrap(), -110.0);
+    assert_eq!(paths.path_weight(&1, &4).unwrap(), Some(-110.0));
     assert_eq!(paths.first_hop(&1, &1), None);
 }
 
@@ -57,7 +57,7 @@ fn floyd_warshall_hops_and_path_count() {
 fn johnson_class_handles_negative_edges() {
     let graph = weighted_directed(&[(1, 2, 4.0), (1, 3, 5.0), (3, 2, -3.0)]);
     let paths = JohnsonShortestPaths::new(&graph).unwrap();
-    assert_eq!(paths.path_weight(&1, &2).unwrap(), 2.0);
+    assert_eq!(paths.path_weight(&1, &2).unwrap(), Some(2.0));
     assert_eq!(paths.path(&1, &2).unwrap().unwrap().vertex_list(), [1, 3, 2]);
 }
 
@@ -75,6 +75,6 @@ fn bidirectional_class_radius_and_astar() {
         BidirectionalAStarShortestPath::new(&graph, |_: &u32, _: &u32| 0.0)
             .path_weight(&1, &3)
             .unwrap(),
-        5.0
+        Some(5.0)
     );
 }

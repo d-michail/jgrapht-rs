@@ -24,7 +24,7 @@ where
     for &(source, weights) in expected {
         let paths = algorithm.single_source(&source).unwrap();
         for (target, &weight) in graph.vertices().zip(weights) {
-            let actual = paths.weight(target);
+            let actual = paths.weight(target).unwrap_or(f64::INFINITY);
             assert!(
                 (actual == weight) || (actual.is_infinite() && weight.is_infinite()),
                 "distance {source} -> {target}: expected {weight}, got {actual}"

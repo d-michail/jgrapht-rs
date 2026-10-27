@@ -28,9 +28,9 @@ fn test_issue_408() {
     }
 
     let algorithm = JohnsonShortestPaths::new(&graph).unwrap();
-    assert_eq!(algorithm.path_weight(&0, &2).unwrap(), 2.0);
-    assert_eq!(algorithm.path_weight(&4, &5).unwrap(), 1.0);
-    assert_eq!(algorithm.path_weight(&3, &4).unwrap(), f64::INFINITY);
+    assert_eq!(algorithm.path_weight(&0, &2).unwrap(), Some(2.0));
+    assert_eq!(algorithm.path_weight(&4, &5).unwrap(), Some(1.0));
+    assert_eq!(algorithm.path_weight(&3, &4).unwrap(), None);
 }
 
 #[test]
@@ -50,10 +50,10 @@ fn test_wikipedia_example() {
     }
 
     let algorithm = JohnsonShortestPaths::new(&graph).unwrap();
-    assert_eq!(algorithm.path_weight(&"z", &"w").unwrap(), -1.0);
-    assert_eq!(algorithm.path_weight(&"z", &"y").unwrap(), -4.0);
-    assert_eq!(algorithm.path_weight(&"z", &"z").unwrap(), 0.0);
-    assert_eq!(algorithm.path_weight(&"z", &"x").unwrap(), -7.0);
+    assert_eq!(algorithm.path_weight(&"z", &"w").unwrap(), Some(-1.0));
+    assert_eq!(algorithm.path_weight(&"z", &"y").unwrap(), Some(-4.0));
+    assert_eq!(algorithm.path_weight(&"z", &"z").unwrap(), Some(0.0));
+    assert_eq!(algorithm.path_weight(&"z", &"x").unwrap(), Some(-7.0));
 }
 
 #[test]
@@ -89,8 +89,14 @@ fn test_random_graphs_compare_with_floyd_warshall() {
         let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
         for source in graph.vertices() {
             for target in graph.vertices() {
-                let expected = floyd_warshall.path_weight(source, target).unwrap();
-                let actual = johnson.path_weight(source, target).unwrap();
+                let expected = floyd_warshall
+                    .path_weight(source, target)
+                    .unwrap()
+                    .unwrap_or(f64::INFINITY);
+                let actual = johnson
+                    .path_weight(source, target)
+                    .unwrap()
+                    .unwrap_or(f64::INFINITY);
                 assert!(
                     (expected - actual).abs() < 1e-9
                         || (expected.is_infinite() && actual.is_infinite()),

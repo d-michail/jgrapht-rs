@@ -30,8 +30,8 @@ use std::collections::{HashMap, VecDeque};
 ///
 /// `MinimumCycleMeanAlgorithm`: the cycle with the smallest mean edge weight.
 pub trait MinimumCycleMeanAlgorithm<G: Graph> {
-    /// The smallest cycle mean, `+infinity` if the graph has no cycle.
-    fn get_cycle_mean(&mut self) -> f64;
+    /// The smallest cycle mean; `None` if the graph has no cycle.
+    fn get_cycle_mean(&mut self) -> Option<f64>;
     /// A cycle attaining the smallest mean, `None` if the graph is acyclic.
     fn get_cycle(&mut self) -> Option<GraphWalk<G::Vertex, G::Edge>>;
 }
@@ -279,13 +279,10 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
 impl<'g, G: DirectedGraph + IncomingGraph, S: StrongConnectivityAlgorithm<G = G>> MinimumCycleMeanAlgorithm<G>
     for HowardMinimumMeanCycle<'g, G, S>
 {
-    /// Computes minimum mean among all cycle. Returns `Double#POSITIVE_INFINITY` if no cycle
-    /// has been found.
-    fn get_cycle_mean(&mut self) -> f64 {
-        match self.get_cycle() {
-            None => f64::INFINITY,
-            Some(cycle) => cycle.weight() / cycle.length() as f64,
-        }
+    /// Computes minimum mean among all cycle; `None` if no cycle has been found.
+    fn get_cycle_mean(&mut self) -> Option<f64> {
+        self.get_cycle()
+            .map(|cycle| cycle.weight() / cycle.length() as f64)
     }
 
     /// Computes cycle with minimum mean. Returns $null$ if no cycle has been found.

@@ -96,9 +96,9 @@ fn dijkstra_closest_first_iterator_test_undirected() {
     let mut bounded = DijkstraClosestFirstIterator::with_radius(&graph, &"3", 12.0).unwrap();
     assert_eq!(bounded.by_ref().collect::<Vec<_>>(), ["3", "1", "2", "4"]);
     let paths = bounded.paths();
-    assert_eq!(paths.weight(&"4"), 10.0);
-    assert_eq!(paths.weight(&"2"), 5.0);
-    assert_eq!(paths.weight(&"1"), 3.0);
+    assert_eq!(paths.weight(&"4"), Some(10.0));
+    assert_eq!(paths.weight(&"2"), Some(5.0));
+    assert_eq!(paths.weight(&"1"), Some(3.0));
 }
 
 fn fill_java_gnp<G>(graph: &mut G, random: &mut StdRng, vertex_count: i32, probability: f64)
@@ -146,7 +146,10 @@ fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(
     });
     for source in graph.vertices() {
         for target in graph.vertices() {
-            let expected = dijkstra.path_weight(source, target).unwrap();
+            let expected = dijkstra
+                .path_weight(source, target)
+                .unwrap()
+                .unwrap_or(f64::INFINITY);
             let actual = astar
                 .path(source, target)
                 .unwrap()
@@ -180,7 +183,7 @@ fn check_alt_admissibility<G: Graph<Vertex = i32, Edge = DefaultEdge> + Incidenc
                 .unwrap();
             for target in graph.vertices() {
                 let estimate = heuristic.cost_estimate(source, target);
-                let distance = paths.weight(target);
+                let distance = paths.weight(target).unwrap_or(f64::INFINITY);
                 assert!(
                     estimate <= distance + 1e-9
                         || (estimate.is_infinite() && distance.is_infinite()),

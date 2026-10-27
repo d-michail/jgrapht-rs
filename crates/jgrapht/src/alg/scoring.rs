@@ -668,7 +668,7 @@ fn all_distances<G: OutgoingGraph>(g: &G, incoming: bool) -> Vec<Vec<f64>> {
                 .map(|i| {
                     (0..n)
                         .map(|j| match &fw {
-                            Some(fw) => fw.weight(ix.vs[i], ix.vs[j]),
+                            Some(fw) => fw.weight(ix.vs[i], ix.vs[j]).unwrap_or(f64::INFINITY),
                             None => f64::NAN,
                         })
                         .collect()

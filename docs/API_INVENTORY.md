@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1475 | 349 | 117 | 350 | 14 | 19 | 433 | 193 |
+| `jgrapht` | 1470 | 344 | 124 | 348 | 16 | 19 | 426 | 193 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -53,13 +53,7 @@ Each needs an owner in R3/R5/R6.
 | `jgrapht/src/alg/shortestpath/closest_first.rs` | `DijkstraClosestFirstIterator::new` | `INFINITY` |
 | `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ContractionHierarchyBidirectionalDijkstra::new` | `INFINITY` |
 | `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ContractionHierarchyBidirectionalDijkstra::path` | `INFINITY` |
-| `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ManyToManyPaths::weight` | `INFINITY` |
 | `jgrapht/src/alg/shortestpath/dijkstra.rs` | `DecreaseKeyHeap::with_heap` | `INFINITY` |
-| `jgrapht/src/alg/shortestpath/mod.rs` | `ShortestPathAlgorithm::path_weight` | `INFINITY` |
-| `jgrapht/src/alg/shortestpath/paths.rs` | `AllPairsPaths::weight` | `INFINITY` |
-| `jgrapht/src/alg/shortestpath/paths.rs` | `ListSingleSourcePaths::weight` | `INFINITY` |
-| `jgrapht/src/alg/shortestpath/paths.rs` | `SingleSourcePaths::weight` | `INFINITY` |
-| `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `TransitNodeRoutingShortestPath::path_weight` | `INFINITY` |
 | `jgrapht/src/alg/shortestpath/yen.rs` | `BoundedPrunedYenKShortestPath::get_paths` | `INFINITY` |
 | `jgrapht/src/alg/spanner.rs` | `greedy_spanner` | `INFINITY` |
 | `jgrapht/src/alg/spanning.rs` | `maximum_arborescence` | `-1` |
@@ -393,7 +387,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/cycle/howard.rs` | `HowardMinimumMeanCycle::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/cycle/howard.rs` | `HowardMinimumMeanCycle::with_maximum_iterations` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/cycle/howard.rs` | `MinimumCycleMeanAlgorithm::get_cycle` | Option | `Option<GraphWalk<G::Vertex, G::Edge>>` |
-| `jgrapht/src/alg/cycle/howard.rs` | `MinimumCycleMeanAlgorithm::get_cycle_mean` | state query | `f64` |
+| `jgrapht/src/alg/cycle/howard.rs` | `MinimumCycleMeanAlgorithm::get_cycle_mean` | Option | `Option<f64>` |
 | `jgrapht/src/alg/cycle/howard.rs` | `StrongConnectivityAlgorithm::with_strong_connectivity` | Result | `Result<Self>` |
 | `jgrapht/src/alg/cycle/separator.rs` | `ChordalGraphMinimalVertexSeparatorFinder::get_minimal_separators` | Option | `Option<Vec<&Vec<G::Vertex>>>` |
 | `jgrapht/src/alg/cycle/separator.rs` | `ChordalGraphMinimalVertexSeparatorFinder::get_minimal_separators_with_multiplicities` | Option | `Option<&IndexMap<Vec<G::Vertex>, usize>>` |
@@ -750,20 +744,15 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/matching/sparse_edmonds.rs` | `SparseEdmondsMaximumCardinalityMatching::is_optimal_matching` | infallible | `bool` |
 | `jgrapht/src/alg/matching/sparse_edmonds.rs` | `SparseEdmondsMaximumCardinalityMatching::new` | Result | `Result<Self>` |
 | `jgrapht/src/alg/matching/sparse_edmonds.rs` | `SparseEdmondsMaximumCardinalityMatching::with_initializer` | Result | `Result<Self>` |
-| `jgrapht/src/alg/metrics.rs` | `center` | infallible | `Vec<G::Vertex>` |
-| `jgrapht/src/alg/metrics.rs` | `diameter` | infallible | `f64` |
-| `jgrapht/src/alg/metrics.rs` | `eccentricities` | infallible | `HashMap<G::Vertex, f64>` |
 | `jgrapht/src/alg/metrics.rs` | `girth` | Option | `Option<usize>` |
 | `jgrapht/src/alg/metrics.rs` | `naive_count_triangles` | infallible | `u64` |
 | `jgrapht/src/alg/metrics.rs` | `number_of_triangles` | infallible | `u64` |
-| `jgrapht/src/alg/metrics.rs` | `periphery` | infallible | `Vec<G::Vertex>` |
-| `jgrapht/src/alg/metrics.rs` | `radius` | infallible | `f64` |
-| `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::diameter` | state query | `f64` |
+| `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::diameter` | Option | `Option<f64>` |
 | `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::graph_center` | state query | `Vec<V>` |
 | `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::graph_periphery` | state query | `Vec<V>` |
 | `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::graph_pseudo_periphery` | state query | `Vec<V>` |
 | `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::new` | Result | `crate::Result<Self>` |
-| `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::radius` | state query | `f64` |
+| `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::radius` | Option | `Option<f64>` |
 | `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::vertex_eccentricity_map` | state query | `Vec<(V, f64)>` |
 | `jgrapht/src/alg/metrics.rs` | `GraphMeasurer::with_algorithm` | Result | `crate::Result<Self>` |
 | `jgrapht/src/alg/partition.rs` | `bipartite_partition` | Option | `Option<(Vec<G::Vertex>, Vec<G::Vertex>)>` |
@@ -871,7 +860,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ManyToManyPaths::path` | Option | `Option<&GraphWalk<V, E>>` |
 | `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ManyToManyPaths::sources` | state query | `&HashSet<V>` |
 | `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ManyToManyPaths::targets` | state query | `&HashSet<V>` |
-| `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ManyToManyPaths::weight` | state query | `f64` |
+| `jgrapht/src/alg/shortestpath/contraction_hierarchy.rs` | `ManyToManyPaths::weight` | Option | `Option<f64>` |
 | `jgrapht/src/alg/shortestpath/dag_all_paths.rs` | `DagAllPathsCounter::count_all_paths` | Result | `Result<UBig>` |
 | `jgrapht/src/alg/shortestpath/delta_stepping.rs` | `DeltaStepping::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/delta_stepping.rs` | `DeltaStepping::with_delta` | unchecked constructor | `Self` |
@@ -906,7 +895,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/shortestpath/many_to_many.rs` | `DijkstraManyToManyShortestPaths::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/many_to_many.rs` | `DijkstraManyToManyShortestPaths::single_source` | Result | `Result<SingleSourcePaths<G::Vertex, G::Edge>>` |
 | `jgrapht/src/alg/shortestpath/mod.rs` | `ShortestPathAlgorithm::path` | Result<Option> | `Result<Option<GraphWalk<G::Vertex, G::Edge>>>` |
-| `jgrapht/src/alg/shortestpath/mod.rs` | `ShortestPathAlgorithm::path_weight` | Result | `Result<f64>` |
+| `jgrapht/src/alg/shortestpath/mod.rs` | `ShortestPathAlgorithm::path_weight` | Result<Option> | `Result<Option<f64>>` |
 | `jgrapht/src/alg/shortestpath/mod.rs` | `ShortestPathAlgorithm::single_source` | Result | `Result<SingleSourcePaths<G::Vertex, G::Edge>>` |
 | `jgrapht/src/alg/shortestpath/multi_objective.rs` | `MultiObjectiveSingleSourcePaths::paths` | state query | `&[GraphWalk<V, E>]` |
 | `jgrapht/src/alg/shortestpath/multi_objective.rs` | `MultiObjectiveSingleSourcePaths::source` | state query | `&V` |
@@ -919,17 +908,17 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/shortestpath/multi_objective.rs` | `Vec::with_epsilon` | Result | `Result<Self>` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `AllPairsPaths::from_source` | Option | `Option<&SingleSourcePaths<V, E>>` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `AllPairsPaths::path` | Option | `Option<GraphWalk<V, E>>` |
-| `jgrapht/src/alg/shortestpath/paths.rs` | `AllPairsPaths::weight` | state query | `f64` |
+| `jgrapht/src/alg/shortestpath/paths.rs` | `AllPairsPaths::weight` | Option | `Option<f64>` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `ListSingleSourcePaths::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `ListSingleSourcePaths::path` | Option | `Option<GraphWalk<V, E>>` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `ListSingleSourcePaths::paths` | state query | `&HashMap<V, GraphWalk<V, E>>` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `ListSingleSourcePaths::source` | state query | `&V` |
-| `jgrapht/src/alg/shortestpath/paths.rs` | `ListSingleSourcePaths::weight` | state query | `f64` |
+| `jgrapht/src/alg/shortestpath/paths.rs` | `ListSingleSourcePaths::weight` | Option | `Option<f64>` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `SingleSourcePaths::distance_and_predecessor_map` | state query | `(&HashMap<V, f64>, &HashMap<V, (E, V)>)` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `SingleSourcePaths::is_reachable` | infallible | `bool` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `SingleSourcePaths::path` | Option | `Option<GraphWalk<V, E>>` |
 | `jgrapht/src/alg/shortestpath/paths.rs` | `SingleSourcePaths::source` | state query | `&V` |
-| `jgrapht/src/alg/shortestpath/paths.rs` | `SingleSourcePaths::weight` | state query | `f64` |
+| `jgrapht/src/alg/shortestpath/paths.rs` | `SingleSourcePaths::weight` | Option | `Option<f64>` |
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `AccessVertices::backward` | state query | `&[AccessVertex<V, E>]` |
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `AccessVertices::forward` | state query | `&[AccessVertex<V, E>]` |
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `LocalityFilter::is_local` | infallible | `bool` |
@@ -947,7 +936,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `TransitNodeRoutingShortestPath::from_routing` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `TransitNodeRoutingShortestPath::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `TransitNodeRoutingShortestPath::path` | Result<Option> | `Result<Option<GraphWalk<G::Vertex, G::Edge>>>` |
-| `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `TransitNodeRoutingShortestPath::path_weight` | Result | `Result<f64>` |
+| `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `TransitNodeRoutingShortestPath::path_weight` | Result<Option> | `Result<Option<f64>>` |
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `TransitNodeRoutingShortestPath::perform_precomputation` | Result | `Result<()>` |
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `TransitNodeRoutingShortestPath::with_parallelism` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/transit_node_routing.rs` | `VoronoiDiagram::cell` | Option | `Option<usize>` |

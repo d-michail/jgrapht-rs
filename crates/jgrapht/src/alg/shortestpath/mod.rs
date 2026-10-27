@@ -103,8 +103,8 @@ pub trait ShortestPathAlgorithm<G: Graph> {
         Ok(self.single_source(source)?.path(sink))
     }
 
-    /// Weight of the shortest path, `f64::INFINITY` if unreachable.
-    fn path_weight(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
-        Ok(self.path(source, sink)?.map_or(f64::INFINITY, |p| p.weight))
+    /// Weight of the shortest path; `Ok(None)` if `sink` is unreachable from `source`.
+    fn path_weight(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<Option<f64>> {
+        Ok(self.path(source, sink)?.map(|p| p.weight))
     }
 }

@@ -43,8 +43,8 @@ fn dijkstra_many_to_many_handles_reverse_search() {
     let paths = DijkstraManyToManyShortestPaths::new(&graph)
         .get_many_to_many_paths([0, 1], [3])
         .unwrap();
-    assert_eq!(paths.weight(&0, &3), 5.0);
-    assert_eq!(paths.weight(&1, &3), 6.0);
+    assert_eq!(paths.weight(&0, &3), Some(5.0));
+    assert_eq!(paths.weight(&1, &3), Some(6.0));
     assert_eq!(paths.path(&1, &3).unwrap().vertex_list(), [1, 2, 3]);
 }
 
@@ -99,5 +99,5 @@ fn integer_dijkstra_supports_dense_and_remapped_ids() {
     let paths = IntVertexDijkstraShortestPath::new(&graph)
         .single_source(&100)
         .unwrap();
-    assert_eq!(paths.weight(&4), 12.0);
+    assert_eq!(paths.weight(&4), Some(12.0));
 }
