@@ -174,8 +174,10 @@ pub fn is_tree<G: Graph>(g: &G) -> bool {
 
 /// Kahn's algorithm.
 pub fn is_dag<G: DirectedGraph>(g: &G) -> bool {
-    let mut indeg: HashMap<&G::Vertex, usize> =
-        g.vertices().map(|v| (v, g.in_degree_of(v).unwrap())).collect();
+    let mut indeg: HashMap<&G::Vertex, usize> = g
+        .vertices()
+        .map(|v| (v, g.in_degree_of(v).unwrap()))
+        .collect();
     let mut q: VecDeque<_> = indeg
         .iter()
         .filter(|(_, d)| **d == 0)
@@ -237,7 +239,9 @@ pub fn has_ore_property<G: Graph>(g: &G) -> bool {
     let vs: Vec<_> = g.vertices().collect();
     for (i, v) in vs.iter().enumerate() {
         for w in &vs[i + 1..] {
-            if !g.contains_edge_between(v, w) && g.degree_of(v).unwrap() + g.degree_of(w).unwrap() < n {
+            if !g.contains_edge_between(v, w)
+                && g.degree_of(v).unwrap() + g.degree_of(w).unwrap() < n
+            {
                 return false;
             }
         }

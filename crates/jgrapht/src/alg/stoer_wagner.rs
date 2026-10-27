@@ -247,9 +247,7 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
             match this.working.get_edge(s_new, t_new) {
                 None => {
                     if s_new == t_new {
-                        return Err(GraphError::InvalidArgument(
-                            "loops not allowed".into(),
-                        ));
+                        return Err(GraphError::InvalidArgument("loops not allowed".into()));
                     }
                     let e_new = this.working.add_edge(s_new, t_new);
                     this.working.weight[e_new] = w;

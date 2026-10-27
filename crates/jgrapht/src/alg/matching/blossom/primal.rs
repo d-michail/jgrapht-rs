@@ -1272,7 +1272,9 @@ mod tests {
         );
         assert_eq!(state.blossom_num, 1);
         assert_eq!(state.statistics.shrink_count(), 1);
-        assert!((0..state.node_num)
-            .all(|node| { state.arena.nodes[node].blossom_parent == Some(blossom) }));
+        assert!(
+            (0..state.node_num)
+                .all(|node| { state.arena.nodes[node].blossom_parent == Some(blossom) })
+        );
     }
 }

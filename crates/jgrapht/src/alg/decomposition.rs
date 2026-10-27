@@ -238,7 +238,8 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
                 self.component[u] = Some(c);
                 self.size_subtree[u] = 1;
                 let vertex_u = self.index_list[u].clone();
-                let edges: Vec<G::Edge> = self.graph.edges_of(&vertex_u).unwrap().cloned().collect();
+                let edges: Vec<G::Edge> =
+                    self.graph.edges_of(&vertex_u).unwrap().cloned().collect();
                 for edge in &edges {
                     let child = self.opposite(edge, u);
                     if !explored[child] {
@@ -251,7 +252,8 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
                 let mut path_child: Option<usize> = None;
                 let mut path_edge: Option<G::Edge> = None;
                 let vertex_u = self.index_list[u].clone();
-                let edges: Vec<G::Edge> = self.graph.edges_of(&vertex_u).unwrap().cloned().collect();
+                let edges: Vec<G::Edge> =
+                    self.graph.edges_of(&vertex_u).unwrap().cloned().collect();
                 for edge in &edges {
                     let child = self.opposite(edge, u);
                     if Some(child) != self.parent[u] {
@@ -387,7 +389,7 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
         &self.path
     }
     /// Return the internal positionInPath array. For each vertex $v$,
-    /// $positionInPathArray[normalizeVertex(v)] = k$ iff $v$ appears as the $k-th$ vertex on its
+    /// $positionInPathArray\[normalizeVertex(v)\] = k$ iff $v$ appears as the $k-th$ vertex on its
     /// path (0-indexed) or $-1$ if $v$ doesn't belong to any path.
     pub fn position_in_path_array(&self) -> &[Option<usize>] {
         &self.position_in_path
@@ -409,7 +411,7 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
         &self.depth
     }
     /// Return the internal sizeSubtree array. For each vertex $v$,
-    /// $sizeSubtreeArray[normalizeVertex(v)] = getSizeSubtree(v)$
+    /// $sizeSubtreeArray\[normalizeVertex(v)\] = getSizeSubtree(v)$
     pub fn size_subtree_array(&self) -> &[usize] {
         &self.size_subtree
     }
@@ -473,38 +475,6 @@ pub struct DmDecomposition<V> {
 ///
 /// Dulmage–Mendelsohn decomposition of a bipartite graph (`DulmageMendelsohnDecomposition`).
 pub struct DulmageMendelsohnDecomposition<'g, G: Graph> {
-/// This class computes a Dulmage-Mendelsohn Decomposition of a bipartite graph. A Dulmage–Mendelsohn
-/// decomposition is a partition of the vertices of a bipartite graph into subsets, with the property
-/// that two adjacent vertices belong to the same subset if and only if they are paired with each
-/// other in a perfect matching of the graph. This particular implementation is capable of computing
-/// both a coarse and a fine Dulmage-Mendelsohn Decomposition.
-///
-/// The Dulmage-Mendelsohn Decomposition is based on a maximum-matching of the graph $G$. This
-/// implementation uses the Hopcroft-Karp maximum matching algorithm by default.
-///
-/// A coarse Dulmage-Mendelsohn Decomposition is a partitioning into three subsets. Where $D$ is the
-/// set of vertices in G that are not matched in the maximum matching of $G$, these subsets are:
-///
-/// - The vertices in $D \cap U$ and their neighbors
-/// - The vertices in $D \cap V$ and their neighbors
-/// - The remaining vertices
-///
-/// A fine Dulmage-Mendelsohn Decomposition further partitions the remaining vertices into
-/// strongly-connected sets. This implementation uses Kosaraju's algorithm for the
-/// strong-connectivity analysis.
-///
-/// The Dulmage-Mendelsohn Decomposition was introduced in:
-/// Dulmage, A.L., Mendelsohn, N.S. Coverings of bipartitegraphs, Canadian J. Math., 10, 517-534,
-/// 1958.
-///
-/// The implementation of this class is based on:
-/// Bunus P., Fritzson P., Methods for Structural Analysis and Debugging of Modelica Models, 2nd
-/// International Modelica Conference 2002
-///
-/// The runtime complexity of this class is $O(V + E)$.
-///
-/// # Rust notes
-///
     graph: &'g G,
     partition1: HashSet<G::Vertex>,
     partition2: HashSet<G::Vertex>,
@@ -571,14 +541,16 @@ where
             seen
         };
         let forward = |v: &G::Vertex| {
-            dg.out_edges_of(v).unwrap()
+            dg.out_edges_of(v)
+                .unwrap()
                 .map(|e| dg.edge_target(e).unwrap().clone())
                 .collect()
         };
         let subset1 = reach(&forward, &unmatched1);
         let rev = EdgeReversed(&dg);
         let backward = |v: &G::Vertex| {
-            rev.out_edges_of(v).unwrap()
+            rev.out_edges_of(v)
+                .unwrap()
                 .map(|e| rev.edge_target(e).unwrap().clone())
                 .collect()
         };
@@ -617,7 +589,10 @@ where
     }
 
     /// Edges oriented from partition 1 to partition 2, plus matching edges back.
-    fn as_directed_graph(&self, matching: &Matching<G::Vertex, G::Edge>) -> Result<crate::DiGraph<G::Vertex>> {
+    fn as_directed_graph(
+        &self,
+        matching: &Matching<G::Vertex, G::Edge>,
+    ) -> Result<crate::DiGraph<G::Vertex>> {
         let g = self.graph;
         let matched: HashSet<&G::Edge> = matching.edges().iter().collect();
         let mut dg = crate::DiGraph::<G::Vertex>::with_graph_type(crate::GraphType {
@@ -661,8 +636,12 @@ where
                 if matched.contains(e) {
                     h.add_vertex(e.clone());
                 } else {
-                    let find =
-                        |v: &G::Vertex| g.edges_of(v).unwrap().find(|o| matched.contains(*o)).cloned();
+                    let find = |v: &G::Vertex| {
+                        g.edges_of(v)
+                            .unwrap()
+                            .find(|o| matched.contains(*o))
+                            .cloned()
+                    };
                     let (e1, e2) = (find(v1), find(v2));
                     if let (Some(e1), Some(e2)) = (e1, e2) {
                         h.add_vertex(e1.clone());

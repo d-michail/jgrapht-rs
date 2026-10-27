@@ -159,7 +159,8 @@ impl<V: Clone + Eq + Hash> Forest<V> {
     fn dfs<G: Graph<Vertex = V>>(&mut self, g: &G, root: usize, comp: usize, clock: &mut i64) {
         let children_of = |f: &Self, u: usize| -> Vec<usize> {
             let vu = &f.vertices[u];
-            g.out_edges_of(vu).unwrap()
+            g.out_edges_of(vu)
+                .unwrap()
                 .filter_map(|e| g.opposite_vertex(e, vu))
                 .map(|w| f.index[w])
                 .collect()
@@ -466,7 +467,8 @@ impl<'g, G: Graph> TarjanLcaFinder<'g, G> {
             uf.add_element(root.clone())?;
             ancestors.insert(root.clone(), root.clone());
             let nbrs = |u: &G::Vertex| -> Vec<G::Vertex> {
-                g.out_edges_of(u).unwrap()
+                g.out_edges_of(u)
+                    .unwrap()
                     .filter_map(|e| g.opposite_vertex(e, u).cloned())
                     .collect()
             };

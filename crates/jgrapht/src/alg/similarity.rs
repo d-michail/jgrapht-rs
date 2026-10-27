@@ -79,7 +79,8 @@ impl<V: Clone + PartialEq> TreeOrdering<V> {
             state: u8,
         }
         let successors = |v: &V| -> Vec<V> {
-            tree.out_edges_of(v).unwrap()
+            tree.out_edges_of(v)
+                .unwrap()
                 .filter_map(|e| tree.opposite_vertex(e, v).cloned())
                 .collect()
         };
@@ -152,7 +153,6 @@ impl<V: Clone + PartialEq> TreeOrdering<V> {
 type CostFn<'a, V> = Box<dyn Fn(&V) -> f64 + 'a>;
 type ChangeFn<'a, V> = Box<dyn Fn(&V, &V) -> f64 + 'a>;
 
-/// Zhang–Shasha tree edit distance of two rooted trees, with the edit script
 /// Dynamic programming algorithm for computing edit distance between trees.
 ///
 /// The algorithm is originally described in Zhang, Kaizhong & Shasha, Dennis. (1989). Simple
@@ -189,6 +189,7 @@ type ChangeFn<'a, V> = Box<dyn Fn(&V, &V) -> f64 + 'a>;
 ///
 /// # Rust notes
 ///
+/// Zhang–Shasha tree edit distance of two rooted trees, with the edit script
 /// (`ZhangShashaTreeEditDistance`).
 pub struct ZhangShashaTreeEditDistance<'a, G: Graph> {
     tree1: &'a G,

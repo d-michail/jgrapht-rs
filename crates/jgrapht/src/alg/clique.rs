@@ -165,6 +165,7 @@ use std::time::{Duration, Instant};
 /// Shared state of the Bron–Kerbosch finders (`BaseBronKerboschCliqueFinder`).
 struct BronKerboschBase<'g, G: Graph> {
     graph: &'g G,
+    /// `None`: no time limit
     timeout: Option<Duration>,
     time_limit_reached: bool,
     cliques: Option<Vec<HashSet<G::Vertex>>>,
@@ -194,7 +195,8 @@ impl<'g, G: Graph> BronKerboschBase<'g, G> {
 
     fn neighbors(&self, v: &G::Vertex) -> HashSet<G::Vertex> {
         self.graph
-            .edges_of(v).unwrap()
+            .edges_of(v)
+            .unwrap()
             .filter_map(|e| self.graph.opposite_vertex(e, v).cloned())
             .collect()
     }
@@ -204,7 +206,6 @@ fn expired(deadline: Option<Instant>) -> bool {
     deadline.is_some_and(|d| Instant::now() > d)
 }
 
-/// The classic Bron–Kerbosch algorithm (`BronKerboschCliqueFinder`).
 /// Bron-Kerbosch maximal clique enumeration algorithm.
 ///
 /// Implementation of the Bron-Kerbosch clique enumeration algorithm as described in:
@@ -217,6 +218,7 @@ fn expired(deadline: Option<Instant>) -> bool {
 ///
 /// # Rust notes
 ///
+/// The classic Bron–Kerbosch algorithm (`BronKerboschCliqueFinder`).
 pub struct BronKerboschCliqueFinder<'g, G: Graph> {
     base: BronKerboschBase<'g, G>,
 }
@@ -307,7 +309,6 @@ impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex> for BronKerboschCliq
     }
 }
 
-/// Bron–Kerbosch with pivoting (`PivotBronKerboschCliqueFinder`).
 /// Bron-Kerbosch maximal clique enumeration algorithm with pivot.
 ///
 /// The pivoting follows the rule from the paper
@@ -324,6 +325,7 @@ impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex> for BronKerboschCliq
 ///
 /// # Rust notes
 ///
+/// Bron–Kerbosch with pivoting (`PivotBronKerboschCliqueFinder`).
 pub struct PivotBronKerboschCliqueFinder<'g, G: Graph> {
     base: BronKerboschBase<'g, G>,
 }
@@ -355,7 +357,8 @@ impl<'g, G: Graph> PivotBronKerboschCliqueFinder<'g, G> {
         let mut best: Option<(usize, &G::Vertex)> = None;
         for u in p.iter().chain(x.iter()) {
             let count = g
-                .edges_of(u).unwrap()
+                .edges_of(u)
+                .unwrap()
                 .filter(|e| g.opposite_vertex(e, u).is_some_and(|w| p.contains(w)))
                 .count();
             if best.is_none_or(|(c, _)| count > c) {
@@ -430,8 +433,6 @@ impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
     }
 }
 
-/// Bron–Kerbosch over a degeneracy ordering with pivoting
-/// (`DegeneracyBronKerboschCliqueFinder`).
 /// Bron-Kerbosch maximal clique enumeration algorithm with pivot and degeneracy ordering.
 ///
 /// The algorithm is a variant of the Bron-Kerbosch algorithm which apart from the pivoting uses a
@@ -452,6 +453,8 @@ impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
 ///
 /// # Rust notes
 ///
+/// Bron–Kerbosch over a degeneracy ordering with pivoting
+/// (`DegeneracyBronKerboschCliqueFinder`).
 pub struct DegeneracyBronKerboschCliqueFinder<'g, G: Graph> {
     inner: PivotBronKerboschCliqueFinder<'g, G>,
 }
@@ -507,8 +510,6 @@ impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
     }
 }
 
-/// Maximum clique of a chordal graph (`ChordalGraphMaxCliqueFinder`): the vertex of the highest
-/// colour in the optimal colouring of [`ChordalGraphColoring`], together with its predecessors in
 /// Calculates a [maximum cardinality clique](http://mathworld.wolfram.com/MaximumClique.html) in a [chordal graph](https://en.wikipedia.org/wiki/Chordal_graph). A
 /// chordal graph is a simple graph in which all
 /// [cycles](http://mathworld.wolfram.com/GraphCycle.html) of four or more vertices have
@@ -525,6 +526,8 @@ impl<G: Graph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
 ///
 /// # Rust notes
 ///
+/// Maximum clique of a chordal graph (`ChordalGraphMaxCliqueFinder`): the vertex of the highest
+/// colour in the optimal colouring of [`ChordalGraphColoring`], together with its predecessors in
 /// the perfect elimination order.
 pub struct ChordalGraphMaxCliqueFinder<'g, G: UndirectedGraph> {
     graph: &'g G,
@@ -564,9 +567,13 @@ impl<'g, G: UndirectedGraph> ChordalGraphMaxCliqueFinder<'g, G> {
 
             // finds the vertex with the maximum cardinality predecessor list
             let vertex_in_order = super::color::vertex_in_order(&perfect_elimination_order);
-            let max_vertex = perfect_elimination_order
-                .iter()
-                .reduce(|best, v| if coloring.colors[v] > coloring.colors[best] { v } else { best });
+            let max_vertex = perfect_elimination_order.iter().reduce(|best, v| {
+                if coloring.colors[v] > coloring.colors[best] {
+                    v
+                } else {
+                    best
+                }
+            });
             self.maximum_clique = Some(match max_vertex {
                 None => HashSet::new(),
                 Some(v) => {
@@ -782,7 +789,6 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
     }
 
     /// The edges added by the triangulation, as endpoint pairs.
-    /// Check if the graph is chordal.
     pub fn fill_edges(&mut self) -> &[(G::Vertex, G::Vertex)] {
         self.compute_minimal_triangulation();
         &self.fill_edges

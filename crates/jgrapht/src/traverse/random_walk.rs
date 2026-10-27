@@ -67,7 +67,8 @@ impl<'g, G: Graph + 'g, R: RandomSource> RandomWalkVertexIterator<'g, G, R> {
         }
         let edge = if self.weighted {
             let total = *self.out_weight.entry(cur).or_insert_with(|| {
-                g.out_edges_of(cur).unwrap()
+                g.out_edges_of(cur)
+                    .unwrap()
                     .map(|e| g.edge_weight(e).unwrap_or(1.0))
                     .sum()
             });

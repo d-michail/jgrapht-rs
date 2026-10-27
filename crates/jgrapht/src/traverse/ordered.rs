@@ -471,7 +471,8 @@ impl<'g, G: Graph + 'g> DegeneracyOrderingIterator<'g, G> {
         let (mut min_degree, mut max_degree) = (usize::MAX, 0);
         for v in g.vertices() {
             let d = g
-                .edges_of(v).unwrap()
+                .edges_of(v)
+                .unwrap()
                 .filter(|e| g.opposite_vertex(e, v) != Some(v))
                 .count();
             degrees.insert(v, d);

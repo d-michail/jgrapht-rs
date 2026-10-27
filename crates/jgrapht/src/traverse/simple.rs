@@ -198,7 +198,10 @@ pub struct TopologicalOrder<'g, G: DirectedGraph> {
 
 impl<'g, G: DirectedGraph> TopologicalOrder<'g, G> {
     pub fn new(g: &'g G) -> Self {
-        let indeg: HashMap<_, _> = g.vertices().map(|v| (v, g.in_degree_of(v).unwrap())).collect();
+        let indeg: HashMap<_, _> = g
+            .vertices()
+            .map(|v| (v, g.in_degree_of(v).unwrap()))
+            .collect();
         let queue = g.vertices().filter(|v| indeg[v] == 0).collect();
         TopologicalOrder {
             g,

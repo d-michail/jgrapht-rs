@@ -14,8 +14,8 @@
 
 //! Vertex colouring heuristics.
 
-use super::util::Indexed;
 use super::cycle::{ChordalityInspector, IterationOrder};
+use super::util::Indexed;
 use crate::graph::{Graph, GraphExt, UndirectedGraph};
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -646,7 +646,8 @@ impl<V: Clone + Eq + Hash> BrownBacktrackColoring<V> {
             .iter()
             .map(|v| {
                 graph
-                    .edges_of(v).unwrap()
+                    .edges_of(v)
+                    .unwrap()
                     .map(|e| index[graph.opposite_vertex(e, v).unwrap()])
                     .collect()
             })
@@ -708,7 +709,6 @@ impl<V: Clone + Eq + Hash> VertexColoringAlgorithm<V> for BrownBacktrackColoring
     }
 }
 
-/// Optimal colouring of a chordal graph (`ChordalGraphColoring`): the vertices are coloured in the
 /// Calculates a [minimum vertex coloring](http://mathworld.wolfram.com/MinimumVertexColoring.html) for a [chordal graph](https://en.wikipedia.org/wiki/Chordal_graph). A
 /// chordal graph is a simple graph in which all
 /// [cycles](http://mathworld.wolfram.com/GraphCycle.html) of four or more vertices have
@@ -725,6 +725,7 @@ impl<V: Clone + Eq + Hash> VertexColoringAlgorithm<V> for BrownBacktrackColoring
 ///
 /// # Rust notes
 ///
+/// Optimal colouring of a chordal graph (`ChordalGraphColoring`): the vertices are coloured in the
 /// order of a perfect elimination order found by a [`ChordalityInspector`], each with the lowest
 /// colour not used by its predecessors. The colour count is the number of distinct colours.
 pub struct ChordalGraphColoring<'g, G: UndirectedGraph> {
@@ -761,10 +762,8 @@ impl<'g, G: UndirectedGraph> ChordalGraphColoring<'g, G> {
             let vertex_in_order = vertex_in_order(&perfect_elimination_order);
             for vertex in &perfect_elimination_order {
                 let predecessors = predecessors(self.graph, &vertex_in_order, vertex);
-                let predecessor_colors: HashSet<usize> = predecessors
-                    .iter()
-                    .map(|v| vertex_coloring[v])
-                    .collect();
+                let predecessor_colors: HashSet<usize> =
+                    predecessors.iter().map(|v| vertex_coloring[v]).collect();
                 // find the minimum unused color in the set of predecessors
                 let mut min_unused_color = 0;
                 while predecessor_colors.contains(&min_unused_color) {
@@ -1042,7 +1041,8 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlgorithm<'
             .iter()
             .map(|v| {
                 let mut seen = HashSet::new();
-                g.out_edges_of(v).unwrap()
+                g.out_edges_of(v)
+                    .unwrap()
                     .filter_map(|e| g.opposite_vertex(e, v))
                     .map(|w| index[w])
                     .filter(|w| seen.insert(*w))

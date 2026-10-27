@@ -437,7 +437,8 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
                         -f64::MAX
                     } else {
                         let sum: f64 = graph
-                            .out_edges_of(v).unwrap()
+                            .out_edges_of(v)
+                            .unwrap()
                             .map(|e| coord(graph.opposite_vertex(e, v).unwrap()))
                             .sum();
                         sum / degree as f64
@@ -445,7 +446,8 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
                 }
                 _ => {
                     let mut other: Vec<f64> = graph
-                        .edges_of(v).unwrap()
+                        .edges_of(v)
+                        .unwrap()
                         .map(|e| coord(graph.opposite_vertex(e, v).unwrap()))
                         .collect();
                     other.sort_by(|a, b| a.total_cmp(b));

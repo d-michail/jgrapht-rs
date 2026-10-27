@@ -254,8 +254,17 @@ fn test_get_vertex_supplier() {
 fn test_in_degree_of() {
     let f = setup();
     assert_eq!(f.g1.in_degree_of(&V1).unwrap(), 0);
-    assert_eq!([f.g2.in_degree_of(&V1).unwrap(), f.g2.in_degree_of(&V2).unwrap()], [1, 1]);
-    assert_eq!([V1, V2, V3].map(|v| f.g3.in_degree_of(&v).unwrap()), [2, 2, 2]);
+    assert_eq!(
+        [
+            f.g2.in_degree_of(&V1).unwrap(),
+            f.g2.in_degree_of(&V2).unwrap()
+        ],
+        [1, 1]
+    );
+    assert_eq!(
+        [V1, V2, V3].map(|v| f.g3.in_degree_of(&v).unwrap()),
+        [2, 2, 2]
+    );
     assert_eq!(
         [V1, V2, V3, V4].map(|v| f.g4.in_degree_of(&v).unwrap()),
         [1, 1, 1, 1]
@@ -276,8 +285,17 @@ fn test_incoming_outgoing_edges_of() {
 #[test]
 fn test_out_degree_of() {
     let f = setup();
-    assert_eq!([f.g2.out_degree_of(&V1).unwrap(), f.g2.out_degree_of(&V2).unwrap()], [1, 1]);
-    assert_eq!([V1, V2, V3].map(|v| f.g3.out_degree_of(&v).unwrap()), [2, 2, 2]);
+    assert_eq!(
+        [
+            f.g2.out_degree_of(&V1).unwrap(),
+            f.g2.out_degree_of(&V2).unwrap()
+        ],
+        [1, 1]
+    );
+    assert_eq!(
+        [V1, V2, V3].map(|v| f.g3.out_degree_of(&v).unwrap()),
+        [2, 2, 2]
+    );
     assert_eq!(
         [V1, V2, V3, V4].map(|v| f.g4.out_degree_of(&v).unwrap()),
         [1, 1, 1, 1]
@@ -288,8 +306,14 @@ fn test_out_degree_of() {
 fn test_outgoing_edges_of() {
     let f = setup();
     assert_eq!(f.g1.out_edges_of(&V1).unwrap().count(), 0);
-    assert_eq!(set(f.g2.out_edges_of(&V1).unwrap().copied()), set([f.e12_1]));
-    assert_eq!(set(f.g2.out_edges_of(&V2).unwrap().copied()), set([f.e21_1]));
+    assert_eq!(
+        set(f.g2.out_edges_of(&V1).unwrap().copied()),
+        set([f.e12_1])
+    );
+    assert_eq!(
+        set(f.g2.out_edges_of(&V2).unwrap().copied()),
+        set([f.e21_1])
+    );
     assert_eq!(
         set(f.g3.out_edges_of(&V1).unwrap().copied()),
         set([f.e12_2, f.e13_1])
@@ -302,10 +326,22 @@ fn test_outgoing_edges_of() {
         set(f.g3.out_edges_of(&V3).unwrap().copied()),
         set([f.e31_1, f.e32_1])
     );
-    assert_eq!(set(f.g4.out_edges_of(&V1).unwrap().copied()), set([f.e12_3]));
-    assert_eq!(set(f.g4.out_edges_of(&V2).unwrap().copied()), set([f.e23_2]));
-    assert_eq!(set(f.g4.out_edges_of(&V3).unwrap().copied()), set([f.e34_1]));
-    assert_eq!(set(f.g4.out_edges_of(&V4).unwrap().copied()), set([f.e41_1]));
+    assert_eq!(
+        set(f.g4.out_edges_of(&V1).unwrap().copied()),
+        set([f.e12_3])
+    );
+    assert_eq!(
+        set(f.g4.out_edges_of(&V2).unwrap().copied()),
+        set([f.e23_2])
+    );
+    assert_eq!(
+        set(f.g4.out_edges_of(&V3).unwrap().copied()),
+        set([f.e34_1])
+    );
+    assert_eq!(
+        set(f.g4.out_edges_of(&V4).unwrap().copied()),
+        set([f.e41_1])
+    );
 }
 
 #[test]
@@ -394,10 +430,16 @@ fn test_reversed_view() {
             ],
             [1, 0, 0, 1]
         );
-        assert_eq!(set(r.in_edges_of(&V1).unwrap().copied()), set(g.edges().copied()));
+        assert_eq!(
+            set(r.in_edges_of(&V1).unwrap().copied()),
+            set(g.edges().copied())
+        );
         assert_eq!(r.out_edges_of(&V1).unwrap().count(), 0);
         assert_eq!(r.in_edges_of(&V2).unwrap().count(), 0);
-        assert_eq!(set(r.out_edges_of(&V2).unwrap().copied()), set(g.edges().copied()));
+        assert_eq!(
+            set(r.out_edges_of(&V2).unwrap().copied()),
+            set(g.edges().copied())
+        );
         assert_eq!(r.edge_source(&e), Some(&V2));
         assert_eq!(r.edge_target(&e), Some(&V1));
     }
@@ -405,7 +447,13 @@ fn test_reversed_view() {
     let r = EdgeReversed(&g);
     assert_eq!(r.edge_count(), 0);
     for v in [V1, V2] {
-        assert_eq!((r.in_degree_of(&v).unwrap(), r.out_degree_of(&v).unwrap()), (0, 0));
-        assert_eq!(r.in_edges_of(&v).unwrap().count() + r.out_edges_of(&v).unwrap().count(), 0);
+        assert_eq!(
+            (r.in_degree_of(&v).unwrap(), r.out_degree_of(&v).unwrap()),
+            (0, 0)
+        );
+        assert_eq!(
+            r.in_edges_of(&v).unwrap().count() + r.out_edges_of(&v).unwrap().count(),
+            0
+        );
     }
 }

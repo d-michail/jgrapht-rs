@@ -727,7 +727,8 @@ impl<G: Graph, R: RandomSource> ClusteringAlgorithm<G::Vertex>
         let nbrs: Vec<Vec<usize>> = vs
             .iter()
             .map(|v| {
-                g.edges_of(v).unwrap()
+                g.edges_of(v)
+                    .unwrap()
                     .map(|e| index[g.opposite_vertex(e, v).unwrap()])
                     .collect()
             })

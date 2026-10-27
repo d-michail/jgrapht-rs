@@ -27,6 +27,6 @@ mod types;
 pub use matching::KolmogorovWeightedMatching;
 pub use options::{BlossomVOptions, DualUpdateStrategy, InitializationType, ObjectiveSense};
 pub use perfect::{
-    BlossomVDualSolution, KolmogorovWeightedPerfectMatching, BLOSSOM_V_EPSILON, BLOSSOM_V_INFINITY,
+    BLOSSOM_V_EPSILON, BLOSSOM_V_INFINITY, BlossomVDualSolution, KolmogorovWeightedPerfectMatching,
 };
 pub use state::BlossomVStatistics;

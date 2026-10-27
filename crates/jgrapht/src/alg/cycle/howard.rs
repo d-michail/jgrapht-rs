@@ -305,7 +305,8 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> MinimumCycleMe
             let mut skip = component.vertex_count() == 0;
             skip |= component.vertex_count() == 1
                 && component
-                    .in_edges_of(component.vertices().next().expect("one vertex")).unwrap()
+                    .in_edges_of(component.vertices().next().expect("one vertex"))
+                    .unwrap()
                     .next()
                     .is_none();
             if skip {

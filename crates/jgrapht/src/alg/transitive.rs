@@ -91,7 +91,8 @@ impl TransitiveClosure {
     where
         G: DirectedGraph + GraphMut,
     {
-        let mut ordered_vertices: VecDeque<G::Vertex> = VecDeque::with_capacity(graph.vertex_count());
+        let mut ordered_vertices: VecDeque<G::Vertex> =
+            VecDeque::with_capacity(graph.vertex_count());
         for v in TopologicalOrderIterator::new(&*graph)? {
             ordered_vertices.push_front(v.clone());
         }
@@ -179,7 +180,6 @@ impl BitSet {
     }
 }
 
-/// Harry Hsu's transitive reduction algorithm (JACM 22(1), 1975).
 /// An implementation of Harry Hsu's
 /// [transitive reduction algorithm](https://en.wikipedia.org/wiki/Transitive_reduction).
 ///
@@ -190,6 +190,7 @@ impl BitSet {
 ///
 /// # Rust notes
 ///
+/// Harry Hsu's transitive reduction algorithm (JACM 22(1), 1975).
 #[derive(Debug, Clone, Copy)]
 pub struct TransitiveReduction;
 

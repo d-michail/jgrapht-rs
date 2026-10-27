@@ -739,7 +739,8 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
             .iter()
             .map(|v| {
                 graph
-                    .edges_of(v).unwrap()
+                    .edges_of(v)
+                    .unwrap()
                     .map(|e| {
                         let nv = graph.opposite_vertex(e, v).unwrap();
                         (e.clone(), idx[nv])
@@ -911,10 +912,6 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
         &self.blocks
     }
 
-    /// Returns the graph's bridges. An edge is a
-    /// [bridge](http://mathworld.wolfram.com/GraphBridge.html) if removal of that edge
-    /// would increase the number of (weakly) connected components in the graph. Note that this
-    /// definition remains applicable in case of multigraphs or pseudographs.
     /// The blocks containing `v`; a cutpoint lies in several.
     pub fn blocks_of(&self, v: &G::Vertex) -> Result<Vec<&HashSet<G::Vertex>>> {
         let ix = self
@@ -960,7 +957,6 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
     }
 }
 
-/// The block-cutpoint graph (`BlockCutpointGraph`): a forest with one node per block and one node
 /// A Block-Cutpoint graph (also known as a block-cut tree). If $G$ is a graph, the block-cutpoint
 /// graph of $G$, denoted $BC(G)$ is the simple bipartite graph with bipartition $(A, B)$ where $A$
 /// is the set of [cut-vertices](http://mathworld.wolfram.com/ArticulationVertex.html)
@@ -978,6 +974,7 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
 ///
 /// # Rust notes
 ///
+/// The block-cutpoint graph (`BlockCutpointGraph`): a forest with one node per block and one node
 /// per cutpoint, where a cutpoint is adjacent to every block containing it.
 ///
 /// Nodes are numbered: `0..blocks.len()` are the blocks, the rest the cutpoints.
@@ -1059,7 +1056,6 @@ impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
 // KConnectivityFlowAlgorithm
 // ---------------------------------------------------------------------------------------------
 
-/// Edge and vertex connectivity through maximum flows (`KConnectivityFlowAlgorithm`).
 /// This class implements the computation, for a graph, of both
 /// [edge connectivity and](https://en.wikipedia.org/wiki/K-edge-connected_graph)
 /// [vertex connectivity](https://en.wikipedia.org/wiki/K-vertex-connected_graph).
@@ -1092,6 +1088,7 @@ impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
 ///
 /// # Rust notes
 ///
+/// Edge and vertex connectivity through maximum flows (`KConnectivityFlowAlgorithm`).
 ///
 /// The maximum-flow routine is a parameter taking the (unit-capacity) graph and two vertices and
 /// returning the flow value; the default is Edmonds–Karp.
@@ -1288,7 +1285,8 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
 
 /// Successors in a directed graph, neighbours in an undirected one (`Graphs.successorListOf`).
 fn successor_list<G: Graph>(g: &G, v: &G::Vertex) -> Vec<G::Vertex> {
-    g.out_edges_of(v).unwrap()
+    g.out_edges_of(v)
+        .unwrap()
         .filter_map(|e| g.opposite_vertex(e, v).cloned())
         .collect()
 }

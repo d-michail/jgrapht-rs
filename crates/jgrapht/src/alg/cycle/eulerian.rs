@@ -17,7 +17,6 @@ use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use std::collections::{HashMap, HashSet};
 
-
 /// Computes an Eulerian cycle of an Eulerian graph. An
 /// [Eulerian graph](http://mathworld.wolfram.com/EulerianGraph.html) is a graph
 /// containing an [Eulerian cycle](http://mathworld.wolfram.com/EulerianCycle.html).
@@ -300,8 +299,6 @@ impl HierholzerEulerianCycle {
     }
 }
 
-    /// Compute an Eulerian cycle of a graph.
-    /// Compute an Eulerian cycle of a graph.
 impl<G: Graph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
     /// Compute an Eulerian cycle of a graph.
     fn get_eulerian_cycle(&mut self, g: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {

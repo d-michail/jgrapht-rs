@@ -18,9 +18,9 @@ use super::options::{BlossomVOptions, DualUpdateStrategy, ObjectiveSense};
 use super::primal::BlossomVPrimalUpdater;
 use super::state::{BlossomVState, BlossomVStatistics};
 use super::types::{NodeId, TreeId};
-use crate::alg::matching::{Matching, MatchingAlgorithm, DEFAULT_EPSILON};
+use crate::alg::matching::{DEFAULT_EPSILON, Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
-use crate::graph::{props, Graph};
+use crate::graph::{Graph, props};
 use crate::util::HashableSet;
 use indexmap::{IndexMap, IndexSet};
 use std::collections::{HashMap, HashSet};
@@ -758,10 +758,7 @@ mod tests {
 
     #[test]
     fn invalid_dual_solution_is_rejected() {
-        let graph = weighted_graph(
-            4,
-            &[(0, 1, 7.0), (1, 2, 4.0), (2, 3, 3.0), (3, 0, 4.0)],
-        );
+        let graph = weighted_graph(4, &[(0, 1, 7.0), (1, 2, 4.0), (2, 3, 3.0), (3, 0, 4.0)]);
         let mut algorithm = KolmogorovWeightedPerfectMatching::new(&graph).unwrap();
         algorithm.get_matching().unwrap();
         algorithm.state.as_mut().unwrap().arena.nodes[0].dual += 1.0;
@@ -855,10 +852,11 @@ mod tests {
                         "error={error}, seed={seed}, options={options}, objective={objective:?}"
                     );
                     let dual = algorithm.get_dual_solution().unwrap();
-                    assert!(dual
-                        .dual_variables()
-                        .keys()
-                        .all(|vertices| vertices.len() % 2 == 1));
+                    assert!(
+                        dual.dual_variables()
+                            .keys()
+                            .all(|vertices| vertices.len() % 2 == 1)
+                    );
                     let matching = algorithm.get_matching().unwrap();
                     assert_dual_solution(&graph, &matching, &dual, objective);
                 }

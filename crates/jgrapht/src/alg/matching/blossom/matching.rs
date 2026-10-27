@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use super::{BLOSSOM_V_EPSILON, KolmogorovWeightedPerfectMatching};
 use super::{BlossomVOptions, ObjectiveSense};
-use super::{KolmogorovWeightedPerfectMatching, BLOSSOM_V_EPSILON};
+use crate::GraphType;
 use crate::alg::matching::{Matching, MatchingAlgorithm};
 use crate::error::Result;
-use crate::graph::{props, BaseGraph, Graph, GraphMut, UGraph, Undirected};
-use crate::GraphType;
+use crate::graph::{BaseGraph, Graph, GraphMut, UGraph, Undirected, props};
 use indexmap::IndexSet;
 
 /// This class computes weighted matchings in general graphs. Depending on the constructor parameter

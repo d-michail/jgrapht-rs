@@ -130,7 +130,8 @@ impl<'a, G: Graph> Algorithm<'a, G> {
             .iter()
             .map(|v| {
                 graph
-                    .edges_of(v).unwrap()
+                    .edges_of(v)
+                    .unwrap()
                     .map(|e| vertex_index_map[graph.opposite_vertex(e, v).expect("incident edge")])
                     .collect()
             })
@@ -355,7 +356,6 @@ impl<'a, G: Graph> Algorithm<'a, G> {
     }
 }
 
-/// `SparseEdmondsMaximumCardinalityMatching`: Edmonds' blossom algorithm for a maximum
 /// Edmonds' blossom algorithm for maximum cardinality matching in general undirected graphs.
 ///
 /// A matching in a graph $G(V,E)$ is a subset of edges $M$ such that no two edges in $M$ have a
@@ -398,6 +398,7 @@ impl<'a, G: Graph> Algorithm<'a, G> {
 ///
 /// # Rust notes
 ///
+/// `SparseEdmondsMaximumCardinalityMatching`: Edmonds' blossom algorithm for a maximum
 /// cardinality matching in a general graph, in `O(V E log V)` (Gabow, with an odd set cover that
 /// certifies optimality), best for sparse graphs.
 pub struct SparseEdmondsMaximumCardinalityMatching<'g, G: Graph> {

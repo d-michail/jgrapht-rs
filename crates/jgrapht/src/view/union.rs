@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::{GraphType, Result};
 use crate::graph::{DirectedGraph, Graph, UndirectedGraph};
+use crate::{GraphType, Result};
 
 /// How to merge the weights of an edge present in both graphs of a union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

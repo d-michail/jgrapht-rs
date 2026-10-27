@@ -756,8 +756,8 @@ impl<'g, G: Graph> BlossomVInitializer<'g, G> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
     use crate::alg::matching::MatchingAlgorithm;
+    use crate::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
     use crate::graph::{GraphMut, GraphMutExt, UGraph};
     use std::collections::HashSet;
 
@@ -797,9 +797,11 @@ mod tests {
         assert_eq!(state.node_num, 9);
         assert_eq!(state.tree_num, 9);
         assert_eq!(state.edge_num, 6);
-        assert!(state.arena.nodes[..state.node_num]
-            .iter()
-            .all(|node| node.is_outer && node.is_tree_root && node.dual == 0.0));
+        assert!(
+            state.arena.nodes[..state.node_num]
+                .iter()
+                .all(|node| node.is_outer && node.is_tree_root && node.dual == 0.0)
+        );
         assert_eq!(
             state
                 .arena
@@ -840,9 +842,11 @@ mod tests {
         assert_eq!(state.node_num, 4);
         assert_eq!(state.edge_num, 2);
         assert_eq!(state.tree_num, 0);
-        assert!(state.arena.nodes[..state.node_num]
-            .iter()
-            .all(|node| node.is_outer && !node.is_tree_root && node.matched.is_some()));
+        assert!(
+            state.arena.nodes[..state.node_num]
+                .iter()
+                .all(|node| node.is_outer && !node.is_tree_root && node.matched.is_some())
+        );
         for edge in 0..state.edge_num {
             let [Some(a), Some(b)] = state.arena.edges[edge].head else {
                 unreachable!()
@@ -854,9 +858,11 @@ mod tests {
             );
             assert_eq!(state.arena.edges[edge].slack, 0.0);
         }
-        assert!(state.arena.nodes[state.root_sentinel]
-            .tree_sibling_next
-            .is_none());
+        assert!(
+            state.arena.nodes[state.root_sentinel]
+                .tree_sibling_next
+                .is_none()
+        );
     }
 
     #[test]
