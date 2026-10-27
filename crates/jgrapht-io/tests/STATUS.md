@@ -19,5 +19,6 @@ the complete Java test matrix has not yet been brought across.
 | GEXF | partial | `quick-xml` node/edge/weight import and deterministic basic export; declared attributes and visualization parity remain |
 | TSPLIB | partial | coordinate instances, nine distance types, complete weighted graphs, metadata and embedded tours |
 
-Current Rust integration tests: 25. The remaining work is to port the upstream tests format by
+Current Rust integration tests: 28, including injected reader/writer failures and importer reuse.
+The remaining work is to port the upstream tests format by
 format and close every behavior gap they expose.
