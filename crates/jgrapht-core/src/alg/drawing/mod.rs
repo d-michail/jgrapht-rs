@@ -1,6 +1,12 @@
 //! Simple graph layouts. Positions are `(x, y)` pairs.
+//!
+//! [`model`] holds the layout model types; the layouts that write into a model are in [`layouts`].
 
-use super::util::Indexed;
+pub mod fr;
+pub mod layouts;
+pub mod model;
+
+use crate::alg::util::Indexed;
 use crate::graph::Graph;
 use rand::Rng;
 use std::collections::HashMap;
