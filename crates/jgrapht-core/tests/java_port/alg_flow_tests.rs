@@ -1120,3 +1120,139 @@ mod padberg_rao_odd_minimum_cutset_test {
         }
     }
 }
+
+// CapacityScalingMinimumCostFlowTest
+
+mod capacity_scaling_minimum_cost_flow_test {
+    use crate::mincost_data::CASES;
+    use jgrapht::alg::flow::mincost::*;
+    use jgrapht::graph::GraphExt;
+    use jgrapht::*;
+    use std::collections::HashMap;
+
+    const EPS: f64 = 1e-9;
+
+    fn run(case: &[&[i64]], scaling_factor: i32, cost: f64) {
+        let mut graph = DiGraph::<i32>::with_loops().weighted();
+        let mut supply: HashMap<i32, i32> = HashMap::new();
+        let mut lower: HashMap<DefaultEdge, i32> = HashMap::new();
+        let mut upper: HashMap<DefaultEdge, i32> = HashMap::new();
+        for data in case {
+            if data.len() == 2 {
+                graph.add_vertex(data[0] as i32);
+                supply.insert(data[0] as i32, data[1] as i32);
+            } else {
+                let (u, v) = (data[0] as i32, data[1] as i32);
+                graph.add_vertex(u);
+                graph.add_vertex(v);
+                let edge = graph
+                    .add_weighted_edge(&u, &v, data[4] as f64)
+                    .unwrap()
+                    .unwrap();
+                lower.insert(edge, data[2] as i32);
+                upper.insert(edge, data[3] as i32);
+            }
+        }
+        let problem = MinimumCostFlowProblemImpl::with_lower_bounds(
+            &graph,
+            |v| supply.get(v).copied().unwrap_or(0),
+            |e| upper[e],
+            |e| lower.get(e).copied().unwrap_or(0),
+        );
+        let mut algorithm = CapacityScalingMinimumCostFlow::with_scaling_factor(scaling_factor);
+        let flow = algorithm.get_minimum_cost_flow(&problem).unwrap();
+        assert!(
+            (cost - flow.cost).abs() <= EPS,
+            "cost {} vs {cost}",
+            flow.cost
+        );
+        assert!(algorithm.test_optimality(EPS).unwrap());
+        assert!(check_flow_and_dual_solution(
+            &algorithm.dual_solution().unwrap(),
+            &flow,
+            &problem
+        ));
+    }
+
+    fn check_flow_and_dual_solution(
+        dual: &HashMap<i32, f64>,
+        flow: &MinimumCostFlow<DefaultEdge>,
+        problem: &MinimumCostFlowProblemImpl<'_, DiGraph<i32>>,
+    ) -> bool {
+        let graph = problem.graph();
+        for vertex in graph.vertices() {
+            let supply = problem.node_supply(vertex);
+            let flow_in: i32 = graph
+                .in_edges_of(vertex)
+                .map(|e| flow.flow(e).unwrap() as i32)
+                .sum();
+            let flow_out: i32 = graph
+                .out_edges_of(vertex)
+                .map(|e| flow.flow(e).unwrap() as i32)
+                .sum();
+            if supply != flow_out - flow_in {
+                return false;
+            }
+        }
+        for edge in graph.edges() {
+            let f = flow.flow(edge).unwrap();
+            if (problem.arc_capacity_lower_bound(edge) as f64) > f
+                || (problem.arc_capacity_upper_bound(edge) as f64) < f
+            {
+                return false;
+            }
+        }
+        for (edge, value) in &flow.flow_map {
+            if *value < problem.arc_capacity_upper_bound(edge) as f64 {
+                let (s, t) = graph.edge_endpoints(edge).unwrap();
+                if graph.edge_weight(edge).unwrap() + dual[t] - dual[s] < -EPS {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    #[test]
+    fn get_minimum_cost_flow() {
+        for (number, fixed, case, cost) in CASES {
+            if *fixed != 0 {
+                run(case, *fixed, *cost);
+            } else {
+                for scaling_factor in 1..=5 {
+                    run(case, scaling_factor, *cost);
+                }
+            }
+            let _ = number;
+        }
+    }
+
+    #[test]
+    fn rejects_bad_problems() {
+        // undirected network
+        let g = UGraph::<i32>::simple().weighted();
+        let problem = MinimumCostFlowProblemImpl::new(&g, |_| 0, |_| 1);
+        assert!(
+            CapacityScalingMinimumCostFlow::new()
+                .get_minimum_cost_flow(&problem)
+                .is_err()
+        );
+        // supplies that do not sum to zero
+        let mut g = DiGraph::<i32>::with_loops().weighted();
+        g.add_vertex(0);
+        g.add_vertex(1);
+        let problem = MinimumCostFlowProblemImpl::new(&g, |v| if *v == 0 { 1 } else { 0 }, |_| 1);
+        assert!(
+            CapacityScalingMinimumCostFlow::new()
+                .get_minimum_cost_flow(&problem)
+                .is_err()
+        );
+        // no feasible solution: supply 1 at an isolated vertex
+        let problem = MinimumCostFlowProblemImpl::new(&g, |v| if *v == 0 { 1 } else { -1 }, |_| 1);
+        assert!(
+            CapacityScalingMinimumCostFlow::new()
+                .get_minimum_cost_flow(&problem)
+                .is_err()
+        );
+    }
+}

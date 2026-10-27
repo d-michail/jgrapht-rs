@@ -37,6 +37,7 @@ mod graph_views;
 mod graph_walk_test;
 mod graphs_test;
 mod listenable_graph_test;
+mod mincost_data;
 mod netgen_tests;
 mod planar_data;
 mod simple_directed_graph_test;

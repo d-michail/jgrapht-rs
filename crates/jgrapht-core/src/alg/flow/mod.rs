@@ -10,6 +10,7 @@ mod dinic;
 mod edmonds_karp;
 mod gusfield;
 mod legacy;
+pub mod mincost;
 mod padberg_rao;
 mod push_relabel;
 
