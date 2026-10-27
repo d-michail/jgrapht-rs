@@ -1,18 +1,27 @@
 # jgrapht-rs roadmap
 
-Status on 2026-10-27. Source of truth for what is ported: `crates/jgrapht/tests/STATUS.md`.
+Status on 2026-10-27 (reviewed against a clean build: `cargo test --workspace` green). Source of truth for what is ported: `crates/jgrapht/tests/STATUS.md`.
 
 ## Where we are
 
 | Area | Java | Rust |
 |---|---|---|
 | core `graph/`, views, events, `traverse/`, `util/`, `generate/` (incl. netgen) | ported, tests ported (about 400 tests passing, `tests/{alg,graph,generate,traverse,util}`) | done |
-| core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1f (isomorphism, flow, tour, cycle done; 1458 ported tests pass in `tests/{alg,graph,generate,traverse,util}`); 1g (matching) and 1i (shortest paths) still functional. See `FIDELITY_ROADMAP.md` for deviations from Java |
+| core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1h done (matching incl. Blossom V, planar, flow, tour, cycle, isomorphism); 1i (shortest paths) is partial: 265 tests pass, 4 Java test classes (25 tests) and the strict CH/TNR fidelity work remain. The workspace runs 2352 tests, 0 failures, 4 ignored. See `FIDELITY_ROADMAP.md` for deviations from Java and `ISSUES.md` for open problems |
 | `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | done: all planned formats and the 13-class shared layer audited; 314 Rust integration tests pass |
 | `jgrapht::graph::{sparse,map}` | 22 files (about 2.5k loc), 4 test files | done: sparse CSR graphs plus `FastutilMapGraph` / `FastutilMapIntVertexGraph` as `BaseGraph` specifics with optional endpoint indexes (Phase 3b) |
 | other modules (ext, guava, unimi-dsi, osm, demo) | see "Out of scope" | no |
 
 The existing `alg/` is a *functional* port: one function per family (`maximal_cliques`, `simple_cycles`, `nearest_neighbor_tour`, ...). The Java test suite exercises the individual *classes* (every Bron–Kerbosch variant, every simple-cycle algorithm, every TSP heuristic, ...) and often depends on their exact tie-breaking. Porting the tests therefore means growing the algorithm layer class by class, and checking the results against Java.
+
+## Next up (priority order)
+
+1. **Release hygiene** (cheap, blocks CI): ISSUES I-1 (clippy error in `tests/graph/map_graph_test.rs`) and I-2 (128 lib clippy warnings, mostly doc-list indentation from the Javadoc port). CI runs `cargo clippy --workspace --all-targets` and currently fails on I-1.
+2. **Finish 1i**: port `ContractionHierarchyPrecomputationTest` (10), `ContractionHierarchyBidirectionalDijkstraTest` (7), `TransitNodeRoutingPrecomputationTest` (4), `TransitNodeRoutingShortestPathTest` (4), then the strict-fidelity items in `FIDELITY_ROADMAP.md` section G (parallel independent-set CH ordering, bucket-based CH many-to-many, TNR Voronoi locality filter). Closes C14.
+3. **Rust API hardening**: complete the capability, `Result`/`Option`, iterator, stateful-result,
+   error-type and panic work in [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md). This expands the old
+   Phase 4 API pass and ISSUES I-6/I-8 into release-gated milestones.
+4. **Publish**: README mapping table is done; remaining are the crates.io metadata check, a `CHANGELOG`, and a first `0.1.0` tag.
 
 ## Principles (carried over)
 
@@ -44,7 +53,7 @@ Order: cheap and self-contained first, so each step is a commit. Test counts are
 | 1f (done) | flow (96) | `BoykovKolmogorov`, Gusfield equivalent-flow / Gomory–Hu classes, `PadbergRaoOddMinimumCutset`, **`CapacityScalingMinimumCostFlow`** (933 loc) with the `MinimumCostFlowProblem` interface (already started in `alg/flow.rs`) |
 | 1g (done) | matching (223) | Dense/Sparse Edmonds, Kuhn–Munkres, greedy/path-growing variants, and **Kolmogorov Blossom V** (about 5.7k loc: initializer, primal and dual updaters, trees, options) |
 | 1h (done) | planar (40) | **`BoyerMyrvoldPlanarityInspector`** (2.4k loc): planarity test, embedding, Kuratowski subgraph |
-| 1i | shortestpath (283) | all path-iterator classes (Dijkstra closest-first, Yen, Eppstein), k-disjoint (Suurballe, Bhandari), bounded/pruned Yen, many-to-many (default, Dijkstra, CH), multi-objective (Martin, label-correcting), ALT and bidirectional A*, `DagAllPathsCounter`, `AllDirectedPaths`, **contraction hierarchies** (precomputation 1.3k loc, bidirectional Dijkstra, many-to-many) and **transit node routing** (1.3k loc), `IntVertexDijkstra`, `TreeMeasurer`, tree/list single-source path impls |
+| 1i (partial, 265 tests pass; 25 tests in 4 classes left) | shortestpath (283) | all path-iterator classes (Dijkstra closest-first, Yen, Eppstein), k-disjoint (Suurballe, Bhandari), bounded/pruned Yen, many-to-many (default, Dijkstra, CH), multi-objective (Martin, label-correcting), ALT and bidirectional A*, `DagAllPathsCounter`, `AllDirectedPaths`, **contraction hierarchies** (precomputation 1.3k loc, bidirectional Dijkstra, many-to-many) and **transit node routing** (1.3k loc), `IntVertexDijkstra`, `TreeMeasurer`, tree/list single-source path impls |
 
 Guidance for the large items (blossom V, Boyer–Myrvold, CH, TNR, capacity scaling, VF2): port the Java line by line into one Rust module each, keep the Java class names as type names, add the Java tests, and only then refactor. These are where the tests are most order-sensitive.
 
@@ -89,13 +98,13 @@ Workspace crate `crates/jgrapht-io` (lib name `jgrapht_io`), depending on `jgrap
 | 9 | Lemon exporter, Matrix exporter | 5 + 3 | small |
 | 10 | TSPLIB importer | 24 | depends on the TSP data in `tour` |
 
-**Decisions to confirm before starting:**
+**Decisions (all taken):**
 - **Decided: hand-written parsers** for CSV, JSON, GML and DOT, replacing the Java ANTLR grammars (`CSV.g4`, `Json.g4`, `Gml.g4`, `DOT.g4`). No parser-generator dependency, no JVM in the build. `antlr4rust` and the newer `antlr-rust-runtime` were considered and rejected (young third-party runtimes, unknown license for the latter). Fidelity is kept by porting the Java listener logic (value conversion, error messages) and by driving each parser with the Java tests, plus the Java importers as oracle for odd inputs.
 - Exporters must match Java output byte for byte (the tests compare strings), including attribute ordering. Use insertion-ordered maps in the shared layer.
 - XML comparison in tests: the Java tests use XMLUnit; write a small canonicalising comparer in the test utils.
 - Dependencies: `quick-xml`, `thiserror`; no `serde` in the core path (optional feature later).
 
-## Phase 3b: sparse and map-based graph implementations in `jgrapht`
+## Phase 3b (done): sparse and map-based graph implementations in `jgrapht`
 
 These are graph storage implementations, not a separate integration boundary. Port them into `crates/jgrapht/src/graph/sparse/` and `crates/jgrapht/src/graph/map/`; do not create a `jgrapht-opt` crate. Java: `org.jgrapht.opt.graph.sparse` (CSR-based, immutable, integer vertices and edges) and `org.jgrapht.opt.graph.fastutil` (map graphs on primitive-keyed maps); 4 test files (`SparseIntGraphTest` 814 loc, `IncomingOutgoingEdgesTest`, `FastUtilMapGraphTest`, `FastUtilMapIntVertexGraphTest`).
 
@@ -106,10 +115,12 @@ These are graph storage implementations, not a separate integration boundary. Po
 
 ## Phase 4: hardening and release
 
-- README: Java-to-Rust mapping table, per-package status, how to run the Java-port suite.
-- API pass: naming consistency (`*_num` vs `*_count`), error types, `#[non_exhaustive]` on public enums, docs for every public item (`#![warn(missing_docs)]`), doc examples.
+- README: Java-to-Rust mapping table, per-package status, how to run the Java-port suite. **Done.**
+- API pass: follow [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md), including graph capability traits,
+  panic-free public boundaries, naming consistency (`*_num` vs `*_count`), typed errors,
+  `#[non_exhaustive]` auditing, docs for every public item and doc examples.
 - `benches/` (criterion) for the Java `perf/` tests (15), compared with the Java numbers. Started in `crates/jgrapht/benches/`: `graph_perf` (`GraphPerformanceTest`) and `shortestpath_perf` (`DijkstraShortestPathPerformanceTest` plus the `BaseGraph` vs sparse Dijkstra/BFS comparison from Phase 3b); `algorithms_perf` adds the flow, spanning-tree and maximal-clique tests. `structures_perf` adds LCA, tree dynamic connectivity, path-growing / Hopcroft–Karp matching and DAG Hamiltonian path. `pathsearch_perf` adds Yen / bounded-pruned Yen / Eppstein, delta stepping, `AllDirectedPaths`, DAG, Hamiltonian path and Blossom V. Not ported: the Java JMH-only variants (many-to-many, sandwich-prune, `GraphBuilders`) and the memory-footprint parts of the graph tests.
-- CI (fmt, clippy, tests on stable and MSRV, nightly doc build) and publishing `jgrapht`/`jgrapht-io` to crates.io once the user is ready.
+- CI: **done** (`.github/workflows/ci.yml`: tests on stable and 1.88, clippy, nightly doc build with `-D warnings`, package check); `cargo fmt --check` is not a CI step yet. Publishing `jgrapht`/`jgrapht-io` to crates.io once the user is ready.
 - Re-run the heap differential test against each `rheaps` release.
 
 ## Out of scope for now (confirm)
@@ -119,7 +130,7 @@ These are graph storage implementations, not a separate integration boundary. Po
 | `jgrapht-ext` | 3 files | JGraphX/Swing adapters: skip. |
 | `jgrapht-guava`, `jgrapht-unimi-dsi`, `jgrapht-osm`, `jgrapht-demo` | Java-library bridges, OSM import, demos | skip; Rust-native equivalents could come later. |
 
-## Suggested order of work
+## Suggested order of work (historical; steps 1 to 6 are done except 1i, see "Next up" for what is left)
 
 1. Phase 0 (traits and helper utilities).
 2. Phase 1a to 1d (the many small packages; fast progress and broad coverage).
