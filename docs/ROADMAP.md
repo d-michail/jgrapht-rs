@@ -7,7 +7,7 @@ Status on 2026-10-27 (reviewed against a clean build: `cargo test --workspace` g
 | Area | Java | Rust |
 |---|---|---|
 | core `graph/`, views, events, `traverse/`, `util/`, `generate/` (incl. netgen) | ported, tests ported (about 400 tests passing, `tests/{alg,graph,generate,traverse,util}`) | done |
-| core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1h done (matching incl. Blossom V, planar, flow, tour, cycle, isomorphism); 1i (shortest paths) is partial: 265 tests pass, 4 Java test classes (25 tests) and the strict CH/TNR fidelity work remain. The workspace runs 2352 tests, 0 failures, 4 ignored. See `FIDELITY_ROADMAP.md` for deviations from Java and `ISSUES.md` for open problems |
+| core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1h done (matching incl. Blossom V, planar, flow, tour, cycle, isomorphism); 1i (shortest paths) is done as well, including contraction hierarchies and transit node routing checked against the real Java output. The workspace runs 2383 tests, 0 failures, 4 ignored. See `FIDELITY_ROADMAP.md` for deviations from Java and `ISSUES.md` for open problems |
 | `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | done: all planned formats and the 13-class shared layer audited; 314 Rust integration tests pass |
 | `jgrapht::graph::{sparse,map}` | 22 files (about 2.5k loc), 4 test files | done: sparse CSR graphs plus `FastutilMapGraph` / `FastutilMapIntVertexGraph` as `BaseGraph` specifics with optional endpoint indexes (Phase 3b) |
 | other modules (ext, guava, unimi-dsi, osm, demo) | see "Out of scope" | no |
@@ -17,7 +17,7 @@ The existing `alg/` is a *functional* port: one function per family (`maximal_cl
 ## Next up (priority order)
 
 1. **Release hygiene** (cheap, blocks CI): ISSUES I-1 (clippy error in `tests/graph/map_graph_test.rs`) and I-2 (128 lib clippy warnings, mostly doc-list indentation from the Javadoc port). CI runs `cargo clippy --workspace --all-targets` and currently fails on I-1.
-2. **Finish 1i**: port `ContractionHierarchyPrecomputationTest` (10), `ContractionHierarchyBidirectionalDijkstraTest` (7), `TransitNodeRoutingPrecomputationTest` (4), `TransitNodeRoutingShortestPathTest` (4), then the strict-fidelity items in `FIDELITY_ROADMAP.md` section G (parallel independent-set CH ordering, bucket-based CH many-to-many, TNR Voronoi locality filter). Closes C14.
+2. ~~Finish 1i~~ done (see `FIDELITY_ROADMAP.md` section G).
 3. **Rust API hardening**: complete the capability, `Result`/`Option`, iterator, stateful-result,
    error-type and panic work in [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md). This expands the old
    Phase 4 API pass and ISSUES I-6/I-8 into release-gated milestones.
@@ -53,7 +53,7 @@ Order: cheap and self-contained first, so each step is a commit. Test counts are
 | 1f (done) | flow (96) | `BoykovKolmogorov`, Gusfield equivalent-flow / Gomory–Hu classes, `PadbergRaoOddMinimumCutset`, **`CapacityScalingMinimumCostFlow`** (933 loc) with the `MinimumCostFlowProblem` interface (already started in `alg/flow.rs`) |
 | 1g (done) | matching (223) | Dense/Sparse Edmonds, Kuhn–Munkres, greedy/path-growing variants, and **Kolmogorov Blossom V** (about 5.7k loc: initializer, primal and dual updaters, trees, options) |
 | 1h (done) | planar (40) | **`BoyerMyrvoldPlanarityInspector`** (2.4k loc): planarity test, embedding, Kuratowski subgraph |
-| 1i (partial, 265 tests pass; 25 tests in 4 classes left) | shortestpath (283) | all path-iterator classes (Dijkstra closest-first, Yen, Eppstein), k-disjoint (Suurballe, Bhandari), bounded/pruned Yen, many-to-many (default, Dijkstra, CH), multi-objective (Martin, label-correcting), ALT and bidirectional A*, `DagAllPathsCounter`, `AllDirectedPaths`, **contraction hierarchies** (precomputation 1.3k loc, bidirectional Dijkstra, many-to-many) and **transit node routing** (1.3k loc), `IntVertexDijkstra`, `TreeMeasurer`, tree/list single-source path impls |
+| 1i (done) | shortestpath (283) | all path-iterator classes (Dijkstra closest-first, Yen, Eppstein), k-disjoint (Suurballe, Bhandari), bounded/pruned Yen, many-to-many (default, Dijkstra, CH), multi-objective (Martin, label-correcting), ALT and bidirectional A*, `DagAllPathsCounter`, `AllDirectedPaths`, **contraction hierarchies** (precomputation 1.3k loc, bidirectional Dijkstra, many-to-many) and **transit node routing** (1.3k loc), `IntVertexDijkstra`, `TreeMeasurer`, tree/list single-source path impls |
 
 Guidance for the large items (blossom V, Boyer–Myrvold, CH, TNR, capacity scaling, VF2): port the Java line by line into one Rust module each, keep the Java class names as type names, add the Java tests, and only then refactor. These are where the tests are most order-sensitive.
 

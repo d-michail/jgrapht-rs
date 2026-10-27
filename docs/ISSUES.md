@@ -8,9 +8,9 @@ Review of 2026-10-27 on `master` (e8d4f07). Build and `cargo test --workspace` a
 
 **I-2. 128 clippy warnings in the `jgrapht` lib, 40 more in tests/benches.** 116 are `doc list item without indentation` and 12 `overindented`, all from the Javadoc port (`<ul>`/numbered lists turned into Markdown). Others: 21 unnecessary `as u64` literal casts, loops indexing by counter (`needless_range_loop`, Floyd–Warshall and Johnson tests), `type_complexity`, excessive float precision. Not CI-fatal (warnings), but `-D warnings` is impossible until fixed. Mostly machine-fixable with `cargo clippy --fix` plus manual list reindentation.
 
-## Incomplete ports
+## Remaining fidelity gaps
 
-**I-3. Shortest-path package (1i) is partial.** Four Java test classes (25 tests) are not ported (`GraphMeasurerTest` is done): `ContractionHierarchyPrecomputationTest` (10), `ContractionHierarchyBidirectionalDijkstraTest` (7), `TransitNodeRoutingPrecomputationTest` (4), `TransitNodeRoutingShortestPathTest` (4). Technique gaps: CH preprocessing is sequential with deterministic witness searches (Java: parallel independent sets, random ties); CH many-to-many materialises point queries instead of Java's bucket algorithm; TNR uses a conservative locality filter (`transit_node_routing.rs:68`) instead of the Voronoi filter, so queries fall back to CH more often than Java. Tracked as C14 and section G of the fidelity roadmap.
+**I-3. (resolved)** Shortest-path package (1i) is complete: all Java test classes are ported and contraction hierarchies, CH many-to-many and transit node routing follow the Java techniques (see `FIDELITY_ROADMAP.md` section G). What remains is `HashSet` iteration order in tie situations, documented there.
 
 **I-4. Unverified Java iteration order.** `BarabasiAlbert`, `DirectedScaleFree` and `RandomRegular` use approximations not checked against Java (Phase 0 note), and `PathGrowingWeightedMatching` starts from the first inserted vertex rather than Java's `HashSet` order. Tests pass; results can differ from Java for the same seed. Resolve with golden files from the Java oracle if exact reproducibility matters to users.
 

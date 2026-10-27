@@ -154,6 +154,7 @@ fn transit_node_routing_uses_highest_level_and_matches_hierarchy() {
         .unwrap();
     let routing = TransitNodeRoutingPrecomputation::new(&hierarchy)
         .with_transit_vertex_count(1)
+        .unwrap()
         .compute_transit_node_routing()
         .unwrap();
     assert_eq!(routing.transit_vertices().len(), 1);
@@ -164,7 +165,7 @@ fn transit_node_routing_uses_highest_level_and_matches_hierarchy() {
     assert!(routing.locality_filter().is_local(&1, &3));
     assert!(!routing.locality_filter().is_local(&1, &2));
 
-    let query = TransitNodeRoutingShortestPath::new(&routing);
+    let query = TransitNodeRoutingShortestPath::from_routing(routing);
     for source in 1..=3 {
         for target in 1..=3 {
             let actual = query.path(&source, &target).unwrap();

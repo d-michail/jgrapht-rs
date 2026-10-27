@@ -15,10 +15,12 @@
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
+use crate::util::heap::JavaPairingHeap;
+use rheaps::{AddressableHeap, DecreaseKeyHeap};
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 
 fn materialize_single_source<G, F>(
     graph: &G,
@@ -348,38 +350,74 @@ where
     }))
 }
 
+type JavaHandle =
+    <JavaPairingHeap<OrderedF64, usize> as AddressableHeap<OrderedF64, usize>>::Handle;
+
+/// One search frontier of Java's `DijkstraSearchFrontier`: a pairing heap and the seen vertices
+/// with their current distance and tree edge.
 struct Side<'g, G: Graph> {
-    dist: HashMap<&'g G::Vertex, f64>,
-    /// Edge used to reach the vertex and the vertex it was reached from.
-    pred: HashMap<&'g G::Vertex, (&'g G::Edge, &'g G::Vertex)>,
-    settled: HashSet<&'g G::Vertex>,
+    heap: JavaPairingHeap<OrderedF64, usize>,
     nodes: Vec<&'g G::Vertex>,
-    heap: BinaryHeap<Reverse<(OrderedF64, usize)>>,
+    index: HashMap<&'g G::Vertex, usize>,
+    seen: Vec<(f64, JavaHandle, Option<(&'g G::Edge, &'g G::Vertex)>)>,
 }
 
 impl<'g, G: Graph> Side<'g, G> {
     fn new(start: &'g G::Vertex) -> Self {
-        Side {
-            dist: HashMap::from([(start, 0.0)]),
-            pred: HashMap::new(),
-            settled: HashSet::new(),
-            nodes: vec![start],
-            heap: BinaryHeap::from([Reverse((OrderedF64(0.0), 0))]),
+        let mut side = Side {
+            heap: JavaPairingHeap::default(),
+            nodes: Vec::new(),
+            index: HashMap::new(),
+            seen: Vec::new(),
+        };
+        side.update_distance(start, None, 0.0);
+        side
+    }
+
+    fn update_distance(
+        &mut self,
+        v: &'g G::Vertex,
+        tree: Option<(&'g G::Edge, &'g G::Vertex)>,
+        distance: f64,
+    ) {
+        match self.index.get(v) {
+            None => {
+                let id = self.nodes.len();
+                let handle = self.heap.insert(OrderedF64(distance), id);
+                self.nodes.push(v);
+                self.index.insert(v, id);
+                self.seen.push((distance, handle, tree));
+            }
+            Some(&id) if distance < self.seen[id].0 => {
+                self.seen[id].0 = distance;
+                self.seen[id].2 = tree;
+                let _ = self
+                    .heap
+                    .decrease_key(self.seen[id].1, OrderedF64(distance));
+            }
+            Some(_) => {}
         }
     }
-    fn top(&mut self) -> f64 {
-        while let Some(&Reverse((OrderedF64(d), i))) = self.heap.peek() {
-            if self.settled.contains(self.nodes[i]) || d > self.dist[self.nodes[i]] {
-                self.heap.pop();
-            } else {
-                return d;
-            }
-        }
-        f64::INFINITY
+
+    fn distance(&self, v: &G::Vertex) -> f64 {
+        self.index
+            .get(v)
+            .map_or(f64::INFINITY, |&id| self.seen[id].0)
+    }
+
+    fn min_key(&self) -> Option<f64> {
+        self.heap.peek().map(|(_, key, _)| key.0)
+    }
+
+    fn tree_edge(&self, v: &G::Vertex) -> Option<(&'g G::Edge, &'g G::Vertex)> {
+        self.index.get(v).and_then(|&id| self.seen[id].2)
     }
 }
 
 impl<G: Graph> BidirectionalDijkstra<'_, G> {
+    /// Java's bidirectional Dijkstra: the frontiers are scanned alternately, the best path is
+    /// updated whenever an edge reaches a vertex seen by the other frontier, and the search stops
+    /// when the sum of the two minimum keys reaches the best path.
     pub fn path(
         &self,
         s: &G::Vertex,
@@ -397,67 +435,66 @@ impl<G: Graph> BidirectionalDijkstra<'_, G> {
         if s == t {
             return Ok(Some(GraphWalk::single(s.clone())));
         }
-        let mut f = Side::<G>::new(s);
-        let mut b = Side::<G>::new(t);
-        let mut mu = f64::INFINITY;
-        let mut meet: Option<&G::Vertex> = None;
+        let mut sides = [Side::<G>::new(s), Side::<G>::new(t)];
+        let mut best_path = f64::INFINITY;
+        let mut common: Option<&G::Vertex> = None;
+        let mut current = 0;
         loop {
-            let (tf, tb) = (f.top(), b.top());
-            if tf.is_infinite() && tb.is_infinite() || tf + tb >= mu {
+            let (Some(min), Some(other_min)) =
+                (sides[current].min_key(), sides[1 - current].min_key())
+            else {
+                break;
+            };
+            if min + other_min >= best_path {
                 break;
             }
-            let forward = tf <= tb;
-            let (me, other) = if forward { (&mut f, &b) } else { (&mut b, &f) };
-            let Reverse((OrderedF64(d), i)) = me.heap.pop().expect("non-empty frontier");
-            let v = me.nodes[i];
-            me.settled.insert(v);
-            let edges: Vec<_> = if forward {
+            // frontier scan
+            let (OrderedF64(distance), id) = sides[current].heap.pop().expect("non-empty heap");
+            let v = sides[current].nodes[id];
+            let edges: Vec<_> = if current == 0 {
                 g.try_outgoing_of(v)?.collect()
             } else {
                 g.try_incoming_of(v)?.collect()
             };
-            for (e, n) in edges {
-                let w = g.edge_weight(e).unwrap_or(1.0);
-                if w.is_nan() || w < 0.0 {
+            for (e, u) in edges {
+                let weight = g.edge_weight(e).unwrap_or(1.0);
+                if weight.is_nan() || weight < 0.0 {
                     return Err(GraphError::InvalidArgument(
                         "negative or NaN edge weight".into(),
                     ));
                 }
-                let nd = d + w;
-                if nd < me.dist.get(n).copied().unwrap_or(f64::INFINITY) {
-                    me.dist.insert(n, nd);
-                    me.pred.insert(n, (e, v));
-                    me.nodes.push(n);
-                    me.heap.push(Reverse((OrderedF64(nd), me.nodes.len() - 1)));
-                }
-                if let Some(&od) = other.dist.get(n) {
-                    if nd + od < mu {
-                        mu = nd + od;
-                        meet = Some(n);
-                    }
+                sides[current].update_distance(u, Some((e, v)), distance + weight);
+                // check path with u's distance from the other frontier
+                let path_distance = distance + weight + sides[1 - current].distance(u);
+                if path_distance < best_path {
+                    best_path = path_distance;
+                    common = Some(u);
                 }
             }
+            // swap frontiers
+            current = 1 - current;
         }
-        let Some(m) = meet else { return Ok(None) };
-        let (mut vertices, mut edges) = (vec![m.clone()], Vec::new());
-        let mut cur = m;
-        while let Some(&(e, p)) = f.pred.get(cur) {
-            edges.push(e.clone());
-            vertices.push(p.clone());
-            cur = p;
+        let Some(common) = common.filter(|_| best_path.is_finite()) else {
+            return Ok(None);
+        };
+        let mut vertices = VecDeque::from([common.clone()]);
+        let mut edges = VecDeque::new();
+        let mut v = common;
+        while let Some((e, parent)) = sides[0].tree_edge(v) {
+            edges.push_front(e.clone());
+            vertices.push_front(parent.clone());
+            v = parent;
         }
-        vertices.reverse();
-        edges.reverse();
-        cur = m;
-        while let Some(&(e, p)) = b.pred.get(cur) {
-            edges.push(e.clone());
-            vertices.push(p.clone());
-            cur = p;
+        v = common;
+        while let Some((e, parent)) = sides[1].tree_edge(v) {
+            edges.push_back(e.clone());
+            vertices.push_back(parent.clone());
+            v = parent;
         }
         Ok(Some(GraphWalk {
-            vertices,
-            edges,
-            weight: mu,
+            vertices: vertices.into(),
+            edges: edges.into(),
+            weight: best_path,
         }))
     }
 }

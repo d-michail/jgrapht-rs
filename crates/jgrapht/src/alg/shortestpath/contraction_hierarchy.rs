@@ -28,6 +28,8 @@ use rheaps::{AddressableHeap, DecreaseKeyHeap};
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::ops::Deref;
+use std::sync::Arc;
 
 /// A vertex in a contraction hierarchy.
 #[derive(Debug, Clone)]
@@ -59,15 +61,51 @@ pub struct ContractionEdge<E> {
     pub weight: f64,
 }
 
-/// The result of contraction-hierarchy preprocessing.
+/// The data of a contraction hierarchy, shared by all clones of a [`ContractionHierarchy`].
 #[derive(Debug)]
-pub struct ContractionHierarchy<'g, G: Graph> {
-    graph: &'g G,
+pub struct HierarchyData<G: Graph> {
     vertices: Vec<ContractionVertex<G::Vertex>>,
     mapping: HashMap<G::Vertex, usize>,
     edges: Vec<ContractionEdge<G::Edge>>,
     outgoing: Vec<Vec<usize>>,
     incoming: Vec<Vec<usize>>,
+}
+
+/// The result of contraction-hierarchy preprocessing.
+///
+/// Cloning is cheap: clones share the hierarchy data, so routing objects can own the hierarchy
+/// they were computed from.
+pub struct ContractionHierarchy<'g, G: Graph> {
+    graph: &'g G,
+    data: Arc<HierarchyData<G>>,
+}
+
+impl<G: Graph> std::fmt::Debug for ContractionHierarchy<'_, G>
+where
+    HierarchyData<G>: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ContractionHierarchy")
+            .field("data", &self.data)
+            .finish()
+    }
+}
+
+impl<G: Graph> Clone for ContractionHierarchy<'_, G> {
+    fn clone(&self) -> Self {
+        Self {
+            graph: self.graph,
+            data: Arc::clone(&self.data),
+        }
+    }
+}
+
+impl<G: Graph> Deref for ContractionHierarchy<'_, G> {
+    type Target = HierarchyData<G>;
+
+    fn deref(&self) -> &HierarchyData<G> {
+        &self.data
+    }
 }
 
 impl<'g, G: Graph> ContractionHierarchy<'g, G> {
@@ -286,7 +324,7 @@ struct Core {
 
 /// Runs `work` on `parallelism` contiguous chunks of `[start, end)` and concatenates the results
 /// in chunk order. Chunk `i` is `[start + len * i / p, start + len * (i + 1) / p)`, as in Java.
-fn parallel_chunks<S: Send, T: Send>(
+pub(super) fn parallel_chunks<S: Send, T: Send>(
     states: &mut [S],
     start: usize,
     end: usize,
@@ -756,11 +794,13 @@ impl Core {
         let incoming = self.order.iter().map(|&v| self.incoming[v].clone()).collect();
         ContractionHierarchy {
             graph,
-            vertices,
-            mapping,
-            edges,
-            outgoing,
-            incoming,
+            data: Arc::new(HierarchyData {
+                vertices,
+                mapping,
+                edges,
+                outgoing,
+                incoming,
+            }),
         }
     }
 }
@@ -1239,7 +1279,7 @@ impl<'h, 'g, G: Graph> CHManyToManyShortestPaths<'h, 'g, G> {
 
 impl<'g, G: Graph> ContractionHierarchy<'g, G> {
     /// Upward edges leaving `vertex`, with their targets.
-    fn upward_outgoing(&self, vertex: usize) -> Vec<(usize, usize)> {
+    pub(super) fn upward_outgoing(&self, vertex: usize) -> Vec<(usize, usize)> {
         self.outgoing[vertex]
             .iter()
             .filter(|&&e| self.edges[e].is_upward)
@@ -1248,7 +1288,7 @@ impl<'g, G: Graph> ContractionHierarchy<'g, G> {
     }
 
     /// Downward edges entering `vertex`, with their sources.
-    fn downward_incoming(&self, vertex: usize) -> Vec<(usize, usize)> {
+    pub(super) fn downward_incoming(&self, vertex: usize) -> Vec<(usize, usize)> {
         self.incoming[vertex]
             .iter()
             .filter(|&&e| !self.edges[e].is_upward)

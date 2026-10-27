@@ -109,8 +109,7 @@ Edges are values too: use the built-in `DefaultEdge`, or your own type via
 | `org.jgrapht` and `org.jgrapht.graph` | `jgrapht::{Graph, GraphMut, GraphType}`, `graph`, `view`, `event`, `walk` | done |
 | `org.jgrapht.traverse` | `jgrapht::traverse` | done |
 | `org.jgrapht.generate` and `generate.netgen` | `jgrapht::generate` | done |
-| `org.jgrapht.alg` except `alg.shortestpath` | `jgrapht::alg` | done class by class |
-| `org.jgrapht.alg.shortestpath` | `jgrapht::alg::shortestpath` | partial; see the fidelity roadmap |
+| `org.jgrapht.alg` | `jgrapht::alg` | done class by class |
 | `org.jgrapht.nio` | companion crate `jgrapht-io` | done for all planned formats |
 | `org.jgrapht.opt.graph.sparse` | `jgrapht::graph::sparse` | done |
 | `org.jgrapht.opt.graph.fastutil` | `jgrapht::graph::map` | done with Rust map backends |

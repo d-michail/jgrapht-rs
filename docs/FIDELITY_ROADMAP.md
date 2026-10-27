@@ -8,7 +8,7 @@ API shape are out of scope. Each item is done when:
 3. a scaling guard test shows the expected growth (where cheap to write);
 4. the `STATUS.md` row is updated, and any deliberate deviation is written down there.
 
-Items marked **[needs 1g]** or **[needs 1i]** wait for the matching or shortest-path packages.
+All packages (matching and shortest paths included) are now ported; no item waits for them.
 
 ## A. Known algorithmic deviations in ported classes
 
@@ -49,7 +49,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 | C11 | **done** `planarity.rs` (left-right, deleted; `props::is_planar` delegates to `BoyerMyrvoldPlanarityInspector`, the old LR tests now run on the inspector) | `BoyerMyrvoldPlanarityInspector`; `props::is_planar` delegates | |
 | C12 | **done** `matching/legacy.rs` (deleted; callers use the matching classes) | Dense/Sparse Edmonds, Kuhn–Munkres, greedy, path-growing; Blossom V remains tracked by F3 | |
 | C13 (done) | `paths.rs` (deleted; callers/tests use `AllDirectedPaths`, `BellmanFordShortestPath`, `SuurballeKDisjointShortestPaths` and `BhandariKDisjointShortestPaths`; the non-Java vertex-disjoint helper was removed) | Java classes, with typed Bellman–Ford negative-cycle errors carrying the detected `GraphWalk` | |
-| C14 | `shortestpath/*` functions **[needs 1i]** | Java algorithm classes | |
+| C14 | **done** `shortestpath/*` functions: `floyd_warshall` and `johnson` are the engines of `FloydWarshallShortestPaths` / `JohnsonShortestPaths`, `yen_k_shortest_paths` is a thin wrapper over `YenKShortestPath`, and `BidirectionalDijkstra::path` is Java's alternating bidirectional search used by `BidirectionalDijkstraShortestPath` | Java algorithm classes | |
 | C15 | **done** `ChinesePostman` | faithful class using Blossom V for undirected augmentation and Kuhn–Munkres for directed augmentation | |
 
 ## D. Audit of earlier modules
@@ -112,24 +112,10 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
   directed graphs. All 16 upstream scenarios pass, including weighted, unweighted, loop,
   multigraph, pseudograph, and smoke cases. C15 and F4 are complete.
 
-## G. Shortest-path package (1i): checkpoint and hand-off
+## G. Shortest-path package (1i): done
 
-**Checkpoint commit: see the first local commit after `b887d7e`; work is intentionally incomplete.**
+All Java shortest-path test classes are ported (`crates/jgrapht/tests/alg/shortestpath/`, 296 tests; `DeltaSteppingShortestPathTest` is its own test binary) and every class follows the Java technique.
 
-Implemented in `crates/jgrapht/src/alg/shortestpath/`: Java-style BFS, Dijkstra and closest-first iterator, Bellman–Ford, A*/ALT, bidirectional Dijkstra/A*, Floyd–Warshall, Johnson, list/tree single-source paths, `TreeMeasurer`, array-backed integer Dijkstra, sequential delta stepping, `DagAllPathsCounter`, default/Dijkstra/CH many-to-many, Martin and label-correcting multi-objective paths, `AllDirectedPaths`, Suurballe/Bhandari, lazy Yen, bounded/pruned Yen, Eppstein sidetrack heaps, sequential contraction hierarchies, and transit-node routing. C13 deleted the old `alg/paths.rs` helpers and their non-Java vertex-disjoint implementation; callers now use the shortest-path classes directly.
-
-Current validation: `cargo test -p jgrapht --test alg shortestpath:: -- --nocapture` passes **250/250** shortest-path tests: 248 upstream parity cases plus 2 sparse-incidence error-propagation regressions. The parity cases include all 23 meaningful `BoundedPrunedYenKShortestPathTest` scenarios across both Dijkstra and A* spur engines where applicable (negative `k` is unrepresentable by the Rust API), with A* expansion accounting and the upstream random DAG, cyclic, grid, chain, dense-`k`, and tie workloads; all 45 meaningful `YenKShortestPathTest`, `YenShortestPathIteratorTest`, `EppsteinKShortestPathTest`, and `EppsteinShortestPathIteratorTest` cases, including the exact 1,000-graph Eppstein random workload; all 34 meaningful `BaseManyToManyShortestPathsTest` cases across Default, Dijkstra, and CH (the six Java null cases are type-system N/A); the complete `AStarShortestPathTest` (4), `BellmanFordShortestPathTest` (12 cases including the inherited path test), `BidirectionalAStarShortestPathTest` (7), `BidirectionalDijkstraShortestPathTest` (12), `DagAllPathsCounterTest` (5), `DijkstraShortestPathTest` (5 including the inherited path test), `FloydWarshallShortestPathsTest` (2), `FloydWarshallPseudographsTest` (4), `IntVertexDijkstraShortestPathTest` (5), `JohnsonShortestPathsTest` (3), `MartinShortestPathTest` (2), `LabelCorrectingMultiObjectiveShortestPathTest` (5), 20-test `AllDirectedPathsTest`, all 46 inherited and class-specific Suurballe/Bhandari disjoint-path cases, complete list/tree single-source path-result contracts, all four seeded `AllPairsShortestPathsTest` cross-checks, foundational class contracts, and CH/TNR comparisons with Dijkstra.
-
-Strict-fidelity work still required before marking 1i or C14 done:
-
-- Port the remaining 5 concrete Java shortest-path test classes (40 declared tests) and record each class separately in `STATUS.md`; the checkpoint is a coherent implementation base, not a completed package port. Both shared fixtures are now fully represented: `BaseManyToManyShortestPathsTest` across its three concrete classes and `BaseKShortestPathTest` across Yen and Eppstein. The complete older foundational module already covers `ALTAdmissibleHeuristicTest`, `BFSShortestPathTest`, `DijkstraClosestFirstIteratorTest`, and `TreeMeasurerTest`.
-- Make contraction preprocessing reproduce Java's parallel independent-set/random-tie ordering and implement Java's bucket-based CH many-to-many algorithm. The checkpoint uses deterministic sequential witness searches and materialized CH point queries.
-- Complete transit-node routing's Java Voronoi locality filter and exact access-node selection. The checkpoint's conservative locality filter is correct but not technique-faithful.
-- Finish Java-exact order/tie-breaking and full test coverage for delta stepping and `GraphMeasurer`.
-- C14 remains open until every retained functional entry point is verified as a thin class wrapper and the full class test suite passes.
-
-C13 is complete: `alg/paths.rs` and its non-Java vertex-disjoint implementation are deleted, all
-callers and tests use the Java classes directly, and Bellman–Ford's Java-style entry points return a
-typed negative-cycle error containing the detected `GraphWalk`.
-
-The matching section above is independent and was not edited by the shortest-path track.
+- **Contraction hierarchy** (`contraction_hierarchy.rs`): `ContractionHierarchyPrecomputation` computes initial priorities, independent sets, shortcuts and neighbour updates in the same phases and worker chunks as Java (scoped threads in place of the executor, results applied in segment order), with one `Random` per worker from `with_random_supplier`. With `JavaRandom::new(seed)` suppliers the contraction levels, vertex ids and edge set are identical to JGraphT's (checked against the Java output for directed and undirected graphs and 1, 3 and 4 workers). `ContractionHierarchyBidirectionalDijkstra` alternates the frontiers like Java and uses `JavaPairingHeap`; `CHManyToManyShortestPaths` is the bucket algorithm with search spaces, middle vertices and the reversed variant for `|S| > |T|`.
+- **Transit node routing** (`transit_node_routing.rs`): transit vertex selection, Voronoi diagram, transit paths, access vertices with pruning, and the Voronoi-cell locality filter, plus the lazily precomputing `TransitNodeRoutingShortestPath`. Verified against the Java output as described in `STATUS.md`.
+- **Remaining differences**: `HashSet` iteration order (Java) versus insertion/id order (Rust) decides only the order of the shortcuts of one vertex, ties between equidistant transit vertices, and ties between access vertices that prune each other; CH many-to-many paths are unpacked eagerly instead of on request; the BFS of the access vertex computation visits each vertex once.

@@ -62,6 +62,8 @@ mod multi_objective;
 mod path_results;
 #[path = "shortestpath/ported_classes.rs"]
 mod ported_classes;
+#[path = "shortestpath/transit_node_routing.rs"]
+mod transit_node_routing;
 #[path = "shortestpath/yen.rs"]
 mod yen;
 
