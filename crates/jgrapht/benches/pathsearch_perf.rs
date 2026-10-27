@@ -8,10 +8,12 @@ use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use jgrapht::alg::matching::MatchingAlgorithm;
 use jgrapht::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
 use jgrapht::alg::shortestpath::{
-    AllDirectedPaths, BoundedPrunedYenKShortestPath, DeltaStepping, Dijkstra, EppsteinKShortestPath,
-    ShortestPathAlgorithm, YenKShortestPath,
+    AllDirectedPaths, BoundedPrunedYenKShortestPath, DeltaStepping, Dijkstra,
+    EppsteinKShortestPath, ShortestPathAlgorithm, YenKShortestPath,
 };
-use jgrapht::alg::tour::{BacktrackingHamiltonianPath, HamiltonianPathAlgorithm, HeldKarpHamiltonianPath};
+use jgrapht::alg::tour::{
+    BacktrackingHamiltonianPath, HamiltonianPathAlgorithm, HeldKarpHamiltonianPath,
+};
 use jgrapht::traverse::topological_sort;
 use jgrapht::*;
 
@@ -20,15 +22,34 @@ fn k_shortest_paths(c: &mut Criterion) {
     let g = base_graph(n, &random_edges(n, 6_000, 17));
     let mut group = c.benchmark_group("k_shortest_paths");
     group.bench_function("yen", |b| {
-        b.iter(|| black_box(YenKShortestPath::new(&g).get_paths(&0, &(n - 1), k).unwrap().len()))
+        b.iter(|| {
+            black_box(
+                YenKShortestPath::new(&g)
+                    .get_paths(&0, &(n - 1), k)
+                    .unwrap()
+                    .len(),
+            )
+        })
     });
     group.bench_function("bounded_pruned_yen", |b| {
         b.iter(|| {
-            black_box(BoundedPrunedYenKShortestPath::new(&g).get_paths(&0, &(n - 1), k).unwrap().len())
+            black_box(
+                BoundedPrunedYenKShortestPath::new(&g)
+                    .get_paths(&0, &(n - 1), k)
+                    .unwrap()
+                    .len(),
+            )
         })
     });
     group.bench_function("eppstein", |b| {
-        b.iter(|| black_box(EppsteinKShortestPath::new(&g).paths(&0, &(n - 1), k).unwrap().len()))
+        b.iter(|| {
+            black_box(
+                EppsteinKShortestPath::new(&g)
+                    .paths(&0, &(n - 1), k)
+                    .unwrap()
+                    .len(),
+            )
+        })
     });
     group.finish();
 }
@@ -59,12 +80,20 @@ fn all_directed_paths(c: &mut Criterion) {
     for l in 0..layers - 1 {
         for a in 0..width {
             for b in 0..width {
-                g.add_edge(&(l * width + a), &((l + 1) * width + b)).unwrap();
+                g.add_edge(&(l * width + a), &((l + 1) * width + b))
+                    .unwrap();
             }
         }
     }
     c.bench_function("all_directed_paths/layered_dag", |b| {
-        b.iter(|| black_box(AllDirectedPaths::new(&g).get_all_paths(&s, &t, true, None).unwrap().len()))
+        b.iter(|| {
+            black_box(
+                AllDirectedPaths::new(&g)
+                    .get_all_paths(&s, &t, true, None)
+                    .unwrap()
+                    .len(),
+            )
+        })
     });
 }
 
@@ -114,7 +143,8 @@ fn blossom_v(c: &mut Criterion) {
     for u in 0..n {
         for v in u + 1..n {
             if rng.unit() < 0.1 || v == u + 1 {
-                g.add_weighted_edge(&u, &v, 1.0 + rng.next(1000) as f64).unwrap();
+                g.add_weighted_edge(&u, &v, 1.0 + rng.next(1000) as f64)
+                    .unwrap();
             }
         }
     }

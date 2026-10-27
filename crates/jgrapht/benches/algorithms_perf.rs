@@ -16,13 +16,34 @@ fn maximum_flow(c: &mut Criterion) {
     let g = base_graph(n, &random_edges(n, m, 7));
     let mut group = c.benchmark_group("max_flow");
     group.bench_function("edmonds_karp", |b| {
-        b.iter(|| black_box(EdmondsKarpMFImpl::new(&g).unwrap().maximum_flow_value(&0, &(n - 1)).unwrap()))
+        b.iter(|| {
+            black_box(
+                EdmondsKarpMFImpl::new(&g)
+                    .unwrap()
+                    .maximum_flow_value(&0, &(n - 1))
+                    .unwrap(),
+            )
+        })
     });
     group.bench_function("dinic", |b| {
-        b.iter(|| black_box(DinicMFImpl::new(&g).unwrap().maximum_flow_value(&0, &(n - 1)).unwrap()))
+        b.iter(|| {
+            black_box(
+                DinicMFImpl::new(&g)
+                    .unwrap()
+                    .maximum_flow_value(&0, &(n - 1))
+                    .unwrap(),
+            )
+        })
     });
     group.bench_function("push_relabel", |b| {
-        b.iter(|| black_box(PushRelabelMFImpl::new(&g).unwrap().maximum_flow_value(&0, &(n - 1)).unwrap()))
+        b.iter(|| {
+            black_box(
+                PushRelabelMFImpl::new(&g)
+                    .unwrap()
+                    .maximum_flow_value(&0, &(n - 1))
+                    .unwrap(),
+            )
+        })
     });
     group.finish();
 }

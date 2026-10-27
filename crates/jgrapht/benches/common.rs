@@ -1,4 +1,5 @@
 //! Shared random-graph construction for the benchmarks (deterministic, no generator coupling).
+#![allow(dead_code)]
 
 use jgrapht::graph::sparse::SparseIntDirectedWeightedGraph;
 use jgrapht::*;

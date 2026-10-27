@@ -93,7 +93,15 @@ fn matching(c: &mut Criterion) {
         let _ = g.add_weighted_edge(&u, &v, w);
     }
     c.bench_function("matching/path_growing", |b| {
-        b.iter(|| black_box(PathGrowingWeightedMatching::new(&g).unwrap().get_matching().unwrap().weight()))
+        b.iter(|| {
+            black_box(
+                PathGrowingWeightedMatching::new(&g)
+                    .unwrap()
+                    .get_matching()
+                    .unwrap()
+                    .weight(),
+            )
+        })
     });
 
     // bipartite: left 0..n/2, right n/2..n
