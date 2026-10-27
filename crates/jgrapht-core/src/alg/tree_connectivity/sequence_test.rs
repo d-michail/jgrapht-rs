@@ -1,16 +1,19 @@
-//! Port of `org.jgrapht.util.AVLTreeTest` to the shared-arena Rust API.
+//! Invariant tests adapted from `AVLTreeTest` for the private sequence arena.
 
-use jgrapht::util::avl_tree::{AvlNodeId, AvlTree, AvlTreeId};
+use super::sequence::{SequenceArena, SequenceId, SequenceNode};
 
-fn values(tree: &AvlTree<i32>, id: AvlTreeId) -> Vec<i32> {
+fn values(tree: &SequenceArena<i32>, id: SequenceId) -> Vec<i32> {
     tree.node_ids(id)
         .into_iter()
         .map(|node| *tree.value(node))
         .collect()
 }
 
-fn diagnostic(tree: &AvlTree<i32>, id: AvlTreeId) {
-    fn visit(tree: &AvlTree<i32>, node: AvlNodeId) -> (AvlNodeId, AvlNodeId, usize, usize) {
+fn diagnostic(tree: &SequenceArena<i32>, id: SequenceId) {
+    fn visit(
+        tree: &SequenceArena<i32>,
+        node: SequenceNode,
+    ) -> (SequenceNode, SequenceNode, usize, usize) {
         let left = tree.left(node).map(|child| visit(tree, child));
         let right = tree.right(node).map(|child| visit(tree, child));
         let left_height = left.map_or(0, |v| v.2);
@@ -51,7 +54,7 @@ fn diagnostic(tree: &AvlTree<i32>, id: AvlTreeId) {
     }
 }
 
-fn fill(tree: &mut AvlTree<i32>, id: AvlTreeId, from: i32, to: i32) -> Vec<AvlNodeId> {
+fn fill(tree: &mut SequenceArena<i32>, id: SequenceId, from: i32, to: i32) -> Vec<SequenceNode> {
     let middle = (from + to) / 2;
     let mut result = Vec::new();
     for value in (from..middle).rev() {
@@ -67,7 +70,7 @@ fn fill(tree: &mut AvlTree<i32>, id: AvlTreeId, from: i32, to: i32) -> Vec<AvlNo
 
 #[test]
 fn test_empty() {
-    let mut arena = AvlTree::<i32>::new();
+    let mut arena = SequenceArena::<i32>::new();
     let tree = arena.create_tree();
     assert_eq!(arena.size(tree), 0);
     assert_eq!(arena.root(tree), None);
@@ -75,7 +78,7 @@ fn test_empty() {
 
 #[test]
 fn test_one_node() {
-    let mut arena = AvlTree::new();
+    let mut arena = SequenceArena::new();
     let tree = arena.create_tree();
     let node = arena.add_max(tree, 1);
     assert_eq!(*arena.value(node), 1);
@@ -89,7 +92,7 @@ fn test_one_node() {
 #[test]
 fn test_add_max() {
     for count in 0..50 {
-        let mut arena = AvlTree::new();
+        let mut arena = SequenceArena::new();
         let tree = arena.create_tree();
         for value in 0..count {
             arena.add_max(tree, value);
@@ -103,7 +106,7 @@ fn test_add_max() {
 #[test]
 fn test_add_min() {
     for count in 0..50 {
-        let mut arena = AvlTree::new();
+        let mut arena = SequenceArena::new();
         let tree = arena.create_tree();
         for value in (0..count).rev() {
             arena.add_min(tree, value);
@@ -117,7 +120,7 @@ fn test_add_min() {
 fn test_merge_after_and_before() {
     for left_size in 0..50 {
         for right_size in 0..50 {
-            let mut arena = AvlTree::new();
+            let mut arena = SequenceArena::new();
             let left = arena.create_tree();
             let right = arena.create_tree();
             fill(&mut arena, left, 0, left_size);
@@ -149,7 +152,7 @@ fn test_merge_after_and_before() {
 fn test_split_after() {
     for size in 1..50 {
         for split in 0..size {
-            let mut arena = AvlTree::new();
+            let mut arena = SequenceArena::new();
             let tree = arena.create_tree();
             let nodes = fill(&mut arena, tree, 0, size);
             let right = arena.split_after(tree, nodes[split as usize]);
@@ -165,7 +168,7 @@ fn test_split_after() {
 fn test_split_before() {
     for size in 1..50 {
         for split in 0..size {
-            let mut arena = AvlTree::new();
+            let mut arena = SequenceArena::new();
             let tree = arena.create_tree();
             let nodes = fill(&mut arena, tree, 0, size);
             let right = arena.split_before(tree, nodes[split as usize]);
@@ -180,7 +183,7 @@ fn test_split_before() {
 #[test]
 fn test_remove_and_iteration() {
     for size in 1..50 {
-        let mut arena = AvlTree::new();
+        let mut arena = SequenceArena::new();
         let tree = arena.create_tree();
         let nodes = fill(&mut arena, tree, 0, size);
         assert_eq!(arena.node_ids(tree), nodes);
@@ -196,7 +199,7 @@ fn test_remove_and_iteration() {
 
 #[test]
 fn worst_case_height_scaling_guard() {
-    let mut arena = AvlTree::new();
+    let mut arena = SequenceArena::new();
     let tree = arena.create_tree();
     for value in 0..100_000 {
         arena.add_max(tree, value);

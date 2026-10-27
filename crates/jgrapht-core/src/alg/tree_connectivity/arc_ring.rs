@@ -1,53 +1,55 @@
-//! Arena/index based port of JGraphT's circular `DoublyLinkedList`.
+//! Arena-backed intrusive circular rings for the outgoing arcs of Euler-tour vertices.
 //!
-//! A node belongs to at most one logical list. Node handles remain stable across removal and the
-//! bulk list-splicing operations, matching the property for which the Java utility exists.
+//! A node belongs to at most one logical ring and its index remains stable across removal and
+//! splicing.
+
+#![cfg_attr(not(test), allow(dead_code))]
 
 use crate::{GraphError, Result};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ListId(pub(crate) usize);
+pub struct RingId(pub(crate) usize);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ListNodeId(pub(crate) usize);
+pub struct RingNode(pub(crate) usize);
 
 #[derive(Debug, Clone)]
 struct Node<T> {
     value: T,
-    next: Option<ListNodeId>,
-    previous: Option<ListNodeId>,
-    list: Option<ListId>,
+    next: Option<RingNode>,
+    previous: Option<RingNode>,
+    list: Option<RingId>,
 }
 
 #[derive(Debug, Clone, Default)]
 struct List {
-    head: Option<ListNodeId>,
+    head: Option<RingNode>,
     len: usize,
 }
 
 /// Arena containing circular doubly linked lists.
 #[derive(Debug, Clone, Default)]
-pub struct DoublyLinkedList<T> {
+pub struct ArcRingArena<T> {
     nodes: Vec<Node<T>>,
     lists: Vec<List>,
 }
 
-impl<T> DoublyLinkedList<T> {
+impl<T> ArcRingArena<T> {
     pub fn new() -> Self {
-        DoublyLinkedList {
+        ArcRingArena {
             nodes: Vec::new(),
             lists: Vec::new(),
         }
     }
 
-    pub fn create_list(&mut self) -> ListId {
-        let id = ListId(self.lists.len());
+    pub fn create_list(&mut self) -> RingId {
+        let id = RingId(self.lists.len());
         self.lists.push(List::default());
         id
     }
 
-    pub fn allocate_node(&mut self, value: T) -> ListNodeId {
-        let id = ListNodeId(self.nodes.len());
+    pub fn allocate_node(&mut self, value: T) -> RingNode {
+        let id = RingNode(self.nodes.len());
         self.nodes.push(Node {
             value,
             next: None,
@@ -57,46 +59,46 @@ impl<T> DoublyLinkedList<T> {
         id
     }
 
-    pub fn value(&self, node: ListNodeId) -> &T {
+    pub fn value(&self, node: RingNode) -> &T {
         &self.nodes[node.0].value
     }
 
-    pub fn value_mut(&mut self, node: ListNodeId) -> &mut T {
+    pub fn value_mut(&mut self, node: RingNode) -> &mut T {
         &mut self.nodes[node.0].value
     }
 
-    pub fn list_of(&self, node: ListNodeId) -> Option<ListId> {
+    pub fn list_of(&self, node: RingNode) -> Option<RingId> {
         self.nodes[node.0].list
     }
 
     /// The list is circular: the last node's successor is the first node.
-    pub fn next(&self, node: ListNodeId) -> Option<ListNodeId> {
+    pub fn next(&self, node: RingNode) -> Option<RingNode> {
         self.nodes[node.0].next
     }
 
     /// The list is circular: the first node's predecessor is the last node.
-    pub fn previous(&self, node: ListNodeId) -> Option<ListNodeId> {
+    pub fn previous(&self, node: RingNode) -> Option<RingNode> {
         self.nodes[node.0].previous
     }
 
-    pub fn len(&self, list: ListId) -> usize {
+    pub fn len(&self, list: RingId) -> usize {
         self.lists[list.0].len
     }
 
-    pub fn is_empty(&self, list: ListId) -> bool {
+    pub fn is_empty(&self, list: RingId) -> bool {
         self.len(list) == 0
     }
 
-    pub fn first(&self, list: ListId) -> Option<ListNodeId> {
+    pub fn first(&self, list: RingId) -> Option<RingNode> {
         self.lists[list.0].head
     }
 
-    pub fn last(&self, list: ListId) -> Option<ListNodeId> {
+    pub fn last(&self, list: RingId) -> Option<RingNode> {
         self.first(list)
             .and_then(|head| self.nodes[head.0].previous)
     }
 
-    pub fn get_node(&self, list: ListId, index: usize) -> Option<ListNodeId> {
+    pub fn get_node(&self, list: RingId, index: usize) -> Option<RingNode> {
         let len = self.len(list);
         if index >= len {
             return None;
@@ -116,11 +118,11 @@ impl<T> DoublyLinkedList<T> {
         }
     }
 
-    pub fn contains_node(&self, list: ListId, node: ListNodeId) -> bool {
+    pub fn contains_node(&self, list: RingId, node: RingNode) -> bool {
         self.list_of(node) == Some(list)
     }
 
-    pub fn index_of_node(&self, list: ListId, node: ListNodeId) -> Option<usize> {
+    pub fn index_of_node(&self, list: RingId, node: RingNode) -> Option<usize> {
         if !self.contains_node(list, node) {
             return None;
         }
@@ -134,16 +136,16 @@ impl<T> DoublyLinkedList<T> {
         None
     }
 
-    pub fn add_node_first(&mut self, list: ListId, node: ListNodeId) -> Result<()> {
+    pub fn add_node_first(&mut self, list: RingId, node: RingNode) -> Result<()> {
         self.add_node(list, 0, node)
     }
 
-    pub fn add_node_last(&mut self, list: ListId, node: ListNodeId) -> Result<()> {
+    pub fn add_node_last(&mut self, list: RingId, node: RingNode) -> Result<()> {
         let len = self.len(list);
         self.add_node(list, len, node)
     }
 
-    pub fn add_node(&mut self, list: ListId, index: usize, node: ListNodeId) -> Result<()> {
+    pub fn add_node(&mut self, list: RingId, index: usize, node: RingNode) -> Result<()> {
         if index > self.len(list) {
             return Err(GraphError::InvalidArgument("index out of bounds".into()));
         }
@@ -170,9 +172,9 @@ impl<T> DoublyLinkedList<T> {
 
     pub fn add_node_before(
         &mut self,
-        list: ListId,
-        node: ListNodeId,
-        successor: ListNodeId,
+        list: RingId,
+        node: RingNode,
+        successor: RingNode,
     ) -> Result<()> {
         if !self.contains_node(list, successor) {
             return Err(GraphError::InvalidArgument(
@@ -187,13 +189,13 @@ impl<T> DoublyLinkedList<T> {
         Ok(())
     }
 
-    pub fn add_element_first(&mut self, list: ListId, value: T) -> ListNodeId {
+    pub fn add_element_first(&mut self, list: RingId, value: T) -> RingNode {
         let node = self.allocate_node(value);
         self.add_node_first(list, node).unwrap();
         node
     }
 
-    pub fn add_element_last(&mut self, list: ListId, value: T) -> ListNodeId {
+    pub fn add_element_last(&mut self, list: RingId, value: T) -> RingNode {
         let node = self.allocate_node(value);
         self.add_node_last(list, node).unwrap();
         node
@@ -201,16 +203,16 @@ impl<T> DoublyLinkedList<T> {
 
     pub fn add_element_before(
         &mut self,
-        list: ListId,
-        successor: ListNodeId,
+        list: RingId,
+        successor: RingNode,
         value: T,
-    ) -> Result<ListNodeId> {
+    ) -> Result<RingNode> {
         let node = self.allocate_node(value);
         self.add_node_before(list, node, successor)?;
         Ok(node)
     }
 
-    pub fn remove_node(&mut self, list: ListId, node: ListNodeId) -> bool {
+    pub fn remove_node(&mut self, list: RingId, node: RingNode) -> bool {
         if !self.contains_node(list, node) {
             return false;
         }
@@ -232,42 +234,35 @@ impl<T> DoublyLinkedList<T> {
         true
     }
 
-    pub fn remove_at(&mut self, list: ListId, index: usize) -> Option<ListNodeId> {
-        let node = self.get_node(list, index)?;
-        self.remove_node(list, node);
-        Some(node)
-    }
-
-    pub fn clear(&mut self, list: ListId) {
+    pub fn clear(&mut self, list: RingId) {
         while let Some(node) = self.first(list) {
             self.remove_node(list, node);
         }
     }
 
     /// Reverses the list in place, including its circular links.
-    pub fn invert(&mut self, list: ListId) {
+    pub fn invert(&mut self, list: RingId) {
         let nodes = self.node_ids(list);
         for node in nodes {
-            let next = self.nodes[node.0].next;
-            self.nodes[node.0].next = self.nodes[node.0].previous;
-            self.nodes[node.0].previous = next;
+            let links = &mut self.nodes[node.0];
+            std::mem::swap(&mut links.next, &mut links.previous);
         }
         if let Some(head) = self.first(list) {
             self.lists[list.0].head = self.nodes[head.0].next;
         }
     }
 
-    pub fn append(&mut self, list: ListId, moved: ListId) -> Result<()> {
+    pub fn append(&mut self, list: RingId, moved: RingId) -> Result<()> {
         let index = self.len(list);
         self.move_from(list, index, moved)
     }
 
-    pub fn prepend(&mut self, list: ListId, moved: ListId) -> Result<()> {
+    pub fn prepend(&mut self, list: RingId, moved: RingId) -> Result<()> {
         self.move_from(list, 0, moved)
     }
 
     /// Moves all nodes from `moved` before `index`, preserving their handles and order.
-    pub fn move_from(&mut self, list: ListId, index: usize, moved: ListId) -> Result<()> {
+    pub fn move_from(&mut self, list: RingId, index: usize, moved: RingId) -> Result<()> {
         if list == moved {
             return Err(GraphError::InvalidArgument(
                 "cannot move a list into itself".into(),
@@ -309,7 +304,7 @@ impl<T> DoublyLinkedList<T> {
         Ok(())
     }
 
-    pub fn node_ids(&self, list: ListId) -> Vec<ListNodeId> {
+    pub fn node_ids(&self, list: RingId) -> Vec<RingNode> {
         let mut result = Vec::with_capacity(self.len(list));
         let Some(mut node) = self.first(list) else {
             return result;
@@ -321,7 +316,7 @@ impl<T> DoublyLinkedList<T> {
         result
     }
 
-    pub fn reverse_node_ids(&self, list: ListId) -> Vec<ListNodeId> {
+    pub fn reverse_node_ids(&self, list: RingId) -> Vec<RingNode> {
         let mut result = Vec::with_capacity(self.len(list));
         let Some(mut node) = self.last(list) else {
             return result;
@@ -333,7 +328,7 @@ impl<T> DoublyLinkedList<T> {
         result
     }
 
-    pub fn circular_node_ids(&self, list: ListId, first: ListNodeId) -> Option<Vec<ListNodeId>> {
+    pub fn circular_node_ids(&self, list: RingId, first: RingNode) -> Option<Vec<RingNode>> {
         if !self.contains_node(list, first) {
             return None;
         }
@@ -348,9 +343,9 @@ impl<T> DoublyLinkedList<T> {
 
     pub fn reverse_circular_node_ids(
         &self,
-        list: ListId,
-        first: ListNodeId,
-    ) -> Option<Vec<ListNodeId>> {
+        list: RingId,
+        first: RingNode,
+    ) -> Option<Vec<RingNode>> {
         if !self.contains_node(list, first) {
             return None;
         }
@@ -363,7 +358,7 @@ impl<T> DoublyLinkedList<T> {
         Some(result)
     }
 
-    fn ensure_detached(&self, node: ListNodeId) -> Result<()> {
+    fn ensure_detached(&self, node: RingNode) -> Result<()> {
         if self.list_of(node).is_some() {
             Err(GraphError::InvalidArgument(
                 "node is already contained in a list".into(),
@@ -373,7 +368,7 @@ impl<T> DoublyLinkedList<T> {
         }
     }
 
-    fn link_before(&mut self, list: ListId, node: ListNodeId, successor: ListNodeId) {
+    fn link_before(&mut self, list: RingId, node: RingNode, successor: RingNode) {
         let previous = self.nodes[successor.0].previous.unwrap();
         self.nodes[node.0].list = Some(list);
         self.nodes[node.0].previous = Some(previous);
@@ -384,25 +379,25 @@ impl<T> DoublyLinkedList<T> {
     }
 }
 
-impl<T: PartialEq> DoublyLinkedList<T> {
-    pub fn node_of(&self, list: ListId, value: &T) -> Option<ListNodeId> {
+impl<T: PartialEq> ArcRingArena<T> {
+    pub fn node_of(&self, list: RingId, value: &T) -> Option<RingNode> {
         self.node_ids(list)
             .into_iter()
             .find(|&node| self.value(node) == value)
     }
 
-    pub fn last_node_of(&self, list: ListId, value: &T) -> Option<ListNodeId> {
+    pub fn last_node_of(&self, list: RingId, value: &T) -> Option<RingNode> {
         self.reverse_node_ids(list)
             .into_iter()
             .find(|&node| self.value(node) == value)
     }
 
-    pub fn remove_first_occurrence(&mut self, list: ListId, value: &T) -> bool {
+    pub fn remove_first_occurrence(&mut self, list: RingId, value: &T) -> bool {
         self.node_of(list, value)
             .is_some_and(|node| self.remove_node(list, node))
     }
 
-    pub fn remove_last_occurrence(&mut self, list: ListId, value: &T) -> bool {
+    pub fn remove_last_occurrence(&mut self, list: RingId, value: &T) -> bool {
         self.last_node_of(list, value)
             .is_some_and(|node| self.remove_node(list, node))
     }

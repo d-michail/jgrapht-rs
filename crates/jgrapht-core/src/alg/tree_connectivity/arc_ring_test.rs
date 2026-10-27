@@ -1,11 +1,11 @@
-//! Behavioural port of `org.jgrapht.util.DoublyLinkedListTest`.
+//! Invariant tests adapted from Java's `DoublyLinkedListTest` for the private arc-ring arena.
 //!
 //! Java collection-interface and fail-fast iterator checks do not have Rust counterparts; these
 //! tests cover the node API, circular links, deque operations, splicing, inversion and traversal.
 
-use jgrapht::util::doubly_linked_list::{DoublyLinkedList, ListId, ListNodeId};
+use super::arc_ring::{ArcRingArena, RingId, RingNode};
 
-fn values<T: Clone>(arena: &DoublyLinkedList<T>, list: ListId) -> Vec<T> {
+fn values<T: Clone>(arena: &ArcRingArena<T>, list: RingId) -> Vec<T> {
     arena
         .node_ids(list)
         .into_iter()
@@ -13,7 +13,7 @@ fn values<T: Clone>(arena: &DoublyLinkedList<T>, list: ListId) -> Vec<T> {
         .collect()
 }
 
-fn strings(arena: &mut DoublyLinkedList<String>, values: &[&str]) -> ListId {
+fn strings(arena: &mut ArcRingArena<String>, values: &[&str]) -> RingId {
     let list = arena.create_list();
     for value in values {
         arena.add_element_last(list, (*value).to_owned());
@@ -21,7 +21,7 @@ fn strings(arena: &mut DoublyLinkedList<String>, values: &[&str]) -> ListId {
     list
 }
 
-fn assert_links<T>(arena: &DoublyLinkedList<T>, list: ListId) {
+fn assert_links<T>(arena: &ArcRingArena<T>, list: RingId) {
     let nodes = arena.node_ids(list);
     assert_eq!(nodes.len(), arena.len(list));
     for (index, &node) in nodes.iter().enumerate() {
@@ -36,7 +36,7 @@ fn assert_links<T>(arena: &DoublyLinkedList<T>, list: ListId) {
 
 #[test]
 fn empty_size_and_clear() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["a", "b", "c"]);
     assert!(!arena.is_empty(list));
     assert_eq!(arena.len(list), 3);
@@ -48,7 +48,7 @@ fn empty_size_and_clear() {
 
 #[test]
 fn add_node_first_last_and_at_index() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = arena.create_list();
     let a = arena.allocate_node("a");
     let b = arena.allocate_node("b");
@@ -64,7 +64,7 @@ fn add_node_first_last_and_at_index() {
 
 #[test]
 fn a_node_can_belong_to_only_one_list() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let first = arena.create_list();
     let second = arena.create_list();
     let node = arena.allocate_node(1);
@@ -78,7 +78,7 @@ fn a_node_can_belong_to_only_one_list() {
 
 #[test]
 fn add_node_before_checks_the_successor_list() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let first = arena.create_list();
     let second = arena.create_list();
     let successor = arena.add_element_last(first, 2);
@@ -91,7 +91,7 @@ fn add_node_before_checks_the_successor_list() {
 
 #[test]
 fn get_first_last_and_indexed_nodes() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["a", "b", "c", "d"]);
     assert_eq!(arena.value(arena.first(list).unwrap()), "a");
     assert_eq!(arena.value(arena.last(list).unwrap()), "d");
@@ -101,7 +101,7 @@ fn get_first_last_and_indexed_nodes() {
 
 #[test]
 fn index_and_contains_are_by_node_identity() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["same", "same", "other"]);
     let nodes = arena.node_ids(list);
     assert_eq!(arena.index_of_node(list, nodes[1]), Some(1));
@@ -112,7 +112,7 @@ fn index_and_contains_are_by_node_identity() {
 
 #[test]
 fn remove_nodes_from_front_middle_and_back() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["a", "b", "c", "d"]);
     let nodes = arena.node_ids(list);
     assert!(arena.remove_node(list, nodes[0]));
@@ -126,7 +126,7 @@ fn remove_nodes_from_front_middle_and_back() {
 
 #[test]
 fn node_of_and_last_node_of() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["a", "b", "a"]);
     let nodes = arena.node_ids(list);
     assert_eq!(arena.node_of(list, &"a".to_owned()), Some(nodes[0]));
@@ -136,7 +136,7 @@ fn node_of_and_last_node_of() {
 
 #[test]
 fn add_elements_at_both_ends_and_before_node() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = arena.create_list();
     let c = arena.add_element_last(list, "c");
     arena.add_element_first(list, "a");
@@ -147,7 +147,7 @@ fn add_elements_at_both_ends_and_before_node() {
 
 #[test]
 fn remove_first_and_last_occurrences() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["a", "b", "a", "c"]);
     assert!(arena.remove_first_occurrence(list, &"a".to_owned()));
     assert!(arena.remove_last_occurrence(list, &"a".to_owned()));
@@ -157,7 +157,7 @@ fn remove_first_and_last_occurrences() {
 
 #[test]
 fn invert_reverses_content_and_links() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["a", "b", "c", "d"]);
     arena.invert(list);
     assert_eq!(values(&arena, list), ["d", "c", "b", "a"]);
@@ -166,7 +166,7 @@ fn invert_reverses_content_and_links() {
 
 #[test]
 fn move_from_splices_without_changing_node_handles() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["a", "d"]);
     let moved = strings(&mut arena, &["b", "c"]);
     let moved_nodes = arena.node_ids(moved);
@@ -183,7 +183,7 @@ fn move_from_splices_without_changing_node_handles() {
 
 #[test]
 fn append_and_prepend() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["c"]);
     let prefix = strings(&mut arena, &["a", "b"]);
     let suffix = strings(&mut arena, &["d", "e"]);
@@ -195,7 +195,7 @@ fn append_and_prepend() {
 
 #[test]
 fn forward_reverse_and_circular_traversal() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["a", "b", "c", "d"]);
     let nodes = arena.node_ids(list);
     let reverse: Vec<_> = arena
@@ -222,9 +222,9 @@ fn forward_reverse_and_circular_traversal() {
 
 #[test]
 fn node_value_can_be_replaced_like_list_iterator_set() {
-    let mut arena = DoublyLinkedList::new();
+    let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["a", "b", "c"]);
-    let middle: ListNodeId = arena.get_node(list, 1).unwrap();
+    let middle: RingNode = arena.get_node(list, 1).unwrap();
     *arena.value_mut(middle) = "x".to_owned();
     assert_eq!(values(&arena, list), ["a", "x", "c"]);
 }

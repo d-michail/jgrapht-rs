@@ -1,11 +1,19 @@
 //! Dynamic connectivity in a forest (`TreeDynamicConnectivity`).
 //!
-//! This is the Java Euler-tour representation: tours are stored in join/split AVL sequence trees,
-//! and each vertex keeps its outgoing arcs in a circular doubly linked list. Both utilities use
-//! stable arena indices in place of Java object references.
+//! This uses the same Euler-tour representation and worst-case bounds as Java. Tours are stored in
+//! private implicit AVL sequences, and each vertex keeps its outgoing arcs in a private intrusive
+//! circular ring. Both Rust-native structures use stable arena indices.
 
-use crate::util::avl_tree::{AvlNodeId, AvlTree, AvlTreeId};
-use crate::util::doubly_linked_list::{DoublyLinkedList, ListId, ListNodeId};
+mod arc_ring;
+mod sequence;
+
+#[cfg(test)]
+mod arc_ring_test;
+#[cfg(test)]
+mod sequence_test;
+
+use self::arc_ring::{ArcRingArena, RingId, RingNode};
+use self::sequence::{SequenceArena, SequenceId, SequenceNode};
 use crate::{GraphError, Result};
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -16,23 +24,23 @@ type ArcId = usize;
 #[derive(Debug, Clone)]
 struct Node<T> {
     value: T,
-    arcs: ListId,
+    arcs: RingId,
     target_map: HashMap<NodeId, ArcId>,
-    singleton_tree: Option<AvlTreeId>,
+    singleton_tree: Option<SequenceId>,
 }
 
 #[derive(Debug, Clone, Copy)]
 struct Arc {
     target: NodeId,
-    list_node: ListNodeId,
-    tree_node: AvlNodeId,
+    list_node: RingNode,
+    tree_node: SequenceNode,
 }
 
 /// A forest whose trees can be linked and cut in worst-case logarithmic time.
 #[derive(Debug, Clone)]
 pub struct TreeDynamicConnectivity<T: Eq + Hash + Clone> {
-    trees: AvlTree<T>,
-    arc_lists: DoublyLinkedList<ArcId>,
+    trees: SequenceArena<T>,
+    arc_lists: ArcRingArena<ArcId>,
     node_map: HashMap<T, NodeId>,
     nodes: Vec<Node<T>>,
     arcs: Vec<Option<Arc>>,
@@ -47,8 +55,8 @@ impl<T: Eq + Hash + Clone> Default for TreeDynamicConnectivity<T> {
 impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
     pub fn new() -> Self {
         TreeDynamicConnectivity {
-            trees: AvlTree::new(),
-            arc_lists: DoublyLinkedList::new(),
+            trees: SequenceArena::new(),
+            arc_lists: ArcRingArena::new(),
             node_map: HashMap::new(),
             nodes: Vec::new(),
             arcs: Vec::new(),
@@ -199,7 +207,7 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
         self.arc_lists.is_empty(self.nodes[node].arcs)
     }
 
-    fn get_tree(&self, node: NodeId) -> AvlTreeId {
+    fn get_tree(&self, node: NodeId) -> SequenceId {
         if self.is_singleton(node) {
             self.nodes[node].singleton_tree.unwrap()
         } else {
@@ -209,7 +217,7 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
         }
     }
 
-    fn create_arc(&mut self, target: NodeId, tree_node: AvlNodeId) -> ArcId {
+    fn create_arc(&mut self, target: NodeId, tree_node: SequenceNode) -> ArcId {
         let id = self.arcs.len();
         self.arcs.push(None);
         let detached = self.arc_lists.allocate_node(id);
@@ -251,19 +259,19 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
         self.arcs[arc] = None;
     }
 
-    fn make_root(&mut self, tree: AvlTreeId, node: NodeId) {
+    fn make_root(&mut self, tree: SequenceId, node: NodeId) {
         if let Some(first) = self.arc_lists.first(self.nodes[node].arcs) {
             let arc = *self.arc_lists.value(first);
             self.make_first_arc(tree, arc);
         }
     }
 
-    fn make_first_arc(&mut self, tree: AvlTreeId, arc: ArcId) {
+    fn make_first_arc(&mut self, tree: SequenceId, arc: ArcId) {
         let right = self.trees.split_before(tree, self.arc(arc).tree_node);
         self.trees.merge_before(tree, right);
     }
 
-    fn make_last_arc(&mut self, tree: AvlTreeId, node: NodeId, arc: ArcId) {
+    fn make_last_arc(&mut self, tree: SequenceId, node: NodeId, arc: ArcId) {
         if self.arc_lists.len(self.nodes[node].arcs) == 1 {
             self.make_root(tree, node);
         } else {

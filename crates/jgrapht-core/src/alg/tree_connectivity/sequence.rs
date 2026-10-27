@@ -1,122 +1,123 @@
-//! An index-based port of JGraphT's sequence [`AVLTree`].
+//! Arena-backed implicit AVL sequences for Euler tours.
 //!
-//! The tree deliberately has no key comparison. Its in-order traversal defines the order, and it
-//! supports insertion/removal at either end plus logarithmic split and concatenation. Multiple
-//! logical trees share this arena so node handles remain valid when trees are split or merged.
+//! There are no keys: in-order traversal is the sequence order. Multiple logical sequences share
+//! the arena, so stable indices survive logarithmic split and concatenation.
 
-/// Stable handle to a node in an [`AvlTree`] arena.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct AvlNodeId(pub(crate) usize);
+#![cfg_attr(not(test), allow(dead_code))]
 
-/// Handle to one logical tree in an [`AvlTree`] arena.
+/// Stable handle to a node in a [`SequenceArena`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct AvlTreeId(pub(crate) usize);
+pub struct SequenceNode(pub(crate) usize);
+
+/// Handle to one logical sequence in a [`SequenceArena`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SequenceId(pub(crate) usize);
 
 #[derive(Debug, Clone)]
 struct Node<T> {
     value: T,
-    parent: Option<AvlNodeId>,
-    left: Option<AvlNodeId>,
-    right: Option<AvlNodeId>,
-    predecessor: Option<AvlNodeId>,
-    successor: Option<AvlNodeId>,
-    subtree_min: AvlNodeId,
-    subtree_max: AvlNodeId,
+    parent: Option<SequenceNode>,
+    left: Option<SequenceNode>,
+    right: Option<SequenceNode>,
+    predecessor: Option<SequenceNode>,
+    successor: Option<SequenceNode>,
+    subtree_min: SequenceNode,
+    subtree_max: SequenceNode,
     height: usize,
     size: usize,
     /// Present only on a logical tree root.
-    tree: Option<AvlTreeId>,
+    tree: Option<SequenceId>,
 }
 
-/// Arena containing one or more JGraphT-style AVL sequence trees.
+/// Arena containing one or more implicit AVL sequences.
 #[derive(Debug, Clone, Default)]
-pub struct AvlTree<T> {
+pub struct SequenceArena<T> {
     nodes: Vec<Node<T>>,
-    roots: Vec<Option<AvlNodeId>>,
+    roots: Vec<Option<SequenceNode>>,
 }
 
-impl<T> AvlTree<T> {
+impl<T> SequenceArena<T> {
     pub fn new() -> Self {
-        AvlTree {
+        SequenceArena {
             nodes: Vec::new(),
             roots: Vec::new(),
         }
     }
 
     /// Creates an empty logical tree.
-    pub fn create_tree(&mut self) -> AvlTreeId {
-        let id = AvlTreeId(self.roots.len());
+    pub fn create_tree(&mut self) -> SequenceId {
+        let id = SequenceId(self.roots.len());
         self.roots.push(None);
         id
     }
 
-    pub fn value(&self, node: AvlNodeId) -> &T {
+    pub fn value(&self, node: SequenceNode) -> &T {
         &self.nodes[node.0].value
     }
 
-    pub fn root(&self, tree: AvlTreeId) -> Option<AvlNodeId> {
+    pub fn root(&self, tree: SequenceId) -> Option<SequenceNode> {
         self.roots[tree.0]
     }
 
-    pub fn min(&self, tree: AvlTreeId) -> Option<AvlNodeId> {
+    pub fn min(&self, tree: SequenceId) -> Option<SequenceNode> {
         self.root(tree).map(|root| self.nodes[root.0].subtree_min)
     }
 
-    pub fn max(&self, tree: AvlTreeId) -> Option<AvlNodeId> {
+    pub fn max(&self, tree: SequenceId) -> Option<SequenceNode> {
         self.root(tree).map(|root| self.nodes[root.0].subtree_max)
     }
 
-    pub fn successor(&self, node: AvlNodeId) -> Option<AvlNodeId> {
+    pub fn successor(&self, node: SequenceNode) -> Option<SequenceNode> {
         self.nodes[node.0].successor
     }
 
-    pub fn predecessor(&self, node: AvlNodeId) -> Option<AvlNodeId> {
+    pub fn predecessor(&self, node: SequenceNode) -> Option<SequenceNode> {
         self.nodes[node.0].predecessor
     }
 
-    pub fn parent(&self, node: AvlNodeId) -> Option<AvlNodeId> {
+    pub fn parent(&self, node: SequenceNode) -> Option<SequenceNode> {
         self.nodes[node.0].parent
     }
 
-    pub fn left(&self, node: AvlNodeId) -> Option<AvlNodeId> {
+    pub fn left(&self, node: SequenceNode) -> Option<SequenceNode> {
         self.nodes[node.0].left
     }
 
-    pub fn right(&self, node: AvlNodeId) -> Option<AvlNodeId> {
+    pub fn right(&self, node: SequenceNode) -> Option<SequenceNode> {
         self.nodes[node.0].right
     }
 
-    pub fn subtree_min(&self, node: AvlNodeId) -> AvlNodeId {
+    pub fn subtree_min(&self, node: SequenceNode) -> SequenceNode {
         self.nodes[node.0].subtree_min
     }
 
-    pub fn subtree_max(&self, node: AvlNodeId) -> AvlNodeId {
+    pub fn subtree_max(&self, node: SequenceNode) -> SequenceNode {
         self.nodes[node.0].subtree_max
     }
 
-    pub fn height(&self, node: AvlNodeId) -> usize {
+    pub fn height(&self, node: SequenceNode) -> usize {
         self.nodes[node.0].height
     }
 
-    pub fn subtree_size(&self, node: AvlNodeId) -> usize {
+    pub fn subtree_size(&self, node: SequenceNode) -> usize {
         self.nodes[node.0].size
     }
 
-    pub fn size(&self, tree: AvlTreeId) -> usize {
+    pub fn size(&self, tree: SequenceId) -> usize {
         self.root(tree).map_or(0, |root| self.nodes[root.0].size)
     }
 
-    pub fn is_empty(&self, tree: AvlTreeId) -> bool {
+    pub fn is_empty(&self, tree: SequenceId) -> bool {
         self.root(tree).is_none()
     }
 
     /// Finds the logical tree containing `node` in `O(log n)` time.
-    pub fn tree_of(&self, node: AvlNodeId) -> Option<AvlTreeId> {
+    pub fn tree_of(&self, node: SequenceNode) -> Option<SequenceId> {
         let root = self.root_of(node);
         self.nodes[root.0].tree
     }
 
-    pub fn add_max(&mut self, tree: AvlTreeId, value: T) -> AvlNodeId {
+    pub fn add_max(&mut self, tree: SequenceId, value: T) -> SequenceNode {
         let node = self.allocate(value);
         let root = self.root(tree);
         if let Some(max) = self.max(tree) {
@@ -128,7 +129,7 @@ impl<T> AvlTree<T> {
         node
     }
 
-    pub fn add_min(&mut self, tree: AvlTreeId, value: T) -> AvlNodeId {
+    pub fn add_min(&mut self, tree: SequenceId, value: T) -> SequenceNode {
         let node = self.allocate(value);
         let root = self.root(tree);
         if let Some(min) = self.min(tree) {
@@ -140,7 +141,7 @@ impl<T> AvlTree<T> {
         node
     }
 
-    pub fn remove_min(&mut self, tree: AvlTreeId) -> Option<AvlNodeId> {
+    pub fn remove_min(&mut self, tree: SequenceId) -> Option<SequenceNode> {
         let root = self.root(tree)?;
         let (removed, rest) = self.split_root(root, 1);
         let removed = removed.unwrap();
@@ -153,7 +154,7 @@ impl<T> AvlTree<T> {
         Some(removed)
     }
 
-    pub fn remove_max(&mut self, tree: AvlTreeId) -> Option<AvlNodeId> {
+    pub fn remove_max(&mut self, tree: SequenceId) -> Option<SequenceNode> {
         let root = self.root(tree)?;
         let count = self.nodes[root.0].size;
         let (rest, removed) = self.split_root(root, count - 1);
@@ -168,7 +169,7 @@ impl<T> AvlTree<T> {
     }
 
     /// Leaves `node` in `tree` and returns a tree containing everything after it.
-    pub fn split_after(&mut self, tree: AvlTreeId, node: AvlNodeId) -> AvlTreeId {
+    pub fn split_after(&mut self, tree: SequenceId, node: SequenceNode) -> SequenceId {
         debug_assert_eq!(self.tree_of(node), Some(tree));
         let right_tree = self.create_tree();
         let rank = self.rank(node);
@@ -181,7 +182,7 @@ impl<T> AvlTree<T> {
     }
 
     /// Returns a tree containing `node` and everything after it.
-    pub fn split_before(&mut self, tree: AvlTreeId, node: AvlNodeId) -> AvlTreeId {
+    pub fn split_before(&mut self, tree: SequenceId, node: SequenceNode) -> SequenceId {
         debug_assert_eq!(self.tree_of(node), Some(tree));
         let right_tree = self.create_tree();
         let rank = self.rank(node);
@@ -194,7 +195,7 @@ impl<T> AvlTree<T> {
     }
 
     /// Appends all nodes of `other` and empties `other`.
-    pub fn merge_after(&mut self, tree: AvlTreeId, other: AvlTreeId) {
+    pub fn merge_after(&mut self, tree: SequenceId, other: SequenceId) {
         assert_ne!(tree, other);
         let left = self.take_root(tree);
         let right = self.take_root(other);
@@ -203,7 +204,7 @@ impl<T> AvlTree<T> {
     }
 
     /// Prepends all nodes of `other` and empties `other`.
-    pub fn merge_before(&mut self, tree: AvlTreeId, other: AvlTreeId) {
+    pub fn merge_before(&mut self, tree: SequenceId, other: SequenceId) {
         assert_ne!(tree, other);
         let right = self.take_root(tree);
         let left = self.take_root(other);
@@ -211,12 +212,7 @@ impl<T> AvlTree<T> {
         self.set_root(tree, root);
     }
 
-    /// Drops the logical root in constant time, like Java's `clear`.
-    pub fn clear(&mut self, tree: AvlTreeId) {
-        self.take_root(tree);
-    }
-
-    pub fn node_ids(&self, tree: AvlTreeId) -> Vec<AvlNodeId> {
+    pub fn node_ids(&self, tree: SequenceId) -> Vec<SequenceNode> {
         let mut result = Vec::with_capacity(self.size(tree));
         let mut current = self.min(tree);
         while let Some(node) = current {
@@ -226,8 +222,8 @@ impl<T> AvlTree<T> {
         result
     }
 
-    fn allocate(&mut self, value: T) -> AvlNodeId {
-        let id = AvlNodeId(self.nodes.len());
+    fn allocate(&mut self, value: T) -> SequenceNode {
+        let id = SequenceNode(self.nodes.len());
         self.nodes.push(Node {
             value,
             parent: None,
@@ -244,14 +240,14 @@ impl<T> AvlTree<T> {
         id
     }
 
-    fn root_of(&self, mut node: AvlNodeId) -> AvlNodeId {
+    fn root_of(&self, mut node: SequenceNode) -> SequenceNode {
         while let Some(parent) = self.nodes[node.0].parent {
             node = parent;
         }
         node
     }
 
-    fn rank(&self, mut node: AvlNodeId) -> usize {
+    fn rank(&self, mut node: SequenceNode) -> usize {
         let mut rank = self.node_size(self.nodes[node.0].left);
         while let Some(parent) = self.nodes[node.0].parent {
             if self.nodes[parent.0].right == Some(node) {
@@ -262,15 +258,15 @@ impl<T> AvlTree<T> {
         rank
     }
 
-    fn node_height(&self, node: Option<AvlNodeId>) -> usize {
+    fn node_height(&self, node: Option<SequenceNode>) -> usize {
         node.map_or(0, |node| self.nodes[node.0].height)
     }
 
-    fn node_size(&self, node: Option<AvlNodeId>) -> usize {
+    fn node_size(&self, node: Option<SequenceNode>) -> usize {
         node.map_or(0, |node| self.nodes[node.0].size)
     }
 
-    fn update(&mut self, node: AvlNodeId) {
+    fn update(&mut self, node: SequenceNode) {
         let (left, right) = (self.nodes[node.0].left, self.nodes[node.0].right);
         self.nodes[node.0].height = 1 + self.node_height(left).max(self.node_height(right));
         self.nodes[node.0].size = 1 + self.node_size(left) + self.node_size(right);
@@ -285,7 +281,7 @@ impl<T> AvlTree<T> {
         }
     }
 
-    fn reset_structure(&mut self, node: AvlNodeId) {
+    fn reset_structure(&mut self, node: SequenceNode) {
         self.nodes[node.0].parent = None;
         self.nodes[node.0].left = None;
         self.nodes[node.0].right = None;
@@ -296,13 +292,13 @@ impl<T> AvlTree<T> {
         self.nodes[node.0].tree = None;
     }
 
-    fn reset_detached(&mut self, node: AvlNodeId) {
+    fn reset_detached(&mut self, node: SequenceNode) {
         self.reset_structure(node);
         self.nodes[node.0].predecessor = None;
         self.nodes[node.0].successor = None;
     }
 
-    fn set_root(&mut self, tree: AvlTreeId, root: Option<AvlNodeId>) {
+    fn set_root(&mut self, tree: SequenceId, root: Option<SequenceNode>) {
         self.roots[tree.0] = root;
         if let Some(root) = root {
             self.nodes[root.0].parent = None;
@@ -310,7 +306,7 @@ impl<T> AvlTree<T> {
         }
     }
 
-    fn take_root(&mut self, tree: AvlTreeId) -> Option<AvlNodeId> {
+    fn take_root(&mut self, tree: SequenceId) -> Option<SequenceNode> {
         let root = self.roots[tree.0].take();
         if let Some(root) = root {
             self.nodes[root.0].tree = None;
@@ -318,7 +314,7 @@ impl<T> AvlTree<T> {
         root
     }
 
-    fn rotate_left(&mut self, node: AvlNodeId) -> AvlNodeId {
+    fn rotate_left(&mut self, node: SequenceNode) -> SequenceNode {
         let right = self.nodes[node.0].right.unwrap();
         let middle = self.nodes[right.0].left;
         self.nodes[node.0].right = middle;
@@ -333,7 +329,7 @@ impl<T> AvlTree<T> {
         right
     }
 
-    fn rotate_right(&mut self, node: AvlNodeId) -> AvlNodeId {
+    fn rotate_right(&mut self, node: SequenceNode) -> SequenceNode {
         let left = self.nodes[node.0].left.unwrap();
         let middle = self.nodes[left.0].right;
         self.nodes[node.0].left = middle;
@@ -348,7 +344,7 @@ impl<T> AvlTree<T> {
         left
     }
 
-    fn balance_node(&mut self, node: AvlNodeId) -> AvlNodeId {
+    fn balance_node(&mut self, node: SequenceNode) -> SequenceNode {
         self.update(node);
         let left = self.nodes[node.0].left;
         let right = self.nodes[node.0].right;
@@ -381,10 +377,10 @@ impl<T> AvlTree<T> {
     /// Knuth's height-guided AVL concatenation, used by Java's implementation as well.
     fn join_with(
         &mut self,
-        left: Option<AvlNodeId>,
-        junction: AvlNodeId,
-        right: Option<AvlNodeId>,
-    ) -> Option<AvlNodeId> {
+        left: Option<SequenceNode>,
+        junction: SequenceNode,
+        right: Option<SequenceNode>,
+    ) -> Option<SequenceNode> {
         if self.node_height(left) > self.node_height(right) + 1 {
             let left_root = left.unwrap();
             let left_right = self.nodes[left_root.0].right;
@@ -421,9 +417,9 @@ impl<T> AvlTree<T> {
 
     fn split_root(
         &mut self,
-        root: AvlNodeId,
+        root: SequenceNode,
         count: usize,
-    ) -> (Option<AvlNodeId>, Option<AvlNodeId>) {
+    ) -> (Option<SequenceNode>, Option<SequenceNode>) {
         if count == 0 {
             self.nodes[root.0].parent = None;
             return (None, Some(root));
@@ -459,9 +455,9 @@ impl<T> AvlTree<T> {
 
     fn concatenate(
         &mut self,
-        left: Option<AvlNodeId>,
-        right: Option<AvlNodeId>,
-    ) -> Option<AvlNodeId> {
+        left: Option<SequenceNode>,
+        right: Option<SequenceNode>,
+    ) -> Option<SequenceNode> {
         let (Some(left), Some(right)) = (left, right) else {
             return left.or(right);
         };
@@ -475,7 +471,7 @@ impl<T> AvlTree<T> {
         self.join_with(Some(left), junction, right)
     }
 
-    fn sever_boundary(&mut self, left: Option<AvlNodeId>, right: Option<AvlNodeId>) {
+    fn sever_boundary(&mut self, left: Option<SequenceNode>, right: Option<SequenceNode>) {
         if let Some(left) = left {
             let max = self.nodes[left.0].subtree_max;
             self.nodes[max.0].successor = None;
