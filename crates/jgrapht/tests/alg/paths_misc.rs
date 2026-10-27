@@ -223,7 +223,10 @@ fn christofides_is_within_bound() {
                 g.add_weighted_edge(&i, &j, w).unwrap();
             }
         }
-        let c = christofides_tour(&g).unwrap();
+        let c = ChristofidesThreeHalvesApproxMetricTSP::new()
+            .get_tour(&g)
+            .unwrap()
+            .unwrap();
         assert!(c.is_valid(&g) && c.length() == 9);
         let opt = HeldKarpTSP::new().get_tour(&g).unwrap().unwrap();
         assert!(c.weight >= opt.weight - 1e-9 && c.weight <= 1.5 * opt.weight + 1e-9);

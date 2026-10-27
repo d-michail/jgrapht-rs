@@ -5,9 +5,8 @@
 //! Sizes are reduced from the Java tests where building the graph is quadratic (geometric tests: 300
 //! instead of 1000 points; Palmer: at most 42 vertices in the random tests, 200 in the big one).
 //!
-//! Not ported yet: `ChristofidesThreeHalvesApproxMetricTSPTest` (needs the weighted perfect matching
-//! of step 1g). Not ported: `NullPointerException` cases and the factory checks that reject negative
-//! state counts (unsigned here).
+//! Not ported: `NullPointerException` cases and the factory checks that reject negative state counts
+//! (unsigned here).
 
 use jgrapht::alg::tour::*;
 use jgrapht::generate::{Complete, GraphGenerator};
@@ -111,6 +110,125 @@ where
         }
     }
     assert_eq!(seen.len(), g.vertex_count());
+}
+
+mod christofides_three_halves_approx_metric_tsp_test {
+    use super::*;
+
+    fn graph(edges: &[(i32, i32, f64)]) -> Ug {
+        let mut graph = Ug::simple().weighted();
+        for &(source, target, weight) in edges {
+            graph.add_vertex(source);
+            graph.add_vertex(target);
+            graph
+                .add_weighted_edge(&source, &target, weight)
+                .unwrap();
+        }
+        graph
+    }
+
+    fn run_tour(edges: &[(i32, i32, f64)]) -> (Ug, GraphWalk<i32, DefaultEdge>) {
+        let graph = graph(edges);
+        let tour = ChristofidesThreeHalvesApproxMetricTSP::new()
+            .get_tour(&graph)
+            .unwrap()
+            .unwrap();
+        (graph, tour)
+    }
+
+    fn test_instance(edges: &[(i32, i32, f64)], optimum: f64) {
+        let (graph, tour) = run_tour(edges);
+        assert_hamiltonian(&graph, &tour);
+        assert!(tour.weight() <= 1.5 * optimum);
+    }
+
+    #[test]
+    fn rejects_directed_empty_and_incomplete_graphs() {
+        let mut directed = Dg::simple().weighted();
+        directed.add_vertices([1, 2]);
+        directed.add_weighted_edge(&1, &2, 5.0).unwrap();
+        assert!(ChristofidesThreeHalvesApproxMetricTSP::new()
+            .get_tour(&directed)
+            .is_err());
+
+        assert!(ChristofidesThreeHalvesApproxMetricTSP::new()
+            .get_tour(&Ug::simple().weighted())
+            .is_err());
+
+        let mut incomplete = Ug::simple().weighted();
+        incomplete.add_vertices([0, 1]);
+        assert!(ChristofidesThreeHalvesApproxMetricTSP::new()
+            .get_tour(&incomplete)
+            .is_err());
+    }
+
+    #[test]
+    fn unique_tours() {
+        let (graph, tour) = run_tour(&[(1, 2, 5.0)]);
+        assert_hamiltonian(&graph, &tour);
+        assert_eq!(tour.weight(), 10.0);
+
+        let (graph, tour) = run_tour(&[(1, 2, 5.0), (1, 3, 5.0), (2, 3, 9.0)]);
+        assert_hamiltonian(&graph, &tour);
+        assert_eq!(tour.weight(), 19.0);
+    }
+
+    #[test]
+    fn upstream_weighted_instances() {
+        test_instance(
+            &[
+                (1, 0, 2.), (2, 0, 5.), (2, 1, 6.), (3, 0, 2.), (3, 1, 4.), (3, 2, 5.),
+            ],
+            15.,
+        );
+        test_instance(
+            &[
+                (1, 0, 8.), (2, 0, 4.), (2, 1, 4.), (3, 0, 5.), (3, 1, 8.), (3, 2, 6.),
+                (4, 0, 7.), (4, 1, 7.), (4, 2, 5.), (4, 3, 6.),
+            ],
+            26.,
+        );
+        test_instance(
+            &[
+                (1, 0, 3.), (2, 0, 6.), (2, 1, 7.), (3, 0, 6.), (3, 1, 7.), (3, 2, 7.),
+                (4, 0, 5.), (4, 1, 6.), (4, 2, 9.), (4, 3, 9.), (5, 0, 3.), (5, 1, 2.),
+                (5, 2, 10.), (5, 3, 10.), (5, 4, 9.),
+            ],
+            33.,
+        );
+        test_instance(
+            &[
+                (1, 0, 6.), (2, 0, 2.), (2, 1, 9.), (3, 0, 7.), (3, 1, 1.), (3, 2, 8.),
+                (4, 0, 2.), (4, 1, 7.), (4, 2, 3.), (4, 3, 8.), (5, 0, 5.), (5, 1, 5.),
+                (5, 2, 6.), (5, 3, 6.), (5, 4, 3.), (6, 0, 4.), (6, 1, 5.), (6, 2, 5.),
+                (6, 3, 6.), (6, 4, 2.), (6, 5, 5.),
+            ],
+            24.,
+        );
+        test_instance(
+            &[
+                (1, 0, 1.), (2, 0, 3.), (2, 1, 2.), (3, 0, 5.), (3, 1, 6.), (3, 2, 8.),
+                (4, 0, 4.), (4, 1, 5.), (4, 2, 7.), (4, 3, 4.), (5, 0, 6.), (5, 1, 7.),
+                (5, 2, 9.), (5, 3, 6.), (5, 4, 8.), (6, 0, 6.), (6, 1, 7.), (6, 2, 9.),
+                (6, 3, 6.), (6, 4, 8.), (6, 5, 9.), (7, 0, 4.), (7, 1, 5.), (7, 2, 7.),
+                (7, 3, 4.), (7, 4, 6.), (7, 5, 7.), (7, 6, 6.),
+            ],
+            39.,
+        );
+        test_instance(
+            &[
+                (1, 0, 5.), (2, 0, 4.), (2, 1, 5.), (3, 0, 3.), (3, 1, 7.), (3, 2, 6.),
+                (4, 0, 5.), (4, 1, 7.), (4, 2, 6.), (4, 3, 5.), (5, 0, 5.), (5, 1, 8.),
+                (5, 2, 7.), (5, 3, 6.), (5, 4, 8.), (6, 0, 5.), (6, 1, 8.), (6, 2, 7.),
+                (6, 3, 6.), (6, 4, 8.), (6, 5, 7.), (7, 0, 5.), (7, 1, 7.), (7, 2, 6.),
+                (7, 3, 5.), (7, 4, 7.), (7, 5, 6.), (7, 6, 8.), (8, 0, 5.), (8, 1, 6.),
+                (8, 2, 5.), (8, 3, 4.), (8, 4, 6.), (8, 5, 5.), (8, 6, 8.), (8, 7, 7.),
+                (9, 0, 5.), (9, 1, 5.), (9, 2, 4.), (9, 3, 3.), (9, 4, 5.), (9, 5, 4.),
+                (9, 6, 8.), (9, 7, 7.), (9, 8, 6.),
+            ],
+            52.,
+        );
+    }
 }
 
 /// `HamiltonianPathValidator.assertHamiltonianPath`.

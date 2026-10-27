@@ -41,7 +41,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 | C3 | **done** `flow/legacy.rs` (deleted): `min_cost_flow` (SPFA successive shortest paths) and its owned `MinimumCostFlowProblem` struct; NETGEN now returns `MinimumCostFlowProblemImpl`, and the spanning-flow test uses `CapacityScalingMinimumCostFlow` | `CapacityScalingMinimumCostFlow` | |
 | C4 | **done** `flow/legacy.rs`: `stoer_wagner` (deleted, callers use B1) | B1 | |
 | C5 | **done** `tour/legacy.rs` (nearest neighbour, insertion, double tree, 2-opt, Held–Karp removed; callers use the tour classes, and the non-Java cheapest-insertion variant was deleted) | the tour classes | |
-| C6 | `tour/legacy.rs`: `christofides_tour` **[needs 1g]** | `ChristofidesThreeHalvesApproxMetricTSP` on the Java matching | |
+| C6 | **done** `tour/legacy.rs` (deleted; callers use the Java-style class) | `ChristofidesThreeHalvesApproxMetricTSP` backed by Blossom V | |
 | C7 | **done** `cycle/legacy.rs` (`has_cycle`, `simple_cycles`, `cycle_basis`, `cycle_to_walk`; deleted, callers use `CycleDetector`, `JohnsonSimpleCycles` and the cycle-basis classes) | `CycleDetector`, the simple-cycle classes, cycle-basis classes | |
 | C8 | **done** `hamiltonian.rs` (deleted; its one test now uses `BacktrackingHamiltonianPath`, Java has no general exact Hamiltonian cycle search) | `tour` Hamiltonian-path/cycle classes | |
 | C9 | **done** `eulerian.rs` (deleted; `props::is_eulerian` and Christofides use `HierholzerEulerianCycle`; the Eulerian-trail helper had no Java counterpart) | `HierholzerEulerianCycle` | |
@@ -102,6 +102,12 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
   `scripts/port_blossom_fixtures.py`, retaining the upstream case numbers.
 
 **F4. Dependents of Blossom V.** `ChristofidesThreeHalvesApproxMetricTSP` (uses `KolmogorovWeightedPerfectMatching` on the odd-degree vertices; port the Java class and its tests, then delete `christofides_tour` in `tour/legacy.rs`, C6) and `ChinesePostman` (class and tests, C15).
+
+- **F4a Christofides complete:** `ChristofidesThreeHalvesApproxMetricTSP` uses Kruskal, Blossom V
+  on the induced odd-degree subgraph, Hierholzer, and Euler-tour shortcutting. All 11 upstream
+  scenarios pass, the temporary subset-DP/greedy `christofides_tour` helper is deleted, and C6 is
+  complete.
+- **F4b remaining:** port `ChinesePostman` and its tests, then close C15 and F4.
 
 ## G. Shortest-path package (1i): checkpoint and hand-off
 
