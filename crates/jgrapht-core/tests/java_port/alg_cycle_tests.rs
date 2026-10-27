@@ -3899,3 +3899,280 @@ mod chordal_graph_minimal_vertex_separator_finder_test {
         check(&g, &[(&[2], 1), (&[3, 5], 1)]);
     }
 }
+
+// WeakChordalityInspectorTest
+
+mod weak_chordality_inspector_test {
+    use super::*;
+    use jgrapht::alg::cycle::WeakChordalityInspector;
+    use jgrapht::generate::named::{self, build};
+    use jgrapht::generate::{Complete, GraphGenerator};
+    use jgrapht::graph::GraphExt;
+
+    /// A vertex-edge graph with parallel edges ignored (`TestUtil.createUndirected`).
+    fn undirected(edges: &[&[i32]]) -> UGraph<i32> {
+        let mut g = UGraph::<i32>::with_loops().weighted();
+        for e in edges {
+            g.add_vertex(e[0]);
+            g.add_vertex(e[1]);
+            g.add_edge(&e[0], &e[1]).unwrap();
+        }
+        g
+    }
+
+    fn is_hole<G: Graph>(graph: &G, path: &GraphWalk<G::Vertex, G::Edge>) -> bool {
+        let vertices = path.vertex_list();
+        if vertices.len() < 6 || vertices[0] != vertices[vertices.len() - 1] {
+            return false;
+        }
+        for i in 0..vertices.len() - 1 {
+            if !graph.contains_edge_between(&vertices[i], &vertices[i + 1]) {
+                return false;
+            }
+        }
+        for i in 0..vertices.len() - 2 {
+            for j in 0..vertices.len() - 2 {
+                if i.abs_diff(j) > 1 && graph.contains_edge_between(&vertices[i], &vertices[j]) {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    fn is_anti_hole<G: Graph>(graph: &G, path: &GraphWalk<G::Vertex, G::Edge>) -> bool {
+        let vertices = path.vertex_list();
+        if vertices.len() < 6 || vertices[0] != vertices[vertices.len() - 1] {
+            return false;
+        }
+        for i in 0..vertices.len() - 1 {
+            if graph.contains_edge_between(&vertices[i], &vertices[i + 1]) {
+                return false;
+            }
+        }
+        for i in 0..vertices.len() - 2 {
+            for j in 0..vertices.len() - 2 {
+                if i.abs_diff(j) > 1 && !graph.contains_edge_between(&vertices[i], &vertices[j]) {
+                    return false;
+                }
+            }
+        }
+        true
+    }
+
+    fn check<G: Graph>(graph: &G, weakly_chordal: bool) {
+        let mut inspector = WeakChordalityInspector::new(graph);
+        assert_eq!(weakly_chordal, inspector.is_weakly_chordal());
+        let certificate = inspector.get_certificate();
+        if weakly_chordal {
+            assert!(certificate.is_none());
+        } else {
+            let path = certificate.expect("a certificate");
+            assert!(is_hole(graph, path) || is_anti_hole(graph, path));
+        }
+    }
+
+    #[test]
+    fn is_weakly_chordal1() {
+        check(&UGraph::<i32>::with_loops(), true);
+    }
+
+    #[test]
+    fn is_weakly_chordal2() {
+        check(
+            &undirected(&[&[1, 2], &[1, 3], &[2, 3], &[2, 4], &[3, 4]]),
+            true,
+        );
+    }
+
+    #[test]
+    fn is_weakly_chordal3() {
+        check(&undirected(&[&[1, 2], &[1, 3], &[2, 4], &[3, 4]]), true);
+    }
+
+    #[test]
+    fn is_weakly_chordal4() {
+        check(
+            &undirected(&[&[1, 2], &[2, 3], &[3, 4], &[4, 5], &[5, 1]]),
+            false,
+        );
+    }
+
+    #[test]
+    fn is_weakly_chordal5() {
+        check(
+            &undirected(&[
+                &[1, 3],
+                &[1, 4],
+                &[1, 5],
+                &[1, 6],
+                &[2, 4],
+                &[2, 5],
+                &[2, 6],
+                &[2, 7],
+                &[3, 5],
+                &[3, 6],
+                &[3, 7],
+                &[4, 6],
+                &[4, 7],
+                &[5, 7],
+            ]),
+            false,
+        );
+    }
+
+    #[test]
+    fn is_weakly_chordal6() {
+        check(
+            &undirected(&[
+                &[1, 1],
+                &[1, 1],
+                &[1, 2],
+                &[1, 2],
+                &[1, 2],
+                &[1, 3],
+                &[2, 4],
+                &[2, 4],
+                &[2, 4],
+                &[3, 4],
+                &[4, 4],
+                &[4, 4],
+                &[4, 4],
+            ]),
+            true,
+        );
+    }
+
+    #[test]
+    fn is_weakly_chordal7() {
+        check(
+            &undirected(&[
+                &[1, 2],
+                &[1, 3],
+                &[2, 4],
+                &[2, 7],
+                &[2, 8],
+                &[2, 10],
+                &[2, 5],
+                &[3, 5],
+                &[3, 6],
+                &[4, 7],
+                &[5, 8],
+                &[5, 9],
+                &[5, 6],
+                &[6, 9],
+                &[7, 8],
+                &[7, 10],
+                &[8, 9],
+                &[8, 10],
+                &[9, 10],
+            ]),
+            false,
+        );
+    }
+
+    #[test]
+    fn is_weakly_chordal8() {
+        let mut graph = UGraph::<i32>::with_loops();
+        let bound = 100;
+        for i in 0..bound {
+            graph.add_vertex(i);
+            graph.add_vertex(i + 1);
+            graph.add_edge(&i, &(i + 1)).unwrap();
+        }
+        graph.add_edge(&0, &bound).unwrap();
+        check(&graph, false);
+    }
+
+    #[test]
+    fn is_weakly_chordal9() {
+        let mut graph = UGraph::<i32>::with_loops().with_vertex_factory(|i| i as i32);
+        Complete(50).generate_default(&mut graph).unwrap();
+        check(&graph, true);
+    }
+
+    #[test]
+    fn is_weakly_chordal10() {
+        check(&build(named::dodecahedron()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal11() {
+        check(&build(named::bull()), true);
+    }
+
+    #[test]
+    fn is_weakly_chordal12() {
+        check(&build(named::bucky_ball()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal13() {
+        check(&build(named::clebsch()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal14() {
+        check(&build(named::grotzsch()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal15() {
+        check(&build(named::bidiakis_cube()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal16() {
+        check(&build(named::blanusa_first_snark()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal17() {
+        check(&build(named::double_star_snark()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal18() {
+        check(&build(named::brinkmann()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal19() {
+        check(&build(named::gosset()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal20() {
+        check(&build(named::chvatal()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal21() {
+        check(&build(named::kittell()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal22() {
+        check(&build(named::coxeter()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal23() {
+        check(&build(named::ellingham_horton78()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal24() {
+        check(&build(named::errera()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal25() {
+        check(&build(named::folkman()), false);
+    }
+
+    #[test]
+    fn is_weakly_chordal26() {
+        check(&build(named::krackhardt_kite()), true);
+    }
+}

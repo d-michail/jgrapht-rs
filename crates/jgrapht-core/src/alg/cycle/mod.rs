@@ -11,6 +11,7 @@ mod howard;
 mod legacy;
 mod separator;
 mod simple_cycles;
+mod weak_chordality;
 
 pub use basis::{
     CycleBasis, CycleBasisAlgorithm, PatonCycleBase, QueueBFSFundamentalCycleBasis,
@@ -26,3 +27,4 @@ pub use simple_cycles::{
     DirectedSimpleCycles, HawickJamesSimpleCycles, JohnsonSimpleCycles,
     SzwarcfiterLauerSimpleCycles, TarjanSimpleCycles, TiernanSimpleCycles,
 };
+pub use weak_chordality::WeakChordalityInspector;
