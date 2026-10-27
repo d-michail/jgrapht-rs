@@ -14,7 +14,7 @@
 
 use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
-use super::base::MinimumSTCutAlgorithm;
+use super::base::{MinimumCut, MinimumSTCutAlgorithm};
 use super::{DEFAULT_EPSILON, GusfieldGomoryHuCutTree, PushRelabelMFImpl};
 use crate::alg::connectivity::ConnectivityInspector;
 use crate::error::{GraphError, Result};
@@ -86,25 +86,61 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
     /// Computes the minimum odd cut-set for `odd_vertices` (an even number of vertices of the
     /// network); `use_tree_compression` splits the odd vertices into clusters instead of
     /// scanning every tree edge.
-    pub fn calculate_min_cut(
+    ///
+    /// Returns `None` when no cut-set separates the odd vertices into odd-sized sets, for example
+    /// when `odd_vertices` is empty.
+    ///
+    /// # Errors
+    ///
+    /// [`GraphError::VertexNotFound`] if a vertex of `odd_vertices` is not in the network, and
+    /// [`GraphError::InvalidParameter`] if their number is odd.
+    pub fn minimum_odd_cut(
         &mut self,
         odd_vertices: IndexSet<G::Vertex>,
         use_tree_compression: bool,
-    ) -> Result<f64> {
+    ) -> Result<Option<MinimumCut<G::Vertex, G::Edge>>> {
         self.minimum_cut_weight = f64::MAX;
+        self.source_partition_minimum_cut = None;
         if odd_vertices.len() % 2 == 1 {
-            return Err(GraphError::InvalidArgument(
-                "There needs to be an even number of odd vertices".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "odd_vertices",
+                requirement: crate::ParameterRequirement::Even,
+            });
         }
-        debug_assert!(odd_vertices.iter().all(|v| self.network.contains_vertex(v)));
+        if odd_vertices.iter().any(|v| !self.network.contains_vertex(v)) {
+            return Err(GraphError::VertexNotFound);
+        }
         self.odd_vertices = odd_vertices;
         self.gomory_hu_tree = Some(self.gusfield.gomory_hu_tree()?);
-        if use_tree_compression {
-            self.calculate_min_cut_with_tree_compression()
+        let weight = if use_tree_compression {
+            self.calculate_min_cut_with_tree_compression()?
         } else {
-            Ok(self.calculate_min_cut_without_tree_compression())
-        }
+            self.calculate_min_cut_without_tree_compression()
+        };
+        let Some(source_partition) = self.source_partition_minimum_cut.take() else {
+            return Ok(None);
+        };
+        let g = self.network;
+        let sink_partition: IndexSet<G::Vertex> = g
+            .vertices()
+            .filter(|v| !source_partition.contains(*v))
+            .cloned()
+            .collect();
+        let cut_edges: IndexSet<G::Edge> = g
+            .edges()
+            .filter(|e| {
+                g.edge_endpoints(e).is_some_and(|(u, v)| {
+                    source_partition.contains(u) ^ source_partition.contains(v)
+                })
+            })
+            .cloned()
+            .collect();
+        Ok(Some(MinimumCut::new(
+            weight,
+            source_partition,
+            sink_partition,
+            cut_edges,
+        )))
     }
 
     /// Modified implementation of the algorithm proposed in Odd Minimum Cut-sets and b-matchings by
@@ -165,10 +201,11 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
         debug_assert!(cluster.len() >= 2);
         let odd_node1 = &cluster[0];
         let odd_node2 = &cluster[1];
-        let cut_weight = self.gusfield.calculate_min_cut(odd_node1, odd_node2)?;
+        let cut = self.gusfield.minimum_cut(odd_node1, odd_node2)?;
+        let cut_weight = cut.capacity();
         let mut source_partition: Option<IndexSet<G::Vertex>> = None;
         if cut_weight < self.minimum_cut_weight {
-            let partition = self.gusfield.source_partition().clone();
+            let partition = cut.source_partition().clone();
             if Self::is_odd_vertex_set(&partition, &self.odd_vertices) {
                 self.minimum_cut_weight = cut_weight;
                 self.source_partition_minimum_cut = Some(partition.clone());
@@ -180,7 +217,7 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
         }
         let source_partition = match source_partition {
             Some(p) => p,
-            None => self.gusfield.source_partition().clone(),
+            None => cut.source_partition().clone(),
         };
         let split1 = Self::intersection(cluster, &source_partition);
         let split2: IndexSet<G::Vertex> = cluster
@@ -227,37 +264,5 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
                 % 2
                 == 1
         }
-    }
-
-    /// The source side of the last minimum odd cut-set.
-    pub fn source_partition(&self) -> Option<&IndexSet<G::Vertex>> {
-        self.source_partition_minimum_cut.as_ref()
-    }
-
-    /// The sink side of the last minimum odd cut-set.
-    pub fn sink_partition(&self) -> Option<IndexSet<G::Vertex>> {
-        let source = self.source_partition_minimum_cut.as_ref()?;
-        Some(
-            self.network
-                .vertices()
-                .filter(|v| !source.contains(*v))
-                .cloned()
-                .collect(),
-        )
-    }
-
-    /// The edges of the last minimum odd cut-set.
-    pub fn cut_edges(&self) -> Option<IndexSet<G::Edge>> {
-        let source = self.source_partition_minimum_cut.as_ref()?;
-        let g = self.network;
-        Some(
-            g.edges()
-                .filter(|e| {
-                    let (u, v) = g.edge_endpoints(e).unwrap();
-                    source.contains(u) ^ source.contains(v)
-                })
-                .cloned()
-                .collect(),
-        )
     }
 }

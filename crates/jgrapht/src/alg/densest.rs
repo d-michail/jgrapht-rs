@@ -80,8 +80,8 @@ pub type MinCutFn<V> = Box<dyn Fn(&DensityNetwork<V>, &V, &V) -> Result<HashSet<
 pub fn default_min_cut<V: Clone + Eq + std::hash::Hash + 'static>() -> MinCutFn<V> {
     Box::new(|net, s, t| {
         let mut push_relabel = PushRelabelMFImpl::new(net)?;
-        push_relabel.calculate_min_cut(s, t)?;
-        Ok(push_relabel.source_partition().iter().cloned().collect())
+        let cut = push_relabel.minimum_cut(s, t)?;
+        Ok(cut.source_partition().iter().cloned().collect())
     })
 }
 

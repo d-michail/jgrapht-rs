@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1473 | 346 | 120 | 358 | 13 | 19 | 424 | 193 |
+| `jgrapht` | 1471 | 347 | 115 | 354 | 14 | 19 | 429 | 193 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -33,7 +33,7 @@ Each needs an owner in R3/R5/R6.
 | `jgrapht/src/alg/decomposition.rs` | `tree_decomposition` | `usize::MAX` |
 | `jgrapht/src/alg/drawing/model.rs` | `negate` | `-1` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::init` | `usize::MAX` |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::new` | `-1` |
+| `jgrapht/src/alg/flow/mincost.rs` | `CapacityScalingMinimumCostFlow::solve` | `INFINITY` |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::has_edge` | `-1` |
 | `jgrapht/src/alg/lca.rs` | `BinaryLiftingLcaFinder::with_roots` | `usize::MAX` |
 | `jgrapht/src/alg/lca.rs` | `EulerTourRmqLcaFinder::with_roots` | `usize::MAX` |
@@ -130,14 +130,9 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/drawing/fr.rs` | `FRQuadTree::centroid` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/drawing/fr.rs` | `FRQuadTree::insert` | 6 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/drawing/model.rs` | `equals` | 0 unwrap, 1 expect/panic/assert |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::cut_edges` | 4 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::flow_map` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::sink_partition` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::source_partition` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldGomoryHuCutTree::calculate_global_min_cut` | 3 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldGomoryHuCutTree::global_minimum_cut` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldGomoryHuCutTree::gomory_hu_tree` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/flow/mincost.rs` | `CapacityScalingMinimumCostFlow::get_minimum_cost_flow` | 1 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/alg/flow/padberg_rao.rs` | `PadbergRaoOddMinimumCutset::cut_edges` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/interfaces.rs` | `StrongConnectivityAlgorithm::condensation` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/isomorphism/ahu.rs` | `AHURootedTreeIsomorphismInspector::new` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::edge_numbers` | 2 unwrap, 0 expect/panic/assert |
@@ -523,31 +518,30 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::arc_of_edge` | state query | `usize` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::check_capacities` | Result | `Result<()>` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::compose_flow` | state query | `HashMap<G::Edge, f64>` |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::cut_edges` | state query | `&IndexSet<G::Edge>` |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::flow_direction` | Result | `Result<G::Vertex>` |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::flow_map` | state query | `&HashMap<G::Edge, f64>` |
+| `jgrapht/src/alg/flow/base.rs` | `FlowNet::finish` | state query | `MaximumFlow<G::Vertex, G::Edge>` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::has_capacity` | infallible | `bool` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::init` | Result | `Result<()>` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::new` | Result | `Result<Self>` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::push_flow_through` | infallible | `()` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::residual_capacity` | state query | `f64` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::resolve` | Result | `Result<(usize, usize)>` |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::sink_partition` | state query | `&IndexSet<G::Vertex>` |
-| `jgrapht/src/alg/flow/base.rs` | `FlowNet::source_partition` | state query | `&IndexSet<G::Vertex>` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::vertex_index` | Option | `Option<usize>` |
+| `jgrapht/src/alg/flow/base.rs` | `MaximumFlow::cut_capacity` | state query | `f64` |
+| `jgrapht/src/alg/flow/base.rs` | `MaximumFlow::cut_edges` | state query | `&IndexSet<E>` |
 | `jgrapht/src/alg/flow/base.rs` | `MaximumFlow::flow` | Option | `Option<f64>` |
-| `jgrapht/src/alg/flow/base.rs` | `MaximumFlowAlgorithm::flow_direction` | Result | `Result<V>` |
-| `jgrapht/src/alg/flow/base.rs` | `MaximumFlowAlgorithm::flow_map` | Result | `Result<&HashMap<E, f64>>` |
-| `jgrapht/src/alg/flow/base.rs` | `MaximumFlowAlgorithm::maximum_flow` | Result | `Result<MaximumFlow<E>>` |
-| `jgrapht/src/alg/flow/base.rs` | `MaximumFlowAlgorithm::maximum_flow_value` | Result | `Result<f64>` |
-| `jgrapht/src/alg/flow/base.rs` | `MinimumSTCutAlgorithm::calculate_min_cut` | Result | `Result<f64>` |
-| `jgrapht/src/alg/flow/base.rs` | `MinimumSTCutAlgorithm::cut_capacity` | state query | `f64` |
-| `jgrapht/src/alg/flow/base.rs` | `MinimumSTCutAlgorithm::cut_edges` | state query | `&IndexSet<E>` |
-| `jgrapht/src/alg/flow/base.rs` | `MinimumSTCutAlgorithm::sink_partition` | state query | `&IndexSet<V>` |
-| `jgrapht/src/alg/flow/base.rs` | `MinimumSTCutAlgorithm::source_partition` | state query | `&IndexSet<V>` |
-| `jgrapht/src/alg/flow/base.rs` | `name::current_sink` | Option | `Option<&G::Vertex>` |
-| `jgrapht/src/alg/flow/base.rs` | `name::current_source` | Option | `Option<&G::Vertex>` |
-| `jgrapht/src/alg/flow/base.rs` | `name::last_flow_value` | state query | `f64` |
+| `jgrapht/src/alg/flow/base.rs` | `MaximumFlow::flow_direction` | Option | `Option<&V>` |
+| `jgrapht/src/alg/flow/base.rs` | `MaximumFlow::flow_map` | state query | `&HashMap<E, f64>` |
+| `jgrapht/src/alg/flow/base.rs` | `MaximumFlow::into_minimum_cut` | state query | `MinimumCut<V, E>` |
+| `jgrapht/src/alg/flow/base.rs` | `MaximumFlow::sink_partition` | state query | `&IndexSet<V>` |
+| `jgrapht/src/alg/flow/base.rs` | `MaximumFlow::source_partition` | state query | `&IndexSet<V>` |
+| `jgrapht/src/alg/flow/base.rs` | `MaximumFlow::value` | state query | `f64` |
+| `jgrapht/src/alg/flow/base.rs` | `MaximumFlowAlgorithm::maximum_flow` | Result | `Result<MaximumFlow<V, E>>` |
+| `jgrapht/src/alg/flow/base.rs` | `MaximumFlowValueAlgorithm::maximum_flow_value` | Result | `Result<f64>` |
+| `jgrapht/src/alg/flow/base.rs` | `MinimumCut::capacity` | state query | `f64` |
+| `jgrapht/src/alg/flow/base.rs` | `MinimumCut::cut_edges` | state query | `&IndexSet<E>` |
+| `jgrapht/src/alg/flow/base.rs` | `MinimumCut::sink_partition` | state query | `&IndexSet<V>` |
+| `jgrapht/src/alg/flow/base.rs` | `MinimumCut::source_partition` | state query | `&IndexSet<V>` |
+| `jgrapht/src/alg/flow/base.rs` | `MinimumSTCutAlgorithm::minimum_cut` | Result | `Result<MinimumCut<V, E>>` |
 | `jgrapht/src/alg/flow/boykov_kolmogorov.rs` | `BoykovKolmogorovMFImpl::new` | Result | `Result<Self>` |
 | `jgrapht/src/alg/flow/boykov_kolmogorov.rs` | `BoykovKolmogorovMFImpl::with_epsilon` | Result | `Result<Self>` |
 | `jgrapht/src/alg/flow/dinic.rs` | `DinicMFImpl::new` | Result | `Result<Self>` |
@@ -559,15 +553,14 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldEquivalentFlowTree::new` | Result | `Result<Self>` |
 | `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldEquivalentFlowTree::with_algorithm` | Result | `Result<Self>` |
 | `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldEquivalentFlowTree::with_epsilon` | Result | `Result<Self>` |
-| `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldGomoryHuCutTree::calculate_global_min_cut` | Result | `Result<f64>` |
+| `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldGomoryHuCutTree::global_minimum_cut` | Result | `Result<MinimumCut<G::Vertex, G::Edge>>` |
 | `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldGomoryHuCutTree::gomory_hu_tree` | Result | `Result<UGraph<G::Vertex>>` |
 | `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldGomoryHuCutTree::new` | Result | `Result<Self>` |
 | `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldGomoryHuCutTree::with_algorithm` | Result | `Result<Self>` |
 | `jgrapht/src/alg/flow/gusfield.rs` | `GusfieldGomoryHuCutTree::with_epsilon` | Result | `Result<Self>` |
-| `jgrapht/src/alg/flow/mincost.rs` | `CapacityScalingMinimumCostFlow::dual_solution` | Option | `Option<HashMap<V, f64>>` |
 | `jgrapht/src/alg/flow/mincost.rs` | `CapacityScalingMinimumCostFlow::get_minimum_cost_flow` | Result | `Result<MinimumCostFlow<E>>` |
 | `jgrapht/src/alg/flow/mincost.rs` | `CapacityScalingMinimumCostFlow::new` | unchecked constructor | `Self` |
-| `jgrapht/src/alg/flow/mincost.rs` | `CapacityScalingMinimumCostFlow::test_optimality` | Result | `Result<bool>` |
+| `jgrapht/src/alg/flow/mincost.rs` | `CapacityScalingMinimumCostFlow::solve` | Result | `Result<MinimumCostSolution<V, E>>` |
 | `jgrapht/src/alg/flow/mincost.rs` | `CapacityScalingMinimumCostFlow::with_scaling_factor` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/flow/mincost.rs` | `MinimumCostFlow::flow` | Option | `Option<f64>` |
 | `jgrapht/src/alg/flow/mincost.rs` | `MinimumCostFlowAlgorithm::flow_cost` | Result | `Result<f64>` |
@@ -582,12 +575,12 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/flow/mincost.rs` | `MinimumCostFlowProblemImpl::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/flow/mincost.rs` | `MinimumCostFlowProblemImpl::with_costs` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/flow/mincost.rs` | `MinimumCostFlowProblemImpl::with_lower_bounds` | unchecked constructor | `Self` |
-| `jgrapht/src/alg/flow/padberg_rao.rs` | `PadbergRaoOddMinimumCutset::calculate_min_cut` | Result | `Result<f64>` |
-| `jgrapht/src/alg/flow/padberg_rao.rs` | `PadbergRaoOddMinimumCutset::cut_edges` | Option | `Option<IndexSet<G::Edge>>` |
+| `jgrapht/src/alg/flow/mincost.rs` | `MinimumCostSolution::dual_solution` | state query | `&HashMap<V, f64>` |
+| `jgrapht/src/alg/flow/mincost.rs` | `MinimumCostSolution::flow` | state query | `&MinimumCostFlow<E>` |
+| `jgrapht/src/alg/flow/mincost.rs` | `MinimumCostSolution::is_optimal` | infallible | `bool` |
 | `jgrapht/src/alg/flow/padberg_rao.rs` | `PadbergRaoOddMinimumCutset::is_odd_vertex_set` | infallible | `bool` |
+| `jgrapht/src/alg/flow/padberg_rao.rs` | `PadbergRaoOddMinimumCutset::minimum_odd_cut` | Result<Option> | `Result<Option<MinimumCut<G::Vertex, G::Edge>>>` |
 | `jgrapht/src/alg/flow/padberg_rao.rs` | `PadbergRaoOddMinimumCutset::new` | Result | `Result<Self>` |
-| `jgrapht/src/alg/flow/padberg_rao.rs` | `PadbergRaoOddMinimumCutset::sink_partition` | Option | `Option<IndexSet<G::Vertex>>` |
-| `jgrapht/src/alg/flow/padberg_rao.rs` | `PadbergRaoOddMinimumCutset::source_partition` | Option | `Option<&IndexSet<G::Vertex>>` |
 | `jgrapht/src/alg/flow/padberg_rao.rs` | `PadbergRaoOddMinimumCutset::with_algorithm` | Result | `Result<Self>` |
 | `jgrapht/src/alg/flow/padberg_rao.rs` | `PadbergRaoOddMinimumCutset::with_epsilon` | Result | `Result<Self>` |
 | `jgrapht/src/alg/flow/push_relabel.rs` | `PushRelabelMFImpl::calculate_maximum_flow` | Result | `Result<f64>` |

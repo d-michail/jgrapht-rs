@@ -117,15 +117,7 @@ impl<'g, G: IncidenceGraph> PushRelabelMFImpl<'g, G> {
     }
 
     fn calculate(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
-        let (s, t) = self.net.resolve(
-            source,
-            sink,
-            [
-                "invalid source (null or not from this network)",
-                "invalid sink (null or not from this network)",
-                "source is equal to sink",
-            ],
-        )?;
+        let (s, t) = self.net.resolve(source, sink)?;
         self.net.init(s, t)?;
         self.count_height = vec![0; 2 * self.n + 1];
         self.initialize(s, t);

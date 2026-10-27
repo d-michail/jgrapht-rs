@@ -23,13 +23,15 @@ pub mod mincost;
 mod padberg_rao;
 mod push_relabel;
 
-pub use base::{MaximumFlow, MaximumFlowAlgorithm, MinimumSTCutAlgorithm};
+pub use base::{
+    MaximumFlow, MaximumFlowAlgorithm, MaximumFlowValueAlgorithm, MinimumCut, MinimumSTCutAlgorithm,
+};
 pub use boykov_kolmogorov::BoykovKolmogorovMFImpl;
 pub use dinic::DinicMFImpl;
 pub use edmonds_karp::EdmondsKarpMFImpl;
 pub use gusfield::{GusfieldEquivalentFlowTree, GusfieldGomoryHuCutTree};
 pub use mincost::{
-    CapacityScalingMinimumCostFlow, MinimumCostFlow, MinimumCostFlowAlgorithm,
+    CapacityScalingMinimumCostFlow, MinimumCostFlow, MinimumCostFlowAlgorithm, MinimumCostSolution,
     MinimumCostFlowProblem, MinimumCostFlowProblemImpl,
 };
 pub use padberg_rao::PadbergRaoOddMinimumCutset;

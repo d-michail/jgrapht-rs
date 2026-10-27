@@ -76,7 +76,7 @@ impl<'g, G: OutgoingGraph> EdmondsKarpMFImpl<'g, G> {
             return Err(GraphError::must_be_positive("epsilon"));
         }
         let net = FlowNet::new(network, epsilon)?;
-        net.check_capacities(epsilon, "invalid capacity (must be non-negative)")?;
+        net.check_capacities(epsilon)?;
         Ok(EdmondsKarpMFImpl {
             net,
             visited: Vec::new(),
@@ -90,15 +90,7 @@ impl<'g, G: OutgoingGraph> EdmondsKarpMFImpl<'g, G> {
     }
 
     fn calculate(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
-        let (s, t) = self.net.resolve(
-            source,
-            sink,
-            [
-                "invalid source (null or not from this network)",
-                "invalid sink (null or not from this network)",
-                "source is equal to sink",
-            ],
-        )?;
+        let (s, t) = self.net.resolve(source, sink)?;
         self.net.init(s, t)?;
         loop {
             self.breadth_first_search();

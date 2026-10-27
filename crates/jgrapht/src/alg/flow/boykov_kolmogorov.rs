@@ -103,15 +103,7 @@ impl<'g, G: OutgoingGraph> BoykovKolmogorovMFImpl<'g, G> {
     }
 
     fn calculate(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
-        let (s, t) = self.net.resolve(
-            source,
-            sink,
-            [
-                "invalid source (null or not from this network)",
-                "invalid sink (null or not from this network)",
-                "source is equal to sink",
-            ],
-        )?;
+        let (s, t) = self.net.resolve(source, sink)?;
         self.net.init(s, t)?;
         self.data = vec![
             VertexData {

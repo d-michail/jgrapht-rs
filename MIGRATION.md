@@ -60,6 +60,29 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 17: flow results
+
+The flow algorithms keep no state to query afterwards; every run returns what it produced.
+
+| Before | After |
+|---|---|
+| `MaximumFlow<E> { value, flow_map }` (public fields) | `MaximumFlow<V, E>` with `value()`, `flow(e)`, `flow_map()`, `flow_direction(e) -> Option<&V>`, `cut_capacity()`, `source_partition()`, `sink_partition()`, `cut_edges()` |
+| `alg.flow_map()`, `alg.flow_direction(e)` after a run | read them from the `MaximumFlow` that `maximum_flow(s, t)` returned |
+| `alg.calculate_min_cut(s, t)?` then `alg.cut_capacity()`, `alg.source_partition()`, `alg.sink_partition()`, `alg.cut_edges()` | `let cut = alg.minimum_cut(s, t)?;` then `cut.capacity()`, `cut.source_partition()`, `cut.sink_partition()`, `cut.cut_edges()` (`MinimumCut<V, E>`) |
+| `alg.last_flow_value()`, `current_source()`, `current_sink()` (`-1` before the first run) | removed; use the result of the run |
+| `GusfieldEquivalentFlowTree`/`GusfieldGomoryHuCutTree` implemented `MaximumFlowAlgorithm` and returned `Unsupported` for the flow | they implement `MaximumFlowValueAlgorithm` (value only); the Gomory-Hu tree also implements `MinimumSTCutAlgorithm` |
+| `gomory.calculate_global_min_cut()?` then `gomory.source_partition()` | `gomory.global_minimum_cut()?` returns the `MinimumCut` |
+| `mcf.get_minimum_cost_flow(p)?` then `mcf.dual_solution()` and `mcf.test_optimality(eps)?` | `let s = mcf.solve(p)?;` then `s.flow()`, `s.dual_solution()`, `s.is_optimal(eps)` (`MinimumCostSolution`) |
+| `MaximumFlowAlgorithm::maximum_flow_value` | `MaximumFlowValueAlgorithm::maximum_flow_value` (supertrait of `MaximumFlowAlgorithm`; import it to call the method) |
+
+`PadbergRaoOddMinimumCutset::calculate_min_cut(odd, compression)` returning `f64` (`f64::MAX` when
+there was no odd cut) plus `source_partition()`, `sink_partition()`, `cut_edges()` is now
+`minimum_odd_cut(odd, compression) -> Result<Option<MinimumCut<V, E>>>`; `None` means no odd cut-set
+exists. An odd-sized `odd_vertices` is `InvalidParameter { name: "odd_vertices", requirement: Even }`.
+
+Errors are typed: an unknown source or sink is `VertexNotFound`, identical terminals are
+`SourceEqualsSink`, and a negative capacity is `InvalidWeight(Negative)`.
+
 ## Step 16: walks and mappings
 
 * `GraphWalk` fields are private. Replace `walk.vertices` with `walk.vertex_list()` (a slice;

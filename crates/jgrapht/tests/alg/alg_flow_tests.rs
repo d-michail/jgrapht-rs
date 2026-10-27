@@ -87,11 +87,11 @@ fn verify_directed<
     source: i32,
     sink: i32,
     expected: f64,
-    max_flow: &MaximumFlow<DefaultEdge>,
+    max_flow: &MaximumFlow<i32, DefaultEdge>,
     _solver: &S,
 ) {
-    let flow_value = max_flow.value;
-    let flow = &max_flow.flow_map;
+    let flow_value = max_flow.value();
+    let flow = max_flow.flow_map();
     assert!(
         (expected - flow_value).abs() <= EPS,
         "{expected} vs {flow_value}"
@@ -137,8 +137,8 @@ fn verify_undirected<
     solver: &mut S,
 ) {
     let max_flow = solver.maximum_flow(&source, &sink).unwrap();
-    let flow_value = max_flow.value;
-    let flow = &max_flow.flow_map;
+    let flow_value = max_flow.value();
+    let flow = max_flow.flow_map();
     assert_eq!(expected, flow_value);
     for e in graph.edges() {
         assert!(flow.contains_key(e));
@@ -151,7 +151,7 @@ fn verify_undirected<
     for u in graph.vertices() {
         let mut balance = 0.0;
         for e in graph.edges_of(u) {
-            let v = solver.flow_direction(e).unwrap();
+            let v = *max_flow.flow_direction(e).unwrap();
             if *u == v {
                 balance += flow[e];
             } else {
@@ -393,7 +393,7 @@ mod push_relabel_extras {
             graph.add_weighted_edge(&a, &b, w).unwrap();
         }
         let mut mf = PushRelabelMFImpl::new(&graph).unwrap();
-        assert!((2.0 - mf.calculate_min_cut(&-1, &-2).unwrap()).abs() <= 1e-9);
+        assert!((2.0 - mf.minimum_cut(&-1, &-2).unwrap().capacity()).abs() <= 1e-9);
     }
 
     #[test]
@@ -463,22 +463,18 @@ mod boykov_kolmogorov_extras {
 
 // MinimumSourceSinkCutTest
 
-fn verify_cut<
-    S: MinimumSTCutAlgorithm<i32, DefaultEdge>,
-    G: Graph<Vertex = i32, Edge = DefaultEdge>,
->(
+fn verify_cut<G: Graph<Vertex = i32, Edge = DefaultEdge>>(
     network: &G,
     directed: bool,
     source: i32,
     sink: i32,
     expected: f64,
-    cut_weight: f64,
-    mc: &mut S,
+    cut: &jgrapht::alg::flow::MinimumCut<i32, DefaultEdge>,
 ) {
-    let source_partition = mc.source_partition().clone();
-    let sink_partition = mc.sink_partition().clone();
-    let cut_edges = mc.cut_edges().clone();
-    assert_eq!(expected, cut_weight);
+    let source_partition = cut.source_partition().clone();
+    let sink_partition = cut.sink_partition().clone();
+    let cut_edges = cut.cut_edges().clone();
+    assert_eq!(expected, cut.capacity());
     assert!(source_partition.contains(&source));
     assert!(sink_partition.contains(&sink));
     assert!(source_partition.is_disjoint(&sink_partition));
@@ -508,7 +504,7 @@ fn verify_cut<
         .iter()
         .map(|e| network.edge_weight(e).unwrap())
         .sum();
-    assert_eq!(cut_weight, total);
+    assert_eq!(cut.capacity(), total);
 }
 
 macro_rules! min_cut_suite {
@@ -521,14 +517,14 @@ macro_rules! min_cut_suite {
                 network.add_vertex(source);
                 network.add_vertex(sink);
                 let mut mc = $ctor(&network).unwrap();
-                let cut = mc.calculate_min_cut(&source, &sink).unwrap();
-                verify_cut(&network, true, source, sink, expected, cut, &mut mc);
+                let cut = mc.minimum_cut(&source, &sink).unwrap();
+                verify_cut(&network, true, source, sink, expected, &cut);
             }
 
             fn run_undirected(network: Ug, source: i32, sink: i32, expected: f64) {
                 let mut mc = $ctor(&network).unwrap();
-                let cut = mc.calculate_min_cut(&source, &sink).unwrap();
-                verify_cut(&network, false, source, sink, expected, cut, &mut mc);
+                let cut = mc.minimum_cut(&source, &sink).unwrap();
+                verify_cut(&network, false, source, sink, expected, &cut);
             }
 
             #[test]
@@ -644,9 +640,9 @@ macro_rules! min_cut_suite {
                     let (source, sink) = (0, network.vertex_count() as i32 - 1);
                     let mut mc = $ctor(&network).unwrap();
                     let mut other = $other(&network).unwrap();
-                    let expected = other.calculate_min_cut(&source, &sink).unwrap();
-                    let cut = mc.calculate_min_cut(&source, &sink).unwrap();
-                    verify_cut(&network, true, source, sink, expected, cut, &mut mc);
+                    let expected = other.minimum_cut(&source, &sink).unwrap().capacity();
+                    let cut = mc.minimum_cut(&source, &sink).unwrap();
+                    verify_cut(&network, true, source, sink, expected, &cut);
                 }
             }
 
@@ -658,9 +654,9 @@ macro_rules! min_cut_suite {
                     let (source, sink) = (0, network.vertex_count() as i32 - 1);
                     let mut mc = $ctor(&network).unwrap();
                     let mut other = $other(&network).unwrap();
-                    let expected = other.calculate_min_cut(&source, &sink).unwrap();
-                    let cut = mc.calculate_min_cut(&source, &sink).unwrap();
-                    verify_cut(&network, false, source, sink, expected, cut, &mut mc);
+                    let expected = other.minimum_cut(&source, &sink).unwrap().capacity();
+                    let cut = mc.minimum_cut(&source, &sink).unwrap();
+                    verify_cut(&network, false, source, sink, expected, &cut);
                 }
             }
         }
@@ -702,7 +698,7 @@ mod push_relabel_cut_extras {
             network.add_edge(&a, &b).unwrap();
         }
         let mut pr = PushRelabelMFImpl::new(&network).unwrap();
-        assert_eq!(0.0, pr.calculate_min_cut(&0, &5).unwrap());
+        assert_eq!(0.0, pr.minimum_cut(&0, &5).unwrap().capacity());
     }
 
     #[test]
@@ -713,7 +709,7 @@ mod push_relabel_cut_extras {
         }
         network.add_edge(&0, &1).unwrap();
         let mut pr = PushRelabelMFImpl::new(&network).unwrap();
-        assert_eq!(0.0, pr.calculate_min_cut(&0, &2).unwrap());
+        assert_eq!(0.0, pr.minimum_cut(&0, &2).unwrap().capacity());
     }
 }
 
@@ -779,7 +775,7 @@ mod gusfield {
                 if j <= i {
                     continue;
                 }
-                let expected = st.calculate_min_cut(i, j).unwrap();
+                let expected = st.minimum_cut(i, j).unwrap().capacity();
                 assert_eq!(expected, alg.maximum_flow_value(i, j).unwrap());
                 assert_eq!(expected, alg.maximum_flow_value(j, i).unwrap());
                 let cheapest = path_weights(&tree, *i, *j)
@@ -806,8 +802,9 @@ mod gusfield {
         assert!(is_tree(&tree));
         let expected_min_cut = StoerWagnerMinimumCut::new(net).unwrap().min_cut_weight();
         assert_eq!(expected_min_cut, min_weight(&tree));
-        assert_eq!(expected_min_cut, alg.calculate_global_min_cut().unwrap());
-        let partition = alg.source_partition().clone();
+        let global = alg.global_minimum_cut().unwrap();
+        assert_eq!(expected_min_cut, global.capacity());
+        let partition = global.source_partition().clone();
         assert_eq!(expected_min_cut, cut_weight(net, &partition));
         let mut st = PushRelabelMFImpl::new(net).unwrap();
         for i in net.vertices() {
@@ -815,15 +812,15 @@ mod gusfield {
                 if j <= i {
                     continue;
                 }
-                let expected = st.calculate_min_cut(i, j).unwrap();
+                let expected = st.minimum_cut(i, j).unwrap().capacity();
                 assert_eq!(expected, alg.maximum_flow_value(i, j).unwrap());
                 assert_eq!(expected, alg.maximum_flow_value(j, i).unwrap());
-                assert_eq!(expected, alg.calculate_min_cut(j, i).unwrap());
-                assert_eq!(expected, alg.calculate_min_cut(i, j).unwrap());
-                assert_eq!(expected, alg.cut_capacity());
-                let source_partition = alg.source_partition().clone();
+                assert_eq!(expected, alg.minimum_cut(j, i).unwrap().capacity());
+                let cut = alg.minimum_cut(i, j).unwrap();
+                assert_eq!(expected, cut.capacity());
+                let source_partition = cut.source_partition().clone();
                 assert!(source_partition.contains(i));
-                let sink_partition = alg.sink_partition().clone();
+                let sink_partition = cut.sink_partition().clone();
                 assert!(sink_partition.contains(j));
                 assert!(source_partition.is_disjoint(&sink_partition));
                 assert_eq!(expected, cut_weight(net, &source_partition));
@@ -979,12 +976,14 @@ mod padberg_rao_odd_minimum_cutset_test {
 
     fn run_test(net: &Network, odd_vertices: &IndexSet<i32>, use_tree_compression: bool) {
         let mut pr = Pr::new(net).unwrap();
-        let cut_value = pr
-            .calculate_min_cut(odd_vertices.clone(), use_tree_compression)
-            .unwrap();
-        let source_partition = pr.source_partition().unwrap().clone();
-        let sink_partition = pr.sink_partition().unwrap();
-        let cut_edges: HashSet<DefaultEdge> = pr.cut_edges().unwrap().into_iter().collect();
+        let cut = pr
+            .minimum_odd_cut(odd_vertices.clone(), use_tree_compression)
+            .unwrap()
+            .expect("an odd cut-set exists");
+        let cut_value = cut.capacity();
+        let source_partition = cut.source_partition().clone();
+        let sink_partition = cut.sink_partition().clone();
+        let cut_edges: HashSet<DefaultEdge> = cut.cut_edges().iter().copied().collect();
         assert!(source_partition.is_disjoint(&sink_partition));
         let union: HashSet<i32> = source_partition
             .iter()
@@ -1096,7 +1095,16 @@ mod padberg_rao_odd_minimum_cutset_test {
     fn odd_number_of_odd_vertices_is_rejected() {
         let net = network(&[0, 1, 2], &[(0, 1, 1.0)]);
         let mut pr = Pr::new(&net).unwrap();
-        assert!(pr.calculate_min_cut(set(&[0, 1, 2]), true).is_err());
+        assert!(matches!(
+            pr.minimum_odd_cut(set(&[0, 1, 2]), true),
+            Err(jgrapht::GraphError::InvalidParameter {
+                name: "odd_vertices",
+                ..
+            })
+        ));
+        // no odd vertices, no odd cut-set
+        assert!(pr.minimum_odd_cut(set(&[]), true).unwrap().is_none());
+        assert!(pr.minimum_odd_cut(set(&[]), false).unwrap().is_none());
     }
 
     #[test]
@@ -1174,16 +1182,17 @@ mod capacity_scaling_minimum_cost_flow_test {
             |e| lower.get(e).copied().unwrap_or(0),
         );
         let mut algorithm = CapacityScalingMinimumCostFlow::with_scaling_factor(scaling_factor);
-        let flow = algorithm.get_minimum_cost_flow(&problem).unwrap();
+        let solution = algorithm.solve(&problem).unwrap();
+        let flow = solution.flow();
         assert!(
             (cost - flow.cost).abs() <= EPS,
             "cost {} vs {cost}",
             flow.cost
         );
-        assert!(algorithm.test_optimality(EPS).unwrap());
+        assert!(solution.is_optimal(EPS));
         assert!(check_flow_and_dual_solution(
-            &algorithm.dual_solution().unwrap(),
-            &flow,
+            solution.dual_solution(),
+            flow,
             &problem
         ));
     }

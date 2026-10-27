@@ -113,6 +113,9 @@ pub enum ParameterRequirement {
     /// A non-empty collection.
     #[error("non-empty")]
     NonEmpty,
+    /// A collection with an even number of elements.
+    #[error("of even size")]
+    Even,
     /// A finite number (neither infinite nor NaN).
     #[error("finite")]
     Finite,

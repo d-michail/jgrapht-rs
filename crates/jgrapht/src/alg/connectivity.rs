@@ -15,7 +15,7 @@
 //! Connected components, strong connectivity, biconnectivity and condensation.
 
 use crate::graph::{IncidenceGraph, OutgoingGraph};
-use super::flow::MaximumFlowAlgorithm;
+use super::flow::MaximumFlowValueAlgorithm;
 use super::interfaces::StrongConnectivityAlgorithm;
 use super::util::Indexed;
 use crate::event::GraphListener;

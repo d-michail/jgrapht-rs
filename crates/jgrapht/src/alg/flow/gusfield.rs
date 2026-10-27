@@ -14,7 +14,7 @@
 
 use crate::graph::UndirectedGraph;
 use crate::graph::IncidenceGraph;
-use super::base::{MaximumFlow, MaximumFlowAlgorithm, MinimumSTCutAlgorithm};
+use super::base::{MaximumFlowValueAlgorithm, MinimumCut, MinimumSTCutAlgorithm};
 use super::{DEFAULT_EPSILON, PushRelabelMFImpl};
 use crate::error::{GraphError, Result};
 use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
@@ -23,13 +23,6 @@ use std::collections::{HashMap, VecDeque};
 
 type CutAlgorithm<'g, G> =
     Box<dyn MinimumSTCutAlgorithm<<G as Graph>::Vertex, <G as Graph>::Edge> + 'g>;
-
-fn unsupported<T>() -> Result<T> {
-    Err(GraphError::Unsupported(
-        "Flows calculated via Equivalent Flow trees only provide a maximum flow value, not the exact flow per edge/arc."
-            .into(),
-    ))
-}
 
 /// Shared set-up of the two Gusfield algorithms: the vertex order and index map.
 fn index_vertices<G: Graph>(network: &G) -> Result<(Vec<G::Vertex>, HashMap<G::Vertex, usize>)> {
@@ -77,6 +70,21 @@ fn index_vertices<G: Graph>(network: &G) -> Result<(Vec<G::Vertex>, HashMap<G::V
 ///
 /// `GusfieldEquivalentFlowTree`: all-pairs maximum flow values from `n - 1` minimum cut
 /// computations, kept in an equivalent flow tree.
+///
+/// It implements [`MaximumFlowValueAlgorithm`] only: an equivalent flow tree knows the *value* of
+/// the maximum flow between any two vertices but not the flow on each edge, so it cannot be used
+/// where [`MaximumFlowAlgorithm`](super::MaximumFlowAlgorithm) is required:
+///
+/// ```compile_fail,E0277
+/// use jgrapht::alg::flow::{GusfieldEquivalentFlowTree, MaximumFlowAlgorithm};
+/// use jgrapht::{GraphMutExt, UGraph};
+///
+/// fn needs_edge_flows<A: MaximumFlowAlgorithm<u32, jgrapht::DefaultEdge>>(_: &A) {}
+/// let mut g = UGraph::<u32>::simple().weighted();
+/// g.add_edge_with_vertices(0, 1).unwrap();
+/// let eft = GusfieldEquivalentFlowTree::new(&g).unwrap();
+/// needs_edge_flows(&eft);
+/// ```
 pub struct GusfieldEquivalentFlowTree<'g, G: Graph> {
     n: usize,
     minimum_st_cut_algorithm: CutAlgorithm<'g, G>,
@@ -126,10 +134,11 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldEqui
         for s in 1..n {
             let t = p[s];
             neighbors[s] = t;
-            let flow_value = self
+            let cut = self
                 .minimum_st_cut_algorithm
-                .calculate_min_cut(&self.vertex_list[s], &self.vertex_list[t])?;
-            let source_partition = self.minimum_st_cut_algorithm.source_partition();
+                .minimum_cut(&self.vertex_list[s], &self.vertex_list[t])?;
+            let flow_value = cut.capacity();
+            let source_partition = cut.source_partition();
             for i in s..n {
                 if source_partition.contains(&self.vertex_list[i]) && p[i] == t {
                     p[i] = s;
@@ -170,17 +179,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldEqui
     }
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MaximumFlowValueAlgorithm<G::Vertex>
     for GusfieldEquivalentFlowTree<'g, G>
 {
-    fn maximum_flow(
-        &mut self,
-        _source: &G::Vertex,
-        _sink: &G::Vertex,
-    ) -> Result<MaximumFlow<G::Edge>> {
-        unsupported()
-    }
-
     fn maximum_flow_value(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
         let (s, t) = match (self.index_map.get(source), self.index_map.get(sink)) {
             (Some(&s), Some(&t)) => (s, t),
@@ -190,14 +191,6 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MaximumFlowAlgorithm<G::Verte
             self.calculate_equivalent_flow_tree()?;
         }
         Ok(self.flow_matrix[s][t])
-    }
-
-    fn flow_map(&mut self) -> Result<&HashMap<G::Edge, f64>> {
-        unsupported()
-    }
-
-    fn flow_direction(&self, _edge: &G::Edge) -> Result<G::Vertex> {
-        unsupported()
     }
 }
 
@@ -244,12 +237,7 @@ pub struct GusfieldGomoryHuCutTree<'g, G: Graph> {
     p: Option<Vec<usize>>,
     fl: Vec<f64>,
     flow_matrix: Vec<Vec<f64>>,
-    last_invoked_source: Option<G::Vertex>,
-    last_invoked_target: Option<G::Vertex>,
-    source_partition_last_invoked_source: Option<IndexSet<G::Vertex>>,
     gomory_hu_tree: Option<UGraph<G::Vertex>>,
-    sink_cache: Option<IndexSet<G::Vertex>>,
-    cut_cache: Option<IndexSet<G::Edge>>,
 }
 
 impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomoryHuCutTree<'g, G> {
@@ -280,12 +268,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
             p: None,
             fl: Vec::new(),
             flow_matrix: Vec::new(),
-            last_invoked_source: None,
-            last_invoked_target: None,
-            source_partition_last_invoked_source: None,
             gomory_hu_tree: None,
-            sink_cache: None,
-            cut_cache: None,
         })
     }
 
@@ -297,10 +280,11 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
         let mut fl = vec![0.0; n];
         for s in 1..n {
             let t = p[s];
-            let flow_value = self
+            let cut = self
                 .minimum_st_cut_algorithm
-                .calculate_min_cut(&self.vertex_list[s], &self.vertex_list[t])?;
-            let source_partition = self.minimum_st_cut_algorithm.source_partition();
+                .minimum_cut(&self.vertex_list[s], &self.vertex_list[t])?;
+            let flow_value = cut.capacity();
+            let source_partition = cut.source_partition();
             fl[s] = flow_value;
             for i in 0..n {
                 if i != s && source_partition.contains(&self.vertex_list[i]) && p[i] == t {
@@ -343,27 +327,24 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
         Ok(tree)
     }
 
-    /// The weight of a global minimum cut: the cheapest tree edge. Afterwards the source and
-    /// sink are that edge's endpoints.
-    pub fn calculate_global_min_cut(&mut self) -> Result<f64> {
+    /// A global minimum cut: the minimum $s$-$t$ cut for the endpoints of the cheapest tree edge.
+    pub fn global_minimum_cut(&mut self) -> Result<MinimumCut<G::Vertex, G::Edge>> {
         if self.gomory_hu_tree.is_none() {
             self.gomory_hu_tree = Some(self.gomory_hu_tree()?);
         }
         let tree = self.gomory_hu_tree.as_ref().unwrap();
         let mut cheapest: Option<(&DefaultEdge, f64)> = None;
         for e in tree.edges() {
-            let w = tree.edge_weight(e).unwrap();
+            let w = tree.weight_of(e);
             if cheapest.is_none_or(|(_, best)| w < best) {
                 cheapest = Some((e, w));
             }
         }
-        let (edge, weight) =
+        let (edge, _) =
             cheapest.ok_or(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty))?;
         let (u, v) = tree.edge_endpoints(edge).unwrap();
-        self.last_invoked_source = Some(u.clone());
-        self.last_invoked_target = Some(v.clone());
-        self.source_partition_last_invoked_source = None;
-        Ok(weight)
+        let (u, v) = (u.clone(), v.clone());
+        self.minimum_cut(&u, &v)
     }
 
     /// BFS method to find the edges in the shortest path from a source to a target vertex in a tree
@@ -403,132 +384,99 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
     }
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MaximumFlowAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> GusfieldGomoryHuCutTree<'g, G> {
+    /// The source side of a minimum cut between `source` and `target`, read off the tree: remove
+    /// the cheapest edge of the tree path and take the component of `source`.
+    fn source_side(
+        &mut self,
+        source: &G::Vertex,
+        target: &G::Vertex,
+    ) -> Result<IndexSet<G::Vertex>> {
+        if self.gomory_hu_tree.is_none() {
+            self.gomory_hu_tree = Some(self.gomory_hu_tree()?);
+        }
+        if self.gomory_hu_tree.is_none() {
+            self.gomory_hu_tree = Some(self.gomory_hu_tree().expect("tree"));
+        }
+        let path_edges = {
+            let tree = self.gomory_hu_tree.as_ref().unwrap();
+            self.find_path_between(tree, source, target)
+        };
+        let tree = self.gomory_hu_tree.as_mut().unwrap();
+        let mut cheapest: Option<(DefaultEdge, f64)> = None;
+        for e in &path_edges {
+            let w = tree.weight_of(e);
+            if cheapest.is_none_or(|(_, best)| w < best) {
+                cheapest = Some((*e, w));
+            }
+        }
+        let (edge, weight) = cheapest.ok_or(GraphError::SourceEqualsSink)?;
+        let (u, v) = {
+            let (u, v) = tree.edge_endpoints(&edge).unwrap();
+            (u.clone(), v.clone())
+        };
+        tree.remove_edge(&edge);
+        let component = crate::alg::connectivity::ConnectivityInspector::new()
+            .connected_set_of(&*tree, source)
+            .expect("source is in the tree");
+        let partition = self
+            .vertex_list
+            .iter()
+            .filter(|x| component.contains(*x))
+            .cloned()
+            .collect();
+        tree.add_edge_with(&u, &v, edge)
+            .expect("re-adding the removed edge");
+        tree.set_edge_weight(&edge, weight).expect("weighted tree");
+        Ok(partition)
+    }
+}
+
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MaximumFlowValueAlgorithm<G::Vertex>
     for GusfieldGomoryHuCutTree<'g, G>
 {
-    fn maximum_flow(
-        &mut self,
-        _source: &G::Vertex,
-        _sink: &G::Vertex,
-    ) -> Result<MaximumFlow<G::Edge>> {
-        unsupported()
-    }
-
     fn maximum_flow_value(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
         let (s, t) = match (self.index_map.get(source), self.index_map.get(sink)) {
             (Some(&s), Some(&t)) => (s, t),
             _ => return Err(GraphError::VertexNotFound),
         };
-        self.last_invoked_source = Some(source.clone());
-        self.last_invoked_target = Some(sink.clone());
-        self.source_partition_last_invoked_source = None;
-        self.gomory_hu_tree = None;
         if self.p.is_none() {
             self.calculate_gomory_hu_tree()?;
         }
         Ok(self.flow_matrix[s][t])
-    }
-
-    fn flow_map(&mut self) -> Result<&HashMap<G::Edge, f64>> {
-        unsupported()
-    }
-
-    fn flow_direction(&self, _edge: &G::Edge) -> Result<G::Vertex> {
-        unsupported()
     }
 }
 
 impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MinimumSTCutAlgorithm<G::Vertex, G::Edge>
     for GusfieldGomoryHuCutTree<'g, G>
 {
-    fn calculate_min_cut(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
-        self.maximum_flow_value(source, sink)
-    }
-
-    fn cut_capacity(&mut self) -> f64 {
-        let (s, t) = (
-            self.last_invoked_source
-                .clone()
-                .expect("no cut computed yet"),
-            self.last_invoked_target
-                .clone()
-                .expect("no cut computed yet"),
-        );
-        self.calculate_min_cut(&s, &t)
-            .expect("vertices of the network")
-    }
-
-    fn source_partition(&mut self) -> &IndexSet<G::Vertex> {
-        if self.source_partition_last_invoked_source.is_none() {
-            if self.gomory_hu_tree.is_none() {
-                self.gomory_hu_tree = Some(self.gomory_hu_tree().expect("tree"));
-            }
-            let source = self
-                .last_invoked_source
-                .clone()
-                .expect("no cut computed yet");
-            let target = self
-                .last_invoked_target
-                .clone()
-                .expect("no cut computed yet");
-            let path_edges = {
-                let tree = self.gomory_hu_tree.as_ref().unwrap();
-                self.find_path_between(tree, &source, &target)
-            };
-            let tree = self.gomory_hu_tree.as_mut().unwrap();
-            let mut cheapest: Option<(DefaultEdge, f64)> = None;
-            for e in &path_edges {
-                let w = tree.edge_weight(e).unwrap();
-                if cheapest.is_none_or(|(_, best)| w < best) {
-                    cheapest = Some((*e, w));
-                }
-            }
-            let (edge, weight) = cheapest.expect("path is empty?!");
-            let (u, v) = {
-                let (u, v) = tree.edge_endpoints(&edge).unwrap();
-                (u.clone(), v.clone())
-            };
-            tree.remove_edge(&edge);
-            let component = crate::alg::connectivity::ConnectivityInspector::new()
-                .connected_set_of(&*tree, &source)
-                .expect("source is in the tree");
-            let partition = self
-                .vertex_list
-                .iter()
-                .filter(|x| component.contains(*x))
-                .cloned()
-                .collect();
-            tree.add_edge_with(&u, &v, edge)
-                .expect("re-adding the removed edge");
-            tree.set_edge_weight(&edge, weight).expect("weighted tree");
-            self.source_partition_last_invoked_source = Some(partition);
-        }
-        self.source_partition_last_invoked_source.as_ref().unwrap()
-    }
-
-    fn sink_partition(&mut self) -> &IndexSet<G::Vertex> {
-        let source_side = self.source_partition().clone();
-        // Java builds a fresh set on every call; the field only lends it out
-        let sink: IndexSet<G::Vertex> = self
-            .network
+    fn minimum_cut(
+        &mut self,
+        source: &G::Vertex,
+        sink: &G::Vertex,
+    ) -> Result<MinimumCut<G::Vertex, G::Edge>> {
+        let capacity = self.maximum_flow_value(source, sink)?;
+        let source_partition = self.source_side(source, sink)?;
+        let g = self.network;
+        let sink_partition: IndexSet<G::Vertex> = g
             .vertices()
-            .filter(|v| !source_side.contains(*v))
+            .filter(|v| !source_partition.contains(*v))
             .cloned()
             .collect();
-        self.sink_cache.insert(sink)
-    }
-
-    fn cut_edges(&mut self) -> &IndexSet<G::Edge> {
-        let source_side = self.source_partition().clone();
-        let g = self.network;
-        let cut: IndexSet<G::Edge> = g
+        let cut_edges: IndexSet<G::Edge> = g
             .edges()
             .filter(|e| {
-                let (u, v) = g.edge_endpoints(e).unwrap();
-                source_side.contains(u) ^ source_side.contains(v)
+                g.edge_endpoints(e).is_some_and(|(u, v)| {
+                    source_partition.contains(u) ^ source_partition.contains(v)
+                })
             })
             .cloned()
             .collect();
-        self.cut_cache.insert(cut)
+        Ok(MinimumCut::new(
+            capacity,
+            source_partition,
+            sink_partition,
+            cut_edges,
+        ))
     }
 }

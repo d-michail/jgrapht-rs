@@ -57,7 +57,7 @@ impl<'g, G: OutgoingGraph> DinicMFImpl<'g, G> {
             return Err(GraphError::must_be_positive("epsilon"));
         }
         let net = FlowNet::new(network, epsilon)?;
-        net.check_capacities(epsilon, "Capacity must be non-negative!")?;
+        net.check_capacities(epsilon)?;
         Ok(DinicMFImpl {
             net,
             index: Vec::new(),
@@ -66,15 +66,7 @@ impl<'g, G: OutgoingGraph> DinicMFImpl<'g, G> {
     }
 
     fn calculate(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
-        let (s, t) = self.net.resolve(
-            source,
-            sink,
-            [
-                "Network does not contain source!",
-                "Network does not contain sink!",
-                "Source is equal to sink!",
-            ],
-        )?;
+        let (s, t) = self.net.resolve(source, sink)?;
         self.net.init(s, t)?;
         self.dinic();
         Ok(self.net.max_flow_value)

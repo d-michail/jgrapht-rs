@@ -19,6 +19,7 @@ mod common;
 
 mod alg_clique_tests;
 mod capability_bounds_test;
+mod flow_results_test;
 mod alg_clustering_tests;
 mod alg_color_tests;
 mod alg_connectivity_tests;

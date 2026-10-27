@@ -19,18 +19,134 @@ use crate::util::ToleranceDoubleComparator;
 use indexmap::IndexSet;
 use std::collections::{HashMap, VecDeque};
 
-/// `MaximumFlowAlgorithm.MaximumFlow`: the flow value and the flow on every edge.
+/// `MaximumFlowAlgorithm.MaximumFlow` together with the minimum cut that certifies it: everything
+/// one run of a maximum-flow algorithm produced, owned, so it stays valid after the algorithm
+/// object is reused or dropped.
+///
+/// By the max-flow min-cut theorem the flow value is the capacity of the cut between
+/// [`MaximumFlow::source_partition`] and [`MaximumFlow::sink_partition`].
 #[derive(Debug, Clone)]
-pub struct MaximumFlow<E> {
-    pub value: f64,
-    pub flow_map: HashMap<E, f64>,
+pub struct MaximumFlow<V, E> {
+    value: f64,
+    flow_map: HashMap<E, f64>,
+    direction: HashMap<E, V>,
+    source_partition: IndexSet<V>,
+    sink_partition: IndexSet<V>,
+    cut_edges: IndexSet<E>,
 }
 
-impl<E: Eq + std::hash::Hash> MaximumFlow<E> {
+impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> MaximumFlow<V, E> {
+    /// The value of the flow, which equals [`MaximumFlow::cut_capacity`].
+    pub fn value(&self) -> f64 {
+        self.value
+    }
+
     /// Flow on `edge`, if it is an edge of the network.
     pub fn flow(&self, edge: &E) -> Option<f64> {
         self.flow_map.get(edge).copied()
     }
+
+    /// The flow on every edge of the network.
+    pub fn flow_map(&self) -> &HashMap<E, f64> {
+        &self.flow_map
+    }
+
+    /// The endpoint of `edge` the flow runs towards (the target of a directed edge); `None` if
+    /// `edge` is not an edge of the network.
+    pub fn flow_direction(&self, edge: &E) -> Option<&V> {
+        self.direction.get(edge)
+    }
+
+    /// Capacity of the minimum cut; equal to the flow value.
+    pub fn cut_capacity(&self) -> f64 {
+        self.value
+    }
+
+    /// Vertices on the source side of the minimum cut found by the run.
+    pub fn source_partition(&self) -> &IndexSet<V> {
+        &self.source_partition
+    }
+
+    /// Vertices on the sink side of the minimum cut.
+    pub fn sink_partition(&self) -> &IndexSet<V> {
+        &self.sink_partition
+    }
+
+    /// Edges crossing the minimum cut.
+    pub fn cut_edges(&self) -> &IndexSet<E> {
+        &self.cut_edges
+    }
+
+    /// The minimum cut of this run, without the flow.
+    pub fn into_minimum_cut(self) -> MinimumCut<V, E> {
+        MinimumCut {
+            capacity: self.value,
+            source_partition: self.source_partition,
+            sink_partition: self.sink_partition,
+            cut_edges: self.cut_edges,
+        }
+    }
+}
+
+/// A minimum $s$-$t$ cut: a partition of the vertices into a source side and a sink side, the edges
+/// crossing it and its capacity.
+#[derive(Debug, Clone)]
+pub struct MinimumCut<V, E> {
+    capacity: f64,
+    source_partition: IndexSet<V>,
+    sink_partition: IndexSet<V>,
+    cut_edges: IndexSet<E>,
+}
+
+impl<V, E> MinimumCut<V, E> {
+    /// Builds a cut from its parts (used by algorithms that derive a cut without a flow).
+    pub(crate) fn new(
+        capacity: f64,
+        source_partition: IndexSet<V>,
+        sink_partition: IndexSet<V>,
+        cut_edges: IndexSet<E>,
+    ) -> Self {
+        MinimumCut {
+            capacity,
+            source_partition,
+            sink_partition,
+            cut_edges,
+        }
+    }
+
+    /// Sum of the capacities of the edges from the source side to the sink side.
+    pub fn capacity(&self) -> f64 {
+        self.capacity
+    }
+
+    /// Vertices on the source side of the cut.
+    pub fn source_partition(&self) -> &IndexSet<V> {
+        &self.source_partition
+    }
+
+    /// Vertices on the sink side of the cut.
+    pub fn sink_partition(&self) -> &IndexSet<V> {
+        &self.sink_partition
+    }
+
+    /// Edges crossing the cut.
+    pub fn cut_edges(&self) -> &IndexSet<E> {
+        &self.cut_edges
+    }
+}
+
+/// An algorithm that can report the value of a maximum flow between two vertices.
+///
+/// Equivalent-flow trees implement only this trait: they answer all-pairs flow *values* but never
+/// produce the flow on individual edges, which [`MaximumFlowAlgorithm`] promises.
+pub trait MaximumFlowValueAlgorithm<V> {
+    /// The value of a maximum flow from `source` to `sink`.
+    ///
+    /// # Errors
+    ///
+    /// [`GraphError::VertexNotFound`] if either vertex is not in the network, and
+    /// [`GraphError::SourceEqualsSink`] where the algorithm requires distinct terminals.
+    fn maximum_flow_value(&mut self, source: &V, sink: &V) -> Result<f64>;
 }
 
 /// Allows to derive [maximum-flow](https://en.wikipedia.org/wiki/Maximum_flow_problem)
@@ -38,21 +154,11 @@ impl<E: Eq + std::hash::Hash> MaximumFlow<E> {
 ///
 /// # Rust notes
 ///
-/// `MaximumFlowAlgorithm` together with the `FlowAlgorithm` queries.
-pub trait MaximumFlowAlgorithm<V, E> {
-    /// Computes a maximum flow from `source` to `sink`.
-    fn maximum_flow(&mut self, source: &V, sink: &V) -> Result<MaximumFlow<E>>;
-
-    /// The value of a maximum flow from `source` to `sink`.
-    fn maximum_flow_value(&mut self, source: &V, sink: &V) -> Result<f64> {
-        Ok(self.maximum_flow(source, sink)?.value)
-    }
-
-    /// The flow on every edge after the last computation.
-    fn flow_map(&mut self) -> Result<&HashMap<E, f64>>;
-
-    /// The endpoint of `edge` the flow runs towards (the target of a directed edge).
-    fn flow_direction(&self, edge: &E) -> Result<V>;
+/// Every run returns a complete [`MaximumFlow`]; nothing about the run is stored for later
+/// queries, so there is no call order to get wrong.
+pub trait MaximumFlowAlgorithm<V, E>: MaximumFlowValueAlgorithm<V> {
+    /// Computes a maximum flow from `source` to `sink`, together with its minimum cut.
+    fn maximum_flow(&mut self, source: &V, sink: &V) -> Result<MaximumFlow<V, E>>;
 }
 
 /// Given a weighted graph $G(V,E)$ (directed or undirected). This class computes a minimum $s-t$
@@ -70,18 +176,10 @@ pub trait MaximumFlowAlgorithm<V, E> {
 ///
 /// # Rust notes
 ///
-/// `MinimumSTCutAlgorithm`.
+/// `MinimumSTCutAlgorithm`: each call returns the whole [`MinimumCut`].
 pub trait MinimumSTCutAlgorithm<V, E> {
-    /// Computes a minimum cut and returns its capacity.
-    fn calculate_min_cut(&mut self, source: &V, sink: &V) -> Result<f64>;
-    /// Capacity of the last cut.
-    fn cut_capacity(&mut self) -> f64;
-    /// Vertices on the source side of the last cut.
-    fn source_partition(&mut self) -> &IndexSet<V>;
-    /// Vertices on the sink side of the last cut.
-    fn sink_partition(&mut self) -> &IndexSet<V>;
-    /// Edges crossing the last cut.
-    fn cut_edges(&mut self) -> &IndexSet<E>;
+    /// Computes a minimum cut between `source` and `sink`.
+    fn minimum_cut(&mut self, source: &V, sink: &V) -> Result<MinimumCut<V, E>>;
 }
 
 /// `AnnotatedFlowEdge`: one direction of an edge in the residual network.
@@ -118,11 +216,8 @@ pub(crate) struct FlowNet<'g, G: OutgoingGraph> {
     edge_arc: Vec<usize>,
     pub source: usize,
     pub sink: usize,
+    /// Flow pushed so far by the current computation.
     pub max_flow_value: f64,
-    pub max_flow: Option<HashMap<G::Edge, f64>>,
-    source_partition: Option<IndexSet<G::Vertex>>,
-    sink_partition: Option<IndexSet<G::Vertex>>,
-    cut_edges: Option<IndexSet<G::Edge>>,
 }
 
 impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
@@ -143,22 +238,18 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
             edge_arc: Vec::new(),
             source: 0,
             sink: 0,
-            max_flow_value: -1.0,
-            max_flow: None,
-            source_partition: None,
-            sink_partition: None,
-            cut_edges: None,
+            max_flow_value: 0.0,
         })
     }
 
     /// The validation shared by the constructors: capacities must not be negative.
-    pub fn check_capacities(&self, epsilon: f64, what: &str) -> Result<()> {
+    pub fn check_capacities(&self, epsilon: f64) -> Result<()> {
         if self
             .es
             .iter()
             .any(|e| self.weight(self.eindex[*e]) < -epsilon)
         {
-            return Err(GraphError::InvalidArgument(what.into()));
+            return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
         }
         Ok(())
     }
@@ -168,20 +259,11 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     }
 
     /// Checks that `source` and `sink` are distinct vertices of the network.
-    pub fn resolve(
-        &self,
-        source: &G::Vertex,
-        sink: &G::Vertex,
-        msgs: [&str; 3],
-    ) -> Result<(usize, usize)> {
-        let s = self
-            .vertex_index(source)
-            .ok_or_else(|| GraphError::InvalidArgument(msgs[0].into()))?;
-        let t = self
-            .vertex_index(sink)
-            .ok_or_else(|| GraphError::InvalidArgument(msgs[1].into()))?;
+    pub fn resolve(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<(usize, usize)> {
+        let s = self.vertex_index(source).ok_or(GraphError::VertexNotFound)?;
+        let t = self.vertex_index(sink).ok_or(GraphError::VertexNotFound)?;
         if s == t {
-            return Err(GraphError::InvalidArgument(msgs[2].into()));
+            return Err(GraphError::SourceEqualsSink);
         }
         Ok((s, t))
     }
@@ -210,10 +292,6 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
         self.source = source;
         self.sink = sink;
         self.max_flow_value = 0.0;
-        self.max_flow = None;
-        self.source_partition = None;
-        self.sink_partition = None;
-        self.cut_edges = None;
         Ok(())
     }
 
@@ -336,92 +414,76 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
             .collect()
     }
 
-    pub fn flow_map(&mut self) -> &HashMap<G::Edge, f64> {
-        if self.max_flow.is_none() {
-            self.max_flow = Some(self.compose_flow());
-        }
-        self.max_flow.as_ref().unwrap()
-    }
-
-    pub fn flow_direction(&self, e: &G::Edge) -> Result<G::Vertex> {
-        let ei = *self.eindex.get(e).ok_or_else(|| {
-            GraphError::InvalidArgument(
-                "Cannot query the flow on an edge which does not exist in the input graph!".into(),
-            )
-        })?;
+    /// The endpoint of `e` the flow runs towards.
+    fn direction_of(&self, ei: usize) -> G::Vertex {
         let a = &self.arcs[self.edge_arc[ei]];
         if self.directed {
-            return Ok(self.vs[a.target].clone());
+            return self.vs[a.target].clone();
         }
         let inverse = &self.arcs[a.inverse];
-        Ok(if a.flow > inverse.flow {
+        if a.flow > inverse.flow {
             self.vs[a.target].clone()
         } else {
             self.vs[inverse.target].clone()
-        })
+        }
     }
 
-    pub fn source_partition(&mut self) -> &IndexSet<G::Vertex> {
-        if self.source_partition.is_none() {
-            let mut partition = IndexSet::new();
-            let mut seen = vec![false; self.vs.len()];
-            let mut queue = VecDeque::from([self.source]);
-            while let Some(v) = queue.pop_front() {
-                if seen[v] {
-                    continue;
-                }
-                seen[v] = true;
-                partition.insert(self.vs[v].clone());
-                for &a in &self.outgoing[v] {
-                    if self.has_capacity(a) {
-                        queue.push_back(self.arcs[a].target);
-                    }
+    /// Vertices reachable from the source through arcs with residual capacity.
+    fn residual_source_side(&self) -> IndexSet<G::Vertex> {
+        let mut partition = IndexSet::new();
+        let mut seen = vec![false; self.vs.len()];
+        let mut queue = VecDeque::from([self.source]);
+        while let Some(v) = queue.pop_front() {
+            if seen[v] {
+                continue;
+            }
+            seen[v] = true;
+            partition.insert(self.vs[v].clone());
+            for &a in &self.outgoing[v] {
+                if self.has_capacity(a) {
+                    queue.push_back(self.arcs[a].target);
                 }
             }
-            self.source_partition = Some(partition);
         }
-        self.source_partition.as_ref().unwrap()
+        partition
     }
 
-    pub fn sink_partition(&mut self) -> &IndexSet<G::Vertex> {
-        if self.sink_partition.is_none() {
-            let source_side = self.source_partition().clone();
-            let sink_side = self
-                .vs
-                .iter()
-                .filter(|v| !source_side.contains(**v))
-                .map(|v| (*v).clone())
-                .collect();
-            self.sink_partition = Some(sink_side);
-        }
-        self.sink_partition.as_ref().unwrap()
-    }
-
-    pub fn cut_edges(&mut self) -> &IndexSet<G::Edge> {
-        if self.cut_edges.is_none() {
-            let p1 = self.source_partition().clone();
-            let g = self.graph;
-            let mut cut = IndexSet::new();
-            if self.directed {
-                for v in &p1 {
-                    for e in g.out_edges_of(v) {
-                        if !p1.contains(g.edge_target(e).unwrap()) {
-                            cut.insert(e.clone());
-                        }
-                    }
-                }
+    /// Everything the finished computation produced: the flow, its direction on every edge, and
+    /// the minimum cut given by the residual network.
+    pub fn finish(&self) -> MaximumFlow<G::Vertex, G::Edge> {
+        let source_partition = self.residual_source_side();
+        let sink_partition: IndexSet<G::Vertex> = self
+            .vs
+            .iter()
+            .filter(|v| !source_partition.contains(**v))
+            .map(|v| (*v).clone())
+            .collect();
+        let g = self.graph;
+        let mut cut_edges = IndexSet::new();
+        for e in g.edges() {
+            let (Some(s), Some(t)) = (g.edge_source(e), g.edge_target(e)) else {
+                continue;
+            };
+            let (s_in, t_in) = (source_partition.contains(s), source_partition.contains(t));
+            let crossing = if self.directed {
+                s_in && !t_in
             } else {
-                for e in g.edges() {
-                    if p1.contains(g.edge_source(e).unwrap())
-                        ^ p1.contains(g.edge_target(e).unwrap())
-                    {
-                        cut.insert(e.clone());
-                    }
-                }
+                s_in ^ t_in
+            };
+            if crossing {
+                cut_edges.insert(e.clone());
             }
-            self.cut_edges = Some(cut);
         }
-        self.cut_edges.as_ref().unwrap()
+        MaximumFlow {
+            value: self.max_flow_value,
+            flow_map: self.compose_flow(),
+            direction: (0..self.es.len())
+                .map(|ei| (self.es[ei].clone(), self.direction_of(ei)))
+                .collect(),
+            source_partition,
+            sink_partition,
+            cut_edges,
+        }
     }
 }
 
@@ -429,20 +491,13 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
 /// `net: FlowNet` field and a `calculate(&mut self, &V, &V) -> Result<f64>` method.
 macro_rules! flow_algorithm_api {
     ($name:ident, $bound:path) => {
-        impl<'g, G: $bound> $name<'g, G> {
-            /// The source of the last computation.
-            pub fn current_source(&self) -> Option<&G::Vertex> {
-                (self.net.max_flow_value >= 0.0).then(|| self.net.vs[self.net.source])
-            }
-
-            /// The sink of the last computation.
-            pub fn current_sink(&self) -> Option<&G::Vertex> {
-                (self.net.max_flow_value >= 0.0).then(|| self.net.vs[self.net.sink])
-            }
-
-            /// The flow value of the last computation (`-1` before the first one).
-            pub fn last_flow_value(&self) -> f64 {
-                self.net.max_flow_value
+        impl<'g, G: $bound> $crate::alg::flow::MaximumFlowValueAlgorithm<G::Vertex> for $name<'g, G> {
+            fn maximum_flow_value(
+                &mut self,
+                source: &G::Vertex,
+                sink: &G::Vertex,
+            ) -> $crate::error::Result<f64> {
+                self.calculate(source, sink)
             }
         }
 
@@ -453,53 +508,22 @@ macro_rules! flow_algorithm_api {
                 &mut self,
                 source: &G::Vertex,
                 sink: &G::Vertex,
-            ) -> $crate::error::Result<$crate::alg::flow::MaximumFlow<G::Edge>> {
+            ) -> $crate::error::Result<$crate::alg::flow::MaximumFlow<G::Vertex, G::Edge>> {
                 self.calculate(source, sink)?;
-                let flow_map = self.net.compose_flow();
-                self.net.max_flow = Some(flow_map.clone());
-                Ok($crate::alg::flow::MaximumFlow {
-                    value: self.net.max_flow_value,
-                    flow_map,
-                })
-            }
-
-            fn flow_map(
-                &mut self,
-            ) -> $crate::error::Result<&std::collections::HashMap<G::Edge, f64>> {
-                Ok(self.net.flow_map())
-            }
-
-            fn flow_direction(&self, edge: &G::Edge) -> $crate::error::Result<G::Vertex> {
-                self.net.flow_direction(edge)
+                Ok(self.net.finish())
             }
         }
 
         impl<'g, G: $bound> $crate::alg::flow::MinimumSTCutAlgorithm<G::Vertex, G::Edge>
             for $name<'g, G>
         {
-            fn calculate_min_cut(
+            fn minimum_cut(
                 &mut self,
                 source: &G::Vertex,
                 sink: &G::Vertex,
-            ) -> $crate::error::Result<f64> {
+            ) -> $crate::error::Result<$crate::alg::flow::MinimumCut<G::Vertex, G::Edge>> {
                 use $crate::alg::flow::MaximumFlowAlgorithm;
-                self.maximum_flow_value(source, sink)
-            }
-
-            fn cut_capacity(&mut self) -> f64 {
-                self.net.max_flow_value
-            }
-
-            fn source_partition(&mut self) -> &indexmap::IndexSet<G::Vertex> {
-                self.net.source_partition()
-            }
-
-            fn sink_partition(&mut self) -> &indexmap::IndexSet<G::Vertex> {
-                self.net.sink_partition()
-            }
-
-            fn cut_edges(&mut self) -> &indexmap::IndexSet<G::Edge> {
-                self.net.cut_edges()
+                Ok(self.maximum_flow(source, sink)?.into_minimum_cut())
             }
         }
     };

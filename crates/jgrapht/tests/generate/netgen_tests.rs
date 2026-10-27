@@ -19,7 +19,7 @@
 //! whose Java setter throws on its own check `build().is_err()`; `Distributor` takes the random
 //! source per call; problems do not hold the graph.
 
-use jgrapht::alg::flow::{MaximumFlowAlgorithm, MinimumCostFlowProblem, PushRelabelMFImpl};
+use jgrapht::alg::flow::{MaximumFlowValueAlgorithm, MinimumCostFlowProblem, PushRelabelMFImpl};
 use jgrapht::alg::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
 use jgrapht::generate::netgen::*;
 use jgrapht::util::java::JavaRandom;

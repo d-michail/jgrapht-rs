@@ -135,6 +135,33 @@ impl<E: Eq + std::hash::Hash> MinimumCostFlow<E> {
     }
 }
 
+/// A minimum-cost flow with its dual solution, as returned by
+/// [`CapacityScalingMinimumCostFlow::solve`].
+#[derive(Debug, Clone)]
+pub struct MinimumCostSolution<V, E> {
+    flow: MinimumCostFlow<E>,
+    dual_solution: HashMap<V, f64>,
+    min_reduced_cost: f64,
+}
+
+impl<V: Eq + std::hash::Hash, E: Eq + std::hash::Hash> MinimumCostSolution<V, E> {
+    /// The flow and its cost.
+    pub fn flow(&self) -> &MinimumCostFlow<E> {
+        &self.flow
+    }
+
+    /// The dual variable (node potential) of every vertex.
+    pub fn dual_solution(&self) -> &HashMap<V, f64> {
+        &self.dual_solution
+    }
+
+    /// Whether no residual arc has a reduced cost below `-eps`, i.e. whether the flow is optimal
+    /// up to the tolerance `eps`.
+    pub fn is_optimal(&self, eps: f64) -> bool {
+        self.min_reduced_cost >= -eps
+    }
+}
+
 /// Allows to calculate minimum cost flow on the specified
 /// [minimum cost flow problem](https://en.wikipedia.org/wiki/Minimum-cost_flow_problem).
 ///
@@ -426,33 +453,31 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         }
     }
 
-    /// The dual variable (node potential) of every vertex after a computation.
-    pub fn dual_solution(&self) -> Option<HashMap<V, f64>> {
-        self.minimum_cost_flow.as_ref()?;
-        Some(
-            (0..self.n)
-                .map(|i| (self.graph_vertices[i].clone(), self.net.nodes[i].potential))
-                .collect(),
-        )
-    }
-
-    /// Whether no residual arc has a reduced cost below `-eps`.
-    pub fn test_optimality(&self, eps: f64) -> Result<bool> {
-        if self.minimum_cost_flow.is_none() {
-            return Err(GraphError::InvalidArgument(
-                "Cannot return a dual solution before the minimum cost flow is computed!".into(),
-            ));
-        }
+    /// Solves `problem` and returns the flow together with its dual solution (the node potentials)
+    /// and the data needed to certify optimality, in one value (`getMinimumCostFlow`,
+    /// `getFlowCost`, `getDualSolution` and `testOptimality` of the Java class).
+    pub fn solve<P>(&mut self, problem: &P) -> Result<MinimumCostSolution<V, E>>
+    where
+        P: MinimumCostFlowProblem,
+        P::Graph: Graph<Vertex = V, Edge = E>,
+    {
+        let flow = self.get_minimum_cost_flow(problem)?;
+        let dual_solution = (0..self.n)
+            .map(|i| (self.graph_vertices[i].clone(), self.net.nodes[i].potential))
+            .collect();
+        let mut min_reduced_cost = f64::INFINITY;
         for node in &self.net.nodes {
             let mut arc = node.first_non_saturated;
             while let Some(a) = arc {
-                if self.net.reduced_cost(a) < -eps {
-                    return Ok(false);
-                }
+                min_reduced_cost = min_reduced_cost.min(self.net.reduced_cost(a));
                 arc = self.net.arcs[a].next;
             }
         }
-        Ok(true)
+        Ok(MinimumCostSolution {
+            flow,
+            dual_solution,
+            min_reduced_cost,
+        })
     }
 
     /// Solves `problem` (`getMinimumCostFlow`).

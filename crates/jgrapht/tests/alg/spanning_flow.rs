@@ -120,7 +120,7 @@ fn max_flow_algorithms() {
             .unwrap(),
     ];
     for f in flows {
-        assert_eq!(f.value, 23.0);
+        assert_eq!(f.value(), 23.0);
         // flow conservation at inner vertices
         for v in 1..5u32 {
             let inflow: f64 = g
@@ -141,9 +141,11 @@ fn max_flow_algorithms() {
         );
     }
     let mut cut = PushRelabelMFImpl::new(&g).unwrap();
-    assert_eq!(cut.calculate_min_cut(&0, &5).unwrap(), 23.0);
+    let min_cut = cut.minimum_cut(&0, &5).unwrap();
+    assert_eq!(min_cut.capacity(), 23.0);
     assert_eq!(
-        cut.cut_edges()
+        min_cut
+            .cut_edges()
             .iter()
             .map(|e| g.edge_weight(e).unwrap())
             .sum::<f64>(),

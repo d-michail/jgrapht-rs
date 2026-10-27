@@ -257,7 +257,7 @@ mod cycles_isomorphism_trees {
 
 mod flow_matching_tours {
     use jgrapht::alg::flow::{
-        BoykovKolmogorovMFImpl, DinicMFImpl, EdmondsKarpMFImpl, MaximumFlowAlgorithm,
+        BoykovKolmogorovMFImpl, DinicMFImpl, EdmondsKarpMFImpl, MaximumFlowValueAlgorithm,
         PushRelabelMFImpl,
     };
     use jgrapht::alg::matching::{GreedyMaximumCardinalityMatching, MatchingAlgorithm};
