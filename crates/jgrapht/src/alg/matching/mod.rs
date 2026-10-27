@@ -1,6 +1,7 @@
 //! Matching algorithms (JGraphT `org.jgrapht.alg.matching`).
 
 mod base;
+pub mod blossom;
 mod dense_edmonds;
 mod greedy;
 mod hopcroft_karp;

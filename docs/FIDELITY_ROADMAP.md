@@ -86,6 +86,10 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
 
 **F3. Kolmogorov Blossom V** (`org/jgrapht/alg/matching/blossom/v5`, 5917 lines): `BlossomVOptions`, `BlossomVState`, `BlossomVNode`, `BlossomVEdge`, `BlossomVTree`, `BlossomVTreeEdge`, `BlossomVInitializer`, `BlossomVPrimalUpdater`, `BlossomVDualUpdater`, `KolmogorovWeightedPerfectMatching`, `KolmogorovWeightedMatching`, `ObjectiveSense`. Port into `src/alg/matching/blossom/` with arena/index based nodes, edges and trees (no pointers), same data structures and update rules as Java (priority queues of edges per tree, slack/dual bookkeeping, `ObjectiveSense`, options such as `InitializationType`, `UpdateDualsAfter`, `DualUpdateStrategy`). Port the Java tests in this order, running them after each step: `BlossomVStateTest`, `BlossomVTreeEdgeTest`, `BlossomVTreeTest`, `BlossomVNodeTest`, `BlossomVInitializerTest`, `BlossomVDualUpdaterTest`, `BlossomVPrimalUpdaterTest`, `KolmogorovWeightedMatchingTest` (19), `KolmogorovWeightedPerfectMatchingTest` (52); `BlossomVDebugger` is a test helper. Commit per step. Java's tests are sensitive to tie-breaking and iteration order: keep insertion order everywhere Java iterates a list.
 
+- **F3a foundation complete:** `BlossomVOptions`, `ObjectiveSense`, and the arena-backed node,
+  edge, tree, and tree-edge structures are implemented with stable indices, intrusive linked lists,
+  and addressable pairing heaps. Six Java-derived structural tests pass. The initializer is next.
+
 **F4. Dependents of Blossom V.** `ChristofidesThreeHalvesApproxMetricTSP` (uses `KolmogorovWeightedPerfectMatching` on the odd-degree vertices; port the Java class and its tests, then delete `christofides_tour` in `tour/legacy.rs`, C6) and `ChinesePostman` (class and tests, C15).
 
 ## G. Shortest-path package (1i): checkpoint and hand-off
