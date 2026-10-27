@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1483 | 342 | 117 | 376 | 13 | 16 | 419 | 200 |
+| `jgrapht` | 1489 | 342 | 117 | 376 | 13 | 19 | 422 | 200 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -1422,6 +1422,12 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/graph/builder.rs` | `GraphTypeBuilder::undirected` | infallible | `Self` |
 | `jgrapht/src/graph/builder.rs` | `GraphTypeBuilder::vertex_supplier` | state query | `Self` |
 | `jgrapht/src/graph/builder.rs` | `GraphTypeBuilder::weighted` | state query | `Self` |
+| `jgrapht/src/graph/capability.rs` | `IncidenceGraph::degree_of` | state query | `usize` |
+| `jgrapht/src/graph/capability.rs` | `IncidenceGraph::edges_of` | iterator | `impl Iterator<Item = &Self::Edge>` |
+| `jgrapht/src/graph/capability.rs` | `IncomingGraph::in_degree_of` | state query | `usize` |
+| `jgrapht/src/graph/capability.rs` | `IncomingGraph::in_edges_of` | iterator | `impl Iterator<Item = &Self::Edge>` |
+| `jgrapht/src/graph/capability.rs` | `OutgoingGraph::out_degree_of` | state query | `usize` |
+| `jgrapht/src/graph/capability.rs` | `OutgoingGraph::out_edges_of` | iterator | `impl Iterator<Item = &Self::Edge>` |
 | `jgrapht/src/graph/ext.rs` | `remove_vertex_and_preserve_connectivity` | Result | `Result<bool>` |
 | `jgrapht/src/graph/ext.rs` | `remove_vertices_and_preserve_connectivity` | Result | `Result<bool>` |
 | `jgrapht/src/graph/ext.rs` | `DirectedExt::ancestors_of` | state query | `std::collections::HashSet<Self::Vertex>` |

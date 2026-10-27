@@ -25,6 +25,7 @@
 #![allow(dead_code)]
 
 use jgrapht::graph::Graph;
+use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use jgrapht::{GraphError, GraphType, Result};
 
 /// Which `Graph` contract a [`FixtureGraph`] honors.
@@ -202,4 +203,115 @@ pub fn weight_failure_cases() -> [(&'static str, f64); 4] {
         ("negative infinity", f64::NEG_INFINITY),
         ("tiny negative", -f64::MIN_POSITIVE),
     ]
+}
+
+/// Newtypes giving [`FixtureGraph`] the static capabilities its profile honors, for the
+/// capability-trait tests. `OutgoingFixture` is deliberately not `IncomingGraph`.
+macro_rules! delegate_graph {
+    ($ty:ident) => {
+        impl Graph for $ty {
+            type Vertex = u32;
+            type Edge = u32;
+            fn graph_type(&self) -> GraphType {
+                self.0.graph_type()
+            }
+            fn vertices(&self) -> impl Iterator<Item = &u32> {
+                self.0.vertices()
+            }
+            fn edges(&self) -> impl Iterator<Item = &u32> {
+                self.0.edges()
+            }
+            fn vertex_count(&self) -> usize {
+                self.0.vertex_count()
+            }
+            fn edge_count(&self) -> usize {
+                self.0.edge_count()
+            }
+            fn contains_vertex(&self, v: &u32) -> bool {
+                self.0.contains_vertex(v)
+            }
+            fn contains_edge(&self, e: &u32) -> bool {
+                self.0.contains_edge(e)
+            }
+            fn edge_source(&self, e: &u32) -> Option<&u32> {
+                self.0.edge_source(e)
+            }
+            fn edge_target(&self, e: &u32) -> Option<&u32> {
+                self.0.edge_target(e)
+            }
+            fn edge_weight(&self, e: &u32) -> Option<f64> {
+                self.0.edge_weight(e)
+            }
+            fn edges_of(&self, v: &u32) -> Result<impl Iterator<Item = &u32>> {
+                self.0.edges_of(v)
+            }
+            fn edges_between<'a>(
+                &'a self,
+                u: &'a u32,
+                v: &'a u32,
+            ) -> impl Iterator<Item = &'a u32> {
+                self.0.edges_between(u, v)
+            }
+            fn in_edges_of(&self, v: &u32) -> Result<impl Iterator<Item = &u32>> {
+                self.0.in_edges_of(v)
+            }
+            fn out_edges_of(&self, v: &u32) -> Result<impl Iterator<Item = &u32>> {
+                self.0.out_edges_of(v)
+            }
+        }
+    };
+}
+
+/// Implements only [`OutgoingGraph`].
+#[derive(Debug, Clone)]
+pub struct OutgoingFixture(pub FixtureGraph);
+/// Implements the full [`IncidenceGraph`] capability set.
+#[derive(Debug, Clone)]
+pub struct FullFixture(pub FixtureGraph);
+
+delegate_graph!(OutgoingFixture);
+delegate_graph!(FullFixture);
+
+impl OutgoingFixture {
+    pub fn new(vertices: &[u32], edges: &[(u32, u32, f64)]) -> Self {
+        Self(FixtureGraph::new(Profile::OutgoingOnly, vertices, edges))
+    }
+}
+
+impl FullFixture {
+    pub fn new(vertices: &[u32], edges: &[(u32, u32, f64)]) -> Self {
+        Self(FixtureGraph::new(Profile::FullIncidence, vertices, edges))
+    }
+}
+
+impl OutgoingGraph for OutgoingFixture {
+    fn out_edges_of(&self, v: &u32) -> impl Iterator<Item = &u32> {
+        self.0.outgoing(*v)
+    }
+}
+
+impl OutgoingGraph for FullFixture {
+    fn out_edges_of(&self, v: &u32) -> impl Iterator<Item = &u32> {
+        self.0.outgoing(*v)
+    }
+}
+
+impl IncomingGraph for FullFixture {
+    fn in_edges_of(&self, v: &u32) -> impl Iterator<Item = &u32> {
+        let v = *v;
+        self.0
+            .edge_ids
+            .iter()
+            .filter(move |&&e| self.0.edges[e as usize].1 == Some(v))
+    }
+}
+
+impl IncidenceGraph for FullFixture {
+    fn edges_of(&self, v: &u32) -> impl Iterator<Item = &u32> {
+        let v = *v;
+        self.0.edge_ids.iter().filter(move |&&e| {
+            let (s, t, _) = self.0.edges[e as usize];
+            s == Some(v) || t == Some(v)
+        })
+    }
 }

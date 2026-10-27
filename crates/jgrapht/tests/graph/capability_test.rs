@@ -1,0 +1,86 @@
+// (C) Copyright 2003-2026, by John V Sichi and JGraphT Contributors.
+// Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
+//
+// See the CONTRIBUTORS.md file distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0, or the GNU Lesser General Public
+// License v2.1 or later which is available at
+// http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
+
+//! Contract tests for the incidence capability traits (API roadmap R1).
+//!
+//! The capability methods share names with the fallible `Graph` ones until those are removed, so
+//! the calls are qualified.
+use crate::common::fixtures::{FullFixture, OutgoingFixture};
+use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
+
+/// Needs only outgoing access, so an outgoing-only graph must satisfy the bound.
+fn reachable<G: OutgoingGraph<Vertex = u32>>(g: &G, from: u32) -> Vec<u32> {
+    let mut seen = vec![from];
+    let mut i = 0;
+    while i < seen.len() {
+        let v = seen[i];
+        i += 1;
+        for e in OutgoingGraph::out_edges_of(g, &v) {
+            let t = *g.edge_target(e).unwrap();
+            if !seen.contains(&t) {
+                seen.push(t);
+            }
+        }
+    }
+    seen
+}
+
+/// Needs the full capability set.
+fn total_degree<G: IncidenceGraph>(g: &G) -> usize {
+    g.vertices().map(|v| IncidenceGraph::degree_of(g, v)).sum()
+}
+
+const EDGES: [(u32, u32, f64); 4] = [(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0), (0, 2, 10.0)];
+
+#[test]
+fn outgoing_only_graph_satisfies_outgoing_bound() {
+    let g = OutgoingFixture::new(&[0, 1, 2, 3], &EDGES);
+    assert_eq!(reachable(&g, 0), vec![0, 1, 2, 3]);
+    assert_eq!(OutgoingGraph::out_degree_of(&g, &0), 2);
+}
+
+#[test]
+fn full_graph_satisfies_every_bound() {
+    let g = FullFixture::new(&[0, 1, 2, 3], &EDGES);
+    assert_eq!(reachable(&g, 1), vec![1, 2, 3]);
+    assert_eq!(total_degree(&g), 8);
+    assert_eq!(IncomingGraph::in_degree_of(&g, &2), 2);
+    assert_eq!(OutgoingGraph::out_degree_of(&g, &2), 1);
+    assert_eq!(IncidenceGraph::degree_of(&g, &2), 3);
+}
+
+#[test]
+fn absent_vertex_has_no_incident_edges() {
+    let g = FullFixture::new(&[0, 1], &[(0, 1, 1.0)]);
+    assert_eq!(OutgoingGraph::out_edges_of(&g, &9).count(), 0);
+    assert_eq!(IncomingGraph::in_edges_of(&g, &9).count(), 0);
+    assert_eq!(IncidenceGraph::edges_of(&g, &9).count(), 0);
+    assert_eq!(IncidenceGraph::degree_of(&g, &9), 0);
+}
+
+#[test]
+fn directed_self_loop_counts_once_per_direction_and_twice_in_degree() {
+    let g = FullFixture::new(&[0], &[(0, 0, 1.0)]);
+    assert_eq!(IncidenceGraph::edges_of(&g, &0).count(), 1);
+    assert_eq!(OutgoingGraph::out_degree_of(&g, &0), 1);
+    assert_eq!(IncomingGraph::in_degree_of(&g, &0), 1);
+    assert_eq!(IncidenceGraph::degree_of(&g, &0), 2);
+}
+
+#[test]
+fn parallel_edges_are_each_yielded() {
+    let g = FullFixture::new(&[0, 1], &[(0, 1, 1.0), (0, 1, 2.0)]);
+    assert_eq!(OutgoingGraph::out_degree_of(&g, &0), 2);
+    assert_eq!(IncomingGraph::in_degree_of(&g, &1), 2);
+}

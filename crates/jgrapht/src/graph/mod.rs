@@ -16,6 +16,7 @@
 
 mod base;
 pub mod builder;
+pub mod capability;
 mod ext;
 pub mod map;
 pub mod props;

@@ -22,6 +22,7 @@
 #[path = "../common/mod.rs"]
 mod common;
 
+mod capability_test;
 mod directed_acyclic_graph_test;
 mod fixtures_test;
 mod graph_basic;
