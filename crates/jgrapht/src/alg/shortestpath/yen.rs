@@ -55,6 +55,10 @@ struct Candidate<V, E> {
 /// # Rust notes
 ///
 /// Lazy iterator over loopless paths in non-decreasing weight order.
+///
+/// Items are `Result`s: an error raised while computing a path (for example an invalid edge
+/// weight met by the spur searches) is yielded once as `Err`, and the iterator then ends, so a
+/// failure is never mistaken for exhaustion. Collect with `collect::<Result<Vec<_>>>()`.
 pub struct YenShortestPathIterator<'g, G: Graph, P = AllowAllPaths> {
     graph: &'g G,
     source: G::Vertex,
@@ -65,7 +69,7 @@ pub struct YenShortestPathIterator<'g, G: Graph, P = AllowAllPaths> {
     processed: Vec<GraphWalk<G::Vertex, G::Edge>>,
     seen: HashSet<Vec<G::Edge>>,
     next_ordinal: usize,
-    failure: Option<GraphError>,
+    failed: bool,
 }
 
 impl<'g, G: IncidenceGraph> YenShortestPathIterator<'g, G, AllowAllPaths> {
@@ -96,7 +100,7 @@ impl<'g, G: IncidenceGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, 
             processed: Vec::new(),
             seen: HashSet::new(),
             next_ordinal: 0,
-            failure: None,
+            failed: false,
         })
     }
 
@@ -201,8 +205,8 @@ impl<'g, G: IncidenceGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, 
         Ok(())
     }
 
-    /// Fallible analogue of `Iterator::next`.
-    pub fn try_next(&mut self) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
+    /// The next path, or `None` once every path has been produced.
+    fn advance(&mut self) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
         self.initialize()?;
         while let Some(candidate) = self.pop_min_candidate() {
             let path = candidate.path;
@@ -217,19 +221,17 @@ impl<'g, G: IncidenceGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, 
 }
 
 impl<G: IncidenceGraph, P: PathValidator<G>> Iterator for YenShortestPathIterator<'_, G, P> {
-    type Item = GraphWalk<G::Vertex, G::Edge>;
+    type Item = Result<GraphWalk<G::Vertex, G::Edge>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.failure.is_some() {
+        if self.failed {
             return None;
         }
-        match self.try_next() {
-            Ok(path) => path,
-            Err(error) => {
-                self.failure = Some(error);
-                None
-            }
+        let step = self.advance().transpose();
+        if matches!(step, Some(Err(_))) {
+            self.failed = true;
         }
+        step
     }
 }
 
@@ -282,7 +284,7 @@ impl<'g, G: IncidenceGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G,
         )?;
         let mut result = Vec::new();
         while result.len() < k {
-            let Some(path) = iterator.try_next()? else {
+            let Some(path) = iterator.next().transpose()? else {
                 break;
             };
             result.push(path);

@@ -104,7 +104,7 @@ impl<'g, G: IncidenceGraph> BidirectionalDijkstraShortestPath<'g, G> {
 
     pub fn with_radius(graph: &'g G, radius: f64) -> Result<Self> {
         if radius.is_nan() || radius < 0.0 {
-            return Err(GraphError::InvalidParameter { name: "radius", requirement: crate::ParameterRequirement::NonNegative });
+            return Err(GraphError::must_be_non_negative("radius"));
         }
         Ok(Self { graph, radius })
     }

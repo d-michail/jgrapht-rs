@@ -79,7 +79,7 @@ impl<V> CircularLayoutAlgorithm2D<V> {
     /// Create a new layout algorithm
     pub fn new(radius: f64) -> Result<Self> {
         if tolerance().compare(radius, 0.0) <= 0 {
-            return Err(GraphError::InvalidParameter { name: "radius", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("radius"));
         }
         Ok(CircularLayoutAlgorithm2D {
             radius,
@@ -190,7 +190,7 @@ impl RescaleLayoutAlgorithm2D {
     /// Create a new layout algorithm
     pub fn new(scale: f64) -> Result<Self> {
         if scale <= 0.0 {
-            return Err(GraphError::InvalidParameter { name: "scale", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("scale"));
         }
         Ok(RescaleLayoutAlgorithm2D { scale })
     }

@@ -163,6 +163,7 @@ fn collect_loopless<G: Graph<Vertex = u32, Edge = DefaultEdge> + IncidenceGraph>
 ) -> Vec<GraphWalk<u32, DefaultEdge>> {
     YenShortestPathIterator::new(graph, &source, &target)
         .unwrap()
+        .map(|path| path.unwrap())
         .inspect(|path| {
             assert!(path.is_valid(graph));
             assert_eq!(
@@ -379,11 +380,38 @@ mod yen_shortest_path_iterator_test {
                     && graph.edge_target(edge) == Some(&3)
                     && graph.edge_weight(edge) == Some(4.0))
         };
-        let paths: Vec<_> =
-            YenShortestPathIterator::with_validator(&graph, &1, &3, validator)
-                .unwrap()
-                .collect();
+        let paths: Vec<_> = YenShortestPathIterator::with_validator(&graph, &1, &3, validator)
+            .unwrap()
+            .collect::<jgrapht::Result<_>>()
+            .unwrap();
         assert_eq!(weights(&paths), [6.0, 8.0]);
+    }
+}
+
+mod yen_error_reporting {
+    use super::*;
+    use jgrapht::{GraphError, WeightProblem};
+
+    #[test]
+    fn a_failure_is_an_item_not_the_end_of_the_iteration() {
+        let mut graph = DiGraph::<u32>::simple().weighted();
+        graph.add_vertices([1, 2, 3]);
+        for (a, b, w) in [(1, 2, 1.0), (2, 3, -1.0)] {
+            graph.add_edge(&a, &b).unwrap();
+            let e = *graph.get_edge(&a, &b).unwrap();
+            graph.set_edge_weight(&e, w).unwrap();
+        }
+        let mut iterator = YenShortestPathIterator::new(&graph, &1, &3).unwrap();
+        assert!(matches!(
+            iterator.next(),
+            Some(Err(GraphError::InvalidWeight(WeightProblem::NegativeOrNaN)))
+        ));
+        assert!(iterator.next().is_none());
+
+        let collected: jgrapht::Result<Vec<_>> =
+            YenShortestPathIterator::new(&graph, &1, &3).unwrap().collect();
+        assert!(collected.is_err());
+        assert!(YenKShortestPath::new(&graph).get_paths(&1, &3, 2).is_err());
     }
 }
 

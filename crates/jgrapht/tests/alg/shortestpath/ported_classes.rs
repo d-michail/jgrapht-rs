@@ -32,7 +32,7 @@ fn yen_iterator_and_class_are_stably_sorted() {
     );
     let iterator = YenShortestPathIterator::new(&graph, &1, &4).unwrap();
     assert_eq!(
-        iterator.map(|path| path.weight).collect::<Vec<_>>(),
+        iterator.map(|path| path.unwrap().weight).collect::<Vec<_>>(),
         [3.0, 3.0, 10.0]
     );
 }

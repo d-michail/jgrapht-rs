@@ -166,7 +166,7 @@ fn validate<G: DirectedGraph + OutgoingGraph>(
     k: usize,
 ) -> Result<()> {
     if k == 0 {
-        return Err(GraphError::InvalidParameter { name: "number_of_paths", requirement: crate::ParameterRequirement::Positive });
+        return Err(GraphError::must_be_positive("number_of_paths"));
     }
     if source == sink {
         return Err(GraphError::SourceEqualsSink);

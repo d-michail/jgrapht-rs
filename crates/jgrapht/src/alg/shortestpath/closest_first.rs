@@ -46,7 +46,7 @@ impl<'g, G: OutgoingGraph> DijkstraClosestFirstIterator<'g, G> {
 
     pub fn with_radius(graph: &'g G, source: &G::Vertex, radius: f64) -> Result<Self> {
         if radius.is_nan() || radius < 0.0 {
-            return Err(GraphError::InvalidParameter { name: "radius", requirement: crate::ParameterRequirement::NonNegative });
+            return Err(GraphError::must_be_non_negative("radius"));
         }
         let source = graph
             .vertices()

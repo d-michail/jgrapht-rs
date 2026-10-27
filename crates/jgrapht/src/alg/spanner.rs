@@ -29,7 +29,7 @@ pub fn greedy_spanner<G: Graph>(g: &G, k: usize) -> Result<Vec<G::Edge>> {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
     }
     if k == 0 {
-        return Err(GraphError::InvalidParameter { name: "k", requirement: crate::ParameterRequirement::Positive });
+        return Err(GraphError::must_be_positive("k"));
     }
     let ix = Indexed::new(g);
     let stretch = (2 * k - 1) as f64;

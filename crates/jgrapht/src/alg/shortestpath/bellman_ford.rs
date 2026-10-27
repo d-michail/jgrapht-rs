@@ -137,10 +137,10 @@ impl<'g, G> BellmanFord<'g, G> {
 
     pub fn with_options(graph: &'g G, epsilon: f64, max_hops: usize) -> Result<Self> {
         if epsilon <= 0.0 {
-            return Err(GraphError::InvalidParameter { name: "tolerance", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("tolerance"));
         }
         if max_hops == 0 {
-            return Err(GraphError::InvalidParameter { name: "number_of_hops", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("number_of_hops"));
         }
         Ok(Self {
             graph,

@@ -16,7 +16,8 @@ stable. It expands `ISSUES.md` I-6 and I-8 into concrete work packages.
 | 7. Normalize `GraphExt`/`DirectedExt`, remove panic helpers | done within step 6: every `try_*` variant and panic wrapper is gone, the remaining helpers are infallible with `where Self: <capability>` clauses |
 | 8. First typed `GraphError` variants | done: `InvalidParameter`, `InvalidWeight`, `InvalidGraph`, `SourceEqualsSink`, `Infeasible`, `Unbounded`; about 100 `InvalidArgument(String)` sites converted, the rest are converted as their family is migrated (R8 final pass) |
 | 9. Traversals and listener iterators | done: start vertices and radii validated at construction, iteration-time errors are `Result` items, `ClosestFirstIterator` no longer panics on a negative weight, topological cycles are reported; `Strategy`/`Advance` gained an `Output` type |
-| 10 onwards | open |
+| 10. Fallible path iterators | done: Yen yields `Result` items, closest-first distance is an `Option`; Eppstein and the Dijkstra closest-first iterator already validate at construction |
+| 11 onwards | open |
 
 ## Goal
 

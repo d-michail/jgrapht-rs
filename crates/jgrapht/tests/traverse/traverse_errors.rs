@@ -166,3 +166,14 @@ fn closing_a_cyclic_graph_as_a_dag_fails_instead_of_stopping_early() {
         Err(GraphError::InvalidGraph(GraphProperty::Acyclic))
     );
 }
+
+#[test]
+fn closest_first_distance_is_absent_for_unseen_vertices() {
+    let g = weighted_path(&[1.0, 2.0, 4.0]);
+    let mut it = ClosestFirstIterator::from_start(&g, &0).unwrap();
+    assert_eq!(it.shortest_path_length(&2), None);
+    it.by_ref().for_each(drop);
+    assert_eq!(it.shortest_path_length(&0), Some(0.0));
+    assert_eq!(it.shortest_path_length(&3), Some(7.0));
+    assert_eq!(it.shortest_path_length(&99), None);
+}

@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1473 | 345 | 119 | 361 | 14 | 19 | 421 | 194 |
+| `jgrapht` | 1472 | 345 | 120 | 361 | 13 | 19 | 420 | 194 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -73,7 +73,6 @@ Each needs an owner in R3/R5/R6.
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::from_start` | `INFINITY` |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::from_starts` | `INFINITY` |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::new` | `INFINITY` |
-| `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::shortest_path_length` | `INFINITY` |
 | `jgrapht/src/traverse/ordered.rs` | `DegeneracyOrderingIterator::new` | `usize::MAX` |
 | `jgrapht/src/traverse/simple_weighted.rs` | `ClosestFirst::new` | `INFINITY` |
 | `jgrapht/src/util/mod.rs` | `ToleranceDoubleComparator::compare` | `-1` |
@@ -974,7 +973,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/shortestpath/yen.rs` | `BoundedPrunedYenKShortestPath::with_engine` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/yen.rs` | `DijkstraSpurEngine::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/yen.rs` | `PathValidator::get_paths` | Result | `Result<Vec<GraphWalk<G::Vertex, G::Edge>>>` |
-| `jgrapht/src/alg/shortestpath/yen.rs` | `PathValidator::try_next` | Result<Option> | `Result<Option<GraphWalk<G::Vertex, G::Edge>>>` |
 | `jgrapht/src/alg/shortestpath/yen.rs` | `PathValidator::with_validator` | Result | `Result<Self>` |
 | `jgrapht/src/alg/shortestpath/yen.rs` | `PathValidator::with_validator` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/shortestpath/yen.rs` | `SpurShortestPathEngine::name` | state query | `&'static str` |
@@ -1542,7 +1540,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::from_starts` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::from_starts_with_radius` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::new` | unchecked constructor | `Self` |
-| `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::shortest_path_length` | state query | `f64` |
+| `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::shortest_path_length` | Option | `Option<f64>` |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::spanning_tree_edge` | Option | `Option<&'g G::Edge>` |
 | `jgrapht/src/traverse/cross.rs` | `Core::finish_vertex` | infallible | `()` |
 | `jgrapht/src/traverse/cross.rs` | `DepthFirstIterator::color` | Option | `Option<VisitColor>` |

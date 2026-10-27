@@ -74,7 +74,7 @@ impl<'g, G: OutgoingGraph + IncidenceGraph> EdmondsKarpMFImpl<'g, G> {
 
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         if epsilon <= 0.0 {
-            return Err(GraphError::InvalidParameter { name: "epsilon", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("epsilon"));
         }
         let net = FlowNet::new(network, epsilon)?;
         net.check_capacities(epsilon, "invalid capacity (must be non-negative)")?;

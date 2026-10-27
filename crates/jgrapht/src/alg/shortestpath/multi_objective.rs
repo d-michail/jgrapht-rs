@@ -248,7 +248,7 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
 
     pub fn with_epsilon(graph: &'g G, edge_weight: F, epsilon: f64) -> Result<Self> {
         if epsilon.is_nan() || epsilon < 0.0 {
-            return Err(GraphError::InvalidParameter { name: "epsilon", requirement: crate::ParameterRequirement::NonNegative });
+            return Err(GraphError::must_be_non_negative("epsilon"));
         }
         Ok(Self {
             graph,

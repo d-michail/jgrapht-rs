@@ -1044,10 +1044,10 @@ impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
         tolerance: f64,
     ) -> Result<Self, GraphError> {
         if max_iterations == 0 {
-            return Err(GraphError::InvalidParameter { name: "maximum_iterations", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("maximum_iterations"));
         }
         if tolerance <= 0.0 {
-            return Err(GraphError::InvalidParameter { name: "tolerance", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("tolerance"));
         }
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
@@ -1146,13 +1146,13 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
         tolerance: f64,
     ) -> Result<Self, GraphError> {
         if max_iterations == 0 {
-            return Err(GraphError::InvalidParameter { name: "maximum_iterations", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("maximum_iterations"));
         }
         if damping_factor < 0.0 {
             return Err(invalid("Damping factor not valid"));
         }
         if tolerance <= 0.0 {
-            return Err(GraphError::InvalidParameter { name: "tolerance", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("tolerance"));
         }
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
@@ -1230,13 +1230,13 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
         tolerance: f64,
     ) -> Result<Self, GraphError> {
         if max_iterations == 0 {
-            return Err(GraphError::InvalidParameter { name: "maximum_iterations", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("maximum_iterations"));
         }
         if !(0.0..=1.0).contains(&damping_factor) {
             return Err(invalid("Damping factor not valid"));
         }
         if tolerance <= 0.0 {
-            return Err(GraphError::InvalidParameter { name: "tolerance", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("tolerance"));
         }
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
@@ -1514,7 +1514,7 @@ pub const APFLOAT_INFINITE_PRECISION: usize = usize::MAX;
 
 fn ap_precision(precision: usize) -> Result<usize, GraphError> {
     match precision {
-        0 => Err(GraphError::InvalidParameter { name: "precision", requirement: crate::ParameterRequirement::Positive }),
+        0 => Err(GraphError::must_be_positive("precision")),
         APFLOAT_INFINITE_PRECISION => Ok(0),
         finite => Ok(finite),
     }

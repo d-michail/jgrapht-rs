@@ -91,7 +91,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for DeltaStepping<'_, G> {
             1.0
         });
         if delta.is_nan() || delta <= 0.0 {
-            return Err(GraphError::InvalidParameter { name: "delta", requirement: crate::ParameterRequirement::Positive });
+            return Err(GraphError::must_be_positive("delta"));
         }
         let n = ix.n();
         let mut dist = vec![f64::INFINITY; n];

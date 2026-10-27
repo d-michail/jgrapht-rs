@@ -693,9 +693,10 @@ where
         Ok(it)
     }
 
-    /// Distance of `v` from the closest start vertex (`INFINITY` if unseen).
-    pub fn shortest_path_length(&self, v: &G::Vertex) -> f64 {
-        self.seen_data(v).map_or(f64::INFINITY, |d| d.key)
+    /// Distance of `v` from the closest start vertex, or `None` if the traversal has not reached
+    /// `v` (yet). For a vertex that is reached but not yet yielded the value is tentative.
+    pub fn shortest_path_length(&self, v: &G::Vertex) -> Option<f64> {
+        self.seen_data(v).map(|d| d.key)
     }
     pub fn spanning_tree_edge(&self, v: &G::Vertex) -> Option<&'g G::Edge> {
         self.seen_data(v).and_then(|d| d.edge)

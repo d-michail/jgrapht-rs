@@ -60,6 +60,17 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 10: path iterators
+
+* `YenShortestPathIterator` is `Iterator<Item = Result<GraphWalk<..>>>`. It used to store an error
+  and return `None`, which looked like exhaustion; now the error is the next item and the iterator
+  then ends. `try_next` is gone (the item is already a `Result`). Use
+  `iter.collect::<Result<Vec<_>>>()` or `iter.next().transpose()?`.
+* `ClosestFirstIterator::shortest_path_length` returns `Option<f64>` (`None` for a vertex the
+  traversal has not reached) instead of `f64::INFINITY`.
+* `EppsteinShortestPathIterator` and `DijkstraClosestFirstIterator` validate everything in their
+  constructors, so their `next()` cannot fail and keeps its item type.
+
 ## Step 9: traversals report errors
 
 * `Bfs::new`, `Dfs::new`, `DfsPostOrder::new`, `ClosestFirst::new`, `ClosestFirst::with_radius` and
