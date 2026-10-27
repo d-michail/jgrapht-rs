@@ -1095,18 +1095,24 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone> ManyToManyPaths<V, E> {
 ///
 /// # Rust notes
 ///
-/// Many-to-many shortest paths over a precomputed contraction hierarchy.
+/// The search spaces, buckets and middle vertices are the ones of the Java algorithm. Java unpacks
+/// a path from the search spaces when it is asked for; here all requested paths are unpacked once
+/// into a [`ManyToManyPaths`]. The iteration order of the vertex sets is the order of the
+/// hierarchy ids (Java: `HashSet` order), which only decides between equally long paths.
 pub struct CHManyToManyShortestPaths<'h, 'g, G: Graph> {
     hierarchy: &'h ContractionHierarchy<'g, G>,
 }
 
+/// Distance and tree edge of the vertices reached by one search of the many-to-many algorithm.
+type SearchSpace = HashMap<usize, (f64, Option<usize>)>;
+
 impl<'h, 'g, G: Graph> CHManyToManyShortestPaths<'h, 'g, G> {
-    /// Create a many-to-many query object.
+    /// Constructs a new instance of the algorithm for a given contraction hierarchy.
     pub fn new(hierarchy: &'h ContractionHierarchy<'g, G>) -> Self {
         Self { hierarchy }
     }
 
-    /// Compute paths for the Cartesian product of `sources` and `targets`.
+    /// Computes shortest paths from all vertices in `sources` to all vertices in `targets`.
     pub fn many_to_many<I, J>(
         &self,
         sources: I,
@@ -1116,31 +1122,166 @@ impl<'h, 'g, G: Graph> CHManyToManyShortestPaths<'h, 'g, G> {
         I: IntoIterator<Item = G::Vertex>,
         J: IntoIterator<Item = G::Vertex>,
     {
+        let h = self.hierarchy;
         let sources: HashSet<_> = sources.into_iter().collect();
         let targets: HashSet<_> = targets.into_iter().collect();
-        if sources
-            .iter()
-            .any(|v| !self.hierarchy.graph.contains_vertex(v))
-            || targets
-                .iter()
-                .any(|v| !self.hierarchy.graph.contains_vertex(v))
-        {
+        if sources.iter().chain(&targets).any(|v| !h.graph.contains_vertex(v)) {
             return Err(GraphError::VertexNotFound);
         }
-        let query = ContractionHierarchyBidirectionalDijkstra::new(self.hierarchy);
-        let mut paths = HashMap::new();
-        for source in &sources {
-            for target in &targets {
-                if let Some(path) = query.path(source, target)? {
-                    paths.insert((source.clone(), target.clone()), path);
+        let ids = |set: &HashSet<G::Vertex>| {
+            let mut ids: Vec<usize> = set.iter().map(|v| h.mapping[v]).collect();
+            ids.sort_unstable();
+            ids
+        };
+        let (source_ids, target_ids) = (ids(&sources), ids(&targets));
+
+        // with more sources than targets the algorithm runs on the reversed graph
+        let reversed = sources.len() > targets.len();
+        let (search_sources, search_targets) = if reversed {
+            (&target_ids, &source_ids)
+        } else {
+            (&source_ids, &target_ids)
+        };
+        let search_source_set: HashSet<usize> = search_sources.iter().copied().collect();
+        let search_target_set: HashSet<usize> = search_targets.iter().copied().collect();
+
+        let mut buckets: Vec<Vec<(usize, f64)>> = vec![Vec::new(); h.vertices.len()];
+        let mut backward_spaces: HashMap<usize, SearchSpace> = HashMap::new();
+        let mut forward_spaces: HashMap<usize, SearchSpace> = HashMap::new();
+        let mut middle_vertices: HashMap<(usize, usize), (f64, usize)> = HashMap::new();
+
+        for &target in search_targets {
+            let space = h.search_space(target, &search_source_set, |v| {
+                if reversed {
+                    h.upward_outgoing(v)
+                } else {
+                    h.downward_incoming(v)
+                }
+            });
+            let mut entries: Vec<_> = space.iter().map(|(&v, &(d, _))| (v, d)).collect();
+            entries.sort_by_key(|&(v, _)| v);
+            for (vertex, distance) in entries {
+                buckets[vertex].push((target, distance));
+            }
+            backward_spaces.insert(target, space);
+        }
+        for &source in search_sources {
+            let space = h.search_space(source, &search_target_set, |v| {
+                if reversed {
+                    h.downward_incoming(v)
+                } else {
+                    h.upward_outgoing(v)
+                }
+            });
+            let mut entries: Vec<_> = space.iter().map(|(&v, &(d, _))| (v, d)).collect();
+            entries.sort_by_key(|&(v, _)| v);
+            for (middle, forward_distance) in entries {
+                for &(target, bucket_distance) in &buckets[middle] {
+                    let path_distance = forward_distance + bucket_distance;
+                    let pair = if reversed {
+                        (target, source)
+                    } else {
+                        (source, target)
+                    };
+                    match middle_vertices.get(&pair) {
+                        Some(&(d, _)) if d <= path_distance => {}
+                        _ => {
+                            middle_vertices.insert(pair, (path_distance, middle));
+                        }
+                    }
                 }
             }
+            forward_spaces.insert(source, space);
         }
-        Ok(ManyToManyPaths {
-            sources,
-            targets,
-            paths,
-        })
+        // the spaces rooted at the original sources/targets
+        let (source_spaces, target_spaces) = if reversed {
+            (&backward_spaces, &forward_spaces)
+        } else {
+            (&forward_spaces, &backward_spaces)
+        };
+
+        let mut paths = HashMap::new();
+        for &source in &source_ids {
+            for &target in &target_ids {
+                let Some(&(weight, common)) = middle_vertices.get(&(source, target)) else {
+                    continue;
+                };
+                let mut vertices = VecDeque::from([h.vertices[common].vertex.clone()]);
+                let mut edges = VecDeque::new();
+                // traverse forward path
+                let mut v = common;
+                while let Some(e) = source_spaces[&source][&v].1 {
+                    h.unpack_backward(e, &mut vertices, &mut edges);
+                    v = h.edges[e].source;
+                }
+                // traverse reverse path
+                v = common;
+                while let Some(e) = target_spaces[&target][&v].1 {
+                    h.unpack_forward(e, &mut vertices, &mut edges);
+                    v = h.edges[e].target;
+                }
+                paths.insert(
+                    (
+                        h.vertices[source].vertex.clone(),
+                        h.vertices[target].vertex.clone(),
+                    ),
+                    GraphWalk {
+                        vertices: vertices.into(),
+                        edges: edges.into(),
+                        weight,
+                    },
+                );
+            }
+        }
+        Ok(ManyToManyPaths::from_parts(sources, targets, paths))
+    }
+}
+
+impl<'g, G: Graph> ContractionHierarchy<'g, G> {
+    /// Upward edges leaving `vertex`, with their targets.
+    fn upward_outgoing(&self, vertex: usize) -> Vec<(usize, usize)> {
+        self.outgoing[vertex]
+            .iter()
+            .filter(|&&e| self.edges[e].is_upward)
+            .map(|&e| (e, self.edges[e].target))
+            .collect()
+    }
+
+    /// Downward edges entering `vertex`, with their sources.
+    fn downward_incoming(&self, vertex: usize) -> Vec<(usize, usize)> {
+        self.incoming[vertex]
+            .iter()
+            .filter(|&&e| !self.edges[e].is_upward)
+            .map(|&e| (e, self.edges[e].source))
+            .collect()
+    }
+
+    /// Dijkstra search from `source` that stops as soon as all `targets` are settled
+    /// (`BaseManyToManyShortestPaths.getShortestPathsTree`). Returns the distance and tree edge of
+    /// every vertex that was reached.
+    fn search_space(
+        &self,
+        source: usize,
+        targets: &HashSet<usize>,
+        edges_of: impl Fn(usize) -> Vec<(usize, usize)>,
+    ) -> SearchSpace {
+        let mut frontier = Frontier::new();
+        frontier.update_distance(source, None, 0.0);
+        let mut reached_targets = 0;
+        while !frontier.heap.is_empty() && reached_targets < targets.len() {
+            let (OrderedF64(distance), vertex) = frontier.heap.pop().expect("non-empty heap");
+            for (edge, other) in edges_of(vertex) {
+                frontier.update_distance(other, Some(edge), distance + self.edges[edge].weight);
+            }
+            if targets.contains(&vertex) {
+                reached_targets += 1;
+            }
+        }
+        frontier
+            .seen
+            .into_iter()
+            .map(|(v, node)| (v, (node.distance, node.tree_edge)))
+            .collect()
     }
 }
 
