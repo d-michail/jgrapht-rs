@@ -7,7 +7,7 @@ Status on 2026-10-27. Source of truth for what is ported: `crates/jgrapht-core/t
 | Area | Java | Rust |
 |---|---|---|
 | core `graph/`, views, events, `traverse/`, `util/`, `generate/` (incl. netgen) | ported, tests ported (about 400 tests passing, `tests/java_port`) | done |
-| core `alg/` | 312 files, 230 test files, **1509 tests** | functional ports of most families (`alg/*.rs`), almost none of the tests |
+| core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1f (isomorphism, flow, tour, cycle done; 1458 ported tests pass in `tests/java_port`); 1g (matching) and 1i (shortest paths) still functional. See `FIDELITY_ROADMAP.md` for deviations from Java |
 | `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | not started |
 | `jgrapht-opt` (sparse and fastutil graphs) | 22 files (about 2.5k loc), 4 test files | not started, in scope (Phase 3b) |
 | other modules (ext, guava, unimi-dsi, osm, demo) | see "Out of scope" | no |
