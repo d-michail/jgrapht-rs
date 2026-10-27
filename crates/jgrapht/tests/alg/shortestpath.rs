@@ -6,6 +6,8 @@ use rheaps::tree::FibonacciHeap;
 
 #[path = "shortestpath/advanced_speedups.rs"]
 mod advanced_speedups;
+#[path = "shortestpath/all_directed_paths.rs"]
+mod all_directed_paths;
 #[path = "shortestpath/basic_classes.rs"]
 mod basic_classes;
 #[path = "shortestpath/bounded_pruned_yen.rs"]

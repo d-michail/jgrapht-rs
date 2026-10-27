@@ -84,29 +84,6 @@ fn bellman_ford_max_hops_can_disable_cycle_detection() {
 }
 
 #[test]
-fn all_directed_paths_matches_java_edge_cases() {
-    let mut graph = DiGraph::<u32>::pseudo().weighted();
-    graph.add_vertex(0);
-    graph.add_vertex(1);
-    let loop_zero = graph.add_edge(&0, &0).unwrap().unwrap();
-    let to_one = graph.add_edge(&0, &1).unwrap().unwrap();
-    let loop_one = graph.add_edge(&1, &1).unwrap().unwrap();
-    graph.set_edge_weight(&loop_zero, 1.0).unwrap();
-    graph.set_edge_weight(&to_one, 2.0).unwrap();
-    graph.set_edge_weight(&loop_one, 3.0).unwrap();
-
-    let algorithm = AllDirectedPaths::new(&graph);
-    let walks = algorithm.get_all_paths(&0, &1, false, Some(3)).unwrap();
-    assert_eq!(walks.len(), 6);
-    assert!(walks.iter().all(|path| path.length() <= 3));
-    let zero = algorithm
-        .get_all_paths_between([&0, &1], [&0, &1], false, Some(0))
-        .unwrap();
-    assert_eq!(zero.len(), 2);
-    assert!(zero.iter().all(|path| path.length() == 0));
-}
-
-#[test]
 fn suurballe_and_bhandari_find_two_disjoint_paths() {
     let graph = weighted_di(&[
         (1, 2, 1.0),

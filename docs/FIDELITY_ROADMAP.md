@@ -98,11 +98,11 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
 
 Implemented in `crates/jgrapht/src/alg/shortestpath/`: Java-style BFS, Dijkstra and closest-first iterator, Bellman–Ford, A*/ALT, bidirectional Dijkstra/A*, Floyd–Warshall, Johnson, list/tree single-source paths, `TreeMeasurer`, array-backed integer Dijkstra, sequential delta stepping, `DagAllPathsCounter`, default/Dijkstra/CH many-to-many, Martin and label-correcting multi-objective paths, `AllDirectedPaths`, Suurballe/Bhandari, lazy Yen, bounded/pruned Yen, Eppstein sidetrack heaps, sequential contraction hierarchies, and transit-node routing. C13 deleted the old `alg/paths.rs` helpers and their non-Java vertex-disjoint implementation; callers now use the shortest-path classes directly.
 
-Current validation: `cargo test -p jgrapht --test alg shortestpath:: -- --nocapture` passes **42/42** shortest-path tests. These include focused Java-derived golden sequences for Yen/Eppstein, bounded-pruned equivalence tests, foundational class contracts, CH/TNR comparisons with Dijkstra, and Java-derived Bellman–Ford negative-cycle payload tests.
+Current validation: `cargo test -p jgrapht --test alg shortestpath:: -- --nocapture` passes **61/61** shortest-path tests. These include the complete 20-test `AllDirectedPathsTest`, focused Java-derived golden sequences for Yen/Eppstein, bounded-pruned equivalence tests, foundational class contracts, CH/TNR comparisons with Dijkstra, and Java-derived Bellman–Ford negative-cycle payload tests.
 
 Strict-fidelity work still required before marking 1i or C14 done:
 
-- Port the remainder of Java's 41 shortest-path test files / roughly 283 tests and record each class separately in `STATUS.md`; the checkpoint is a coherent implementation base, not a completed package port.
+- Port the remaining 40 Java shortest-path test files / roughly 264 tests and record each class separately in `STATUS.md`; the checkpoint is a coherent implementation base, not a completed package port.
 - Make contraction preprocessing reproduce Java's parallel independent-set/random-tie ordering and implement Java's bucket-based CH many-to-many algorithm. The checkpoint uses deterministic sequential witness searches and materialized CH point queries.
 - Complete transit-node routing's Java Voronoi locality filter and exact access-node selection. The checkpoint's conservative locality filter is correct but not technique-faithful.
 - Add bounded-pruned Yen's alternate A* spur engine and settled-vertex accounting (`expanded_vertices` is currently zero).
