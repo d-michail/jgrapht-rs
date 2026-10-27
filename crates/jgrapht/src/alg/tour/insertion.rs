@@ -107,7 +107,7 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
         if subtour_vertices.is_empty() {
             let mut shortest: Option<(&G::Edge, f64)> = None;
             for e in graph.edges() {
-                let w = graph.edge_weight(e).unwrap_or(1.0);
+                let w = graph.weight_of(e);
                 if shortest.is_none_or(|(_, best)| w.total_cmp(&best).is_lt()) {
                     shortest = Some((e, w));
                 }
@@ -310,7 +310,7 @@ impl<G: OutgoingGraph> HamiltonianCycleAlgorithm<G> for FarthestInsertionHeurist
             if source != target {
                 let (i, j) = (vertex_map[source], vertex_map[target]);
                 if all_dist[i][j] == 0.0 {
-                    let w = graph.edge_weight(edge).unwrap_or(1.0);
+                    let w = graph.weight_of(edge);
                     all_dist[i][j] = w;
                     all_dist[j][i] = w;
                     if longest_edge_weight < all_dist[i][j] {

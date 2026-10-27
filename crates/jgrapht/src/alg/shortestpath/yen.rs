@@ -115,7 +115,7 @@ impl<'g, G: IncidenceGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, 
             if !self.validator.is_valid_path(&partial, &path.edges[i]) {
                 return false;
             }
-            weight += self.graph.edge_weight(&path.edges[i]).unwrap_or(1.0);
+            weight += self.graph.weight_of(&path.edges[i]);
         }
         true
     }
@@ -194,7 +194,7 @@ impl<'g, G: IncidenceGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, 
             edges.extend(spur_path.edges);
             let root_weight: f64 = root_edges
                 .iter()
-                .map(|edge| self.graph.edge_weight(edge).unwrap_or(1.0))
+                .map(|edge| self.graph.weight_of(edge))
                 .sum();
             self.push_candidate(GraphWalk::new(
                 vertices,
@@ -707,7 +707,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
                 .map(|(edge, target)| (edge.clone(), target.clone()))
                 .collect::<Vec<_>>();
             for (edge, target) in outgoing {
-                let weight = graph.edge_weight(&edge).unwrap_or(1.0);
+                let weight = graph.weight_of(&edge);
                 if weight.is_nan() || weight < 0.0 {
                     return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
                 }
@@ -761,7 +761,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
                 continue;
             }
             for (edge, predecessor) in self.graph.incoming_of(vertex) {
-                let weight = self.graph.edge_weight(edge).unwrap_or(1.0);
+                let weight = self.graph.weight_of(edge);
                 if weight.is_nan() || weight < 0.0 {
                     return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
                 }
@@ -829,8 +829,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
             banned_vertices.insert(path.vertices[spur_index].clone());
             root_cost += self
                 .graph
-                .edge_weight(&path.edges[spur_index])
-                .unwrap_or(1.0);
+                .weight_of(&path.edges[spur_index]);
         }
         Ok(())
     }

@@ -121,7 +121,7 @@ fn build_fundamental_cycle<G: Graph>(
     spanning_forest: &HashMap<G::Vertex, Option<G::Edge>>,
 ) -> (Vec<G::Edge>, f64) {
     let (source, target) = graph.edge_endpoints(e).expect("edge of the graph");
-    let weight_of = |e: &G::Edge| graph.edge_weight(e).unwrap_or(1.0);
+    let weight_of = |e: &G::Edge| graph.weight_of(e);
     if source == target {
         return (vec![e.clone()], weight_of(e));
     }
@@ -261,7 +261,7 @@ impl<'g, G: IncidenceGraph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, 
         if has_multiple_edges(graph) {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::NoParallelEdges));
         }
-        let weight_of = |e: &G::Edge| graph.edge_weight(e).unwrap_or(1.0);
+        let weight_of = |e: &G::Edge| graph.weight_of(e);
         let mut used: HashMap<G::Vertex, IndexMap<G::Vertex, G::Edge>> = HashMap::new();
         let mut parent: HashMap<G::Vertex, Option<G::Edge>> = HashMap::new();
         let mut stack: Vec<G::Vertex> = Vec::new();

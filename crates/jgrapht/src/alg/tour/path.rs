@@ -155,7 +155,7 @@ fn vertex_list_to_path<G: Graph>(
         let e = graph
             .get_edge(&pair[0], &pair[1])
             .ok_or(GraphError::EdgeNotFound)?;
-        weight += graph.edge_weight(e).unwrap_or(1.0);
+        weight += graph.weight_of(e);
         edges.push(e.clone());
     }
     Ok(GraphWalk::new(vertices, edges, weight))

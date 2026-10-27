@@ -114,6 +114,19 @@ pub trait GraphExt: Graph {
             .is_some_and(|(s, t)| s == v || t == v)
     }
 
+    /// Weight of an edge that the graph itself yielded (from `edges()` or an incidence query).
+    ///
+    /// This is [`Graph::edge_weight`] under the [`Graph`] integrity contract: such an edge has a
+    /// weight (`1.0` in an unweighted graph), so the lookup cannot fail.
+    ///
+    /// # Panics
+    ///
+    /// If `e` is not an edge of the graph, which a well-formed graph never yields.
+    fn weight_of(&self, e: &Self::Edge) -> f64 {
+        self.edge_weight(e)
+            .expect("Graph integrity: every edge yielded by the graph has a weight")
+    }
+
     /// Sum of all edge weights.
     fn total_weight(&self) -> f64 {
         self.edges().filter_map(|e| self.edge_weight(e)).sum()

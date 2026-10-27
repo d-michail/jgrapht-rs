@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
 use super::search::search;
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
@@ -70,7 +71,7 @@ impl<G: OutgoingGraph, H: DecreaseKeyHeap<OrderedF64, usize> + Default> Shortest
             self.g,
             s,
             None,
-            |e, _, _| self.g.edge_weight(e).unwrap_or(1.0),
+            |e, _, _| self.g.weight_of(e),
             |_| 0.0,
             self.radius,
         )
@@ -81,7 +82,7 @@ impl<G: OutgoingGraph, H: DecreaseKeyHeap<OrderedF64, usize> + Default> Shortest
             self.g,
             s,
             Some(t),
-            |e, _, _| self.g.edge_weight(e).unwrap_or(1.0),
+            |e, _, _| self.g.weight_of(e),
             |_| 0.0,
             self.radius,
         )?;

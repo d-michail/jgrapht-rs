@@ -79,7 +79,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumC
                     edges.insert(e.clone());
                     matched.insert(v);
                     matched.insert(w);
-                    cost += graph.edge_weight(e).unwrap_or(1.0);
+                    cost += graph.weight_of(e);
                 }
             }
         } else {
@@ -93,7 +93,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumC
                         edges.insert(e.clone());
                         matched.insert(v);
                         matched.insert(w);
-                        cost += graph.edge_weight(e).unwrap_or(1.0);
+                        cost += graph.weight_of(e);
                         break;
                     }
                 }
@@ -161,7 +161,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeighted
     /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum weighted matching.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
-        let weight = |e: &G::Edge| graph.edge_weight(e).unwrap_or(1.0);
+        let weight = |e: &G::Edge| graph.weight_of(e);
         // sort edges in non-increasing order of weight
         let mut all_edges: Vec<&G::Edge> = graph.edges().collect();
         if self.normalize_edge_costs {

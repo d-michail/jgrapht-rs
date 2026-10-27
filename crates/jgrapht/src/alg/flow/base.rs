@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::GraphExt;
 use crate::graph::IncidenceGraph;
 use crate::graph::OutgoingGraph;
 use crate::error::{GraphError, Result};
@@ -187,7 +188,7 @@ impl<'g, G: OutgoingGraph + IncidenceGraph> FlowNet<'g, G> {
     }
 
     fn weight(&self, e: usize) -> f64 {
-        self.graph.edge_weight(self.es[e]).unwrap_or(1.0)
+        self.graph.weight_of(self.es[e])
     }
 
     /// `init` + `buildInternal`: rebuilds the residual network for a new computation.

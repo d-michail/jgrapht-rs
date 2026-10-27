@@ -18,7 +18,7 @@ use crate::graph::OutgoingGraph;
 use super::flow::{MinimumSTCutAlgorithm, PushRelabelMFImpl};
 use super::util::Indexed;
 use crate::Result;
-use crate::graph::{Graph, GraphMut};
+use crate::graph::{Graph, GraphExt, GraphMut};
 use std::collections::HashSet;
 
 fn simple_edges<G: Graph>(ix: &Indexed<'_, G>) -> Vec<(usize, usize)> {
@@ -218,7 +218,7 @@ where
     }
 
     fn weight_of<H: Graph<Vertex = G::Vertex>>(g: &H, e: &H::Edge) -> f64 {
-        g.edge_weight(e).unwrap_or(1.0)
+        g.weight_of(e)
     }
 
     fn numerator<H: Graph<Vertex = G::Vertex>>(&self, g: &H) -> f64 {

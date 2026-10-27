@@ -133,7 +133,7 @@ where
             }
             let vertex = vertices[vertex_index];
             for (edge, neighbor) in self.graph.outgoing_of(&vertex) {
-                let weight = self.graph.edge_weight(edge).unwrap_or(1.0);
+                let weight = self.graph.weight_of(edge);
                 if weight.is_nan() || weight < 0.0 {
                     return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
                 }

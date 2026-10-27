@@ -234,7 +234,7 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
             vertex_map.insert(v, id);
         }
         for e in graph.edges() {
-            let w = graph.edge_weight(e).unwrap_or(1.0);
+            let w = graph.weight_of(e);
             if w < 0.0 {
                 return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
             }

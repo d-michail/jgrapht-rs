@@ -20,7 +20,7 @@ use super::state::{BlossomVState, BlossomVStatistics};
 use super::types::{NodeId, TreeId};
 use crate::alg::matching::{DEFAULT_EPSILON, Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
-use crate::graph::{Graph, props};
+use crate::graph::{Graph, GraphExt, props};
 use crate::util::HashableSet;
 use indexmap::{IndexMap, IndexSet};
 use std::collections::{HashMap, HashSet};
@@ -228,7 +228,7 @@ impl<'g, G: Graph> KolmogorovWeightedPerfectMatching<'g, G> {
         for edge in 0..state.edge_num {
             let graph_edge = &state.graph_edges[edge];
             let mut slack =
-                scale * state.graph.edge_weight(graph_edge).unwrap_or(1.0) - state.min_edge_weight;
+                scale * state.graph.weight_of(graph_edge) - state.min_edge_weight;
             let [Some(a), Some(b)] = state.arena.edges[edge].head_original else {
                 unreachable!("original edge endpoints")
             };
@@ -513,7 +513,7 @@ impl<'g, G: Graph> KolmogorovWeightedPerfectMatching<'g, G> {
                 .ok_or(GraphError::Infeasible)?;
             let graph_edge = state.graph_edges[state.arena.edges[matched].pos].clone();
             if edges.insert(graph_edge.clone()) {
-                weight += graph.edge_weight(&graph_edge).unwrap_or(1.0);
+                weight += graph.weight_of(&graph_edge);
             }
         }
         Ok(Matching::new(graph, edges, weight))
@@ -633,7 +633,7 @@ mod tests {
             if source == target {
                 continue;
             }
-            let mut slack = graph.edge_weight(edge).unwrap_or(1.0);
+            let mut slack = graph.weight_of(edge);
             for (vertices, &dual) in solution.dual_variables() {
                 if vertices.contains(source) != vertices.contains(target) {
                     slack -= dual;

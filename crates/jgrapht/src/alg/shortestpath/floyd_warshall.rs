@@ -32,7 +32,7 @@ pub fn floyd_warshall<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex
         d[i][i] = 0.0;
         for (e, t) in g.outgoing_of(vs[i]) {
             let j = idx[t];
-            let w = g.edge_weight(e).unwrap_or(1.0);
+            let w = g.weight_of(e);
             if w < d[i][j] || (i == j && w < 0.0) {
                 d[i][j] = w;
                 pred[i][j] = Some(i);

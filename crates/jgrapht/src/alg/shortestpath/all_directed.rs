@@ -288,7 +288,7 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>> AllD
                 let path = GraphWalk::new(
                     vec![source.clone(), target.clone()],
                     vec![edge.clone()],
-                    self.graph.edge_weight(edge).unwrap_or(1.0),
+                    self.graph.weight_of(edge),
                 );
                 if targets.contains(target) {
                     complete.push(path.clone());
@@ -325,7 +325,7 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>> AllD
                 let mut next = path.clone();
                 next.vertices.push(child.clone());
                 next.edges.push(edge.clone());
-                next.weight += self.graph.edge_weight(edge).unwrap_or(1.0);
+                next.weight += self.graph.weight_of(edge);
                 if targets.contains(child) {
                     complete.push(next.clone());
                 }

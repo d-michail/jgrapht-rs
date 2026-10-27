@@ -205,7 +205,7 @@ pub struct ZhangShashaTreeEditDistance<'a, G: Graph> {
     executed: bool,
 }
 
-impl<'a, G: OutgoingGraph + IncidenceGraph> ZhangShashaTreeEditDistance<'a, G>
+impl<'a, G: IncidenceGraph> ZhangShashaTreeEditDistance<'a, G>
 where
     G::Vertex: Eq + Hash,
 {

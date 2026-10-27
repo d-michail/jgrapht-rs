@@ -295,8 +295,8 @@ impl<G: OutgoingGraph + IncidenceGraph> HamiltonianCycleAlgorithm<G> for GreedyH
         let mut edges: Vec<&G::Edge> = graph.edges().collect();
         edges.sort_by(|a, b| {
             let (wa, wb) = (
-                graph.edge_weight(a).unwrap_or(1.0),
-                graph.edge_weight(b).unwrap_or(1.0),
+                graph.weight_of(a),
+                graph.weight_of(b),
             );
             wa.total_cmp(&wb)
         });
@@ -407,7 +407,7 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for HeldKarpTSP {
         for e in graph.edges() {
             let (source, target) = graph.edge_endpoints(e).expect("edge of the graph");
             let (u, v) = (vertex_map[source], vertex_map[target]);
-            let weight = graph.edge_weight(e).unwrap_or(1.0);
+            let weight = graph.weight_of(e);
             w[u][v] = w[u][v].min(weight);
             if !graph.graph_type().directed {
                 w[v][u] = w[v][u].min(weight);

@@ -305,7 +305,7 @@ where
             if successor == vertex {
                 continue;
             }
-            let edge_weight = graph.edge_weight(edge).unwrap_or(1.0);
+            let edge_weight = graph.weight_of(edge);
             if edge_weight.is_nan() || edge_weight < 0.0 {
                 return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
             }
@@ -465,7 +465,7 @@ impl<G: IncidenceGraph> BidirectionalDijkstra<'_, G> {
                 g.incoming_of(v).collect()
             };
             for (e, u) in edges {
-                let weight = g.edge_weight(e).unwrap_or(1.0);
+                let weight = g.weight_of(e);
                 if weight.is_nan() || weight < 0.0 {
                     return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
                 }

@@ -18,6 +18,7 @@
 //! shortcut stores the two hierarchy edges it bypasses, which makes query results unpackable into
 //! the original edge and vertex types without requiring a mutable or cloneable graph.
 
+use crate::graph::GraphExt;
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::Graph;
 use crate::util::heap::JavaPairingHeap;
@@ -380,7 +381,7 @@ impl Core {
             if source == target {
                 continue;
             }
-            let weight = graph.edge_weight(edge).unwrap_or(1.0);
+            let weight = graph.weight_of(edge);
             if weight.is_nan() || weight < 0.0 {
                 return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
             }

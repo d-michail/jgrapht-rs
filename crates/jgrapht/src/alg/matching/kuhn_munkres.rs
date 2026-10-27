@@ -15,7 +15,7 @@
 use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
-use crate::graph::{Graph, props};
+use crate::graph::{Graph, GraphExt, props};
 use indexmap::IndexSet;
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -101,7 +101,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
             let e = graph
                 .get_edge(first_partition[i], second_partition[j])
                 .expect("complete bipartite graph");
-            weight += graph.edge_weight(e).unwrap_or(1.0);
+            weight += graph.weight_of(e);
             edge_set.insert(e.clone());
         }
         Ok(Matching::new(graph, edge_set, weight))
@@ -128,11 +128,10 @@ impl KuhnMunkresMatrixImplementation {
                     continue;
                 }
                 cost_matrix[i][j] = g
-                    .edge_weight(
+                    .weight_of(
                         g.get_edge(source, target)
                             .expect("complete bipartite graph"),
-                    )
-                    .unwrap_or(1.0);
+                    );
             }
         }
         KuhnMunkresMatrixImplementation {

@@ -85,7 +85,7 @@ impl<'g, G: OutgoingGraph> Iterator for ClosestFirst<'g, G> {
                 continue;
             }
             for (e, n) in g.outgoing_of(v) {
-                let w = g.edge_weight(e).unwrap_or(1.0);
+                let w = g.weight_of(e);
                 if w.is_nan() || w < 0.0 {
                     self.failed = true;
                     return Some(Err(GraphError::InvalidWeight(WeightProblem::NegativeOrNaN)));
@@ -160,13 +160,13 @@ impl<'g, G: OutgoingGraph, R: Rng> Iterator for RandomWalk<'g, G, R> {
                     }
                     let total: f64 = options
                         .iter()
-                        .map(|(e, _)| g.edge_weight(e).unwrap_or(1.0))
+                        .map(|(e, _)| g.weight_of(e))
                         .sum();
                     let mut x = self.rng.random::<f64>() * total;
                     options
                         .iter()
                         .find(|(e, _)| {
-                            x -= g.edge_weight(e).unwrap_or(1.0);
+                            x -= g.weight_of(e);
                             x < 0.0
                         })
                         .unwrap_or(options.last().unwrap())

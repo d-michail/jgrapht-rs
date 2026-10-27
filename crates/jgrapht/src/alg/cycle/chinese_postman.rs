@@ -266,7 +266,7 @@ impl ChinesePostman {
         }
         let weight = edges
             .iter()
-            .map(|edge| graph.edge_weight(edge).unwrap_or(1.0))
+            .map(|edge| graph.weight_of(edge))
             .sum();
         Ok(GraphWalk::new(vertices, edges, weight))
     }

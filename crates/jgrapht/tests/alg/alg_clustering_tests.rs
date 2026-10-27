@@ -329,6 +329,24 @@ macro_rules! with_graph {
     }};
 }
 
+/// Like `with_graph!` for algorithms that only accept undirected graphs (their bound is
+/// `UndirectedGraph`, so a directed case would not compile).
+macro_rules! with_ugraph {
+    ($case:expr, |$g:ident| $body:block) => {{
+        let case: &Case = $case;
+        assert!(!case.directed, "this algorithm only accepts undirected graphs");
+        let ty = GraphType {
+            self_loops: case.loops,
+            multiple_edges: case.multi,
+            weighted: case.weighted,
+            ..GraphType::simple()
+        };
+        let mut $g = UGraph::<i32>::with_graph_type(ty);
+        fill(&mut $g, case);
+        $body
+    }};
+}
+
 fn fill<D: graph::Direction>(g: &mut BaseGraph<i32, DefaultEdge, D>, case: &Case) {
     g.add_vertices(case.vertices.iter().copied());
     for (a, b, w) in case.edges {
@@ -377,7 +395,7 @@ mod naive_greedy_modularity_algorithm_test {
     #[test]
     fn all_cases() {
         for case in NAIVE {
-            let c = with_graph!(case, |g| {
+            let c = with_ugraph!(case, |g| {
                 NaiveGreedyModularityAlgorithm::new(&g)
                     .unwrap()
                     .clustering()
@@ -406,7 +424,7 @@ mod label_propagation_clustering_test {
     #[test]
     fn all_cases() {
         for case in LP {
-            let c = with_graph!(case, |g| {
+            let c = with_ugraph!(case, |g| {
                 LabelPropagationClustering::new(&g, 0, JavaRandom::new(case.seed.unwrap()))
                     .unwrap()
                     .clustering()
@@ -414,13 +432,5 @@ mod label_propagation_clustering_test {
             });
             check_case(case, &c);
         }
-    }
-
-    #[test]
-    fn rejects_directed_graphs() {
-        assert!(
-            LabelPropagationClustering::new(&DiGraph::<i32>::simple(), 0, JavaRandom::new(1))
-                .is_err()
-        );
     }
 }

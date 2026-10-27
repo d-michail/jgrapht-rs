@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::GraphExt;
 use crate::graph::IncidenceGraph;
 use crate::graph::OutgoingGraph;
 use crate::error::{GraphError, Result};
@@ -77,7 +78,7 @@ pub(crate) fn closed_vertex_list_to_tour<G: Graph>(
         let e = graph
             .get_edge(&pair[0], &pair[1])
             .ok_or(GraphError::EdgeNotFound)?;
-        tour_weight += graph.edge_weight(e).unwrap_or(1.0);
+        tour_weight += graph.weight_of(e);
         edges.push(e.clone());
     }
     Ok(GraphWalk::new(tour, edges, tour_weight))
@@ -119,7 +120,5 @@ pub(crate) fn check_graph<G: OutgoingGraph>(graph: &G) -> Result<()> {
 
 /// The weight of the edge between `u` and `v` (the graph must be complete).
 pub(crate) fn weight_between<G: Graph>(graph: &G, u: &G::Vertex, v: &G::Vertex) -> f64 {
-    graph
-        .edge_weight(graph.get_edge(u, v).expect("complete graph"))
-        .unwrap_or(1.0)
+    graph.weight_of(graph.get_edge(u, v).expect("complete graph"))
 }

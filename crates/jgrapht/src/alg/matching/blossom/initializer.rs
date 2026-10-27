@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::GraphExt;
 use super::options::{BlossomVOptions, InitializationType};
 use super::state::{BlossomVState, BlossomVStatistics};
 use super::types::{BlossomArena, BlossomHeap, EdgeId, Label, NodeId};
@@ -134,7 +135,7 @@ impl<'g, G: Graph> BlossomVInitializer<'g, G> {
         let min_edge_weight = self
             .graph
             .edges()
-            .map(|edge| self.weight_scale * self.graph.edge_weight(edge).unwrap_or(1.0))
+            .map(|edge| self.weight_scale * self.graph.weight_of(edge))
             .min_by(f64::total_cmp)
             .unwrap_or(0.0);
         let mut graph_edges = Vec::with_capacity(self.graph.edge_count());
@@ -150,7 +151,7 @@ impl<'g, G: Graph> BlossomVInitializer<'g, G> {
             arena.add_edge(
                 source,
                 target,
-                self.weight_scale * self.graph.edge_weight(edge).unwrap_or(1.0) - min_edge_weight,
+                self.weight_scale * self.graph.weight_of(edge) - min_edge_weight,
                 position,
             );
             graph_edges.push(edge.clone());

@@ -491,7 +491,7 @@ impl<'g, G: IncidenceGraph + 'g> MatchingAlgorithm<G::Vertex, G::Edge>
             let w = &self.vertices[self.matching.opposite(vx)];
             let edge = graph.get_edge(v, w).expect("matched vertices are adjacent");
             edges.insert(edge.clone());
-            cost += 0.5 * graph.edge_weight(edge).unwrap_or(1.0);
+            cost += 0.5 * graph.weight_of(edge);
         }
         Ok(Matching::new(graph, edges, cost))
     }

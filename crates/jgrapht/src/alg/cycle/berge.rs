@@ -34,7 +34,7 @@ fn ce<S: Graph<Vertex = usize>>(g: &S, a: usize, b: usize) -> bool {
 }
 
 fn weight<S: Graph<Vertex = usize, Edge = DefaultEdge>>(g: &S, edges: &[DefaultEdge]) -> f64 {
-    edges.iter().map(|e| g.edge_weight(e).unwrap_or(1.0)).sum()
+    edges.iter().map(|e| g.weight_of(e)).sum()
 }
 
 fn edge_between<S: Graph<Vertex = usize, Edge = DefaultEdge>>(
@@ -1109,7 +1109,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
             let id = h
                 .add_edge(&index[s], &index[t])?
                 .expect("pseudograph accepts every edge");
-            h.set_edge_weight(&id, g.edge_weight(e).unwrap_or(1.0))?;
+            h.set_edge_weight(&id, g.weight_of(e))?;
         }
         Ok((h, vs))
     }

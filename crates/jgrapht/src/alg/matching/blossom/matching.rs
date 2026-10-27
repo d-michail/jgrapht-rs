@@ -17,7 +17,7 @@ use super::{BlossomVOptions, ObjectiveSense};
 use crate::GraphType;
 use crate::alg::matching::{Matching, MatchingAlgorithm};
 use crate::error::Result;
-use crate::graph::{BaseGraph, Graph, GraphMut, UGraph, Undirected, props};
+use crate::graph::{BaseGraph, Graph, GraphExt, GraphMut, UGraph, Undirected, props};
 use indexmap::IndexSet;
 
 /// This class computes weighted matchings in general graphs. Depending on the constructor parameter
@@ -122,7 +122,7 @@ impl<'g, G: Graph> KolmogorovWeightedMatching<'g, G> {
                 continue;
             }
             augmented.add_edge_with(&source, &target, next_edge)?;
-            augmented.set_edge_weight(&next_edge, self.graph.edge_weight(edge).unwrap_or(1.0))?;
+            augmented.set_edge_weight(&next_edge, self.graph.weight_of(edge))?;
             next_edge += 1;
         }
         for vertex in 0..n {
@@ -138,7 +138,7 @@ impl<'g, G: Graph> KolmogorovWeightedMatching<'g, G> {
                 continue;
             }
             augmented.add_edge_with(&(n + source), &(n + target), next_edge)?;
-            augmented.set_edge_weight(&next_edge, self.graph.edge_weight(edge).unwrap_or(1.0))?;
+            augmented.set_edge_weight(&next_edge, self.graph.weight_of(edge))?;
             original_by_internal.push(edge.clone());
             next_edge += 1;
         }

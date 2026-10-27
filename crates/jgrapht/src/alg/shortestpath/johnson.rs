@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
 use super::bellman_ford::relax_all;
 use super::search::search;
@@ -36,7 +37,7 @@ pub fn johnson<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Ed
             g,
             s,
             None,
-            |e, u, v| (g.edge_weight(e).unwrap_or(1.0) + h[u] - h[v]).max(0.0),
+            |e, u, v| (g.weight_of(e) + h[u] - h[v]).max(0.0),
             |_| 0.0,
             f64::INFINITY,
         )?;

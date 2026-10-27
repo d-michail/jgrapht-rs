@@ -60,6 +60,19 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 12: coloring, scoring, clustering, drawing
+
+* `UndirectedModularityMeasurer::new`, `KSpanningTreeClustering::new`,
+  `NaiveGreedyModularityAlgorithm::new`, `LabelPropagationClustering::new` and `Coreness::new`
+  require `G: UndirectedGraph` instead of returning `InvalidGraph(Undirected)` for a directed
+  graph. A directed graph no longer compiles.
+* `VertexScoringAlgorithm::vertex_score` returns `VertexNotFound` and
+  `EdgeBetweennessCentrality::edge_score` returns `EdgeNotFound` for an unknown element (was
+  `InvalidArgument("Cannot return score of unknown ...")`).
+* New `GraphExt::weight_of(e)`: the weight of an edge the graph itself yielded. It replaces
+  `edge_weight(e).unwrap_or(1.0)` throughout the algorithms, so a malformed graph panics with the
+  integrity-contract message instead of getting an invented weight of `1.0`.
+
 ## Step 11: predicates and utilities
 
 No signature changed. `graph::props` predicates return `false` (or skip the offending edge) for a

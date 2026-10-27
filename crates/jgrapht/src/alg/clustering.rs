@@ -122,7 +122,7 @@ pub fn k_spanning_tree_clustering<G: Graph>(g: &G, k: usize) -> Result<Vec<Vec<G
 
 use super::interfaces::{Clustering, ClusteringAlgorithm};
 use super::scoring::{EdgeBetweennessCentrality, OverflowStrategy};
-use crate::graph::{GraphExt, props};
+use crate::graph::{GraphExt, UndirectedGraph};
 use crate::util::OrderedF64;
 use crate::util::java::{
     RandomSource, java_hash_order, java_hash_set_order, java_shuffle, java_string_hash,
@@ -153,22 +153,21 @@ pub struct UndirectedModularityMeasurer<'g, G: Graph> {
     degrees: HashMap<G::Vertex, f64>,
 }
 
-impl<'g, G: IncidenceGraph> UndirectedModularityMeasurer<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G> {
     /// Construct a new measurer
     pub fn new(graph: &'g G) -> Result<Self> {
-        props::require_undirected(graph)?;
         let mut degrees = HashMap::new();
         let m;
         if graph.graph_type().weighted {
             m = graph
                 .edges()
-                .map(|e| graph.edge_weight(e).unwrap_or(1.0))
+                .map(|e| graph.weight_of(e))
                 .sum();
             for v in graph.vertices() {
                 let mut sum = 0.0;
                 for e in graph.out_edges_of(v) {
                     let u = graph.opposite_vertex(e, v).unwrap();
-                    let w = graph.edge_weight(e).unwrap_or(1.0);
+                    let w = graph.weight_of(e);
                     sum += if u == v { 2.0 * w } else { w };
                 }
                 degrees.insert(v.clone(), sum);
@@ -211,7 +210,7 @@ impl<'g, G: IncidenceGraph> UndirectedModularityMeasurer<'g, G> {
                 .get(u)
                 .ok_or_else(|| GraphError::InvalidArgument(INVALID.into()))?;
             if pv == pu {
-                edge_weight[*pv] += self.graph.edge_weight(e).unwrap_or(1.0);
+                edge_weight[*pv] += self.graph.weight_of(e);
             }
         }
         let mut modularity = 0.0;
@@ -323,10 +322,9 @@ pub struct KSpanningTreeClustering<'g, G: Graph> {
     k: usize,
 }
 
-impl<'g, G: Graph> KSpanningTreeClustering<'g, G> {
+impl<'g, G: UndirectedGraph> KSpanningTreeClustering<'g, G> {
     /// Create a new clustering algorithm.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
-        props::require_undirected(graph)?;
         if k < 1 || k > graph.vertex_count() {
             return Err(GraphError::InvalidArgument(
                 "Illegal number of clusters".into(),
@@ -342,9 +340,8 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for KSpanningTreeClustering<'_, G>
         let g = self.graph;
         let mut edges = super::spanning::prim(g).edges;
         edges.sort_by(|a, b| {
-            g.edge_weight(a)
-                .unwrap_or(1.0)
-                .total_cmp(&g.edge_weight(b).unwrap_or(1.0))
+            g.weight_of(a)
+                .total_cmp(&g.weight_of(b))
         });
         let mut forest = super::util::UnionFind::new(g.vertices().cloned());
         for edge in edges {
@@ -386,15 +383,14 @@ pub struct NaiveGreedyModularityAlgorithm<'g, G: Graph> {
     graph: &'g G,
 }
 
-impl<'g, G: Graph> NaiveGreedyModularityAlgorithm<'g, G> {
+impl<'g, G: UndirectedGraph> NaiveGreedyModularityAlgorithm<'g, G> {
     /// Create a new Naive Greedy clustering algorithm.
     pub fn new(graph: &'g G) -> Result<Self> {
-        props::require_undirected(graph)?;
         Ok(NaiveGreedyModularityAlgorithm { graph })
     }
 }
 
-impl<G: IncidenceGraph> ClusteringAlgorithm<G::Vertex> for NaiveGreedyModularityAlgorithm<'_, G> {
+impl<G: UndirectedGraph + IncidenceGraph> ClusteringAlgorithm<G::Vertex> for NaiveGreedyModularityAlgorithm<'_, G> {
     /// Computes a clustering.
     fn clustering(&self) -> Result<Clustering<G::Vertex>> {
         let mut communities: Vec<HashSet<G::Vertex>> = self
@@ -705,10 +701,9 @@ pub struct LabelPropagationClustering<'g, G: Graph, R> {
     rng: std::cell::RefCell<R>,
 }
 
-impl<'g, G: Graph, R: RandomSource> LabelPropagationClustering<'g, G, R> {
+impl<'g, G: UndirectedGraph, R: RandomSource> LabelPropagationClustering<'g, G, R> {
     /// `max_iterations == 0` means no limit.
     pub fn new(graph: &'g G, max_iterations: usize, rng: R) -> Result<Self> {
-        props::require_undirected(graph)?;
         Ok(LabelPropagationClustering {
             graph,
             max_iterations,

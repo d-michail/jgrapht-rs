@@ -367,7 +367,7 @@ impl<G: OutgoingGraph + IncidenceGraph> EulerianCycleAlgorithm<G> for Hierholzer
         let mut it = run.eulerian_head;
         while it != NIL {
             let e = es[run.enodes[it].e];
-            total_weight += g.edge_weight(e).unwrap_or(1.0);
+            total_weight += g.weight_of(e);
             current = g
                 .opposite_vertex(e, &current)
                 .expect("edge of the graph")

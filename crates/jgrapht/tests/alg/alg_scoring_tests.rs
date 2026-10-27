@@ -437,8 +437,8 @@ mod coreness {
     }
 
     #[test]
-    fn test_rejects_directed_and_non_simple() {
-        assert!(Coreness::new(&DiGraph::<String>::simple()).is_err());
+    fn test_rejects_non_simple() {
+        // a directed graph is a compile error: `Coreness::new` takes an `UndirectedGraph`
         let mut g = UGraph::<String>::multi();
         g.add_vertices([s("a"), s("b")]);
         g.add_edge(&s("a"), &s("b")).unwrap();

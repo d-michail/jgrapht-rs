@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
 use super::search::search;
 use crate::graph::Graph;
@@ -94,7 +95,7 @@ impl<
             self.g,
             s,
             Some(t),
-            |e, _, _| self.g.edge_weight(e).unwrap_or(1.0),
+            |e, _, _| self.g.weight_of(e),
             |v| (self.heuristic)(v, t),
             f64::INFINITY,
         )?;

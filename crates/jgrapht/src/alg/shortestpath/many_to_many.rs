@@ -277,7 +277,7 @@ fn reverse_tree<G: IncomingGraph>(
             break;
         }
         for (edge, previous) in graph.incoming_of(vertices[vertex]) {
-            let weight = graph.edge_weight(edge).unwrap_or(1.0);
+            let weight = graph.weight_of(edge);
             if weight.is_nan() || weight < 0.0 {
                 return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
             }

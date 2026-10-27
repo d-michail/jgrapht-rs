@@ -17,7 +17,7 @@
 
 use crate::graph::IncidenceGraph;
 use crate::Result;
-use crate::graph::{Graph, GraphMut, GraphMutExt};
+use crate::graph::{Graph, GraphExt, GraphMut, GraphMutExt};
 
 /// Complement: same vertices, an edge wherever `g` has none (no loops unless `loops`).
 pub fn complement_into<G, T>(g: &G, target: &mut T, loops: bool) -> Result<()>
@@ -121,7 +121,7 @@ pub fn contract_edge<G: GraphMut + IncidenceGraph>(g: &mut G, e: &G::Edge) -> Re
                 x.clone(),
                 g.edge_source(x).unwrap().clone(),
                 g.edge_target(x).unwrap().clone(),
-                g.edge_weight(x).unwrap_or(1.0),
+                g.weight_of(x),
             )
         })
         .collect();

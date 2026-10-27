@@ -18,7 +18,8 @@ stable. It expands `ISSUES.md` I-6 and I-8 into concrete work packages.
 | 9. Traversals and listener iterators | done: start vertices and radii validated at construction, iteration-time errors are `Result` items, `ClosestFirstIterator` no longer panics on a negative weight, topological cycles are reported; `Strategy`/`Advance` gained an `Output` type |
 | 10. Fallible path iterators | done: Yen yields `Result` items, closest-first distance is an `Option`; Eppstein and the Dijkstra closest-first iterator already validate at construction |
 | 11. `graph::props`, `alg::util`, connectivity, partitioning | done: the family was already at its narrowest bounds (most of it runs on the `Indexed` snapshot and needs only `Graph`); `is_forest`, `is_dag` and `is_k33_subdivision` no longer panic on a graph that breaks the integrity contract; `Indexed::new` documents that it relies on the contract instead of substituting weight `1.0`; tests run each bound class on outgoing-only, lazy and full sparse graphs |
-| 12 onwards | open |
+| 12. Coloring, scoring, clustering, drawing | done: bounds verified minimal by trial narrowing (nothing wider than needed); undirected-only algorithms (`UndirectedModularityMeasurer`, k-spanning-tree, naive greedy modularity, label propagation, `Coreness`) take `UndirectedGraph`; score lookups report `VertexNotFound`/`EdgeNotFound`; 86 silent `edge_weight(e).unwrap_or(1.0)` sites use the documented `GraphExt::weight_of`; `incoming_lists` is infallible |
+| 13 onwards | open |
 
 ## Goal
 

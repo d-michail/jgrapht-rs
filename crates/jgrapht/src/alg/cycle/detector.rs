@@ -206,7 +206,7 @@ pub fn simple_cycle_to_graph_path<G: Graph>(
     let mut weight = 0.0;
     let mut e = &cycle[0];
     edges.push(e.clone());
-    weight += graph.edge_weight(e).unwrap_or(1.0);
+    weight += graph.weight_of(e);
     let start = graph.edge_source(e).ok_or(GraphError::EdgeNotFound)?;
     let mut cur = graph
         .opposite_vertex(e, start)
@@ -222,7 +222,7 @@ pub fn simple_cycle_to_graph_path<G: Graph>(
             return Err(not_simple());
         };
         edges.push(e.clone());
-        weight += graph.edge_weight(e).unwrap_or(1.0);
+        weight += graph.weight_of(e);
         cur = graph
             .opposite_vertex(e, cur)
             .ok_or(GraphError::EdgeNotFound)?;

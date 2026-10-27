@@ -14,7 +14,7 @@
 
 //! Vertex and edge scoring: centralities, PageRank, coreness, clustering coefficients.
 
-use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph};
+use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph, UndirectedGraph};
 use super::util::Indexed;
 use crate::graph::Graph;
 use crate::util::OrderedF64;
@@ -481,9 +481,7 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
     /// Get an edge score
     pub fn edge_score(&mut self, e: &G::Edge) -> Result<f64, GraphError> {
         if !self.graph.contains_edge(e) {
-            return Err(GraphError::InvalidArgument(
-                "Cannot return score of unknown edge".into(),
-            ));
+            return Err(GraphError::EdgeNotFound);
         }
         Ok(self.scores()?[e])
     }
@@ -596,7 +594,7 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
                 if *w == v {
                     continue;
                 }
-                let e_weight = g.edge_weight(e).unwrap_or(1.0);
+                let e_weight = g.weight_of(e);
                 if e_weight < 0.0 {
                     return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
                 }
@@ -649,9 +647,10 @@ pub trait VertexScoringAlgorithm<V, S: Clone = f64> {
     where
         V: Eq + std::hash::Hash,
     {
-        self.scores().get(v).cloned().ok_or_else(|| {
-            GraphError::InvalidArgument("Cannot return score of unknown vertex".into())
-        })
+        self.scores()
+            .get(v)
+            .cloned()
+            .ok_or(GraphError::VertexNotFound)
     }
 }
 
@@ -848,8 +847,7 @@ pub struct Coreness<V> {
 
 impl<V: Eq + std::hash::Hash + Clone> Coreness<V> {
     /// Constructor
-    pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
-        crate::graph::props::require_undirected(g)?;
+    pub fn new<G: UndirectedGraph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
         if !crate::graph::props::is_simple(g) {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Simple));
         }
@@ -988,21 +986,18 @@ fn invalid(msg: &str) -> GraphError {
 }
 
 /// Weighted incoming neighbours of every vertex as indices, in the graph's iteration order.
-fn incoming_lists<G: IncomingGraph>(
-    g: &G,
-    vs: &[&G::Vertex],
-) -> Result<Vec<Vec<(usize, f64)>>, GraphError> {
+fn incoming_lists<G: IncomingGraph>(g: &G, vs: &[&G::Vertex]) -> Vec<Vec<(usize, f64)>> {
     let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
     vs.iter()
         .map(|v| {
-            Ok(g.in_edges_of(v)
+            g.in_edges_of(v)
                 .map(|e| {
                     (
                         idx[g.opposite_vertex(e, v).unwrap()],
-                        g.edge_weight(e).unwrap_or(1.0),
+                        g.weight_of(e),
                     )
                 })
-                .collect())
+                .collect()
         })
         .collect()
 }
@@ -1051,7 +1046,7 @@ impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
         }
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
-        let incoming = incoming_lists(g, &vs)?;
+        let incoming = incoming_lists(g, &vs);
         let mut scores = vec![(1.0 / n as f64).sqrt(); n];
         let mut next = vec![0.0; n];
         let mut l2_norm = tolerance;
@@ -1156,7 +1151,7 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
         }
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
-        let incoming = incoming_lists(g, &vs)?;
+        let incoming = incoming_lists(g, &vs);
         let exo: Vec<f64> = vs.iter().map(|v| exogenous_factor(v)).collect();
         let mut scores = exo.clone();
         let mut next = vec![0.0; n];
@@ -1245,7 +1240,7 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
             .iter()
             .map(|v| g.out_degree_of(v))
             .collect();
-        let incoming = incoming_lists(g, &vs)?;
+        let incoming = incoming_lists(g, &vs);
         let mut weight_sum = vec![0.0; n];
         if weighted {
             for list in &incoming {
@@ -1356,7 +1351,7 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
                     .map(|e| {
                         (
                             idx[g.opposite_vertex(e, v).unwrap()],
-                            g.edge_weight(e).unwrap_or(1.0),
+                            g.weight_of(e),
                         )
                     })
                     .collect())
@@ -1617,7 +1612,7 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
                     .map(|e| {
                         (
                             idx[g.opposite_vertex(e, v).unwrap()],
-                            g.edge_weight(e).unwrap_or(1.0),
+                            g.weight_of(e),
                         )
                     })
                     .collect())

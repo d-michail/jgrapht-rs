@@ -14,6 +14,7 @@
 
 //! Minimum cost flow (`org.jgrapht.alg.flow.mincost`).
 
+use crate::graph::GraphExt;
 use crate::error::{GraphError, Result};
 use crate::graph::Graph;
 use crate::util::OrderedF64;
@@ -80,7 +81,7 @@ impl<'g, G: Graph> MinimumCostFlowProblemImpl<'g, G> {
             node_supplies,
             arc_capacity_upper_bounds,
             arc_capacity_lower_bounds,
-            move |e| graph.edge_weight(e).unwrap_or(1.0),
+            move |e| graph.weight_of(e),
         )
     }
 

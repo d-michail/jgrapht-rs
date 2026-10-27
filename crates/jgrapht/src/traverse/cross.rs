@@ -521,7 +521,7 @@ where
         v: &'g G::Vertex,
         e: &'g G::Edge,
     ) -> Option<f64> {
-        let w = c.g.edge_weight(e).unwrap_or(1.0);
+        let w = c.g.weight_of(e);
         if w.is_nan() || w < 0.0 {
             self.error
                 .get_or_insert(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));

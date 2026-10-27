@@ -117,3 +117,99 @@ mod connectivity_and_partitioning {
         assert!(bipartite_partition(&odd).is_none());
     }
 }
+
+mod scoring_coloring_clustering {
+    use jgrapht::GraphError;
+    use jgrapht::alg::clustering::{LabelPropagationClustering, NaiveGreedyModularityAlgorithm};
+    use jgrapht::alg::color::{GreedyColoring, LargestDegreeFirstColoring};
+    use jgrapht::alg::interfaces::{ClusteringAlgorithm, VertexColoringAlgorithm};
+    use jgrapht::alg::scoring::{
+        ClosenessCentrality, Coreness, HarmonicCentrality, PageRank, VertexScoringAlgorithm,
+    };
+    use jgrapht::graph::sparse::{
+        FullIncoming, LazyIncoming, NoIncoming, SparseIntDirectedGraph, SparseIntUndirectedGraph,
+    };
+    use jgrapht::util::java::JavaRandom;
+    use std::collections::HashMap;
+
+    const EDGES: [(usize, usize); 6] = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 2)];
+
+    fn sorted(scores: &HashMap<usize, f64>) -> Vec<(usize, u64)> {
+        let mut v: Vec<_> = scores.iter().map(|(k, s)| (*k, s.to_bits())).collect();
+        v.sort();
+        v
+    }
+
+    #[test]
+    fn outgoing_scoring_runs_without_an_incoming_index() {
+        let no = SparseIntDirectedGraph::<NoIncoming>::from_edges(5, &EDGES).unwrap();
+        let full = SparseIntDirectedGraph::<FullIncoming>::from_edges(5, &EDGES).unwrap();
+        assert_eq!(
+            sorted(ClosenessCentrality::new(&no).scores()),
+            sorted(ClosenessCentrality::new(&full).scores())
+        );
+        assert_eq!(
+            sorted(HarmonicCentrality::new(&no).scores()),
+            sorted(HarmonicCentrality::new(&full).scores())
+        );
+    }
+
+    #[test]
+    fn incoming_scoring_agrees_between_lazy_and_full_indexes() {
+        let lazy = SparseIntDirectedGraph::<LazyIncoming>::from_edges(5, &EDGES).unwrap();
+        let full = SparseIntDirectedGraph::<FullIncoming>::from_edges(5, &EDGES).unwrap();
+        assert_eq!(
+            sorted(PageRank::new(&lazy).scores()),
+            sorted(PageRank::new(&full).scores())
+        );
+    }
+
+    #[test]
+    fn undirected_only_algorithms_take_undirected_graphs() {
+        let g = SparseIntUndirectedGraph::new(5, &EDGES).unwrap();
+        let scores = Coreness::new(&g).unwrap();
+        assert_eq!(scores.vertex_score(&0).unwrap(), 2);
+        // a directed graph is a compile error (`Coreness::new` takes an `UndirectedGraph`)
+    }
+
+    #[test]
+    fn unknown_vertices_are_reported_as_not_found() {
+        let full = SparseIntDirectedGraph::<FullIncoming>::from_edges(5, &EDGES).unwrap();
+        let closeness = ClosenessCentrality::new(&full);
+        assert_eq!(closeness.vertex_score(&99), Err(GraphError::VertexNotFound));
+    }
+
+    #[test]
+    fn coloring_agrees_between_lazy_and_full_indexes() {
+        let lazy = SparseIntDirectedGraph::<LazyIncoming>::from_edges(5, &EDGES).unwrap();
+        let full = SparseIntDirectedGraph::<FullIncoming>::from_edges(5, &EDGES).unwrap();
+        for (a, b) in [
+            (
+                GreedyColoring::new(&lazy).coloring().unwrap(),
+                GreedyColoring::new(&full).coloring().unwrap(),
+            ),
+            (
+                LargestDegreeFirstColoring::new(&lazy).coloring().unwrap(),
+                LargestDegreeFirstColoring::new(&full).coloring().unwrap(),
+            ),
+        ] {
+            assert_eq!(a.count, b.count);
+            assert_eq!(a.colors, b.colors);
+        }
+    }
+
+    #[test]
+    fn clustering_takes_undirected_graphs() {
+        let g = SparseIntUndirectedGraph::new(5, &EDGES).unwrap();
+        let naive = NaiveGreedyModularityAlgorithm::new(&g)
+            .unwrap()
+            .clustering()
+            .unwrap();
+        assert!(!naive.clusters().is_empty());
+        let lp = LabelPropagationClustering::new(&g, 0, JavaRandom::new(7))
+            .unwrap()
+            .clustering()
+            .unwrap();
+        assert!(!lp.clusters().is_empty());
+    }
+}

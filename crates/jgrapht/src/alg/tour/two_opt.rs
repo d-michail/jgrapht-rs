@@ -115,7 +115,7 @@ impl<'a, G: OutgoingGraph + 'a + OutgoingGraph> TwoOptHeuristicTSP<'a, G> {
         let mut dist = vec![vec![0.0; n]; n];
         for e in graph.edges() {
             let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
-            let weight = graph.edge_weight(e).unwrap_or(1.0);
+            let weight = graph.weight_of(e);
             let (si, ti) = (index[s], index[t]);
             dist[si][ti] = weight;
             dist[ti][si] = weight;

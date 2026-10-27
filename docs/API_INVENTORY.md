@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1472 | 345 | 120 | 361 | 13 | 19 | 420 | 194 |
+| `jgrapht` | 1473 | 345 | 120 | 361 | 13 | 19 | 421 | 194 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -204,6 +204,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/generate/netgen/problems.rs` | `MaximumFlowProblem::sink` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/generate/netgen/problems.rs` | `MaximumFlowProblem::source` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/generate/structured.rs` | `Complement::new` | 2 unwrap, 0 expect/panic/assert |
+| `jgrapht/src/graph/ext.rs` | `GraphExt::weight_of` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_graph` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_graph_reversed` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/graph/mod.rs` | `graph_hash` | 0 unwrap, 1 expect/panic/assert |
@@ -1420,6 +1421,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/graph/ext.rs` | `GraphExt::outgoing_of` | iterator | `impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::test_incidence` | state query | `bool` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::total_weight` | state query | `f64` |
+| `jgrapht/src/graph/ext.rs` | `GraphExt::weight_of` | state query | `f64` |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_edge_with_vertices` | Result<Option> | `Result<Option<Self::Edge>>` |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_graph` | Result | `Result<bool>` |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_graph_reversed` | Result | `Result<bool>` |

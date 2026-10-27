@@ -112,7 +112,7 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
         for e in graph.edges_of(x) {
             let other = graph.opposite_vertex(e, x).expect("incident edge");
             if visible_vertex.contains(other) && other != x {
-                let cur_weight = graph.edge_weight(e).unwrap_or(1.0);
+                let cur_weight = graph.weight_of(e);
                 if self.comparator.compare(cur_weight, 0.0) > 0
                     && best
                         .as_ref()
@@ -212,7 +212,7 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
 
         // extend matching to maximal cardinality (out of edges with positive weight)
         for e in graph.edges() {
-            let edge_weight = graph.edge_weight(e).unwrap_or(1.0);
+            let edge_weight = graph.weight_of(e);
             if self.comparator.compare(edge_weight, 0.0) <= 0 {
                 // ignore zero or negative weight
                 continue;
@@ -257,7 +257,7 @@ impl DynamicProgrammingPathSolver {
         g: &G,
         path: &[G::Edge],
     ) -> (f64, IndexSet<G::Edge>) {
-        let weight = |e: &G::Edge| g.edge_weight(e).unwrap_or(1.0);
+        let weight = |e: &G::Edge| g.weight_of(e);
         let path_length = path.len();
         // special cases
         match path_length {

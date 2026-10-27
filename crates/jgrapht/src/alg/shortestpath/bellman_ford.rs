@@ -186,7 +186,7 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
                 .get(current)
                 .expect("a detected negative cycle has predecessors");
             edges.push((*edge).clone());
-            weight += self.graph.edge_weight(edge).unwrap_or(1.0);
+            weight += self.graph.weight_of(edge);
             current = previous;
             if current == start {
                 break;
@@ -221,7 +221,7 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
                 let vertex = *vertex;
                 let vertex_distance = distance[vertex];
                 for (edge, target) in self.graph.outgoing_of(vertex) {
-                    let candidate = vertex_distance + self.graph.edge_weight(edge).unwrap_or(1.0);
+                    let candidate = vertex_distance + self.graph.weight_of(edge);
                     if self.improves(
                         candidate,
                         distance.get(target).copied().unwrap_or(f64::INFINITY),
@@ -244,7 +244,7 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
                 let vertex = *vertex;
                 let vertex_distance = distance[vertex];
                 for (edge, target) in self.graph.outgoing_of(vertex) {
-                    let candidate = vertex_distance + self.graph.edge_weight(edge).unwrap_or(1.0);
+                    let candidate = vertex_distance + self.graph.weight_of(edge);
                     if self.improves(
                         candidate,
                         distance.get(target).copied().unwrap_or(f64::INFINITY),
@@ -314,7 +314,7 @@ pub(crate) fn relax_all<'g, G: OutgoingGraph>(
                 continue;
             };
             for (edge, target) in graph.outgoing_of(vertex) {
-                let candidate = vertex_distance + graph.edge_weight(edge).unwrap_or(1.0);
+                let candidate = vertex_distance + graph.weight_of(edge);
                 if candidate < distance.get(target).copied().unwrap_or(f64::INFINITY) {
                     distance.insert(target, candidate);
                     predecessor.insert(target, (edge, vertex));

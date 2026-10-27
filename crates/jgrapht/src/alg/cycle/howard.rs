@@ -124,7 +124,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
                 let v = component
                     .opposite_vertex(e, u)
                     .expect("edge of the component");
-                let e_weight = component.edge_weight(e).unwrap_or(1.0);
+                let e_weight = component.weight_of(e);
                 if e_weight < self.vertex_distance[v] {
                     self.vertex_distance.insert(v.clone(), e_weight);
                     self.policy_graph.insert(v.clone(), e.clone());
@@ -170,11 +170,11 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
             }
             if self.vertex_level[&u] == current_cycle_level {
                 let mut current_weight =
-                    component.edge_weight(&self.policy_graph[&u]).unwrap_or(1.0);
+                    component.weight_of(&self.policy_graph[&u]);
                 let mut current_size = 1;
                 let mut v = self.policy_successor(component, &u);
                 while v != u {
-                    current_weight += component.edge_weight(&self.policy_graph[&v]).unwrap_or(1.0);
+                    current_weight += component.weight_of(&self.policy_graph[&v]);
                     current_size += 1;
                     v = self.policy_successor(component, &v);
                 }
@@ -219,7 +219,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
                 if self.policy_graph[v] == *e && !reached[v] {
                     reached.insert(v.clone(), true);
                     let updated_distance = self.vertex_distance[&u]
-                        + component.edge_weight(e).unwrap_or(1.0)
+                        + component.weight_of(e)
                         - current_mean;
                     self.vertex_distance.insert(v.clone(), updated_distance);
                     queue.push_back(v.clone());
@@ -234,7 +234,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
                     .expect("edge of the component");
                 let old_distance = self.vertex_distance[v];
                 let updated_distance = self.vertex_distance[u]
-                    + component.edge_weight(e).unwrap_or(1.0)
+                    + component.weight_of(e)
                     - current_mean;
                 if old_distance > updated_distance {
                     if self.comparator.compare(old_distance, updated_distance) > 0 {

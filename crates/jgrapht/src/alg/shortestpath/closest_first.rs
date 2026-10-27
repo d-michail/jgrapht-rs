@@ -56,7 +56,7 @@ impl<'g, G: OutgoingGraph> DijkstraClosestFirstIterator<'g, G> {
         // Rust's `Iterator::next` stay infallible without changing semantics
         // for any successful iteration.
         if graph.edges().any(|edge| {
-            let weight = graph.edge_weight(edge).unwrap_or(1.0);
+            let weight = graph.weight_of(edge);
             weight.is_nan() || weight < 0.0
         }) {
             return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
@@ -153,7 +153,7 @@ impl<G: OutgoingGraph> Iterator for DijkstraClosestFirstIterator<'_, G> {
             if self.settled.contains(target) {
                 continue;
             }
-            let candidate = distance + self.graph.edge_weight(edge).unwrap_or(1.0);
+            let candidate = distance + self.graph.weight_of(edge);
             if candidate < self.distance.get(target).copied().unwrap_or(f64::INFINITY) {
                 self.distance.insert(target, candidate);
                 self.predecessor.insert(target, (edge, vertex));

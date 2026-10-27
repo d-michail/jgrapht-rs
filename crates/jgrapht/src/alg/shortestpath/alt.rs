@@ -79,7 +79,7 @@ impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
             }
         }
         if graph.edges().any(|edge| {
-            let weight = graph.edge_weight(edge).unwrap_or(1.0);
+            let weight = graph.weight_of(edge);
             weight.is_nan() || weight < 0.0
         }) {
             return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
@@ -183,7 +183,7 @@ fn distances<G: IncidenceGraph>(
             graph.outgoing_of(vertex).collect()
         };
         for (edge, target) in adjacent {
-            let candidate = value + graph.edge_weight(edge).unwrap_or(1.0);
+            let candidate = value + graph.weight_of(edge);
             if candidate < distance.get(target).copied().unwrap_or(f64::INFINITY) {
                 distance.insert(target, candidate);
                 nodes.push(target);

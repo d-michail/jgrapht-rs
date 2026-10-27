@@ -19,6 +19,7 @@
 //! exceed the capacity; every subset hangs below the root as one or more subtrees. Hash sets and
 //! maps of the Java code are insertion-ordered here, which makes the heuristics deterministic.
 
+use crate::graph::GraphExt;
 use crate::graph::IncidenceGraph;
 use super::connectivity::ConnectivityInspector;
 use super::spanning::prim;
@@ -592,7 +593,7 @@ impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
     fn distance(&self, a: &G::Vertex, b: &G::Vertex) -> f64 {
         match self.problem.graph.get_edge(a, b) {
             None => f64::MAX,
-            Some(e) => self.problem.graph.edge_weight(e).unwrap_or(1.0),
+            Some(e) => self.problem.graph.weight_of(e),
         }
     }
 }

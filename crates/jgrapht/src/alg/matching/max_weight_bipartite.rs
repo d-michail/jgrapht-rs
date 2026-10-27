@@ -112,7 +112,7 @@ impl<'g, G: IncidenceGraph> MaximumWeightBipartiteMatching<'g, G> {
 
     /// Returns the weight of the matching.
     fn weight(&self, e: &G::Edge) -> Result<DBig> {
-        big_decimal(self.graph.edge_weight(e).unwrap_or(1.0))
+        big_decimal(self.graph.weight_of(e))
     }
 
     fn pot(&self, v: &G::Vertex) -> &DBig {

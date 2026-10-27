@@ -79,14 +79,14 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource> RandomWalkVerte
             }
             let total = *self.out_weight.entry(cur).or_insert_with(|| {
                 g.out_edges_of(cur)
-                    .map(|e| g.edge_weight(e).unwrap_or(1.0))
+                    .map(|e| g.weight_of(e))
                     .sum()
             });
             let p = total * self.rng.next_double();
             let mut cumulative = 0.0;
             let mut picked = None;
             for e in g.out_edges_of(cur) {
-                cumulative += g.edge_weight(e).unwrap_or(1.0);
+                cumulative += g.weight_of(e);
                 if p <= cumulative {
                     picked = Some(e);
                     break;

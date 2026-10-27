@@ -313,7 +313,7 @@ impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinShortestPathIterator<'g, G> {
                 continue;
             }
             let source_distance = self.distance[vertex];
-            let delta = self.graph.edge_weight(&edge).unwrap_or(1.0) + self.distance[&target]
+            let delta = self.graph.weight_of(&edge) + self.distance[&target]
                 - source_distance;
             let node = self.allocate(PathsGraphVertex::new(Some(edge), delta));
             if outroot.is_none_or(|root| delta < self.paths_graph[root].delta) {
@@ -595,7 +595,7 @@ fn reverse_shortest_path_tree<G: IncomingGraph>(
         settled[vertex_index] = true;
         let vertex = vertices[vertex_index];
         for (edge, source) in graph.incoming_of(vertex) {
-            let weight = graph.edge_weight(edge).unwrap_or(1.0);
+            let weight = graph.weight_of(edge);
             if weight.is_nan() || weight < 0.0 {
                 return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
             }
