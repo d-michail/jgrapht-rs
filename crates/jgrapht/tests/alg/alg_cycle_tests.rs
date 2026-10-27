@@ -6,6 +6,264 @@ use jgrapht::alg::cyclic_exchange::AhujaOrlinSharmaCyclicExchangeLocalAugmentati
 use jgrapht::*;
 use std::collections::HashMap;
 
+mod chinese_postman_test {
+    use super::*;
+    use jgrapht::alg::cycle::ChinesePostman;
+
+    fn undirected(
+        graph_type: GraphType,
+        vertices: &[i32],
+        edges: &[(i32, i32, f64)],
+    ) -> UGraph<i32> {
+        let mut graph = UGraph::<i32>::with_graph_type(graph_type).weighted();
+        graph.add_vertices(vertices.iter().copied());
+        for &(source, target, weight) in edges {
+            graph
+                .add_weighted_edge(&source, &target, weight)
+                .unwrap();
+        }
+        graph
+    }
+
+    fn directed(
+        graph_type: GraphType,
+        vertices: &[i32],
+        edges: &[(i32, i32, f64)],
+    ) -> DiGraph<i32> {
+        let mut graph = DiGraph::<i32>::with_graph_type(graph_type).weighted();
+        graph.add_vertices(vertices.iter().copied());
+        for &(source, target, weight) in edges {
+            graph
+                .add_weighted_edge(&source, &target, weight)
+                .unwrap();
+        }
+        graph
+    }
+
+    fn verify<G: Graph>(graph: &G, expected_weight: f64, expected_length: usize)
+    where
+        G::Vertex: std::fmt::Debug,
+    {
+        let path = ChinesePostman::new().get_cpp_solution(graph).unwrap();
+        assert_eq!(path.length(), expected_length);
+        assert_eq!(path.edge_list().len(), expected_length);
+        assert!((path.weight() - expected_weight).abs() < 1e-8);
+        assert!(
+            (path
+                .edge_list()
+                .iter()
+                .map(|edge| graph.edge_weight(edge).unwrap_or(1.0))
+                .sum::<f64>()
+                - expected_weight)
+                .abs()
+                < 1e-8
+        );
+        assert!(graph.edges().all(|edge| path.edge_list().contains(edge)));
+        assert_eq!(path.start_vertex(), path.end_vertex());
+        assert_eq!(path.vertex_list().len(), path.edge_list().len() + 1);
+        for index in 0..path.edge_list().len() {
+            let source = &path.vertex_list()[index];
+            let target = &path.vertex_list()[index + 1];
+            let edge = &path.edge_list()[index];
+            if graph.graph_type().directed {
+                assert_eq!(graph.edge_source(edge), Some(source));
+                assert_eq!(graph.edge_target(edge), Some(target));
+            } else {
+                assert_eq!(graph.opposite_vertex(edge, source), Some(target));
+            }
+        }
+    }
+
+    #[test]
+    fn empty_single_loop_and_parallel_edge_graphs() {
+        let empty = DiGraph::<i32>::simple();
+        assert!(ChinesePostman::new().get_cpp_solution(&empty).is_err());
+
+        verify(
+            &undirected(GraphType::simple(), &[0, 1], &[(0, 1, 10.)]),
+            20.,
+            2,
+        );
+        verify(
+            &undirected(
+                GraphType::pseudograph(),
+                &[0, 1],
+                &[(0, 1, 10.), (0, 0, 20.)],
+            ),
+            40.,
+            3,
+        );
+        verify(
+            &undirected(
+                GraphType::multigraph(),
+                &[1, 2, 3, 4],
+                &[
+                    (1, 2, 1.),
+                    (1, 4, 3.),
+                    (2, 3, 20.),
+                    (2, 3, 10.),
+                    (3, 4, 2.),
+                ],
+            ),
+            42.,
+            8,
+        );
+    }
+
+    #[test]
+    fn undirected_weighted_graphs() {
+        verify(
+            &undirected(
+                GraphType::simple(),
+                &(1..=8).collect::<Vec<_>>(),
+                &[
+                    (1, 2, 50.), (1, 3, 50.), (1, 4, 50.), (2, 4, 50.), (2, 5, 70.),
+                    (2, 6, 50.), (3, 4, 70.), (3, 7, 70.), (3, 8, 120.), (4, 6, 60.),
+                    (5, 6, 70.), (6, 8, 60.), (7, 8, 70.),
+                ],
+            ),
+            1000.,
+            16,
+        );
+        verify(
+            &undirected(
+                GraphType::simple(),
+                &[1, 2, 3, 4, 5],
+                &[
+                    (1, 2, 8.), (1, 3, 5.), (1, 4, 6.), (2, 3, 5.), (2, 5, 6.),
+                    (3, 4, 5.), (3, 5, 5.), (4, 5, 8.),
+                ],
+            ),
+            60.,
+            10,
+        );
+        verify(
+            &undirected(
+                GraphType::simple(),
+                &[1, 2, 3, 4, 5, 6, 7],
+                &[
+                    (1, 2, 5.), (1, 4, 4.), (1, 5, 1.), (2, 3, 3.), (2, 5, 1.),
+                    (2, 7, 1.), (3, 4, 2.), (3, 5, 3.), (3, 6, 1.), (3, 7, 2.),
+                    (4, 5, 1.), (6, 7, 3.),
+                ],
+            ),
+            31.,
+            15,
+        );
+        verify(
+            &undirected(
+                GraphType::simple(),
+                &(1..=10).collect::<Vec<_>>(),
+                &[
+                    (1, 2, 100.), (1, 3, 150.), (1, 4, 200.), (2, 3, 120.),
+                    (2, 5, 250.), (3, 6, 200.), (4, 5, 100.), (4, 7, 80.),
+                    (4, 8, 160.), (5, 6, 100.), (5, 7, 100.), (6, 7, 150.),
+                    (6, 10, 160.), (7, 9, 100.), (8, 9, 40.), (9, 10, 80.),
+                ],
+            ),
+            2590.,
+            20,
+        );
+        verify(
+            &undirected(
+                GraphType::simple(),
+                &[1, 2, 3, 4, 5, 6],
+                &[(1, 2, 1.), (2, 3, 1.), (3, 4, 1.), (2, 5, 1.), (3, 6, 1.)],
+            ),
+            10.,
+            10,
+        );
+    }
+
+    #[test]
+    fn directed_weighted_graphs() {
+        verify(
+            &directed(
+                GraphType::pseudograph(),
+                &[1, 2, 3, 4],
+                &[
+                    (1, 2, 1.), (2, 3, 3.), (2, 3, 20.), (3, 4, 10.), (4, 4, 5.),
+                    (4, 1, 2.),
+                ],
+            ),
+            54.,
+            9,
+        );
+        verify(
+            &directed(
+                GraphType::simple(),
+                &[1, 2, 3, 4],
+                &[(1, 2, 1.), (1, 4, 5.), (2, 3, 2.), (3, 1, 3.), (4, 3, 4.)],
+            ),
+            18.,
+            6,
+        );
+        verify(
+            &directed(
+                GraphType::simple(),
+                &[1, 2, 3, 4],
+                &[
+                    (1, 2, 8.), (1, 3, 3.), (2, 3, 10.), (2, 4, 5.), (3, 4, 15.),
+                    (4, 1, 4.),
+                ],
+            ),
+            76.,
+            10,
+        );
+        verify(
+            &directed(
+                GraphType::multigraph(),
+                &[1, 2, 3, 4],
+                &[
+                    (1, 2, 21.), (2, 3, 8.), (3, 1, 5.), (3, 4, 20.), (4, 2, 12.),
+                    (4, 2, 2.),
+                ],
+            ),
+            104.,
+            9,
+        );
+        verify(
+            &directed(
+                GraphType::simple(),
+                &[1, 2, 3, 4, 5, 6],
+                &[
+                    (1, 2, 10.), (1, 3, 20.), (2, 4, 50.), (2, 5, 10.), (3, 4, 20.),
+                    (3, 5, 33.), (4, 5, 5.), (4, 6, 12.), (5, 1, 12.), (5, 6, 1.),
+                    (6, 3, 22.),
+                ],
+            ),
+            276.,
+            17,
+        );
+    }
+
+    #[test]
+    fn directed_unweighted_graph() {
+        verify(
+            &directed(
+                GraphType::simple(),
+                &(1..=11).collect::<Vec<_>>(),
+                &[
+                    (1, 2, 1.), (1, 11, 1.), (2, 3, 1.), (3, 4, 1.), (3, 5, 1.),
+                    (4, 9, 1.), (5, 7, 1.), (6, 9, 1.), (7, 6, 1.), (8, 7, 1.),
+                    (9, 8, 1.), (9, 10, 1.), (10, 1, 1.), (11, 9, 1.),
+                ],
+            ),
+            22.,
+            22,
+        );
+    }
+
+    #[test]
+    fn two_vertex_unweighted_smoke() {
+        verify(
+            &undirected(GraphType::simple(), &[0, 1], &[(0, 1, 1.)]),
+            2.,
+            2,
+        );
+    }
+}
+
 mod ahuja_orlin_sharma_cyclic_exchange {
     use super::*;
 

@@ -5,6 +5,7 @@
 
 mod basis;
 mod berge;
+mod chinese_postman;
 mod chordality;
 mod detector;
 mod eulerian;
@@ -18,6 +19,7 @@ pub use basis::{
     StackBFSFundamentalCycleBasis,
 };
 pub use berge::BergeGraphInspector;
+pub use chinese_postman::ChinesePostman;
 pub use chordality::{ChordalityInspector, IterationOrder};
 pub use detector::{CycleDetector, simple_cycle_to_graph_path};
 pub use eulerian::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
