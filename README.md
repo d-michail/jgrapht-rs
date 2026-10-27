@@ -8,17 +8,20 @@ sets, views are plain wrapper types, and fallible operations return `Result` ins
 Heap-based algorithms (Dijkstra, A\*, Prim, Johnson, ...) use the priority queues from
 [`rheaps`](https://crates.io/crates/rheaps), the Rust port of JHeaps.
 
-> Status: early. The API is not stable and the crate is not yet published.
+> Status: pre-release. The API is not stable and the crates are not yet published.
 >
-> Major incomplete areas: maximum-weight matching for large general graphs (Blossom V), full
-> Java-fidelity coverage for the shortest-path speedups and graph I/O. CSR sparse graphs are in
-> `jgrapht::graph::sparse`.
+> The core graph, traversal, generator, algorithm (except the remaining shortest-path fidelity
+> work), sparse/map backend, and graph-I/O test suites are ported. See the
+> [core status register](crates/jgrapht/tests/STATUS.md),
+> [I/O status register](crates/jgrapht-io/tests/STATUS.md), and
+> [fidelity roadmap](docs/FIDELITY_ROADMAP.md) for the exact coverage and documented deviations.
 
 ## Crates
 
 - `jgrapht` contains graph traits, mutable and immutable graph implementations, algorithms,
-  traversal and generators. The CSR sparse graphs (`graph::sparse`) also live here because they are graph storage
-  choices rather than optional integrations.
+  traversal and generators. The CSR sparse graphs (`graph::sparse`) and map-backed graphs
+  (`graph::map`) also live here because they are graph storage choices rather than optional
+  integrations.
 - `jgrapht-io` is the companion import/export crate. All supported formats live in this one crate
   as modules, keeping parser dependencies out of `jgrapht` without creating a crate per format.
 
@@ -72,14 +75,14 @@ Edges are values too: use the built-in `DefaultEdge`, or your own type via
   lexicographic BFS, maximum cardinality search, degeneracy ordering
 - **Connectivity & structure:** connected and strongly connected components (Tarjan,
   Kosaraju), condensation, articulation points/bridges/blocks and the block–cut tree, Eulerian
-  circuits and trails, simple cycles (Johnson), cycle bases, chordal graphs, transitive
-  closure/reduction, LCA, planarity testing (left–right), (sub)graph isomorphism,
+  circuits and trails, simple cycles, cycle bases, chordal graphs, transitive closure/reduction,
+  LCA, Boyer–Myrvold planarity testing and embedding, (sub)graph isomorphism,
   Hamiltonian cycles/paths, negative cycle detection, simple paths and edge-disjoint shortest paths
 - **Spanning trees & flows:** Kruskal, Prim, Borůvka, minimum/maximum arborescences
   (Chu–Liu/Edmonds), max flow (Edmonds–Karp, Dinic, push–relabel), minimum s–t cuts,
   Gomory–Hu trees, Stoer–Wagner, minimum cost flow
-- **Matching & colouring:** Hopcroft–Karp, Hungarian, Edmonds' blossom, greedy and path-growing matching, exact
-  weighted matching for small graphs;
+- **Matching & colouring:** Hopcroft–Karp, Kuhn–Munkres, dense/sparse Edmonds, greedy and
+  path-growing matching, and Kolmogorov Blossom V weighted matching;
   greedy / largest-degree-first / smallest-degree-last / DSATUR / chordal colouring, colour refinement
 - **Combinatorial:** maximal cliques (Bron–Kerbosch), independent sets, vertex covers
   (greedy, 2-approximations, König), bipartite partitioning
@@ -94,6 +97,23 @@ Edges are values too: use the built-in `DefaultEdge`, or your own type via
 - **Generators:** complete, bipartite, ring, path, star, wheel, grid, hypercube, G(n,p), G(n,m),
   Barabási–Albert, Watts–Strogatz, Prüfer trees
 
+## Java-to-Rust package map
+
+| JGraphT package | Rust location | Port status |
+|---|---|---|
+| `org.jgrapht` and `org.jgrapht.graph` | `jgrapht::{Graph, GraphMut, GraphType}`, `graph`, `view`, `event`, `walk` | done |
+| `org.jgrapht.traverse` | `jgrapht::traverse` | done |
+| `org.jgrapht.generate` and `generate.netgen` | `jgrapht::generate` | done |
+| `org.jgrapht.alg` except `alg.shortestpath` | `jgrapht::alg` | done class by class |
+| `org.jgrapht.alg.shortestpath` | `jgrapht::alg::shortestpath` | partial; see the fidelity roadmap |
+| `org.jgrapht.nio` | companion crate `jgrapht-io` | done for all planned formats |
+| `org.jgrapht.opt.graph.sparse` | `jgrapht::graph::sparse` | done |
+| `org.jgrapht.opt.graph.fastutil` | `jgrapht::graph::map` | done with Rust map backends |
+
+The Java integration modules (`ext`, `guava`, `unimi-dsi`, `osm`, and demos) are currently out of
+scope. The status registers linked above are the source of truth for individual upstream test
+classes.
+
 ## Development
 
 ```sh
@@ -102,8 +122,22 @@ cargo clippy --workspace --all-targets
 cargo fmt --all
 ```
 
-The Java sources used as the reference live in a separate checkout of JGraphT.
+The Java-port suites can also be run independently:
+
+```sh
+cargo test -p jgrapht --test alg
+cargo test -p jgrapht --test graph
+cargo test -p jgrapht --test generate
+cargo test -p jgrapht --test traverse
+cargo test -p jgrapht --test util
+cargo test -p jgrapht --test delta_stepping
+cargo test -p jgrapht-io
+```
+
+The Java sources used as the oracle live in a separate JGraphT checkout. Rust test modules mirror
+the upstream test classes, while `crates/jgrapht/tests/STATUS.md` and
+`crates/jgrapht-io/tests/STATUS.md` record ported and deliberately inapplicable cases.
 
 ## License
 
-JGraphT is dual-licensed under EPL 2.0 and LGPL 2.1+; this port follows the same terms.
+Licensed under Apache-2.0 OR EPL-2.0 OR LGPL-2.1-or-later, as declared by the crate manifests.
