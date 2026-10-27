@@ -939,3 +939,1465 @@ mod cycles_test {
         assert!(simple_cycle_to_graph_path(&graph, &cycle).is_err());
     }
 }
+
+// QueueBFSFundamentalCycleBasisTest, StackBFSFundamentalCycleBasisTest, PatonCycleBaseTest
+
+mod cycle_basis_support {
+    use jgrapht::graph::GraphExt;
+    use jgrapht::*;
+
+    pub fn add_ev<G: GraphMut<Vertex = i32>>(g: &mut G, a: i32, b: i32) -> G::Edge {
+        g.add_vertex(a);
+        g.add_vertex(b);
+        g.add_edge(&a, &b).unwrap().unwrap()
+    }
+
+    pub fn add_ev_w<G: GraphMut<Vertex = i32>>(g: &mut G, a: i32, b: i32, w: f64) -> G::Edge {
+        let e = add_ev(g, a, b);
+        g.set_edge_weight(&e, w).unwrap();
+        e
+    }
+
+    pub fn add_w<G: GraphMut<Vertex = i32>>(g: &mut G, a: i32, b: i32, w: f64) {
+        let e = g.add_edge(&a, &b).unwrap().unwrap();
+        g.set_edge_weight(&e, w).unwrap();
+    }
+
+    pub fn ge<G: Graph<Vertex = i32>>(g: &G, a: i32, b: i32) -> G::Edge {
+        g.get_edge(&a, &b).unwrap().clone()
+    }
+
+    /// `assertCycle`: the edges form a closed chain (a closed walk for directed graphs).
+    pub fn assert_cycle<G: Graph<Vertex = i32>>(g: &G, edges: &[G::Edge]) {
+        if edges.is_empty() {
+            return;
+        }
+        let directed = g.graph_type().directed;
+        let mut dup = std::collections::HashSet::new();
+        let ends = |e: &G::Edge| {
+            let (s, t) = g.edge_endpoints(e).unwrap();
+            (*s, *t)
+        };
+        for (i, cur) in edges.iter().enumerate() {
+            assert!(dup.insert(cur.clone()));
+            if i > 0 {
+                let (cs, ct) = ends(cur);
+                let (ps, pt) = ends(&edges[i - 1]);
+                if directed {
+                    assert!(cs == pt);
+                } else {
+                    assert!(cs == ps || cs == pt || ct == ps || ct == pt);
+                }
+            }
+        }
+        if edges.len() > 1 {
+            let (fs, ft) = ends(&edges[0]);
+            let (ls, lt) = ends(edges.last().unwrap());
+            if directed {
+                assert!(fs == lt);
+            } else {
+                assert!(fs == ls || fs == lt || ft == ls || ft == lt);
+            }
+        }
+    }
+}
+use cycle_basis_support::*;
+
+mod queue_bfs_fundamental_cycle_basis_test {
+    use super::*;
+    use jgrapht::alg::cycle::*;
+
+    #[test]
+    fn test_simple() {
+        let mut graph = UGraph::<i32>::simple();
+        add_ev(&mut graph, 0, 1);
+        add_ev(&mut graph, 1, 2);
+        add_ev(&mut graph, 2, 0);
+        let mut cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        assert_eq!(1, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 0, 1)));
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert_eq!(3, c1.len());
+        assert_eq!(3, cb.length());
+        assert!((3.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 2, 3);
+        add_ev(&mut graph, 3, 0);
+        cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(2, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        assert_eq!(6, cb.length());
+        assert!((6.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 3, 1);
+        cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(3, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 3)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c3.len());
+        assert_eq!(9, cb.length());
+        assert!((9.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 3, 4);
+        add_ev(&mut graph, 4, 2);
+        cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(4, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 3)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&ge(&graph, 3, 4)));
+        assert!(c4.contains(&ge(&graph, 0, 3)));
+        assert!(c4.contains(&ge(&graph, 0, 2)));
+        assert!(c4.contains(&ge(&graph, 2, 4)));
+        assert_eq!(4, c4.len());
+        assert_eq!(13, cb.length());
+        assert!((13.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 4, 5);
+        cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(4, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 3)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&ge(&graph, 3, 4)));
+        assert!(c4.contains(&ge(&graph, 0, 3)));
+        assert!(c4.contains(&ge(&graph, 0, 2)));
+        assert!(c4.contains(&ge(&graph, 2, 4)));
+        assert_eq!(4, c4.len());
+        assert_eq!(13, cb.length());
+        assert!((13.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 5, 2);
+        cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(5, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 3)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&ge(&graph, 3, 4)));
+        assert!(c4.contains(&ge(&graph, 0, 3)));
+        assert!(c4.contains(&ge(&graph, 0, 2)));
+        assert!(c4.contains(&ge(&graph, 2, 4)));
+        assert_eq!(4, c4.len());
+        let c5 = cycles[4].clone();
+        assert!(c5.contains(&ge(&graph, 4, 5)));
+        assert!(c5.contains(&ge(&graph, 2, 4)));
+        assert!(c5.contains(&ge(&graph, 2, 5)));
+        assert_eq!(3, c5.len());
+        assert_eq!(16, cb.length());
+        assert!((16.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 5, 6);
+        add_ev(&mut graph, 6, 4);
+        cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(6, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 3)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&ge(&graph, 3, 4)));
+        assert!(c4.contains(&ge(&graph, 0, 3)));
+        assert!(c4.contains(&ge(&graph, 0, 2)));
+        assert!(c4.contains(&ge(&graph, 2, 4)));
+        assert_eq!(4, c4.len());
+        let c5 = cycles[4].clone();
+        assert!(c5.contains(&ge(&graph, 4, 5)));
+        assert!(c5.contains(&ge(&graph, 2, 4)));
+        assert!(c5.contains(&ge(&graph, 2, 5)));
+        assert_eq!(3, c5.len());
+        let c6 = cycles[5].clone();
+        assert!(c6.contains(&ge(&graph, 5, 6)));
+        assert!(c6.contains(&ge(&graph, 5, 2)));
+        assert!(c6.contains(&ge(&graph, 2, 4)));
+        assert!(c6.contains(&ge(&graph, 4, 6)));
+        assert_eq!(4, c6.len());
+        assert_eq!(20, cb.length());
+        assert!((20.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_multigraphs_with_loops() {
+        let mut graph = UGraph::<i32>::pseudo();
+        add_ev(&mut graph, 0, 1);
+        add_ev(&mut graph, 0, 2);
+        add_ev(&mut graph, 0, 3);
+        add_ev(&mut graph, 1, 2);
+        add_ev(&mut graph, 2, 3);
+        add_ev(&mut graph, 1, 4);
+        add_ev(&mut graph, 2, 5);
+        add_ev(&mut graph, 3, 6);
+        add_ev(&mut graph, 4, 5);
+        add_ev(&mut graph, 5, 6);
+        add_ev(&mut graph, 4, 7);
+        add_ev(&mut graph, 5, 8);
+        add_ev(&mut graph, 6, 9);
+        add_ev(&mut graph, 7, 8);
+        let e89_1 = graph.add_edge(&8, &9).unwrap().unwrap();
+        add_ev(&mut graph, 7, 9);
+        let e89_2 = graph.add_edge(&8, &9).unwrap().unwrap();
+        let e89_3 = graph.add_edge(&8, &9).unwrap().unwrap();
+        let e89_4 = graph.add_edge(&8, &9).unwrap().unwrap();
+        let e77_1 = graph.add_edge(&7, &7).unwrap().unwrap();
+        let e77_2 = graph.add_edge(&7, &7).unwrap().unwrap();
+        let e77_3 = graph.add_edge(&7, &7).unwrap().unwrap();
+        let cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        assert_eq!(13, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 0, 1)));
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 1, 4)));
+        assert!(c3.contains(&ge(&graph, 4, 5)));
+        assert!(c3.contains(&ge(&graph, 5, 2)));
+        assert!(c3.contains(&ge(&graph, 2, 0)));
+        assert_eq!(5, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&ge(&graph, 0, 2)));
+        assert!(c4.contains(&ge(&graph, 2, 5)));
+        assert!(c4.contains(&ge(&graph, 5, 6)));
+        assert!(c4.contains(&ge(&graph, 6, 3)));
+        assert!(c4.contains(&ge(&graph, 3, 0)));
+        assert_eq!(5, c4.len());
+        let c5 = cycles[4].clone();
+        assert!(c5.contains(&ge(&graph, 0, 1)));
+        assert!(c5.contains(&ge(&graph, 1, 4)));
+        assert!(c5.contains(&ge(&graph, 4, 7)));
+        assert!(c5.contains(&ge(&graph, 7, 8)));
+        assert!(c5.contains(&ge(&graph, 8, 5)));
+        assert!(c5.contains(&ge(&graph, 5, 2)));
+        assert!(c5.contains(&ge(&graph, 2, 0)));
+        assert_eq!(7, c5.len());
+        let c6 = cycles[5].clone();
+        assert!(c6.contains(&ge(&graph, 0, 2)));
+        assert!(c6.contains(&ge(&graph, 2, 5)));
+        assert!(c6.contains(&ge(&graph, 5, 8)));
+        assert!(c6.contains(&e89_1));
+        assert!(c6.contains(&ge(&graph, 9, 6)));
+        assert!(c6.contains(&ge(&graph, 6, 3)));
+        assert!(c6.contains(&ge(&graph, 3, 0)));
+        assert_eq!(7, c6.len());
+        let c7 = cycles[6].clone();
+        assert!(c7.contains(&ge(&graph, 0, 1)));
+        assert!(c7.contains(&ge(&graph, 1, 4)));
+        assert!(c7.contains(&ge(&graph, 4, 7)));
+        assert!(c7.contains(&ge(&graph, 7, 9)));
+        assert!(c7.contains(&ge(&graph, 9, 6)));
+        assert!(c7.contains(&ge(&graph, 6, 3)));
+        assert!(c7.contains(&ge(&graph, 3, 0)));
+        assert_eq!(7, c7.len());
+        let c8 = cycles[7].clone();
+        assert!(c8.contains(&ge(&graph, 0, 2)));
+        assert!(c8.contains(&ge(&graph, 2, 5)));
+        assert!(c8.contains(&ge(&graph, 5, 8)));
+        assert!(c8.contains(&e89_2));
+        assert!(c8.contains(&ge(&graph, 9, 6)));
+        assert!(c8.contains(&ge(&graph, 6, 3)));
+        assert!(c8.contains(&ge(&graph, 3, 0)));
+        assert_eq!(7, c8.len());
+        let c9 = cycles[8].clone();
+        assert!(c9.contains(&ge(&graph, 0, 2)));
+        assert!(c9.contains(&ge(&graph, 2, 5)));
+        assert!(c9.contains(&ge(&graph, 5, 8)));
+        assert!(c9.contains(&e89_3));
+        assert!(c9.contains(&ge(&graph, 9, 6)));
+        assert!(c9.contains(&ge(&graph, 6, 3)));
+        assert!(c9.contains(&ge(&graph, 3, 0)));
+        assert_eq!(7, c9.len());
+        let c10 = cycles[9].clone();
+        assert!(c10.contains(&ge(&graph, 0, 2)));
+        assert!(c10.contains(&ge(&graph, 2, 5)));
+        assert!(c10.contains(&ge(&graph, 5, 8)));
+        assert!(c10.contains(&e89_4));
+        assert!(c10.contains(&ge(&graph, 9, 6)));
+        assert!(c10.contains(&ge(&graph, 6, 3)));
+        assert!(c10.contains(&ge(&graph, 3, 0)));
+        assert_eq!(7, c10.len());
+        let c11 = cycles[10].clone();
+        assert!(c11.contains(&e77_1));
+        assert_eq!(1, c11.len());
+        let c12 = cycles[11].clone();
+        assert!(c12.contains(&e77_2));
+        assert_eq!(1, c12.len());
+        let c13 = cycles[12].clone();
+        assert!(c13.contains(&e77_3));
+        assert_eq!(1, c13.len());
+        assert_eq!(61, cb.length());
+        assert!((61.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_multi_graph_with_multiple_components_with_loops() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertex(0);
+        graph.add_vertex(1);
+        graph.add_vertex(2);
+        graph.add_edge(&0, &1).unwrap();
+        graph.add_edge(&0, &2).unwrap();
+        let e12_1 = graph.add_edge(&1, &2).unwrap().unwrap();
+        let e12_2 = graph.add_edge(&1, &2).unwrap().unwrap();
+        let e11_1 = graph.add_edge(&1, &1).unwrap().unwrap();
+        let e11_2 = graph.add_edge(&1, &1).unwrap().unwrap();
+        graph.add_vertex(3);
+        graph.add_vertex(4);
+        graph.add_vertex(5);
+        graph.add_edge(&3, &4).unwrap();
+        graph.add_edge(&3, &5).unwrap();
+        let e45_1 = graph.add_edge(&4, &5).unwrap().unwrap();
+        let e45_2 = graph.add_edge(&4, &5).unwrap().unwrap();
+        let e55_1 = graph.add_edge(&5, &5).unwrap().unwrap();
+        let e55_2 = graph.add_edge(&5, &5).unwrap().unwrap();
+        let cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        assert_eq!(8, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 0, 1)));
+        assert!(c1.contains(&e12_1));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 0, 1)));
+        assert!(c2.contains(&e12_2));
+        assert!(c2.contains(&ge(&graph, 2, 0)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&e11_1));
+        assert_eq!(1, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&e11_2));
+        assert_eq!(1, c4.len());
+        let c5 = cycles[4].clone();
+        assert!(c5.contains(&ge(&graph, 3, 4)));
+        assert!(c5.contains(&e45_1));
+        assert!(c5.contains(&ge(&graph, 5, 3)));
+        assert_eq!(3, c5.len());
+        let c6 = cycles[5].clone();
+        assert!(c6.contains(&ge(&graph, 3, 4)));
+        assert!(c6.contains(&e45_2));
+        assert!(c6.contains(&ge(&graph, 5, 3)));
+        assert_eq!(3, c6.len());
+        let c7 = cycles[6].clone();
+        assert!(c7.contains(&e55_1));
+        assert_eq!(1, c7.len());
+        let c8 = cycles[7].clone();
+        assert!(c8.contains(&e55_2));
+        assert_eq!(1, c8.len());
+        assert_eq!(16, cb.length());
+        assert!((16.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_two_parallel_edges() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertex(0);
+        graph.add_vertex(1);
+        let e1 = graph.add_edge(&0, &1).unwrap().unwrap();
+        let e2 = graph.add_edge(&0, &1).unwrap().unwrap();
+        let cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        assert_eq!(1, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&e1));
+        assert!(c1.contains(&e2));
+        assert_eq!(2, c1.len());
+        assert_eq!(2, cb.length());
+        assert!((2.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_more_parallel_edges() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertex(0);
+        graph.add_vertex(1);
+        graph.add_vertex(2);
+        graph.add_vertex(3);
+        let e01_1 = graph.add_edge(&0, &1).unwrap().unwrap();
+        let e01_2 = graph.add_edge(&0, &1).unwrap().unwrap();
+        let e12 = graph.add_edge(&1, &2).unwrap().unwrap();
+        let e23_1 = graph.add_edge(&2, &3).unwrap().unwrap();
+        let e23_2 = graph.add_edge(&2, &3).unwrap().unwrap();
+        let e30 = graph.add_edge(&3, &0).unwrap().unwrap();
+        let cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        assert_eq!(3, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&e01_2));
+        assert!(c1.contains(&e01_1));
+        assert_eq!(2, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&e23_1));
+        assert!(c2.contains(&e30));
+        assert!(c2.contains(&e01_1));
+        assert!(c2.contains(&e12));
+        assert_eq!(4, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&e23_2));
+        assert!(c3.contains(&e30));
+        assert!(c3.contains(&e01_1));
+        assert!(c3.contains(&e12));
+        assert_eq!(4, c3.len());
+        assert_eq!(10, cb.length());
+        assert!((10.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_zero_cycle_space_dimension() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertex(0);
+        graph.add_vertex(1);
+        graph.add_vertex(2);
+        graph.add_vertex(3);
+        graph.add_edge(&0, &1).unwrap();
+        graph.add_edge(&2, &3).unwrap();
+        let cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(0, cb.cycles().len());
+        assert_eq!(0, cb.length());
+        assert!((0.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_empty_graph() {
+        let mut graph = UGraph::<i32>::pseudo();
+        let cb = QueueBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(0, cb.cycles().len());
+        assert_eq!(0, cb.length());
+        assert!((0.0 - cb.weight()).abs() <= 0.0001);
+    }
+}
+
+mod stack_bfs_fundamental_cycle_basis_test {
+    use super::*;
+    use jgrapht::alg::cycle::*;
+
+    #[test]
+    fn test_simple() {
+        let mut graph = UGraph::<i32>::simple();
+        add_ev(&mut graph, 0, 1);
+        add_ev(&mut graph, 1, 2);
+        add_ev(&mut graph, 2, 0);
+        let mut cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(1, cb.cycles().len());
+        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 0, 1)));
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert_eq!(3, c1.len());
+        assert_eq!(3, cb.length());
+        assert!((3.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 2, 3);
+        add_ev(&mut graph, 3, 0);
+        cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(2, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        assert_eq!(6, cb.length());
+        assert!((6.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 3, 1);
+        cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(3, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 3)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c3.len());
+        assert_eq!(9, cb.length());
+        assert!((9.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 3, 4);
+        add_ev(&mut graph, 4, 2);
+        cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(4, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 3)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&ge(&graph, 3, 4)));
+        assert!(c4.contains(&ge(&graph, 0, 3)));
+        assert!(c4.contains(&ge(&graph, 0, 2)));
+        assert!(c4.contains(&ge(&graph, 2, 4)));
+        assert_eq!(4, c4.len());
+        assert_eq!(13, cb.length());
+        assert!((13.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 4, 5);
+        cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(4, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 3)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&ge(&graph, 3, 4)));
+        assert!(c4.contains(&ge(&graph, 0, 3)));
+        assert!(c4.contains(&ge(&graph, 0, 2)));
+        assert!(c4.contains(&ge(&graph, 2, 4)));
+        assert_eq!(4, c4.len());
+        assert_eq!(13, cb.length());
+        assert!((13.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 5, 2);
+        cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(5, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 3)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&ge(&graph, 4, 2)));
+        assert!(c4.contains(&ge(&graph, 2, 0)));
+        assert!(c4.contains(&ge(&graph, 0, 3)));
+        assert!(c4.contains(&ge(&graph, 3, 4)));
+        assert_eq!(4, c4.len());
+        let c5 = cycles[4].clone();
+        assert!(c5.contains(&ge(&graph, 5, 2)));
+        assert!(c5.contains(&ge(&graph, 2, 0)));
+        assert!(c5.contains(&ge(&graph, 0, 3)));
+        assert!(c5.contains(&ge(&graph, 3, 4)));
+        assert!(c5.contains(&ge(&graph, 4, 5)));
+        assert_eq!(5, c5.len());
+        assert_eq!(18, cb.length());
+        assert!((18.0 - cb.weight()).abs() <= 0.0001);
+        add_ev(&mut graph, 5, 6);
+        add_ev(&mut graph, 6, 4);
+        cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        cycles = cb.cycles().iter().cloned().collect();
+        assert_eq!(6, cb.cycles().len());
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 1, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert!(c2.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 3)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert!(c3.contains(&ge(&graph, 0, 3)));
+        assert_eq!(3, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&ge(&graph, 4, 2)));
+        assert!(c4.contains(&ge(&graph, 2, 0)));
+        assert!(c4.contains(&ge(&graph, 0, 3)));
+        assert!(c4.contains(&ge(&graph, 3, 4)));
+        assert_eq!(4, c4.len());
+        let c5 = cycles[4].clone();
+        assert!(c5.contains(&ge(&graph, 5, 2)));
+        assert!(c5.contains(&ge(&graph, 2, 0)));
+        assert!(c5.contains(&ge(&graph, 0, 3)));
+        assert!(c5.contains(&ge(&graph, 3, 4)));
+        assert!(c5.contains(&ge(&graph, 4, 5)));
+        assert_eq!(5, c5.len());
+        let c6 = cycles[5].clone();
+        assert!(c6.contains(&ge(&graph, 5, 6)));
+        assert!(c6.contains(&ge(&graph, 6, 4)));
+        assert!(c6.contains(&ge(&graph, 4, 5)));
+        assert_eq!(3, c6.len());
+        assert_eq!(21, cb.length());
+        assert!((21.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_multigraphs_with_loops() {
+        let mut graph = UGraph::<i32>::pseudo();
+        add_ev(&mut graph, 0, 1);
+        add_ev(&mut graph, 0, 2);
+        add_ev(&mut graph, 0, 3);
+        add_ev(&mut graph, 1, 2);
+        add_ev(&mut graph, 2, 3);
+        add_ev(&mut graph, 1, 4);
+        add_ev(&mut graph, 2, 5);
+        add_ev(&mut graph, 3, 6);
+        add_ev(&mut graph, 4, 5);
+        add_ev(&mut graph, 5, 6);
+        add_ev(&mut graph, 4, 7);
+        add_ev(&mut graph, 5, 8);
+        add_ev(&mut graph, 6, 9);
+        add_ev(&mut graph, 7, 8);
+        let e89_1 = graph.add_edge(&8, &9).unwrap().unwrap();
+        add_ev(&mut graph, 7, 9);
+        let e89_2 = graph.add_edge(&8, &9).unwrap().unwrap();
+        let e89_3 = graph.add_edge(&8, &9).unwrap().unwrap();
+        let e89_4 = graph.add_edge(&8, &9).unwrap().unwrap();
+        let e77_1 = graph.add_edge(&7, &7).unwrap().unwrap();
+        let e77_2 = graph.add_edge(&7, &7).unwrap().unwrap();
+        let e77_3 = graph.add_edge(&7, &7).unwrap().unwrap();
+        let cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(13, cb.cycles().len());
+        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 1, 2)));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert!(c1.contains(&ge(&graph, 0, 1)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 2, 3)));
+        assert!(c2.contains(&ge(&graph, 3, 0)));
+        assert!(c2.contains(&ge(&graph, 0, 2)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&ge(&graph, 1, 4)));
+        assert!(c3.contains(&ge(&graph, 4, 7)));
+        assert!(c3.contains(&ge(&graph, 7, 9)));
+        assert!(c3.contains(&ge(&graph, 9, 6)));
+        assert!(c3.contains(&ge(&graph, 6, 3)));
+        assert!(c3.contains(&ge(&graph, 3, 0)));
+        assert!(c3.contains(&ge(&graph, 0, 1)));
+        assert_eq!(7, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&ge(&graph, 2, 5)));
+        assert!(c4.contains(&ge(&graph, 5, 6)));
+        assert!(c4.contains(&ge(&graph, 6, 3)));
+        assert!(c4.contains(&ge(&graph, 3, 0)));
+        assert!(c4.contains(&ge(&graph, 0, 2)));
+        assert_eq!(5, c4.len());
+        let c5 = cycles[4].clone();
+        assert!(c5.contains(&ge(&graph, 4, 5)));
+        assert!(c5.contains(&ge(&graph, 5, 6)));
+        assert!(c5.contains(&ge(&graph, 6, 9)));
+        assert!(c5.contains(&ge(&graph, 9, 7)));
+        assert!(c5.contains(&ge(&graph, 7, 4)));
+        assert_eq!(5, c5.len());
+        let c6 = cycles[5].clone();
+        assert!(c6.contains(&ge(&graph, 5, 8)));
+        assert!(c6.contains(&ge(&graph, 8, 9)));
+        assert!(c6.contains(&ge(&graph, 9, 6)));
+        assert!(c6.contains(&ge(&graph, 6, 5)));
+        assert_eq!(4, c6.len());
+        let c7 = cycles[6].clone();
+        assert!(c7.contains(&ge(&graph, 7, 8)));
+        assert!(c7.contains(&e89_1));
+        assert!(c7.contains(&ge(&graph, 9, 7)));
+        assert_eq!(3, c7.len());
+        let c8 = cycles[7].clone();
+        assert!(c8.contains(&e89_2));
+        assert!(c8.contains(&e89_1));
+        assert_eq!(2, c8.len());
+        let c9 = cycles[8].clone();
+        assert!(c9.contains(&e89_3));
+        assert!(c9.contains(&e89_1));
+        assert_eq!(2, c9.len());
+        let c10 = cycles[9].clone();
+        assert!(c10.contains(&e89_4));
+        assert!(c10.contains(&e89_1));
+        assert_eq!(2, c10.len());
+        let c11 = cycles[10].clone();
+        assert!(c11.contains(&e77_1));
+        assert_eq!(1, c11.len());
+        let c12 = cycles[11].clone();
+        assert!(c12.contains(&e77_2));
+        assert_eq!(1, c12.len());
+        let c13 = cycles[12].clone();
+        assert!(c13.contains(&e77_3));
+        assert_eq!(1, c13.len());
+        for c in cb.cycles() {
+            assert_cycle(&graph, c);
+        }
+        assert_eq!(39, cb.length());
+        assert!((39.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_multi_graph_with_multiple_components_with_loops() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertex(0);
+        graph.add_vertex(1);
+        graph.add_vertex(2);
+        graph.add_edge(&0, &1).unwrap();
+        graph.add_edge(&0, &2).unwrap();
+        let e12_1 = graph.add_edge(&1, &2).unwrap().unwrap();
+        let e12_2 = graph.add_edge(&1, &2).unwrap().unwrap();
+        let e11_1 = graph.add_edge(&1, &1).unwrap().unwrap();
+        let e11_2 = graph.add_edge(&1, &1).unwrap().unwrap();
+        graph.add_vertex(3);
+        graph.add_vertex(4);
+        graph.add_vertex(5);
+        graph.add_edge(&3, &4).unwrap();
+        graph.add_edge(&3, &5).unwrap();
+        let e45_1 = graph.add_edge(&4, &5).unwrap().unwrap();
+        let e45_2 = graph.add_edge(&4, &5).unwrap().unwrap();
+        let e55_1 = graph.add_edge(&5, &5).unwrap().unwrap();
+        let e55_2 = graph.add_edge(&5, &5).unwrap().unwrap();
+        let cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(8, cb.cycles().len());
+        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&ge(&graph, 0, 1)));
+        assert!(c1.contains(&e12_1));
+        assert!(c1.contains(&ge(&graph, 2, 0)));
+        assert_eq!(3, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&ge(&graph, 0, 1)));
+        assert!(c2.contains(&e12_2));
+        assert!(c2.contains(&ge(&graph, 2, 0)));
+        assert_eq!(3, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&e11_1));
+        assert_eq!(1, c3.len());
+        let c4 = cycles[3].clone();
+        assert!(c4.contains(&e11_2));
+        assert_eq!(1, c4.len());
+        let c5 = cycles[4].clone();
+        assert!(c5.contains(&ge(&graph, 3, 4)));
+        assert!(c5.contains(&e45_1));
+        assert!(c5.contains(&ge(&graph, 5, 3)));
+        assert_eq!(3, c5.len());
+        let c6 = cycles[5].clone();
+        assert!(c6.contains(&ge(&graph, 3, 4)));
+        assert!(c6.contains(&e45_2));
+        assert!(c6.contains(&ge(&graph, 5, 3)));
+        assert_eq!(3, c6.len());
+        let c7 = cycles[6].clone();
+        assert!(c7.contains(&e55_1));
+        assert_eq!(1, c7.len());
+        let c8 = cycles[7].clone();
+        assert!(c8.contains(&e55_2));
+        assert_eq!(1, c8.len());
+        assert_eq!(16, cb.length());
+        assert!((16.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_two_parallel_edges() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertex(0);
+        graph.add_vertex(1);
+        let e1 = graph.add_edge(&0, &1).unwrap().unwrap();
+        let e2 = graph.add_edge(&0, &1).unwrap().unwrap();
+        let cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(1, cb.cycles().len());
+        let c1 = cb.cycles().first().unwrap().clone();
+        assert!(c1.contains(&e1));
+        assert!(c1.contains(&e2));
+        assert_eq!(2, c1.len());
+        assert_eq!(2, cb.length());
+        assert!((2.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_more_parallel_edges() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertex(0);
+        graph.add_vertex(1);
+        graph.add_vertex(2);
+        graph.add_vertex(3);
+        let e01_1 = graph.add_edge(&0, &1).unwrap().unwrap();
+        let e01_2 = graph.add_edge(&0, &1).unwrap().unwrap();
+        let e12 = graph.add_edge(&1, &2).unwrap().unwrap();
+        let e23_1 = graph.add_edge(&2, &3).unwrap().unwrap();
+        let e23_2 = graph.add_edge(&2, &3).unwrap().unwrap();
+        let e30 = graph.add_edge(&3, &0).unwrap().unwrap();
+        let cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(3, cb.cycles().len());
+        let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
+        let c1 = cycles[0].clone();
+        assert!(c1.contains(&e01_2));
+        assert!(c1.contains(&e01_1));
+        assert_eq!(2, c1.len());
+        let c2 = cycles[1].clone();
+        assert!(c2.contains(&e01_1));
+        assert!(c2.contains(&e12));
+        assert!(c2.contains(&e23_1));
+        assert!(c2.contains(&e30));
+        assert_eq!(4, c2.len());
+        let c3 = cycles[2].clone();
+        assert!(c3.contains(&e23_2));
+        assert!(c3.contains(&e23_1));
+        assert_eq!(2, c3.len());
+        assert_eq!(8, cb.length());
+        assert!((8.0 - cb.weight()).abs() <= 0.0001);
+    }
+
+    #[test]
+    fn test_zero_cycle_space_dimension() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertex(0);
+        graph.add_vertex(1);
+        graph.add_vertex(2);
+        graph.add_vertex(3);
+        graph.add_edge(&0, &1).unwrap();
+        graph.add_edge(&2, &3).unwrap();
+        let cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(0, cb.cycles().len());
+        assert_eq!(0, cb.length());
+        assert!((0.0 - cb.weight()).abs() <= 1e-9);
+    }
+
+    #[test]
+    fn test_empty_graph() {
+        let mut graph = UGraph::<i32>::pseudo();
+        let cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(0, cb.cycles().len());
+        assert_eq!(0, cb.length());
+        assert!((0.0 - cb.weight()).abs() <= 1e-9);
+    }
+
+    #[test]
+    fn test_1() {
+        let mut graph = UGraph::<i32>::simple();
+        graph.add_vertices(1..=7);
+        graph.add_edge(&1, &2).unwrap();
+        graph.add_edge(&1, &3).unwrap();
+        graph.add_edge(&2, &4).unwrap();
+        graph.add_edge(&2, &5).unwrap();
+        graph.add_edge(&3, &6).unwrap();
+        graph.add_edge(&3, &7).unwrap();
+        graph.add_edge(&4, &5).unwrap();
+        graph.add_edge(&6, &7).unwrap();
+        graph.add_edge(&4, &6).unwrap();
+        let cb = StackBFSFundamentalCycleBasis::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        let cycles_sizes = [5, 6, 3];
+        for (i, cycle) in cb.cycles().iter().take(3).enumerate() {
+            assert_cycle(&graph, cycle);
+            assert_eq!(cycles_sizes[i], cycle.len());
+        }
+        assert_eq!(14, cb.length());
+        assert!((14.0 - cb.weight()).abs() <= 1e-9);
+    }
+}
+
+mod paton_cycle_base_test {
+    use super::*;
+    use jgrapht::alg::connectivity::ConnectivityInspector;
+    use jgrapht::alg::cycle::*;
+    use jgrapht::generate::{GnpRandomGraphGenerator, GraphGenerator};
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+
+    const MAX_SIZE: usize = 10;
+    const RESULTS: [usize; 11] = [0, 0, 0, 1, 3, 6, 10, 15, 21, 28, 36];
+
+    type G = UGraph<i32>;
+
+    fn graph(n: i32, edges: &[(i32, i32)]) -> G {
+        let mut g = G::simple();
+        g.add_vertices(0..n);
+        for (a, b) in edges {
+            g.add_edge(a, b).unwrap();
+        }
+        g
+    }
+
+    fn basis(g: &G) -> CycleBasis<DefaultEdge> {
+        PatonCycleBase::new(g).unwrap().get_cycle_basis().unwrap()
+    }
+
+    fn check_result(g: &G, size: usize) {
+        assert_eq!(size, basis(g).cycles().len());
+    }
+
+    fn complete(size: i32) -> G {
+        let mut g = G::simple();
+        g.add_vertices(0..size);
+        for i in 0..size {
+            for j in 0..size {
+                if i != j {
+                    g.add_edge(&i, &j).unwrap();
+                }
+            }
+        }
+        g
+    }
+
+    #[test]
+    fn algorithm() {
+        let steps: [(&[(i32, i32)], usize); 7] = [
+            (&[(0, 1), (1, 2), (2, 0)], 1),
+            (&[(2, 3), (3, 0)], 2),
+            (&[(3, 1)], 3),
+            (&[(3, 4), (4, 2)], 4),
+            (&[(4, 5)], 4),
+            (&[(5, 2)], 5),
+            (&[(5, 6), (6, 4)], 6),
+        ];
+        let mut g = graph(7, &[]);
+        for (edges, expected) in steps {
+            for (a, b) in edges {
+                g.add_edge(a, b).unwrap();
+            }
+            check_result(&g, expected);
+        }
+        for size in 1..=MAX_SIZE {
+            check_result(&complete(size as i32), RESULTS[size]);
+        }
+    }
+
+    fn from_edges(n: i32, edges: &[(i32, i32)]) -> G {
+        let mut g = G::simple();
+        g.add_vertices(1..=n);
+        for (a, b) in edges {
+            g.add_edge(a, b).unwrap();
+        }
+        g
+    }
+
+    const EDGES7: [(i32, i32); 9] = [
+        (1, 2),
+        (1, 3),
+        (2, 4),
+        (2, 5),
+        (3, 6),
+        (3, 7),
+        (4, 5),
+        (6, 7),
+        (4, 6),
+    ];
+
+    #[test]
+    fn paton_cycle_basis() {
+        let g = from_edges(7, &EDGES7);
+        let cycles_sizes = [3, 5, 3];
+        for (i, cycle) in basis(&g).cycles().iter().take(3).enumerate() {
+            assert_eq!(cycles_sizes[i], cycle.len());
+        }
+    }
+
+    #[test]
+    fn paton_cycle_basis1() {
+        let g = from_edges(
+            15,
+            &[
+                (1, 2),
+                (1, 3),
+                (1, 4),
+                (1, 12),
+                (3, 5),
+                (3, 6),
+                (12, 13),
+                (6, 7),
+                (6, 8),
+                (13, 14),
+                (7, 9),
+                (8, 10),
+                (14, 15),
+                (10, 11),
+                (2, 11),
+                (5, 4),
+                (5, 9),
+                (9, 10),
+                (9, 11),
+                (10, 14),
+                (11, 15),
+            ],
+        );
+        let ucb = basis(&g);
+        let cycles_sizes = [3, 8, 8, 9, 5, 7, 4];
+        for (i, cycle) in ucb.cycles().iter().take(7).enumerate() {
+            assert_eq!(cycles_sizes[i], cycle.len());
+            assert_cycle(&g, cycle);
+        }
+        assert_eq!(44, ucb.length());
+        assert!((44.0 - ucb.weight()).abs() <= 1e-9);
+    }
+
+    fn expected_length(cycles: usize) -> usize {
+        // lengths of the successive bases: 3, 6, 9, 12, 12, 15, 18
+        [0, 3, 6, 9, 12, 15, 18][cycles]
+    }
+
+    #[test]
+    fn paton_cycle_basis2() {
+        let steps: [(&[(i32, i32)], usize); 7] = [
+            (&[(0, 1), (1, 2), (2, 0)], 1),
+            (&[(2, 3), (3, 0)], 2),
+            (&[(3, 1)], 3),
+            (&[(3, 4), (4, 2)], 4),
+            (&[(4, 5)], 4),
+            (&[(5, 2)], 5),
+            (&[(5, 6), (6, 4)], 6),
+        ];
+        let mut g = graph(7, &[]);
+        for (edges, expected) in steps {
+            for (a, b) in edges {
+                g.add_edge(a, b).unwrap();
+            }
+            let b = basis(&g);
+            assert_eq!(expected, b.cycles().len());
+            assert_eq!(expected_length(expected), b.length());
+        }
+        for size in 1..=MAX_SIZE {
+            let g = complete(size as i32);
+            let b = basis(&g);
+            assert_eq!(RESULTS[size], b.cycles().len());
+            assert_eq!(3 * RESULTS[size], b.length());
+            assert!((3.0 * RESULTS[size] as f64 - b.weight()).abs() <= 1e-9);
+            for c in b.cycles() {
+                assert_cycle(&g, c);
+            }
+        }
+    }
+
+    #[test]
+    fn paton_cycle_basis3() {
+        let mut edges = vec![
+            (1, 2),
+            (1, 3),
+            (2, 4),
+            (2, 5),
+            (3, 6),
+            (3, 7),
+            (4, 8),
+            (4, 9),
+            (5, 10),
+            (5, 11),
+            (6, 12),
+            (6, 13),
+            (7, 14),
+            (7, 15),
+            (8, 9),
+            (10, 11),
+            (12, 13),
+            (14, 15),
+        ];
+        edges.extend([
+            (8, 10),
+            (9, 11),
+            (10, 12),
+            (11, 13),
+            (12, 14),
+            (8, 11),
+            (9, 12),
+            (10, 13),
+            (11, 14),
+            (12, 15),
+            (8, 12),
+            (9, 13),
+            (10, 14),
+            (11, 15),
+            (8, 13),
+            (9, 14),
+            (10, 15),
+            (8, 14),
+            (9, 15),
+            (8, 15),
+        ]);
+        let g = from_edges(15, &edges);
+        let ucb = basis(&g);
+        for cycle in ucb.cycles().iter().take(24) {
+            assert_cycle(&g, cycle);
+        }
+        assert_eq!(85, ucb.length());
+        assert!((85.0 - ucb.weight()).abs() <= 1e-9);
+    }
+
+    #[test]
+    fn paton_cycle_basis4() {
+        let g = from_edges(7, &EDGES7);
+        let ucb = basis(&g);
+        for cycle in ucb.cycles().iter().take(3) {
+            assert_cycle(&g, cycle);
+        }
+        assert_eq!(11, ucb.length());
+        assert!((11.0 - ucb.weight()).abs() <= 1e-9);
+    }
+
+    #[test]
+    fn paton_cycle_basis5() {
+        let g = from_edges(
+            15,
+            &[
+                (1, 2),
+                (1, 3),
+                (2, 4),
+                (2, 5),
+                (3, 6),
+                (3, 7),
+                (4, 8),
+                (4, 9),
+                (5, 10),
+                (5, 11),
+                (6, 12),
+                (6, 13),
+                (7, 14),
+                (7, 15),
+                (8, 9),
+                (10, 11),
+                (12, 13),
+                (14, 15),
+                (8, 10),
+            ],
+        );
+        let ucb = basis(&g);
+        let cycles_sizes = [3, 3, 3, 5, 3];
+        for (i, cycle) in ucb.cycles().iter().take(5).enumerate() {
+            assert_cycle(&g, cycle);
+            assert_eq!(cycles_sizes[i], cycle.len());
+        }
+        assert_eq!(17, ucb.length());
+        assert!((17.0 - ucb.weight()).abs() <= 1e-9);
+    }
+
+    #[test]
+    fn paton_cycle_basis6() {
+        let g = from_edges(
+            7,
+            &[
+                (1, 2),
+                (1, 3),
+                (2, 4),
+                (2, 5),
+                (2, 3),
+                (3, 6),
+                (3, 7),
+                (4, 6),
+                (5, 7),
+            ],
+        );
+        let cycles_sizes = [3, 4, 4];
+        for (i, cycle) in basis(&g).cycles().iter().take(3).enumerate() {
+            assert_eq!(cycles_sizes[i], cycle.len());
+        }
+    }
+
+    #[test]
+    fn paton_cycle_basis7() {
+        let g = from_edges(7, &[(1, 2), (1, 3), (2, 4), (2, 5), (4, 5), (4, 3)]);
+        let ucb = basis(&g);
+        for cycle in ucb.cycles().iter().take(2) {
+            assert_cycle(&g, cycle);
+        }
+        assert_eq!(7, ucb.length());
+        assert!((7.0 - ucb.weight()).abs() <= 1e-9);
+    }
+
+    #[test]
+    fn paton_cycle_basis8() {
+        let mut seed = 0u64;
+        for _ in 0..10 {
+            seed += 1;
+            let mut g = G::simple().with_vertex_factory(|i| i as i32);
+            GnpRandomGraphGenerator::new(200, 0.7, StdRng::seed_from_u64(seed), false)
+                .unwrap()
+                .generate_default(&mut g)
+                .unwrap();
+            let ucb = basis(&g);
+            let k = ConnectivityInspector::new().connected_sets(&g).len();
+            let cycle_space_dimension = g.edge_count() - g.vertex_count() + k;
+            assert_eq!(cycle_space_dimension, ucb.cycles().len());
+            for cycle in ucb.cycles() {
+                assert_cycle(&g, cycle);
+            }
+        }
+    }
+
+    #[test]
+    fn zero_cycle_space_dimension() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertices(0..4);
+        graph.add_edge(&0, &1).unwrap();
+        graph.add_edge(&2, &3).unwrap();
+        let cb = PatonCycleBase::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(0, cb.cycles().len());
+        assert_eq!(0, cb.length());
+        assert!(cb.weight().abs() <= 1e-9);
+    }
+
+    #[test]
+    fn with_loops() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertices(0..4);
+        let e01 = graph.add_edge(&0, &1).unwrap().unwrap();
+        let e12 = graph.add_edge(&1, &2).unwrap().unwrap();
+        let e23 = graph.add_edge(&2, &3).unwrap().unwrap();
+        let e30 = graph.add_edge(&3, &0).unwrap().unwrap();
+        let e00 = graph.add_edge(&0, &0).unwrap().unwrap();
+        let e11 = graph.add_edge(&1, &1).unwrap().unwrap();
+        let e22 = graph.add_edge(&2, &2).unwrap().unwrap();
+        let e33 = graph.add_edge(&3, &3).unwrap().unwrap();
+        let cb = PatonCycleBase::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        let expected: [Vec<DefaultEdge>; 5] = [
+            vec![e00],
+            vec![e33],
+            vec![e12, e23, e30, e01],
+            vec![e22],
+            vec![e11],
+        ];
+        for (i, c) in cb.cycles().iter().take(5).enumerate() {
+            assert_cycle(&graph, c);
+            assert_eq!(&expected[i], c);
+        }
+        assert_eq!(5, cb.cycles().len());
+        assert_eq!(8, cb.length());
+        assert!((8.0 - cb.weight()).abs() <= 1e-9);
+    }
+
+    #[test]
+    fn single_loops() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertex(0);
+        let e1 = graph.add_edge(&0, &0).unwrap().unwrap();
+        let cb = PatonCycleBase::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        let c = cb.cycles().first().unwrap();
+        assert_cycle(&graph, c);
+        assert_eq!(&vec![e1], c);
+        assert_eq!(1, cb.cycles().len());
+        assert_eq!(1, cb.length());
+        assert!((1.0 - cb.weight()).abs() <= 1e-9);
+    }
+
+    #[test]
+    fn multiple_edges() {
+        let mut graph = UGraph::<i32>::pseudo();
+        graph.add_vertex(0);
+        graph.add_edge(&0, &0).unwrap();
+        graph.add_edge(&0, &0).unwrap();
+        assert!(
+            PatonCycleBase::new(&graph)
+                .unwrap()
+                .get_cycle_basis()
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn disconnected_and_weights() {
+        let mut graph = UGraph::<i32>::pseudo().weighted();
+        graph.add_vertices(0..6);
+        for (a, b, w) in [
+            (0, 1, 2.0),
+            (1, 2, 7.0),
+            (2, 0, 13.0),
+            (3, 4, 102.0),
+            (4, 5, 107.0),
+            (5, 3, 113.0),
+        ] {
+            add_w(&mut graph, a, b, w);
+        }
+        let cb = PatonCycleBase::new(&graph)
+            .unwrap()
+            .get_cycle_basis()
+            .unwrap();
+        assert_eq!(2, cb.cycles().len());
+        assert_eq!(6, cb.length());
+        assert!((344.0 - cb.weight()).abs() <= 1e-9);
+    }
+}
