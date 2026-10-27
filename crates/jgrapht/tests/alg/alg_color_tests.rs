@@ -86,7 +86,7 @@ fn assert_coloring(g: &G, coloring: &Coloring<i32>, expected: usize) {
     }
 }
 
-fn check_random_graph_coloring(compute: &dyn Fn(&G) -> Coloring<i32>, rng: JavaRandom) {
+fn check_random_graph_coloring(compute: &dyn Fn(&G) -> Coloring<i32>, rng: rand::rngs::StdRng) {
     let (tests, n, p) = (5, 20, 0.35);
     let mut gen_ = GnpRandomGraphGenerator::new(n, p, rng, false).unwrap();
     for _ in 0..tests {
@@ -149,14 +149,17 @@ macro_rules! base_coloring_tests {
 
             #[test]
             fn test_random_fixed_seed_17() {
-                check_random_graph_coloring(&|g| make(g).coloring().unwrap(), JavaRandom::new(17));
+                check_random_graph_coloring(
+                    &|g| make(g).coloring().unwrap(),
+                    <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(17),
+                );
             }
 
             #[test]
             fn test_random() {
                 check_random_graph_coloring(
                     &|g| make(g).coloring().unwrap(),
-                    JavaRandom::from_time(),
+                    <rand::rngs::StdRng as rand::SeedableRng>::from_os_rng(),
                 );
             }
         }

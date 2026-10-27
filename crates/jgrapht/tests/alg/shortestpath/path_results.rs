@@ -2,8 +2,9 @@ use jgrapht::alg::shortestpath::{
     ALTAdmissibleHeuristic, AStarShortestPath, BidirectionalDijkstraShortestPath,
     DijkstraShortestPath, ListSingleSourcePaths, ShortestPathAlgorithm, TreeSingleSourcePaths,
 };
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::{HashMap, HashSet};
 
 fn assert_same_weight(expected: f64, actual: f64) {
@@ -14,7 +15,7 @@ fn assert_same_weight(expected: f64, actual: f64) {
 }
 
 fn java_directed_gnp(
-    random: &mut JavaRandom,
+    random: &mut StdRng,
     vertex_count: i32,
     probability: f64,
     create_loops: bool,
@@ -31,10 +32,10 @@ fn java_directed_gnp(
             if source == target && !create_loops {
                 continue;
             }
-            if random.next_double() < probability {
+            if random.random::<f64>() < probability {
                 graph.add_edge(&source, &target).unwrap();
             }
-            if random.next_double() < probability {
+            if random.random::<f64>() < probability {
                 graph.add_edge(&target, &source).unwrap();
             }
         }
@@ -46,7 +47,7 @@ fn java_directed_gnp(
 // deliberately unseeded random graph.
 #[test]
 fn list_single_source_paths_test_paths() {
-    let mut random = JavaRandom::new(0x5eed);
+    let mut random = StdRng::seed_from_u64(0x5eed);
     let graph = java_directed_gnp(&mut random, 50, 0.7, false);
 
     let dijkstra = DijkstraShortestPath::new(&graph);
@@ -104,17 +105,19 @@ fn tree_single_source_paths_test_paths() {
 }
 
 fn all_pairs_shortest_paths(seed: i64) {
-    let mut random = JavaRandom::new(seed);
+    let mut random = StdRng::seed_from_u64(seed as u64);
     for _ in 0..5 {
         let mut graph = java_directed_gnp(&mut random, 20, 0.35, true);
         let edges = graph.edges().copied().collect::<Vec<_>>();
         for edge in edges {
-            graph.set_edge_weight(&edge, random.next_double()).unwrap();
+            graph
+                .set_edge_weight(&edge, random.random::<f64>())
+                .unwrap();
         }
 
         let mut landmark_set = HashSet::new();
         while landmark_set.len() < 2 {
-            landmark_set.insert(random.next_int_bound(20));
+            landmark_set.insert(random.random_range(0..20));
         }
         let heuristic = ALTAdmissibleHeuristic::new(&graph, landmark_set).unwrap();
         let dijkstra = DijkstraShortestPath::new(&graph);

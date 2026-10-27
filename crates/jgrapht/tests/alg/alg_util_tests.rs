@@ -9,6 +9,8 @@ use jgrapht::alg::util::*;
 use jgrapht::event::Listenable;
 use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
 use jgrapht::util::java::JavaRandom;
+use rand::SeedableRng;
+use rand::rngs::StdRng;
 use jgrapht::util::sampler::AliasMethodSampler;
 use jgrapht::*;
 use std::collections::HashSet;
@@ -75,7 +77,7 @@ mod vertex_degree_comparator_test {
     #[test]
     fn test_vertex_degree_comparator() {
         let mut generator =
-            GnmRandomGraphGenerator::new(100, 1000, JavaRandom::new(0), false, false).unwrap();
+            GnmRandomGraphGenerator::new(100, 1000, StdRng::seed_from_u64(0), false, false).unwrap();
         for _ in 0..20 {
             let mut graph = UGraph::<i32>::simple().with_vertex_factory(|i| i as i32);
             generator.generate_default(&mut graph).unwrap();

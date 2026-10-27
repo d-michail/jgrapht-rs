@@ -984,7 +984,8 @@ mod color_refinement_isomorphism_inspector_test {
 
 mod subgraph_utils {
     use super::*;
-    use jgrapht::util::java::JavaRandom;
+    use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
     pub type G = DiGraph<i32>;
 
@@ -1024,11 +1025,11 @@ mod subgraph_utils {
         let mut map: HashMap<i32, i32> = HashMap::new();
         let mut g2 = G::with_loops();
         let n = g1.vertex_count() as i32;
-        let mut rnd = JavaRandom::new(seed);
+        let mut rnd = StdRng::seed_from_u64(seed as u64);
         let mut i = 0;
         while (i as usize) < vertex_count {
             for v in g1.vertices() {
-                if rnd.next_int_bound(n) == 0 && !map.contains_key(v) {
+                if rnd.random_range(0..n) == 0 && !map.contains_key(v) {
                     let u = i;
                     i += 1;
                     g2.add_vertex(u);
@@ -1050,11 +1051,11 @@ mod subgraph_utils {
         for i in 0..vertex_count {
             g.add_vertex(i);
         }
-        let mut rnd = JavaRandom::new(seed);
+        let mut rnd = StdRng::seed_from_u64(seed as u64);
         let mut i = 0;
         while i < edge_count {
-            let source = rnd.next_int_bound(vertex_count);
-            let target = rnd.next_int_bound(vertex_count);
+            let source = rnd.random_range(0..vertex_count);
+            let target = rnd.random_range(0..vertex_count);
             if source != target && !g.contains_edge_between(&source, &target) {
                 g.add_edge(&source, &target).unwrap();
                 i += 1;
@@ -1225,7 +1226,8 @@ mod vf2_subgraph_isomorphism_inspector_test {
     use super::subgraph_utils::*;
     use super::*;
     use jgrapht::graph::Undirected;
-    use jgrapht::util::java::JavaRandom;
+    use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
     use std::cmp::Ordering;
 
     fn sg(vertices: &[i32], edges: &[(i32, i32)]) -> UGraph<i32> {
@@ -1598,12 +1600,12 @@ mod vf2_subgraph_isomorphism_inspector_test {
 
     #[test]
     fn random_graphs() {
-        let mut rnd = JavaRandom::new(54321);
+        let mut rnd = StdRng::seed_from_u64(54321);
         for i in 1..50 {
-            let vertex_count = 2 + rnd.next_int_bound(i);
+            let vertex_count = 2 + rnd.random_range(0..i);
             let edge_count =
-                vertex_count + rnd.next_int_bound(vertex_count * (vertex_count - 1)) / 2;
-            let sub_vertex_count = 1 + rnd.next_int_bound(vertex_count);
+                vertex_count + rnd.random_range(0..vertex_count * (vertex_count - 1)) / 2;
+            let sub_vertex_count = 1 + rnd.random_range(0..vertex_count);
             let g1 = random_graph(vertex_count, edge_count as usize, i as i64);
             let g2 = random_subgraph(&g1, sub_vertex_count as usize, i as i64);
             let vf2 = VF2SubgraphIsomorphismInspector::new(&g1, &g2).unwrap();
@@ -1613,12 +1615,12 @@ mod vf2_subgraph_isomorphism_inspector_test {
 
     #[test]
     fn random_graphs_exhaustive() {
-        let mut rnd = JavaRandom::new(12345);
+        let mut rnd = StdRng::seed_from_u64(12345);
         for i in 1..100 {
-            let vertex_count = 3 + rnd.next_int_bound(5);
-            let edge_count = rnd.next_int_bound(vertex_count * (vertex_count - 1));
-            let sub_vertex_count = 2 + rnd.next_int_bound(vertex_count);
-            let sub_edge_count = rnd.next_int_bound(sub_vertex_count * (sub_vertex_count - 1));
+            let vertex_count = 3 + rnd.random_range(0..5);
+            let edge_count = rnd.random_range(0..vertex_count * (vertex_count - 1));
+            let sub_vertex_count = 2 + rnd.random_range(0..vertex_count);
+            let sub_edge_count = rnd.random_range(0..sub_vertex_count * (sub_vertex_count - 1));
             let g1 = random_graph(vertex_count, edge_count as usize, i as i64);
             let g2 = random_graph(sub_vertex_count, sub_edge_count as usize, i as i64);
             let vf2 = VF2SubgraphIsomorphismInspector::new(&g1, &g2).unwrap();

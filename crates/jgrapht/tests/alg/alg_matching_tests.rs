@@ -7,7 +7,8 @@
 use indexmap::IndexSet;
 use jgrapht::alg::matching::*;
 use jgrapht::generate::*;
-use jgrapht::util::java::JavaRandom;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use jgrapht::*;
 use std::collections::{HashMap, HashSet};
 
@@ -80,7 +81,7 @@ mod greedy_maximum_cardinality_matching_test {
 
     fn run(sorted: bool, repeat: usize) {
         let mut generator =
-            GnmRandomGraphGenerator::new(200, 120, JavaRandom::new(7), false, false).unwrap();
+            GnmRandomGraphGenerator::new(200, 120, StdRng::seed_from_u64(7), false, false).unwrap();
         for _ in 0..repeat {
             let mut graph = integer_graph();
             generator.generate_default(&mut graph).unwrap();
@@ -502,7 +503,7 @@ macro_rules! base_path_growing_tests {
             let mut gg = GnpRandomGraphGenerator::new(
                 number_vertices,
                 edge_probability,
-                JavaRandom::new(33),
+                StdRng::seed_from_u64(33),
                 false,
             )
             .unwrap();
@@ -677,15 +678,15 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
 
     #[test]
     fn test_random_bipartite_graphs() {
-        let mut random = JavaRandom::new(1);
+        let mut random = StdRng::seed_from_u64(1);
         let vertices = 100;
         for _ in 0..100 {
-            let edges = random.next_int_bound((max_edges(vertices) / 2) as i32) as usize;
+            let edges = random.random_range(0..max_edges(vertices) / 2);
             let mut generator = GnmRandomBipartiteGraphGenerator::new(
                 vertices,
                 vertices / 2,
                 edges,
-                JavaRandom::new(0),
+                StdRng::seed_from_u64(0),
             );
             let mut graph = integer_graph();
             let (first, second) = generator.generate_partitions(&mut graph).unwrap();
@@ -795,7 +796,7 @@ mod maximum_weight_bipartite_matching_test {
         assert!((matchings.weight() - 5.0).abs() < 1e-9);
     }
 
-    fn test_random_instance(rng: &mut JavaRandom, n: i32, p: f64, repeat: usize) {
+    fn test_random_instance(rng: &mut StdRng, n: i32, p: f64, repeat: usize) {
         for _ in 0..repeat {
             // generate random bipartite
             let mut g = UG::simple().weighted();
@@ -812,14 +813,14 @@ mod maximum_weight_bipartite_matching_test {
             // create edges
             for i in 0..n {
                 for j in 0..n {
-                    if rng.next_double() < p {
+                    if rng.random::<f64>() < p {
                         g.add_edge(&i, &(n + j)).unwrap();
                     }
                 }
             }
             // assign random weights
             for e in g.edges().cloned().collect::<Vec<_>>() {
-                g.set_edge_weight(&e, 1000.0 * f64::from(rng.next_int()))
+                g.set_edge_weight(&e, 1000.0 * f64::from(rng.random::<i32>()))
                     .unwrap();
             }
 
@@ -874,13 +875,13 @@ mod maximum_weight_bipartite_matching_test {
 
     #[test]
     fn test_random_instances_fixed_seed() {
-        test_random_instance(&mut JavaRandom::new(17), 100, 0.7, 2);
+        test_random_instance(&mut StdRng::seed_from_u64(17), 100, 0.7, 2);
     }
 
     #[test]
     #[ignore = "slow (n = 1000)"]
     fn test_random_instances() {
-        let mut rng = JavaRandom::new(23);
+        let mut rng = StdRng::seed_from_u64(23);
         test_random_instance(&mut rng, 100, 0.8, 1);
         test_random_instance(&mut rng, 1000, 0.8, 1);
     }
@@ -1381,12 +1382,12 @@ mod dense_edmonds_maximum_cardinality_matching_test {
 
     #[test]
     fn test_random_graphs_large() {
-        let mut random = JavaRandom::new(1);
+        let mut random = StdRng::seed_from_u64(1);
         let vertices = 100;
         for _ in 0..100 {
-            let edges = random.next_int_bound((max_edges(vertices) / 2) as i32) as usize;
+            let edges = random.random_range(0..max_edges(vertices) / 2);
             let mut generator =
-                GnmRandomGraphGenerator::new(vertices, edges, JavaRandom::new(0), false, false)
+                GnmRandomGraphGenerator::new(vertices, edges, StdRng::seed_from_u64(0), false, false)
                     .unwrap();
             let mut graph = integer_graph();
             generator.generate_default(&mut graph).unwrap();
@@ -1402,7 +1403,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
         for n in 4..12 {
             for m in 5..max_edges(n) {
                 let mut generator =
-                    GnmRandomGraphGenerator::new(n, m, JavaRandom::new(17), false, false).unwrap();
+                    GnmRandomGraphGenerator::new(n, m, StdRng::seed_from_u64(17), false, false).unwrap();
                 for _ in 0..25 {
                     let mut graph = integer_graph();
                     generator.generate_default(&mut graph).unwrap();
@@ -1529,12 +1530,12 @@ mod sparse_edmonds_maximum_cardinality_matching_test {
 
     #[test]
     fn test_random_graphs_large() {
-        let mut random = JavaRandom::new(1);
+        let mut random = StdRng::seed_from_u64(1);
         let vertices = 100;
         for _ in 0..100 {
-            let edges = random.next_int_bound((max_edges(vertices) / 2) as i32) as usize;
+            let edges = random.random_range(0..max_edges(vertices) / 2);
             let mut generator =
-                GnmRandomGraphGenerator::new(vertices, edges, JavaRandom::new(0), false, false)
+                GnmRandomGraphGenerator::new(vertices, edges, StdRng::seed_from_u64(0), false, false)
                     .unwrap();
             let mut graph = integer_graph();
             generator.generate_default(&mut graph).unwrap();
@@ -1544,7 +1545,7 @@ mod sparse_edmonds_maximum_cardinality_matching_test {
 
     fn barabasi(seed: i64) {
         let mut generator =
-            BarabasiAlbertGraphGenerator::new(6, 6, 250, JavaRandom::new(seed)).unwrap();
+            BarabasiAlbertGraphGenerator::new(6, 6, 250, StdRng::seed_from_u64(seed as u64)).unwrap();
         let mut graph = integer_graph();
         generator.generate_default(&mut graph).unwrap();
         sparse_solution(&graph, None);
@@ -1569,7 +1570,7 @@ mod sparse_edmonds_maximum_cardinality_matching_test {
         for n in 4..12 {
             for m in 5..max_edges(n) {
                 let mut generator =
-                    GnmRandomGraphGenerator::new(n, m, JavaRandom::new(19), false, false).unwrap();
+                    GnmRandomGraphGenerator::new(n, m, StdRng::seed_from_u64(19), false, false).unwrap();
                 for _ in 0..25 {
                     let mut graph = integer_graph();
                     generator.generate_default(&mut graph).unwrap();

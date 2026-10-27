@@ -2,8 +2,9 @@ use jgrapht::alg::shortestpath::{
     ALTAdmissibleHeuristic, AStarShortestPath, BFSShortestPath, DijkstraClosestFirstIterator,
     DijkstraShortestPath, ShortestPathAlgorithm, TreeMeasurer,
 };
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashSet;
 
 fn bfs_graph() -> (DiGraph<&'static str>, [DefaultEdge; 5]) {
@@ -86,7 +87,7 @@ fn dijkstra_closest_first_iterator_test_undirected() {
     assert_eq!(paths.weight(&"1"), 3.0);
 }
 
-fn fill_java_gnp<G>(graph: &mut G, random: &mut JavaRandom, vertex_count: i32, probability: f64)
+fn fill_java_gnp<G>(graph: &mut G, random: &mut StdRng, vertex_count: i32, probability: f64)
 where
     G: GraphMut<Vertex = i32, Edge = DefaultEdge>,
 {
@@ -96,17 +97,19 @@ where
     let directed = graph.graph_type().directed;
     for source in 0..vertex_count {
         for target in source..vertex_count {
-            if random.next_double() < probability {
+            if random.random::<f64>() < probability {
                 graph.add_edge(&source, &target).unwrap();
             }
-            if directed && random.next_double() < probability {
+            if directed && random.random::<f64>() < probability {
                 graph.add_edge(&target, &source).unwrap();
             }
         }
     }
     let edges = graph.edges().copied().collect::<Vec<_>>();
     for edge in edges {
-        graph.set_edge_weight(&edge, random.next_double()).unwrap();
+        graph
+            .set_edge_weight(&edge, random.random::<f64>())
+            .unwrap();
     }
 }
 
@@ -117,10 +120,10 @@ fn assert_same_weight(expected: f64, actual: f64) {
     );
 }
 
-fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge>>(graph: &G, random: &mut JavaRandom) {
+fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge>>(graph: &G, random: &mut StdRng) {
     let mut landmarks = HashSet::new();
     while landmarks.len() < 2 {
-        landmarks.insert(random.next_int_bound(30));
+        landmarks.insert(random.random_range(0..30));
     }
     let heuristic = ALTAdmissibleHeuristic::new(graph, landmarks).unwrap();
     let dijkstra = DijkstraShortestPath::new(graph);
@@ -141,7 +144,7 @@ fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge>>(graph: &G, random
 
 #[test]
 fn alt_admissible_heuristic_test_random() {
-    let mut random = JavaRandom::new(47);
+    let mut random = StdRng::seed_from_u64(47);
     for _ in 0..3 {
         let mut graph = DiGraph::<i32>::pseudo().weighted();
         fill_java_gnp(&mut graph, &mut random, 30, 0.35);
@@ -176,7 +179,7 @@ fn check_alt_admissibility<G: Graph<Vertex = i32, Edge = DefaultEdge>>(graph: &G
 
 #[test]
 fn alt_admissible_heuristic_test_random_admissible() {
-    let mut random = JavaRandom::new(33);
+    let mut random = StdRng::seed_from_u64(33);
     for _ in 0..3 {
         let mut graph = DiGraph::<i32>::pseudo().weighted();
         fill_java_gnp(&mut graph, &mut random, 35, 0.3);

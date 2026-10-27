@@ -11,7 +11,8 @@ use jgrapht::alg::shortestpath::{
     BfsShortestPath, Dijkstra, DijkstraManyToManyShortestPaths, ShortestPathAlgorithm,
 };
 use jgrapht::generate::{GnpRandomGraphGenerator, GraphGenerator};
-use jgrapht::util::java::JavaRandom;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use jgrapht::*;
 
 fn all_pairs_dijkstra(c: &mut Criterion) {
@@ -63,7 +64,7 @@ fn many_to_many_state(n: usize) -> (DiGraph<usize>, Vec<usize>) {
     let mut graph = DiGraph::<usize>::simple()
         .weighted()
         .with_vertex_factory(|id| id as usize);
-    GnpRandomGraphGenerator::new(n, 0.1, JavaRandom::new(SEED), false)
+    GnpRandomGraphGenerator::new(n, 0.1, StdRng::seed_from_u64(SEED as u64), false)
         .unwrap()
         .generate_default(&mut graph)
         .unwrap();
@@ -74,17 +75,17 @@ fn many_to_many_state(n: usize) -> (DiGraph<usize>, Vec<usize>) {
         }
     }
 
-    let mut random = JavaRandom::new(SEED);
+    let mut random = StdRng::seed_from_u64(SEED as u64);
     let edges: Vec<_> = graph.edges().cloned().collect();
     for edge in edges {
         graph
-            .set_edge_weight(&edge, 1.0 + random.next_int_bound(1000) as f64)
+            .set_edge_weight(&edge, 1.0 + random.random_range(0..1000) as f64)
             .unwrap();
     }
 
     let mut sources = Vec::with_capacity(5);
     while sources.len() < 5 {
-        let source = random.next_int_bound(n as i32) as usize;
+        let source = random.random_range(0..n as i32) as usize;
         if !sources.contains(&source) {
             sources.push(source);
         }

@@ -1,4 +1,9 @@
 //! Java-compatible building blocks, so that seeded tests reproduce JGraphT's exact outputs.
+//!
+//! Kept only for the places that must match numbers produced by the JVM: the seeded generator
+//! tests and the NETGEN golden file, the Fruchterman–Reingold and random layouts, label
+//! propagation, the alias sampler and the random-greedy colouring tests. Everything else seeds
+//! `rand`'s `StdRng`; the algorithms accept any `rand::RngCore` through [`RandomSource`].
 
 /// `java.util.Random`: the same 48-bit linear congruential generator, so equal seeds give equal
 /// streams.

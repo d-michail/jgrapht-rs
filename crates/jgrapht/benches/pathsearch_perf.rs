@@ -17,7 +17,8 @@ use jgrapht::alg::tour::{
     BacktrackingHamiltonianPath, HamiltonianPathAlgorithm, HeldKarpHamiltonianPath,
 };
 use jgrapht::traverse::topological_sort;
-use jgrapht::util::java::JavaRandom;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use jgrapht::*;
 
 fn k_shortest_paths(c: &mut Criterion) {
@@ -244,7 +245,7 @@ fn undirected_graph(n: usize) -> UGraph<usize> {
 
 fn hamiltonian_graph(family: HamiltonianFamily, n: usize) -> HamiltonianGraph {
     let seed = 0xBEEF_CAFE_1234_5678u64 ^ ((n as u64) << 16) ^ family.ordinal();
-    let mut random = JavaRandom::new(seed as i64);
+    let mut random = StdRng::seed_from_u64(seed as u64);
     match family {
         HamiltonianFamily::Path => {
             let mut graph = undirected_graph(n);
@@ -274,7 +275,7 @@ fn hamiltonian_graph(family: HamiltonianFamily, n: usize) -> HamiltonianGraph {
             let probability = 3.0 / n as f64;
             for source in 0..n {
                 for target in source + 1..n {
-                    if random.next_double() < probability {
+                    if random.random::<f64>() < probability {
                         graph.add_edge(&source, &target).unwrap();
                     }
                 }
@@ -312,9 +313,9 @@ fn hamiltonian_graph(family: HamiltonianFamily, n: usize) -> HamiltonianGraph {
                 graph.add_edge(&vertex, &(vertex + 1)).unwrap();
             }
             for _ in 0..(n / 3).max(1) {
-                let source = random.next_int_bound((n - 2) as i32) as usize;
+                let source = random.random_range(0..(n - 2) as i32) as usize;
                 let target =
-                    source + 2 + random.next_int_bound((n - source - 2).max(1) as i32) as usize;
+                    source + 2 + random.random_range(0..(n - source - 2).max(1) as i32) as usize;
                 graph.add_edge(&source, &target.min(n - 1)).unwrap();
             }
             HamiltonianGraph::Directed(graph)

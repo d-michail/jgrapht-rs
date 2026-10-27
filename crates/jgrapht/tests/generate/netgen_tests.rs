@@ -447,7 +447,7 @@ mod network_generator_test {
         }
     }
 
-    fn test_min_cost(config: &NetworkGeneratorConfig, seed: i64) {
+    fn test_min_cost(config: &NetworkGeneratorConfig, seed: u64) {
         let mut g1 = new_graph();
         let mut generator1 = Gen::new(config.clone(), seed);
         let p1 = generator1
@@ -500,7 +500,7 @@ mod network_generator_test {
 
     fn gen_max_flow(
         config: &NetworkGeneratorConfig,
-        seed: i64,
+        seed: u64,
     ) -> (G, MaximumFlowProblem<i32, DefaultEdge>) {
         let mut g = new_graph();
         let mut generator = Gen::new(config.clone(), seed);
@@ -515,7 +515,7 @@ mod network_generator_test {
         (g, problem)
     }
 
-    fn test_max_flow(config: &NetworkGeneratorConfig, seed: i64) {
+    fn test_max_flow(config: &NetworkGeneratorConfig, seed: u64) {
         let (g1, mut p1) = gen_max_flow(config, seed);
         let (g2, p2) = gen_max_flow(config, seed);
         assert_graphs_equal(&g1, &g2);
@@ -541,7 +541,7 @@ mod network_generator_test {
 
     fn gen_bipartite(
         config: &NetworkGeneratorConfig,
-        seed: i64,
+        seed: u64,
     ) -> (G, BipartiteMatchingProblem<i32, DefaultEdge>) {
         let mut g = new_graph();
         let mut generator = Gen::new(config.clone(), seed);
@@ -553,7 +553,7 @@ mod network_generator_test {
         (g, problem)
     }
 
-    fn test_bipartite(config: &NetworkGeneratorConfig, seed: i64) {
+    fn test_bipartite(config: &NetworkGeneratorConfig, seed: u64) {
         let (g1, p1) = gen_bipartite(config, seed);
         let (g2, p2) = gen_bipartite(config, seed);
         // feasibility: a perfect matching exists
@@ -616,7 +616,7 @@ mod network_generator_test {
                         for tn in [0i64, 1, 2, 5, 10, 20, 30] {
                             let arcs = NetworkGeneratorConfig::minimum_arc_num_for(s, tn, t);
                             let config = mcf_config(s, ts, tn, tt, t, arcs, s.max(t) as i32);
-                            test_min_cost(&config, rng.next_long());
+                            test_min_cost(&config, rng.next_long() as u64);
                         }
                     }
                 }
@@ -635,7 +635,7 @@ mod network_generator_test {
                             let arcs =
                                 NetworkGeneratorConfig::maximum_arc_num_full(s, ts, tn, tt, t);
                             let config = mcf_config(s, ts, tn, tt, t, arcs, 10 * s as i32);
-                            test_min_cost(&config, rng.next_long());
+                            test_min_cost(&config, rng.next_long() as u64);
                         }
                     }
                 }
@@ -649,7 +649,7 @@ mod network_generator_test {
         let arcs = NetworkGeneratorConfig::minimum_arc_num_for(s, tn, t);
         test_min_cost(
             &mcf_config(s, 0, tn, 0, t, arcs, 10 * s as i32),
-            rng().next_long(),
+            rng().next_long() as u64,
         );
     }
 
@@ -675,7 +675,7 @@ mod network_generator_test {
             for t in 1..5i64 {
                 for tn in 0..30i64 {
                     let arcs = NetworkGeneratorConfig::minimum_arc_num_for(s, tn, t);
-                    test_max_flow(&max_flow_config(s, tn, t, arcs), rng.next_long());
+                    test_max_flow(&max_flow_config(s, tn, t, arcs), rng.next_long() as u64);
                 }
             }
         }
@@ -688,7 +688,7 @@ mod network_generator_test {
             for t in 1..5i64 {
                 for tn in 0..30i64 {
                     let arcs = NetworkGeneratorConfig::maximum_arc_num_for(s, tn, t);
-                    test_max_flow(&max_flow_config(s, tn, t, arcs), rng.next_long());
+                    test_max_flow(&max_flow_config(s, tn, t, arcs), rng.next_long() as u64);
                 }
             }
         }
@@ -703,7 +703,7 @@ mod network_generator_test {
                     let lb = NetworkGeneratorConfig::minimum_arc_num_for(s, tn, t);
                     let ub = NetworkGeneratorConfig::maximum_arc_num_for(s, tn, t);
                     let arcs = rng.next_int_bound((ub - lb + 1) as i32) as i64 + lb;
-                    test_max_flow(&max_flow_config(s, tn, t, arcs), rng.next_long());
+                    test_max_flow(&max_flow_config(s, tn, t, arcs), rng.next_long() as u64);
                 }
             }
         }
@@ -720,7 +720,7 @@ mod network_generator_test {
     fn bipartite_matching_minimum_number_of_arcs() {
         let mut rng = rng();
         for i in 1..50 {
-            test_bipartite(&bipartite_config(i, i), rng.next_long());
+            test_bipartite(&bipartite_config(i, i), rng.next_long() as u64);
         }
     }
 
@@ -728,7 +728,7 @@ mod network_generator_test {
     fn bipartite_matching_maximum_number_of_arcs() {
         let mut rng = rng();
         for i in 1..50 {
-            test_bipartite(&bipartite_config(i, i * i), rng.next_long());
+            test_bipartite(&bipartite_config(i, i * i), rng.next_long() as u64);
         }
     }
 
@@ -737,7 +737,7 @@ mod network_generator_test {
         let mut rng = rng();
         for i in 1..50 {
             let arcs = rng.next_int_bound(i * i - i + 1) + i;
-            test_bipartite(&bipartite_config(i, arcs), rng.next_long());
+            test_bipartite(&bipartite_config(i, arcs), rng.next_long() as u64);
         }
     }
 
@@ -747,7 +747,7 @@ mod network_generator_test {
             .set_bipartite_matching_problem_params_cost(1000, 250000, 1, 100)
             .build()
             .unwrap();
-        test_bipartite(&config, rng().next_long());
+        test_bipartite(&config, rng().next_long() as u64);
     }
 }
 
@@ -765,7 +765,7 @@ fn matches_jgrapht_for_a_fixed_seed() {
     })
     .weighted()
     .with_vertex_factory(|i| i as i32);
-    let mut generator = NetworkGenerator::<i32, DefaultEdge>::new(c, 7);
+    let mut generator = NetworkGenerator::<i32, DefaultEdge, _>::with_rng(c, JavaRandom::new(7));
     let p = generator
         .generate_minimum_cost_flow_problem(&mut g)
         .unwrap();

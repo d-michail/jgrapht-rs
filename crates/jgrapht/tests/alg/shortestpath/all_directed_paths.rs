@@ -1,5 +1,6 @@
 use super::*;
-use jgrapht::util::java::JavaRandom;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashSet;
 
 const I1: &str = "I1";
@@ -262,15 +263,15 @@ fn random_cyclic_graph(
     edge_probability: f64,
     loop_probability: f64,
 ) -> DiGraph<i32> {
-    let mut rng = JavaRandom::new(seed);
+    let mut rng = StdRng::seed_from_u64(seed as u64);
     let mut graph = DiGraph::with_loops();
     graph.add_vertices(0..n);
     for source in 0..n {
         for target in 0..n {
             let add = if source == target {
-                rng.next_double() < loop_probability
+                rng.random::<f64>() < loop_probability
             } else {
-                rng.next_double() < edge_probability
+                rng.random::<f64>() < edge_probability
             };
             if add {
                 graph.add_edge(&source, &target).unwrap();
@@ -460,12 +461,12 @@ fn random_graph_with_isolated_pocket(
     pocket_size: i32,
     edge_probability: f64,
 ) -> DiGraph<i32> {
-    let mut rng = JavaRandom::new(seed);
+    let mut rng = StdRng::seed_from_u64(seed as u64);
     let mut graph = DiGraph::simple();
     graph.add_vertices(0..main_size + pocket_size);
     for source in 0..main_size {
         for target in 0..main_size {
-            if source != target && rng.next_double() < edge_probability {
+            if source != target && rng.random::<f64>() < edge_probability {
                 graph.add_edge(&source, &target).unwrap();
             }
         }
@@ -480,7 +481,7 @@ fn random_graph_with_isolated_pocket(
         graph.add_edge(&source, &(main_size - 1)).unwrap();
         for other_offset in 0..pocket_size {
             let target = main_size + other_offset;
-            if source != target && rng.next_double() < edge_probability {
+            if source != target && rng.random::<f64>() < edge_probability {
                 graph.add_edge(&source, &target).unwrap();
             }
         }

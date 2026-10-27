@@ -5,7 +5,9 @@ use crate::alg::flow::MinimumCostFlowProblemImpl;
 use crate::graph::props::require_directed;
 use crate::graph::{Graph, GraphMut};
 use crate::util::ElementsSequenceGenerator;
-use crate::util::java::{JavaRandom, RandomSource};
+use crate::util::java::RandomSource;
+use rand::SeedableRng;
+use rand::rngs::StdRng;
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet};
 
@@ -49,16 +51,17 @@ const TS2S: usize = 8;
 ///
 /// The structure (chains of transshipment nodes from the sources, arcs to the sinks, then random
 /// arcs up to the requested count) and the random-number consumption follow JGraphT, so a
-/// [`JavaRandom`] seed reproduces JGraphT's networks.
-pub struct NetworkGenerator<V, E, R = JavaRandom> {
+/// [`JavaRandom`] given to [`NetworkGenerator::with_rng`] reproduces JGraphT's networks. The
+/// seeded constructor [`NetworkGenerator::new`] uses `rand`'s `StdRng`.
+pub struct NetworkGenerator<V, E, R = StdRng> {
     config: NetworkGeneratorConfig,
     rng: R,
     info: Option<NetworkInfo<V, E>>,
 }
 
-impl<V, E> NetworkGenerator<V, E, JavaRandom> {
-    pub fn new(config: NetworkGeneratorConfig, seed: i64) -> Self {
-        Self::with_rng(config, JavaRandom::new(seed))
+impl<V, E> NetworkGenerator<V, E, StdRng> {
+    pub fn new(config: NetworkGeneratorConfig, seed: u64) -> Self {
+        Self::with_rng(config, StdRng::seed_from_u64(seed))
     }
 }
 

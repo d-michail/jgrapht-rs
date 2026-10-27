@@ -11,10 +11,9 @@
 use jgrapht::alg::tour::*;
 use jgrapht::generate::{Complete, GraphGenerator};
 use jgrapht::graph::GraphExt;
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
-use rand::SeedableRng;
 use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::collections::HashSet;
 use std::hash::Hash;
 
@@ -274,14 +273,14 @@ fn bt<G: Graph>(graph: &G) -> HamiltonianPathSearchResult<G::Vertex, G::Edge> {
     BacktrackingHamiltonianPath::new().get_path(graph).unwrap()
 }
 
-fn random_undirected(n: i32, p: f64, rnd: &mut JavaRandom) -> Ug {
+fn random_undirected(n: i32, p: f64, rnd: &mut StdRng) -> Ug {
     let mut g = Ug::simple();
     for i in 0..n {
         g.add_vertex(i);
     }
     for i in 0..n {
         for j in i + 1..n {
-            if rnd.next_double() < p {
+            if rnd.random::<f64>() < p {
                 g.add_edge(&i, &j).unwrap();
             }
         }
@@ -289,14 +288,14 @@ fn random_undirected(n: i32, p: f64, rnd: &mut JavaRandom) -> Ug {
     g
 }
 
-fn random_directed(n: i32, p: f64, rnd: &mut JavaRandom) -> Dg {
+fn random_directed(n: i32, p: f64, rnd: &mut StdRng) -> Dg {
     let mut g = Dg::simple();
     for i in 0..n {
         g.add_vertex(i);
     }
     for i in 0..n {
         for j in 0..n {
-            if i != j && rnd.next_double() < p {
+            if i != j && rnd.random::<f64>() < p {
                 g.add_edge(&i, &j).unwrap();
             }
         }
@@ -376,7 +375,7 @@ mod dag_hamiltonian_path_test {
     #[test]
     fn cross_validation_against_backtracking_on_random_dags() {
         use jgrapht::util::java::java_shuffle;
-        let mut random = JavaRandom::new(0xDA6DA6);
+        let mut random = StdRng::seed_from_u64(0xDA6DA6);
         for n in 2..=8 {
             for p in [0.3, 0.5, 0.8] {
                 for _ in 0..25 {
@@ -388,7 +387,7 @@ mod dag_hamiltonian_path_test {
                     java_shuffle(&mut order, &mut random);
                     for i in 0..n as usize {
                         for j in i + 1..n as usize {
-                            if random.next_double() < p {
+                            if random.random::<f64>() < p {
                                 graph.add_edge(&order[i], &order[j]).unwrap();
                             }
                         }
@@ -544,7 +543,7 @@ mod held_karp_hamiltonian_path_test {
 
     #[test]
     fn cross_validation_against_backtracking_undirected() {
-        let mut random = JavaRandom::new(0xBEEFFACE12345678u64 as i64);
+        let mut random = StdRng::seed_from_u64(0xBEEFFACE12345678u64 as u64);
         for n in 2..=8 {
             for p in [0.3, 0.5, 0.8] {
                 for _ in 0..25 {
@@ -556,7 +555,7 @@ mod held_karp_hamiltonian_path_test {
 
     #[test]
     fn cross_validation_against_backtracking_directed() {
-        let mut random = JavaRandom::new(0xFEEDBEEF87654321u64 as i64);
+        let mut random = StdRng::seed_from_u64(0xFEEDBEEF87654321u64 as u64);
         for n in 2..=8 {
             for p in [0.3, 0.5, 0.8] {
                 for _ in 0..25 {
@@ -867,7 +866,7 @@ mod backtracking_hamiltonian_path_test {
 
     #[test]
     fn undirected_random_graphs_match_oracle() {
-        let mut random = JavaRandom::new(SEED);
+        let mut random = StdRng::seed_from_u64(SEED as u64);
         for n in 2..=6 {
             for p in [0.3, 0.5, 0.8] {
                 for _ in 0..40 {
@@ -879,7 +878,7 @@ mod backtracking_hamiltonian_path_test {
 
     #[test]
     fn directed_random_graphs_match_oracle() {
-        let mut random = JavaRandom::new(SEED ^ 0x5A5A5A5A);
+        let mut random = StdRng::seed_from_u64((SEED ^ 0x5A5A5A5A) as u64);
         for n in 2..=6 {
             for p in [0.3, 0.5, 0.8] {
                 for _ in 0..40 {
@@ -1645,10 +1644,10 @@ mod nearest_neighbor_heuristic_tsp_test {
         let locs = locations();
         let g = geometric_graph(&locs);
         let tours = g.vertex_count();
-        let mut test_rnd = JavaRandom::new(0);
-        let mut alg = NearestNeighborHeuristicTSP::with_rng(JavaRandom::new(0));
+        let mut test_rnd = StdRng::seed_from_u64(0);
+        let mut alg = NearestNeighborHeuristicTSP::with_rng(StdRng::seed_from_u64(0));
         for _ in 0..tours {
-            let expected_start = locs[test_rnd.next_int_bound(tours as i32) as usize];
+            let expected_start = locs[test_rnd.random_range(0..tours)];
             let tour = alg.get_tour(&g).unwrap().unwrap();
             assert_eq!(Some(&expected_start), tour.start_vertex());
         }
@@ -1668,7 +1667,7 @@ mod nearest_neighbor_heuristic_tsp_test {
         let locs = locations();
         let g = geometric_graph(&locs);
         let mut initial = locs.clone();
-        jgrapht::util::java::java_shuffle(&mut initial, &mut JavaRandom::new(0x4A47_7261_7068_54));
+        jgrapht::util::java::java_shuffle(&mut initial, &mut StdRng::seed_from_u64(0x4A47_7261_7068_54));
         let mut alg = NearestNeighborHeuristicTSP::with_initial_vertices(initial.clone());
         for expected in &initial {
             let tour = alg.get_tour(&g).unwrap().unwrap();
