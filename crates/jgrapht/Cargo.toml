@@ -24,3 +24,7 @@ harness = false
 [[bench]]
 name = "shortestpath_perf"
 harness = false
+
+[[bench]]
+name = "algorithms_perf"
+harness = false
