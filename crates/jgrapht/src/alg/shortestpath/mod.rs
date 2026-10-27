@@ -30,7 +30,9 @@ mod yen;
 pub use all_directed::{AllDirectedPaths, AllowAllPaths, PathValidator};
 pub use alt::ALTAdmissibleHeuristic;
 pub use astar::{AStar, AStarShortestPath};
-pub use bellman_ford::{BellmanFord, BellmanFordShortestPath};
+pub use bellman_ford::{
+    BellmanFord, BellmanFordError, BellmanFordShortestPath, NegativeCycleDetected,
+};
 pub use bfs::{BFSShortestPath, BfsShortestPath};
 pub use bidirectional::{
     BidirectionalAStarShortestPath, BidirectionalDijkstra, BidirectionalDijkstraShortestPath,

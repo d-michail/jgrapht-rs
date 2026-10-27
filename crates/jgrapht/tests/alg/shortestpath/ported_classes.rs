@@ -3,6 +3,87 @@ use dashu_int::UBig;
 use std::collections::HashMap;
 
 #[test]
+fn bellman_ford_reports_the_actual_negative_cycle() {
+    let mut graph = DiGraph::<&str>::pseudo().weighted();
+    graph.add_vertices(["w", "y", "x", "z", "s"]);
+    for (source, target, weight) in [
+        ("w", "z", 2.0),
+        ("y", "w", 4.0),
+        ("x", "w", 6.0),
+        ("x", "y", 3.0),
+        ("z", "x", -7.0),
+        ("y", "z", 3.0),
+        ("z", "y", -3.0),
+        ("s", "w", 0.0),
+        ("s", "y", 0.0),
+        ("s", "x", 0.0),
+        ("s", "z", 0.0),
+    ] {
+        graph.add_weighted_edge(&source, &target, weight).unwrap();
+    }
+
+    let error = BellmanFord::new(&graph).get_paths(&"s").unwrap_err();
+    assert_eq!(error.to_string(), "graph contains a negative-weight cycle");
+    let cycle = error.cycle().unwrap();
+    assert_eq!(cycle.start_vertex(), Some(&"x"));
+    assert_eq!(cycle.end_vertex(), Some(&"x"));
+    assert_eq!(cycle.weight, -1.0);
+    assert_eq!(cycle.length(), 3);
+    assert!(cycle.is_valid(&graph));
+}
+
+#[test]
+fn bellman_ford_reports_an_undirected_negative_edge_as_a_cycle() {
+    let mut graph = UGraph::<&str>::multi().weighted();
+    graph.add_vertices(["w", "y", "x"]);
+    graph.add_weighted_edge(&"w", &"y", 1.0).unwrap();
+    graph.add_weighted_edge(&"y", &"x", 1.0).unwrap();
+    graph.add_weighted_edge(&"y", &"x", -1.0).unwrap();
+
+    let error = BellmanFord::new(&graph).get_paths(&"w").unwrap_err();
+    let cycle = error.cycle().unwrap();
+    assert_eq!(cycle.start_vertex(), Some(&"x"));
+    assert_eq!(cycle.end_vertex(), Some(&"x"));
+    assert_eq!(cycle.weight, -2.0);
+    assert_eq!(cycle.length(), 2);
+    assert!(cycle.is_valid(&graph));
+}
+
+#[test]
+fn bellman_ford_ignores_unreachable_negative_cycles() {
+    let graph = weighted_di(&[
+        (1, 2, 1.0),
+        (2, 3, 1.0),
+        (3, 4, 1.0),
+        (5, 4, 1.0),
+        (5, 6, -1.0),
+        (6, 7, -1.0),
+        (7, 5, -1.0),
+    ]);
+    let paths = BellmanFord::new(&graph).get_paths(&1).unwrap();
+    assert_eq!(paths.weight(&4), 3.0);
+    assert_eq!(paths.weight(&5), f64::INFINITY);
+}
+
+#[test]
+fn bellman_ford_max_hops_can_disable_cycle_detection() {
+    let graph = weighted_di(&[(1, 2, 1.0), (2, 3, 1.0), (3, 4, 1.0), (4, 1, -5.0)]);
+    let paths = BellmanFord::with_options(&graph, 1e-16, 3)
+        .unwrap()
+        .get_paths(&1)
+        .unwrap();
+    assert_eq!(paths.weight(&3), 2.0);
+
+    let error = BellmanFord::with_options(&graph, 1e-16, 4)
+        .unwrap()
+        .get_paths(&1)
+        .unwrap_err();
+    let cycle = error.cycle().unwrap();
+    assert_eq!(cycle.weight, -2.0);
+    assert_eq!(cycle.length(), 4);
+}
+
+#[test]
 fn all_directed_paths_matches_java_edge_cases() {
     let mut graph = DiGraph::<u32>::pseudo().weighted();
     graph.add_vertex(0);

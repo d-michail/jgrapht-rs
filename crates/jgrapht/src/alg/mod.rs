@@ -22,7 +22,6 @@ pub mod linkprediction;
 pub mod matching;
 pub mod metrics;
 pub mod partition;
-pub mod paths;
 pub mod planar;
 pub mod scoring;
 pub mod shortestpath;

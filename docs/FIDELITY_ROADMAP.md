@@ -38,7 +38,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 |---|---|---|---|
 | C1 | **done** `isomorphism/legacy.rs` (backtracking, deleted along with the non-induced variants; the older tests and `generate_tests` use `VF2GraphIsomorphismInspector` and `VF2SubgraphIsomorphismInspector`) | VF2 / AHU / colour-refinement inspectors | |
 | C2 | **done** `flow/legacy.rs`: `max_flow`, `edmonds_karp`, `dinic`, `push_relabel`, `minimum_st_cut`, `gomory_hu_tree` (deleted; Goldberg and k-connectivity now use `PushRelabelMFImpl` and `EdmondsKarpMFImpl`, the old `goldberg_densest_subgraph` is gone) | the class implementations in `flow/` | |
-| C3 | `flow/legacy.rs`: `min_cost_flow` (SPFA successive shortest paths) and its `MinimumCostFlowProblem` struct | `CapacityScalingMinimumCostFlow`. Remaining callers: `paths.rs` (goes with C13/1i, Suurballe) and netgen, which must return `MinimumCostFlowProblemImpl` | `paths.rs`, `generate/netgen` |
+| C3 | `flow/legacy.rs`: `min_cost_flow` (SPFA successive shortest paths) and its `MinimumCostFlowProblem` struct | `CapacityScalingMinimumCostFlow`. Remaining callers: netgen, which must return `MinimumCostFlowProblemImpl`, and the legacy `spanning_flow` tests | `generate/netgen`, `tests/alg/spanning_flow.rs` |
 | C4 | **done** `flow/legacy.rs`: `stoer_wagner` (deleted, callers use B1) | B1 | |
 | C5 | `tour/legacy.rs` (nearest neighbour, insertion, double tree, 2-opt, Held–Karp) | the tour classes | |
 | C6 | `tour/legacy.rs`: `christofides_tour` **[needs 1g]** | `ChristofidesThreeHalvesApproxMetricTSP` on the Java matching | |
@@ -48,7 +48,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 | C10 | **done** `chordal.rs` (deleted; `ChordalGraphColoring` and `ChordalGraphMaxCliqueFinder` now follow Java and use `ChordalityInspector`, new `ChordalGraphIndependentSetFinder`, `props::is_chordal` delegates to the inspector; the chromatic-number and maximal-cliques helpers had no Java counterpart) | `ChordalityInspector` | |
 | C11 | **done** `planarity.rs` (left-right, deleted; `props::is_planar` delegates to `BoyerMyrvoldPlanarityInspector`, the old LR tests now run on the inspector) | `BoyerMyrvoldPlanarityInspector`; `props::is_planar` delegates | |
 | C12 | **done** `matching/legacy.rs` (deleted; callers use the matching classes) | Dense/Sparse Edmonds, Kuhn–Munkres, greedy, path-growing; Blossom V remains tracked by F3 | |
-| C13 | `paths.rs` (`all_simple_paths`, `find_negative_cycle`, edge/vertex-disjoint shortest paths) | Java classes (`AllDirectedPaths`, `BellmanFord`-based, `SuurballeKDisjointShortestPaths`, ...) | |
+| C13 (done) | `paths.rs` (deleted; callers/tests use `AllDirectedPaths`, `BellmanFordShortestPath`, `SuurballeKDisjointShortestPaths` and `BhandariKDisjointShortestPaths`; the non-Java vertex-disjoint helper was removed) | Java classes, with typed Bellman–Ford negative-cycle errors carrying the detected `GraphWalk` | |
 | C14 | `shortestpath/*` functions **[needs 1i]** | Java algorithm classes | |
 | C15 | `ChinesePostman` **[needs 1g]** | faithful class | |
 
@@ -92,17 +92,21 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
 
 **Checkpoint commit: see the first local commit after `b887d7e`; work is intentionally incomplete.**
 
-Implemented in `crates/jgrapht/src/alg/shortestpath/`: Java-style BFS, Dijkstra and closest-first iterator, Bellman–Ford, A*/ALT, bidirectional Dijkstra/A*, Floyd–Warshall, Johnson, list/tree single-source paths, `TreeMeasurer`, array-backed integer Dijkstra, sequential delta stepping, `DagAllPathsCounter`, default/Dijkstra/CH many-to-many, Martin and label-correcting multi-objective paths, `AllDirectedPaths`, Suurballe/Bhandari, lazy Yen, bounded/pruned Yen, Eppstein sidetrack heaps, sequential contraction hierarchies, and transit-node routing. The old `alg/paths.rs` edge-disjoint and all-path helpers now delegate to the classes; its minimum-cost-flow dependency is gone. Vertex-disjoint paths use vertex splitting plus the Suurballe residual transformation.
+Implemented in `crates/jgrapht/src/alg/shortestpath/`: Java-style BFS, Dijkstra and closest-first iterator, Bellman–Ford, A*/ALT, bidirectional Dijkstra/A*, Floyd–Warshall, Johnson, list/tree single-source paths, `TreeMeasurer`, array-backed integer Dijkstra, sequential delta stepping, `DagAllPathsCounter`, default/Dijkstra/CH many-to-many, Martin and label-correcting multi-objective paths, `AllDirectedPaths`, Suurballe/Bhandari, lazy Yen, bounded/pruned Yen, Eppstein sidetrack heaps, sequential contraction hierarchies, and transit-node routing. C13 deleted the old `alg/paths.rs` helpers and their non-Java vertex-disjoint implementation; callers now use the shortest-path classes directly.
 
-Validation at checkpoint: `cargo test -p jgrapht --test alg shortestpath:: -- --nocapture` passes **38/38** shortest-path tests. These include focused Java-derived golden sequences for Yen/Eppstein, bounded-pruned equivalence tests, foundational class contracts, CH/TNR comparisons with Dijkstra, and C13 compatibility tests.
+Current validation: `cargo test -p jgrapht --test alg shortestpath:: -- --nocapture` passes **42/42** shortest-path tests. These include focused Java-derived golden sequences for Yen/Eppstein, bounded-pruned equivalence tests, foundational class contracts, CH/TNR comparisons with Dijkstra, and Java-derived Bellman–Ford negative-cycle payload tests.
 
-Strict-fidelity work still required before marking 1i, C13, or C14 done:
+Strict-fidelity work still required before marking 1i or C14 done:
 
 - Port the remainder of Java's 41 shortest-path test files / roughly 283 tests and record each class separately in `STATUS.md`; the checkpoint is a coherent implementation base, not a completed package port.
 - Make contraction preprocessing reproduce Java's parallel independent-set/random-tie ordering and implement Java's bucket-based CH many-to-many algorithm. The checkpoint uses deterministic sequential witness searches and materialized CH point queries.
 - Complete transit-node routing's Java Voronoi locality filter and exact access-node selection. The checkpoint's conservative locality filter is correct but not technique-faithful.
 - Add bounded-pruned Yen's alternate A* spur engine and settled-vertex accounting (`expanded_vertices` is currently zero).
 - Finish Java-exact order/tie-breaking and full test coverage for all-directed paths, disjoint paths, many-to-many, multi-objective, integer Dijkstra, delta stepping, graph/tree measurers, and the path-result implementations.
-- C13 remains open until negative-cycle behavior is represented by the Java-style Bellman–Ford exception/cycle payload and all legacy helper callers/tests are migrated. C14 remains open until every retained functional entry point is verified as a thin class wrapper and the full class test suite passes.
+- C14 remains open until every retained functional entry point is verified as a thin class wrapper and the full class test suite passes.
+
+C13 is complete: `alg/paths.rs` and its non-Java vertex-disjoint implementation are deleted, all
+callers and tests use the Java classes directly, and Bellman–Ford's Java-style entry points return a
+typed negative-cycle error containing the detected `GraphWalk`.
 
 The matching section above is independent and was not edited by the shortest-path track.

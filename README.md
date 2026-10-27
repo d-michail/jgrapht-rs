@@ -74,8 +74,7 @@ Edges are values too: use the built-in `DefaultEdge`, or your own type via
   Kosaraju), condensation, articulation points/bridges/blocks and the block–cut tree, Eulerian
   circuits and trails, simple cycles (Johnson), cycle bases, chordal graphs, transitive
   closure/reduction, LCA, planarity testing (left–right), (sub)graph isomorphism,
-  Hamiltonian cycles/paths, negative cycle detection, simple paths, edge- and vertex-disjoint
-  shortest paths
+  Hamiltonian cycles/paths, negative cycle detection, simple paths and edge-disjoint shortest paths
 - **Spanning trees & flows:** Kruskal, Prim, Borůvka, minimum/maximum arborescences
   (Chu–Liu/Edmonds), max flow (Edmonds–Karp, Dinic, push–relabel), minimum s–t cuts,
   Gomory–Hu trees, Stoer–Wagner, minimum cost flow

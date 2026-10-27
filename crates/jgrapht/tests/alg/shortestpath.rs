@@ -84,10 +84,10 @@ fn dijkstra_classic() {
 fn negative_weights() {
     let g = weighted_di(&[(1, 2, 4.0), (1, 3, 5.0), (3, 2, -3.0)]);
     assert!(Dijkstra::new(&g).single_source(&1).is_err());
-    assert_eq!(BellmanFord(&g).path_weight(&1, &2).unwrap(), 2.0);
+    assert_eq!(BellmanFord::new(&g).path_weight(&1, &2).unwrap(), 2.0);
     let cyc = weighted_di(&[(1, 2, 1.0), (2, 3, -2.0), (3, 1, 0.5)]);
     assert_eq!(
-        BellmanFord(&cyc).single_source(&1).err(),
+        BellmanFord::new(&cyc).single_source(&1).err(),
         Some(GraphError::NegativeCycle)
     );
     assert_eq!(floyd_warshall(&cyc).err(), Some(GraphError::NegativeCycle));
@@ -153,7 +153,7 @@ fn algorithms_agree_on_random_graphs() {
         let jo = johnson(&g).unwrap();
         for s in 0..25 {
             let d = Dijkstra::new(&g).single_source(&s).unwrap();
-            let b = BellmanFord(&g).single_source(&s).unwrap();
+            let b = BellmanFord::new(&g).single_source(&s).unwrap();
             for t in 0..25 {
                 let w = d.weight(&t);
                 assert_eq!(w, b.weight(&t));
