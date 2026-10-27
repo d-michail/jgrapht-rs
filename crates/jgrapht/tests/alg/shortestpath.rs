@@ -8,10 +8,14 @@ use rheaps::tree::FibonacciHeap;
 mod advanced_speedups;
 #[path = "shortestpath/all_directed_paths.rs"]
 mod all_directed_paths;
+#[path = "shortestpath/astar.rs"]
+mod astar;
 #[path = "shortestpath/basic_classes.rs"]
 mod basic_classes;
 #[path = "shortestpath/bellman_ford.rs"]
 mod bellman_ford;
+#[path = "shortestpath/bidirectional_dijkstra.rs"]
+mod bidirectional_dijkstra;
 #[path = "shortestpath/bounded_pruned_yen.rs"]
 mod bounded_pruned_yen;
 #[path = "shortestpath/dag_all_paths_counter.rs"]
@@ -22,6 +26,8 @@ mod dijkstra;
 mod disjoint_paths;
 #[path = "shortestpath/eppstein.rs"]
 mod eppstein;
+#[path = "shortestpath/floyd_warshall.rs"]
+mod floyd_warshall;
 #[path = "shortestpath/foundational_classes.rs"]
 mod foundational_classes;
 #[path = "shortestpath/incidence_errors.rs"]

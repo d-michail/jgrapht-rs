@@ -1,0 +1,264 @@
+use jgrapht::alg::shortestpath::{
+    DijkstraShortestPath, FloydWarshallShortestPaths, ShortestPathAlgorithm,
+};
+use jgrapht::generate::{GnmRandomGraphGenerator, GnpRandomGraphGenerator, GraphGenerator};
+use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
+use rand::{Rng, SeedableRng, rngs::StdRng};
+
+fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge>>(graph: &G, check_hops: bool) {
+    let floyd_warshall = FloydWarshallShortestPaths::new(graph).unwrap();
+    let dijkstra = DijkstraShortestPath::new(graph);
+    for source in graph.vertices() {
+        for target in graph.vertices() {
+            let expected = dijkstra.path(source, target).unwrap();
+            let actual = floyd_warshall.path(source, target).unwrap();
+            match (expected, actual) {
+                (None, None) => {}
+                (Some(expected), Some(actual)) => {
+                    assert!((expected.weight - actual.weight).abs() < 0.01);
+                    assert!(actual.is_valid(graph));
+                    if check_hops && !actual.edges.is_empty() {
+                        assert_eq!(
+                            floyd_warshall.first_hop(source, target).as_ref(),
+                            actual.vertices.get(1)
+                        );
+                        assert_eq!(
+                            floyd_warshall.last_hop(source, target).as_ref(),
+                            actual.vertices.get(actual.vertices.len() - 2)
+                        );
+                    }
+                }
+                pair => panic!("Dijkstra/Floyd-Warshall reachability mismatch: {pair:?}"),
+            }
+        }
+    }
+}
+
+#[test]
+fn test_compare_with_dijkstra() {
+    for round in 0..10 {
+        let mut directed = DiGraph::<usize>::simple();
+        GnmRandomGraphGenerator::new(10, 15, StdRng::seed_from_u64(0xF100 + round), false, false)
+            .unwrap()
+            .generate_indexed(&mut directed)
+            .unwrap();
+        verify_all_pairs(&directed, false);
+
+        let mut undirected = UGraph::<usize>::simple();
+        GnmRandomGraphGenerator::new(10, 15, StdRng::seed_from_u64(0xF200 + round), false, false)
+            .unwrap()
+            .generate_indexed(&mut undirected)
+            .unwrap();
+        verify_all_pairs(&undirected, true);
+    }
+}
+
+#[test]
+fn test_weighted_edges() {
+    let mut graph = DiGraph::<&str>::simple().weighted();
+    graph.add_vertices(["a", "b"]);
+    let edge = graph.add_weighted_edge(&"a", &"b", 5.0).unwrap().unwrap();
+    let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
+
+    assert_eq!(floyd_warshall.path_weight(&"a", &"b").unwrap(), 5.0);
+    let path = floyd_warshall.path(&"a", &"b").unwrap().unwrap();
+    assert_eq!(path.edges, [edge]);
+    assert_eq!(path.start_vertex(), Some(&"a"));
+    assert_eq!(path.end_vertex(), Some(&"b"));
+    assert_eq!(path.weight, 5.0);
+    assert_eq!(floyd_warshall.first_hop(&"a", &"b"), Some("b"));
+    assert_eq!(floyd_warshall.last_hop(&"a", &"b"), Some("a"));
+    assert!(floyd_warshall.path(&"b", &"a").unwrap().is_none());
+}
+
+fn parallel_fixture() -> (DiGraph<i32>, [DefaultEdge; 9]) {
+    let mut graph = DiGraph::<i32>::pseudo().weighted();
+    graph.add_vertices(1..=4);
+    let mut edges = Vec::new();
+    for (source, target, weight) in [
+        (1, 2, -5.0),
+        (1, 2, -2.0),
+        (1, 2, 1.0),
+        (2, 3, 0.0),
+        (2, 3, -2.0),
+        (2, 3, -5.0),
+        (3, 4, -100.0),
+        (3, 4, 100.0),
+        (3, 4, 1.0),
+    ] {
+        edges.push(
+            graph
+                .add_weighted_edge(&source, &target, weight)
+                .unwrap()
+                .unwrap(),
+        );
+    }
+    (graph, edges.try_into().unwrap())
+}
+
+#[test]
+fn pseudograph_test_1() {
+    let (graph, [e12, _, _, _, _, e23, e34, _, _]) = parallel_fixture();
+    let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
+
+    let expected = [
+        (1, [0.0, -5.0, -10.0, -110.0]),
+        (2, [f64::INFINITY, 0.0, -5.0, -105.0]),
+        (3, [f64::INFINITY, f64::INFINITY, 0.0, -100.0]),
+        (4, [f64::INFINITY, f64::INFINITY, f64::INFINITY, 0.0]),
+    ];
+    for (source, weights) in expected {
+        let paths = floyd_warshall.single_source(&source).unwrap();
+        for (target, weight) in (1..=4).zip(weights) {
+            assert_eq!(paths.weight(&target), weight);
+        }
+        assert!(paths.path(&source).unwrap().edges.is_empty());
+    }
+    let paths1 = floyd_warshall.single_source(&1).unwrap();
+    assert_eq!(paths1.path(&2).unwrap().edges, [e12]);
+    assert_eq!(paths1.path(&3).unwrap().edges, [e12, e23]);
+    assert_eq!(paths1.path(&4).unwrap().edges, [e12, e23, e34]);
+    let paths2 = floyd_warshall.single_source(&2).unwrap();
+    assert_eq!(paths2.path(&3).unwrap().edges, [e23]);
+    assert_eq!(paths2.path(&4).unwrap().edges, [e23, e34]);
+    assert_eq!(
+        floyd_warshall
+            .single_source(&3)
+            .unwrap()
+            .path(&4)
+            .unwrap()
+            .edges,
+        [e34]
+    );
+    assert_eq!(floyd_warshall.shortest_paths_count(), 6);
+
+    let expected_first = [
+        ((1, 2), Some(2)),
+        ((1, 3), Some(2)),
+        ((1, 4), Some(2)),
+        ((2, 3), Some(3)),
+        ((2, 4), Some(3)),
+        ((3, 4), Some(4)),
+    ];
+    let expected_last = [
+        ((1, 2), Some(1)),
+        ((1, 3), Some(2)),
+        ((1, 4), Some(3)),
+        ((2, 3), Some(2)),
+        ((2, 4), Some(3)),
+        ((3, 4), Some(3)),
+    ];
+    for source in 1..=4 {
+        for target in 1..=4 {
+            let first = expected_first
+                .iter()
+                .find_map(|((pair_source, pair_target), value)| {
+                    (*pair_source == source && *pair_target == target).then_some(*value)
+                })
+                .flatten();
+            let last = expected_last
+                .iter()
+                .find_map(|((pair_source, pair_target), value)| {
+                    (*pair_source == source && *pair_target == target).then_some(*value)
+                })
+                .flatten();
+            assert_eq!(floyd_warshall.first_hop(&source, &target), first);
+            assert_eq!(floyd_warshall.last_hop(&source, &target), last);
+        }
+    }
+}
+
+#[test]
+fn pseudograph_test_get_path_weight() {
+    let (graph, _) = parallel_fixture();
+    let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
+
+    assert_eq!(floyd_warshall.path_weight(&2, &1).unwrap(), f64::INFINITY);
+    assert_eq!(floyd_warshall.path_weight(&2, &2).unwrap(), 0.0);
+    assert_eq!(floyd_warshall.path_weight(&2, &3).unwrap(), -5.0);
+    assert_eq!(floyd_warshall.path_weight(&2, &4).unwrap(), -105.0);
+}
+
+#[test]
+fn pseudograph_test_loops() {
+    let mut graph = DiGraph::<i32>::pseudo().weighted();
+    graph.add_vertices([1, 2]);
+    graph.add_weighted_edge(&1, &2, 5.0).unwrap();
+    graph.add_weighted_edge(&2, &1, 15.0).unwrap();
+    for vertex in [1, 1, 1, 2, 2, 2] {
+        graph.add_edge(&vertex, &vertex).unwrap();
+    }
+    let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
+
+    for vertex in [1, 2] {
+        let path = floyd_warshall.path(&vertex, &vertex).unwrap().unwrap();
+        assert_eq!(path.start_vertex(), Some(&vertex));
+        assert_eq!(path.end_vertex(), Some(&vertex));
+        assert_eq!(path.length(), 0);
+        assert_eq!(path.weight, 0.0);
+        assert!(path.edges.is_empty());
+        assert_eq!(path.vertices, [vertex]);
+    }
+    assert_eq!(floyd_warshall.path_weight(&1, &2).unwrap(), 5.0);
+    assert_eq!(floyd_warshall.path_weight(&2, &1).unwrap(), 15.0);
+}
+
+fn random_pseudograph<G>(mut graph: G, seed: u64)
+where
+    G: Graph<Vertex = usize, Edge = DefaultEdge> + GraphMut,
+{
+    const N: usize = 50;
+    const P: f64 = 0.85;
+    let mut generator =
+        GnpRandomGraphGenerator::new(N, P, StdRng::seed_from_u64(seed), true).unwrap();
+    generator.generate_default(&mut graph).unwrap();
+    let mut random = StdRng::seed_from_u64(seed ^ 0x55aa);
+    for edge in graph.edges().copied().collect::<Vec<_>>() {
+        graph.set_edge_weight(&edge, random.random()).unwrap();
+    }
+    let vertices = graph.vertices().copied().collect::<Vec<_>>();
+    for &source in &vertices {
+        for _ in 0..(N as f64 * P) as usize {
+            let target = vertices[random.random_range(0..vertices.len())];
+            graph
+                .add_weighted_edge(&source, &target, random.random())
+                .unwrap();
+        }
+    }
+
+    let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
+    for source in graph.vertices() {
+        let dijkstra = DijkstraShortestPath::new(&graph)
+            .single_source(source)
+            .unwrap();
+        let floyd_paths = floyd_warshall.single_source(source).unwrap();
+        for target in graph.vertices() {
+            assert!((dijkstra.weight(target) - floyd_paths.weight(target)).abs() < 1e-9);
+            assert_eq!(
+                floyd_paths.path(target).map(|path| path.edges),
+                floyd_warshall
+                    .path(source, target)
+                    .unwrap()
+                    .map(|path| path.edges)
+            );
+        }
+    }
+}
+
+#[test]
+fn pseudograph_test_random_graphs() {
+    for round in 0..20 {
+        random_pseudograph(
+            DiGraph::<usize>::pseudo()
+                .weighted()
+                .with_vertex_factory(|index| index as usize),
+            0xD100 + round,
+        );
+        random_pseudograph(
+            UGraph::<usize>::pseudo()
+                .weighted()
+                .with_vertex_factory(|index| index as usize),
+            0xD200 + round,
+        );
+    }
+}
