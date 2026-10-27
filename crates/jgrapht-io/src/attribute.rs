@@ -1,3 +1,7 @@
+//! Typed attributes shared by all import and export formats.
+
+#![deny(missing_docs)]
+
 use indexmap::IndexMap;
 use std::fmt;
 use std::str::FromStr;
@@ -6,20 +10,31 @@ use std::str::FromStr;
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum AttributeType {
+    /// Explicit null value.
     Null,
+    /// Boolean value.
     Boolean,
+    /// 32-bit integer value.
     Int,
+    /// 64-bit integer value.
     Long,
+    /// Single-precision floating-point value.
     Float,
+    /// Double-precision floating-point value.
     Double,
+    /// Plain string value.
     String,
+    /// HTML-formatted string value.
     Html,
+    /// Type was not declared or recognized by the source format.
     #[default]
     Unknown,
+    /// Identifier value, distinct from display text in formats that support it.
     Identifier,
 }
 
 impl AttributeType {
+    /// Returns the canonical lowercase spelling used by the text formats.
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Null => "null",
@@ -73,6 +88,7 @@ pub struct Attribute {
 }
 
 impl Attribute {
+    /// Creates an attribute from its lexical value and declared type.
     pub fn new(value: impl Into<String>, attribute_type: AttributeType) -> Self {
         Self {
             value: value.into(),
@@ -80,14 +96,17 @@ impl Attribute {
         }
     }
 
+    /// Creates an explicit null attribute.
     pub fn null() -> Self {
         Self::new("null", AttributeType::Null)
     }
 
+    /// Returns the attribute's original lexical value.
     pub fn value(&self) -> &str {
         &self.value
     }
 
+    /// Returns the declared attribute type.
     pub const fn attribute_type(&self) -> AttributeType {
         self.attribute_type
     }
