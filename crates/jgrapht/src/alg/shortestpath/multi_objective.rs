@@ -106,7 +106,7 @@ fn build_paths<G: Graph>(
                 vertices.reverse();
                 edges.reverse();
                 let weight = edges.iter().map(|&edge| indexed.w[edge]).sum();
-                sink_paths.push(GraphWalk::new(
+                sink_paths.push(GraphWalk::new_unchecked(
                     vertices,
                     edges.iter().map(|&edge| indexed.es[edge].clone()).collect(),
                     weight,

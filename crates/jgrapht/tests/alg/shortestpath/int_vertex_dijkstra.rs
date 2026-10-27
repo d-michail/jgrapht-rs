@@ -113,19 +113,19 @@ fn check_directed(offset: i32) {
     let paths = IntVertexDijkstraShortestPath::new(&graph)
         .single_source(&offset)
         .unwrap();
-    assert!(paths.path(&offset).unwrap().edges.is_empty());
-    assert_eq!(paths.path(&(offset + 1)).unwrap().edges, [edges[0]]);
-    assert_eq!(paths.path(&(offset + 2)).unwrap().edges, [edges[1]]);
+    assert!(paths.path(&offset).unwrap().edge_list().is_empty());
+    assert_eq!(paths.path(&(offset + 1)).unwrap().edge_list(), [edges[0]]);
+    assert_eq!(paths.path(&(offset + 2)).unwrap().edge_list(), [edges[1]]);
     assert_eq!(
-        paths.path(&(offset + 3)).unwrap().edges,
+        paths.path(&(offset + 3)).unwrap().edge_list(),
         [edges[1], edges[3]]
     );
     assert_eq!(
-        paths.path(&(offset + 4)).unwrap().edges,
+        paths.path(&(offset + 4)).unwrap().edge_list(),
         [edges[0], edges[4]]
     );
     assert_eq!(
-        paths.path(&(offset + 5)).unwrap().edges,
+        paths.path(&(offset + 5)).unwrap().edge_list(),
         [edges[0], edges[4], edges[7]]
     );
 }

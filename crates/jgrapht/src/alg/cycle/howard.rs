@@ -272,7 +272,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
                 break;
             }
         }
-        GraphWalk::new(path_vertices, path_edges, best_cycle_weight)
+        GraphWalk::new_unchecked(path_vertices, path_edges, best_cycle_weight)
     }
 }
 

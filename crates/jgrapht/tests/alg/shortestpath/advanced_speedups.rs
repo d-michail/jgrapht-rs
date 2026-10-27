@@ -50,11 +50,11 @@ fn contraction_hierarchy_preserves_paths() {
     assert_eq!(hierarchy.vertices().len(), graph.vertex_count());
     let query = ContractionHierarchyBidirectionalDijkstra::new(&hierarchy);
     let path = query.path(&1, &3).unwrap().unwrap();
-    assert_eq!(path.vertices, vec![1, 2, 3]);
-    assert_eq!(path.weight, 2.0);
+    assert_eq!(path.vertex_list(), vec![1, 2, 3]);
+    assert_eq!(path.weight(), 2.0);
     assert!(path.is_valid(&graph));
     assert_eq!(query.path(&3, &1).unwrap(), None);
-    assert_eq!(query.path(&7, &9).unwrap().unwrap().weight, 4.0);
+    assert_eq!(query.path(&7, &9).unwrap().unwrap().weight(), 4.0);
 }
 
 #[test]
@@ -83,7 +83,7 @@ fn contraction_hierarchy_turns_undirected_edges_into_two_arcs() {
                 && edge.target == hierarchy.contraction_mapping()[&1])
     );
     let query = ContractionHierarchyBidirectionalDijkstra::new(&hierarchy);
-    assert_eq!(query.path(&3, &1).unwrap().unwrap().vertices, [3, 2, 1]);
+    assert_eq!(query.path(&3, &1).unwrap().unwrap().vertex_list(), [3, 2, 1]);
 }
 
 #[test]
@@ -96,7 +96,7 @@ fn ch_many_to_many_materializes_requested_product() {
         .many_to_many([1, 7, 9], [3, 5])
         .unwrap();
     assert_eq!(paths.weight(&1, &3), 2.0);
-    assert_eq!(paths.path(&7, &5).unwrap().vertices, [7, 4, 5]);
+    assert_eq!(paths.path(&7, &5).unwrap().vertex_list(), [7, 4, 5]);
     assert_eq!(paths.weight(&9, &3), f64::INFINITY);
 }
 
@@ -161,7 +161,7 @@ fn transit_node_routing_uses_highest_level_and_matches_hierarchy() {
     assert!(routing.transit_vertices().contains(&2));
     let cv1 = hierarchy.contraction_mapping()[&1];
     assert_eq!(routing.access_vertices().forward(cv1).len(), 1);
-    assert_eq!(routing.access_vertices().forward(cv1)[0].path.edges, [e12]);
+    assert_eq!(routing.access_vertices().forward(cv1)[0].path.edge_list(), [e12]);
     assert!(routing.locality_filter().is_local(&1, &3));
     assert!(!routing.locality_filter().is_local(&1, &2));
 

@@ -501,7 +501,7 @@ impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinShortestPathIterator<'g, G> {
                     .clone(),
             );
         }
-        GraphWalk::new(vertices, edges, path.weight)
+        GraphWalk::new_unchecked(vertices, edges, path.weight)
     }
 }
 

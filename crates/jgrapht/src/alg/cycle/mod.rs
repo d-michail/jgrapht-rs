@@ -43,4 +43,4 @@ pub use simple_cycles::{
     DirectedSimpleCycles, HawickJamesSimpleCycles, JohnsonSimpleCycles,
     SzwarcfiterLauerSimpleCycles, TarjanSimpleCycles, TiernanSimpleCycles,
 };
-pub use weak_chordality::WeakChordalityInspector;
+pub use weak_chordality::{WeakChordalityCertificate, WeakChordalityInspector};

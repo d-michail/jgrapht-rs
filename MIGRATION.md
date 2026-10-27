@@ -60,6 +60,22 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 16: walks and mappings
+
+* `GraphWalk` fields are private. Replace `walk.vertices` with `walk.vertex_list()` (a slice;
+  `.to_vec()` for an owned list), `walk.edges` with `walk.edge_list()` and `walk.weight` with
+  `walk.weight()`.
+* `GraphWalk::new(vertices, edges, weight)` is gone. Use `GraphWalk::from_parts(..)?`, which checks
+  `vertices.len() == edges.len() + 1` (or both empty), or `from_vertex_list` / `from_edge_list` /
+  `try_new` to verify the walk against a graph.
+* `GraphMapping` fields are private; use `vertex`, `vertex_inverse`, `edge`, `edge_inverse`,
+  `map_vertex` and `map_edge`.
+* `WeakChordalityInspector::get_certificate` returns
+  `Option<&WeakChordalityCertificate<V>>`, an enum `Hole(Vec<V>) | Antihole(Vec<V>)` of closed vertex
+  lists with `vertex_list()` and `is_hole()`, instead of a `GraphWalk` that held no edges for an
+  antihole.
+* `alg::util::Indexed` is no longer public.
+
 ## Step 15: shortest paths
 
 * Removed: `yen_k_shortest_paths(g, s, t, k)` (use `YenKShortestPath::new(g).get_paths(s, t, k)`),

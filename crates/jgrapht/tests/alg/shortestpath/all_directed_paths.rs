@@ -80,8 +80,8 @@ fn trivial_paths() {
         .get_all_paths_between([&I1], [&I1, &A], true, Some(1))
         .unwrap();
     assert_eq!(paths.len(), 2);
-    assert_eq!(paths[0].vertices, [I1]);
-    assert_eq!(paths[1].vertices, [I1, A]);
+    assert_eq!(paths[0].vertex_list(), [I1]);
+    assert_eq!(paths[1].vertex_list(), [I1, A]);
 }
 
 #[test]
@@ -98,9 +98,9 @@ fn length_one_paths() {
         )
         .unwrap();
     assert_eq!(paths.len(), 3);
-    assert_eq!(paths[0].vertices, [A]);
-    assert_eq!(paths[1].vertices, [B]);
-    assert_eq!(paths[2].vertices, [B, A]);
+    assert_eq!(paths[0].vertex_list(), [A]);
+    assert_eq!(paths[1].vertex_list(), [B]);
+    assert_eq!(paths[2].vertex_list(), [B, A]);
 }
 
 #[test]
@@ -121,10 +121,10 @@ fn length_one_paths_with_path_validator() {
         )
         .unwrap();
     assert_eq!(paths.len(), 4);
-    assert_eq!(paths[0].vertices, [A]);
-    assert_eq!(paths[1].vertices, [B]);
-    assert_eq!(paths[2].vertices, [C]);
-    assert_eq!(paths[3].vertices, [C, A]);
+    assert_eq!(paths[0].vertex_list(), [A]);
+    assert_eq!(paths[1].vertex_list(), [B]);
+    assert_eq!(paths[2].vertex_list(), [C]);
+    assert_eq!(paths[3].vertex_list(), [C, A]);
 }
 
 #[test]
@@ -144,14 +144,14 @@ fn path_weights() {
     let mut paths = AllDirectedPaths::new(&graph)
         .get_all_paths(&A, &D, true, Some(2))
         .unwrap();
-    paths.sort_by(|left, right| left.weight.total_cmp(&right.weight));
+    paths.sort_by(|left, right| left.weight().total_cmp(&right.weight()));
     assert_eq!(paths.len(), 3);
-    assert_eq!(paths[0].vertices, [A, D]);
-    assert_eq!(paths[0].weight, -1.0);
-    assert_eq!(paths[1].vertices, [A, C, D]);
-    assert_eq!(paths[1].weight, 0.5);
-    assert_eq!(paths[2].vertices, [A, B, D]);
-    assert_eq!(paths[2].weight, 2.2);
+    assert_eq!(paths[0].vertex_list(), [A, D]);
+    assert_eq!(paths[0].weight(), -1.0);
+    assert_eq!(paths[1].vertex_list(), [A, C, D]);
+    assert_eq!(paths[1].weight(), 0.5);
+    assert_eq!(paths[2].vertex_list(), [A, B, D]);
+    assert_eq!(paths[2].weight(), 2.2);
 }
 
 #[test]
@@ -194,7 +194,7 @@ fn target_reachable_but_source_unreachable_branch_is_ignored() {
                 .get_all_paths(&"S", &"T", simple, Some(5))
                 .unwrap();
             assert_eq!(paths.len(), 1);
-            assert_eq!(paths[0].vertices, ["S", A, "T"]);
+            assert_eq!(paths[0].vertex_list(), ["S", A, "T"]);
         }
     }
 }
@@ -377,7 +377,7 @@ where
 }
 
 fn path_set(paths: &[GraphWalk<i32, DefaultEdge>]) -> HashSet<Vec<i32>> {
-    paths.iter().map(|path| path.vertices.clone()).collect()
+    paths.iter().map(|path| path.vertex_list().to_vec()).collect()
 }
 
 #[test]
@@ -407,7 +407,7 @@ fn multiple_sources_partial_garden() {
             .get_all_paths_between([&"S1", &"S2"], [&"T"], true, Some(5))
             .unwrap();
         assert_eq!(paths.len(), 1, "forward_pruning={forward_pruning}");
-        assert_eq!(paths[0].vertices, ["S1", A, "T"]);
+        assert_eq!(paths[0].vertex_list(), ["S1", A, "T"]);
     }
 }
 
@@ -423,7 +423,7 @@ fn unbounded_simple_paths_with_unreachable_garden() {
         algorithm.set_forward_pruning(forward_pruning);
         let paths = algorithm.get_all_paths(&"S", &"T", true, None).unwrap();
         assert_eq!(paths.len(), 1, "forward_pruning={forward_pruning}");
-        assert_eq!(paths[0].vertices, ["S", A, "T"]);
+        assert_eq!(paths[0].vertex_list(), ["S", A, "T"]);
     }
 }
 

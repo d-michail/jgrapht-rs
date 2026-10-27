@@ -27,12 +27,12 @@ fn yen_iterator_and_class_are_stably_sorted() {
     ]);
     let paths = YenKShortestPath::new(&graph).get_paths(&1, &4, 10).unwrap();
     assert_eq!(
-        paths.iter().map(|path| path.weight).collect::<Vec<_>>(),
+        paths.iter().map(|path| path.weight()).collect::<Vec<_>>(),
         [3.0, 3.0, 10.0]
     );
     let iterator = YenShortestPathIterator::new(&graph, &1, &4).unwrap();
     assert_eq!(
-        iterator.map(|path| path.unwrap().weight).collect::<Vec<_>>(),
+        iterator.map(|path| path.unwrap().weight()).collect::<Vec<_>>(),
         [3.0, 3.0, 10.0]
     );
 }
@@ -45,7 +45,7 @@ fn dijkstra_many_to_many_handles_reverse_search() {
         .unwrap();
     assert_eq!(paths.weight(&0, &3), 5.0);
     assert_eq!(paths.weight(&1, &3), 6.0);
-    assert_eq!(paths.path(&1, &3).unwrap().vertices, [1, 2, 3]);
+    assert_eq!(paths.path(&1, &3).unwrap().vertex_list(), [1, 2, 3]);
 }
 
 #[test]

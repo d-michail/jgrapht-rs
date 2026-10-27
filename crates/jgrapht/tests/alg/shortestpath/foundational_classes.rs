@@ -39,9 +39,9 @@ fn bfs_shortest_path_test_path_between() {
     let (graph, [e12, e13, e24, e35, _]) = bfs_graph();
     let bfs = BFSShortestPath::new(&graph);
 
-    assert_eq!(bfs.path(&"v1", &"v2").unwrap().unwrap().edges, [e12]);
-    assert_eq!(bfs.path(&"v1", &"v4").unwrap().unwrap().edges, [e12, e24]);
-    assert_eq!(bfs.path(&"v1", &"v5").unwrap().unwrap().edges, [e13, e35]);
+    assert_eq!(bfs.path(&"v1", &"v2").unwrap().unwrap().edge_list(), [e12]);
+    assert_eq!(bfs.path(&"v1", &"v4").unwrap().unwrap().edge_list(), [e12, e24]);
+    assert_eq!(bfs.path(&"v1", &"v5").unwrap().unwrap().edge_list(), [e13, e35]);
     assert!(bfs.path(&"v4", &"v3").unwrap().is_none());
 }
 
@@ -50,11 +50,11 @@ fn bfs_shortest_path_test_all_paths() {
     let (graph, [e12, e13, e24, e35, _]) = bfs_graph();
     let paths = BFSShortestPath::new(&graph).single_source(&"v1").unwrap();
 
-    assert!(paths.path(&"v1").unwrap().edges.is_empty());
-    assert_eq!(paths.path(&"v2").unwrap().edges, [e12]);
-    assert_eq!(paths.path(&"v3").unwrap().edges, [e13]);
-    assert_eq!(paths.path(&"v4").unwrap().edges, [e12, e24]);
-    assert_eq!(paths.path(&"v5").unwrap().edges, [e13, e35]);
+    assert!(paths.path(&"v1").unwrap().edge_list().is_empty());
+    assert_eq!(paths.path(&"v2").unwrap().edge_list(), [e12]);
+    assert_eq!(paths.path(&"v3").unwrap().edge_list(), [e13]);
+    assert_eq!(paths.path(&"v4").unwrap().edge_list(), [e12, e24]);
+    assert_eq!(paths.path(&"v5").unwrap().edge_list(), [e13, e35]);
 }
 
 #[test]
@@ -150,7 +150,7 @@ fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(
             let actual = astar
                 .path(source, target)
                 .unwrap()
-                .map_or(f64::INFINITY, |path| path.weight);
+                .map_or(f64::INFINITY, |path| path.weight());
             assert_same_weight(expected, actual);
         }
     }

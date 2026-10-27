@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1471 | 345 | 120 | 357 | 13 | 19 | 423 | 194 |
+| `jgrapht` | 1473 | 346 | 120 | 358 | 13 | 19 | 424 | 193 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -211,9 +211,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/cross.rs` | `DepthFirstIterator::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/util/java.rs` | `JavaRandom::next_int_bound` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/util/sampler.rs` | `AliasMethodSampler::with_epsilon` | 2 unwrap, 0 expect/panic/assert |
-| `jgrapht/src/walk.rs` | `GraphWalk::reverse` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/walk.rs` | `GraphWalk::try_new` | 0 unwrap, 2 expect/panic/assert |
-| `jgrapht/src/walk.rs` | `GraphWalk::verify` | 0 unwrap, 1 expect/panic/assert |
 
 ## All public functions
 
@@ -419,7 +417,9 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/cycle/simple_cycles.rs` | `name::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/cycle/simple_cycles.rs` | `name::set_graph` | infallible | `()` |
 | `jgrapht/src/alg/cycle/simple_cycles.rs` | `name::with_graph` | unchecked constructor | `Self` |
-| `jgrapht/src/alg/cycle/weak_chordality.rs` | `WeakChordalityInspector::get_certificate` | Option | `Option<&GraphWalk<G::Vertex, G::Edge>>` |
+| `jgrapht/src/alg/cycle/weak_chordality.rs` | `WeakChordalityCertificate::is_hole` | infallible | `bool` |
+| `jgrapht/src/alg/cycle/weak_chordality.rs` | `WeakChordalityCertificate::vertex_list` | state query | `&[V]` |
+| `jgrapht/src/alg/cycle/weak_chordality.rs` | `WeakChordalityInspector::get_certificate` | Option | `Option<&WeakChordalityCertificate<G::Vertex>>` |
 | `jgrapht/src/alg/cycle/weak_chordality.rs` | `WeakChordalityInspector::is_weakly_chordal` | infallible | `bool` |
 | `jgrapht/src/alg/cycle/weak_chordality.rs` | `WeakChordalityInspector::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/cyclic_exchange.rs` | `AhujaOrlinSharmaCyclicExchangeLocalAugmentation::local_augmentation_cycle` | state query | `GraphWalk<G::Vertex, G::Edge>` |
@@ -1676,12 +1676,12 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/walk.rs` | `GraphWalk::end_vertex` | Option | `Option<&V>` |
 | `jgrapht/src/walk.rs` | `GraphWalk::from_edge_list` | Result | `Result<Self>` |
 | `jgrapht/src/walk.rs` | `GraphWalk::from_edges` | Option | `Option<Self>` |
+| `jgrapht/src/walk.rs` | `GraphWalk::from_parts` | Result | `Result<Self>` |
 | `jgrapht/src/walk.rs` | `GraphWalk::from_vertex_list` | Result | `Result<Self>` |
 | `jgrapht/src/walk.rs` | `GraphWalk::from_vertices` | Option | `Option<Self>` |
 | `jgrapht/src/walk.rs` | `GraphWalk::is_empty` | infallible | `bool` |
 | `jgrapht/src/walk.rs` | `GraphWalk::is_valid` | infallible | `bool` |
 | `jgrapht/src/walk.rs` | `GraphWalk::length` | state query | `usize` |
-| `jgrapht/src/walk.rs` | `GraphWalk::new` | unchecked constructor | `Self` |
 | `jgrapht/src/walk.rs` | `GraphWalk::reverse` | Result | `Result<Self>` |
 | `jgrapht/src/walk.rs` | `GraphWalk::reversed` | state query | `Self` |
 | `jgrapht/src/walk.rs` | `GraphWalk::set_weight` | infallible | `()` |

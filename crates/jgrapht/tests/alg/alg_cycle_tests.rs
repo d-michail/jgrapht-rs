@@ -3595,7 +3595,7 @@ mod howard_minimum_mean_cycle_test {
                 weight += minimum_weight;
             }
             assert_eq!(end, *vertices.last().unwrap());
-            GraphWalk::new(vertices, edge_list, weight)
+            GraphWalk::from_parts(vertices, edge_list, weight).unwrap()
         });
         let mut mmc = HowardMinimumMeanCycle::new(&graph);
         let actual_path = mmc.get_cycle();
@@ -4189,8 +4189,7 @@ mod weak_chordality_inspector_test {
         g
     }
 
-    fn is_hole<G: Graph>(graph: &G, path: &GraphWalk<G::Vertex, G::Edge>) -> bool {
-        let vertices = path.vertex_list();
+    fn is_hole<G: Graph>(graph: &G, vertices: &[G::Vertex]) -> bool {
         if vertices.len() < 6 || vertices[0] != vertices[vertices.len() - 1] {
             return false;
         }
@@ -4209,8 +4208,7 @@ mod weak_chordality_inspector_test {
         true
     }
 
-    fn is_anti_hole<G: Graph>(graph: &G, path: &GraphWalk<G::Vertex, G::Edge>) -> bool {
-        let vertices = path.vertex_list();
+    fn is_anti_hole<G: Graph>(graph: &G, vertices: &[G::Vertex]) -> bool {
         if vertices.len() < 6 || vertices[0] != vertices[vertices.len() - 1] {
             return false;
         }
@@ -4237,7 +4235,11 @@ mod weak_chordality_inspector_test {
             assert!(certificate.is_none());
         } else {
             let path = certificate.expect("a certificate");
-            assert!(is_hole(graph, path) || is_anti_hole(graph, path));
+            assert!(if path.is_hole() {
+                is_hole(graph, path.vertex_list())
+            } else {
+                is_anti_hole(graph, path.vertex_list())
+            });
         }
     }
 
@@ -4861,5 +4863,30 @@ mod berge_graph_inspector_test {
         stimulus.add_vertices(0..number_of_vertices);
         assert!(dut.is_berge_with_certificate(&stimulus, true).unwrap());
         assert!(!verify_certificate(&stimulus, &dut));
+    }
+}
+
+mod weak_chordality_certificate {
+    use jgrapht::{GraphMutExt, UGraph};
+    use jgrapht::alg::cycle::{WeakChordalityCertificate, WeakChordalityInspector};
+
+    #[test]
+    fn a_hole_and_an_antihole_are_told_apart() {
+        // C5 is its own complement, so the certificate may be either kind.
+        let mut c5 = UGraph::<i32>::simple();
+        for i in 0..5 {
+            c5.add_edge_with_vertices(i, (i + 1) % 5).unwrap();
+        }
+        let mut inspector = WeakChordalityInspector::new(&c5);
+        let certificate = inspector.get_certificate().cloned();
+        match certificate {
+            Some(WeakChordalityCertificate::Hole(v)) | Some(WeakChordalityCertificate::Antihole(v)) => {
+                assert_eq!(v.first(), v.last());
+                assert_eq!(v.len(), 6);
+            }
+            None => panic!("C5 is not weakly chordal"),
+        }
+        let certificate = inspector.get_certificate().unwrap();
+        assert_eq!(certificate.vertex_list().len(), 6);
     }
 }

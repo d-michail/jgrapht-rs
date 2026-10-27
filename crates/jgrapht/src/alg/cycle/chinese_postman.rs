@@ -268,6 +268,6 @@ impl ChinesePostman {
             .iter()
             .map(|edge| graph.weight_of(edge))
             .sum();
-        Ok(GraphWalk::new(vertices, edges, weight))
+        Ok(GraphWalk::new_unchecked(vertices, edges, weight))
     }
 }

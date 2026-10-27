@@ -153,7 +153,7 @@ mod heavy_path_decomposition_test {
         let in_path: HashSet<&Gr::Vertex> = paths
             .paths()
             .iter()
-            .flat_map(|p| p.vertices.iter())
+            .flat_map(|p| p.vertex_list().iter())
             .collect();
         let mut maxim = 0;
         for v in graph.vertices() {
@@ -186,11 +186,11 @@ mod heavy_path_decomposition_test {
         let paths = d.path_decomposition().unwrap();
         let mut which_path: HashMap<&Gr::Vertex, usize> = HashMap::new();
         for (i, path) in paths.paths().iter().enumerate() {
-            for (j, v) in path.vertices.iter().enumerate() {
+            for (j, v) in path.vertex_list().iter().enumerate() {
                 if which_path.insert(v, i).is_some() {
                     return false;
                 }
-                if j > 0 && !graph.contains_edge_between(&path.vertices[j - 1], v) {
+                if j > 0 && !graph.contains_edge_between(&path.vertex_list()[j - 1], v) {
                     return false;
                 }
             }

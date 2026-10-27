@@ -96,7 +96,7 @@ fn listenable_events() {
 fn walks() {
     let g = path_digraph();
     let w = GraphWalk::from_vertices(&g, vec![1, 2, 3, 4]).unwrap();
-    assert_eq!((w.length(), w.weight), (3, 6.0));
+    assert_eq!((w.length(), w.weight()), (3, 6.0));
     assert!(w.is_valid(&g));
     let a = GraphWalk::from_vertices(&g, vec![1, 2, 3]).unwrap();
     let b = GraphWalk::from_vertices(&g, vec![3, 4]).unwrap();

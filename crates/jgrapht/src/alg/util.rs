@@ -41,8 +41,7 @@ pub fn vertex_degree_comparator<G: IncidenceGraph>(
 /// Building it relies on the [`Graph`] integrity contract: every edge has endpoints that are
 /// vertices and a weight. A graph that breaks the contract makes [`Indexed::new`] panic with a
 /// message naming the contract; no valid graph can trigger it.
-pub struct Indexed<'g, G: Graph> {
-    pub g: &'g G,
+pub(crate) struct Indexed<'g, G: Graph> {
     pub vs: Vec<&'g G::Vertex>,
     pub idx: HashMap<&'g G::Vertex, usize>,
     pub es: Vec<&'g G::Edge>,
@@ -91,7 +90,6 @@ impl<'g, G: Graph> Indexed<'g, G> {
             inn = out.clone();
         }
         Indexed {
-            g,
             vs,
             idx,
             es,

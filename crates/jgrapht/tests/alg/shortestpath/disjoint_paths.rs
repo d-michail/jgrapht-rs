@@ -49,9 +49,9 @@ fn graph(vertices: impl IntoIterator<Item = i32>, edges: &[(i32, i32, f64)]) -> 
 fn assert_paths(paths: &[GraphWalk<i32, DefaultEdge>], expected: &[(&[i32], f64)]) {
     assert_eq!(paths.len(), expected.len());
     for (path, (vertices, weight)) in paths.iter().zip(expected) {
-        assert_eq!(path.vertices, *vertices);
+        assert_eq!(path.vertex_list(), *vertices);
         assert_eq!(path.length(), vertices.len() - 1);
-        assert_eq!(path.weight, *weight);
+        assert_eq!(path.weight(), *weight);
     }
 }
 
@@ -80,7 +80,7 @@ fn two_disjoint_paths_joint_node(solver: Solver) {
     assert!(
         paths
             .iter()
-            .all(|path| path.length() == 4 && path.weight == 4.0)
+            .all(|path| path.length() == 4 && path.weight() == 4.0)
     );
     let choices = [
         vec![1, 2, 3, 4, 5],
@@ -88,14 +88,14 @@ fn two_disjoint_paths_joint_node(solver: Solver) {
         vec![1, 7, 3, 4, 5],
         vec![1, 7, 3, 6, 5],
     ];
-    assert!(choices.contains(&paths[0].vertices));
-    assert!(choices.contains(&paths[1].vertices));
-    assert_ne!(paths[0].edges, paths[1].edges);
+    assert!(choices.contains(&paths[0].vertex_list().to_vec()));
+    assert!(choices.contains(&paths[1].vertex_list().to_vec()));
+    assert_ne!(paths[0].edge_list(), paths[1].edge_list());
     assert!(
         paths[0]
-            .edges
+            .edge_list()
             .iter()
-            .all(|edge| !paths[1].edges.contains(edge))
+            .all(|edge| !paths[1].edge_list().contains(edge))
     );
 }
 
@@ -276,8 +276,8 @@ fn wikipedia(solver: Solver) {
     );
     let paths = solve(solver, &graph, 1, 6, 3).unwrap();
     assert_eq!(paths.len(), 2);
-    assert!(paths.iter().all(|path| path.weight == 5.0));
-    let vertices: Vec<_> = paths.iter().map(|path| path.vertices.clone()).collect();
+    assert!(paths.iter().all(|path| path.weight() == 5.0));
+    let vertices: Vec<_> = paths.iter().map(|path| path.vertex_list().to_vec()).collect();
     assert!(vertices.contains(&vec![1, 3, 4, 6]));
     assert!(vertices.contains(&vec![1, 2, 5, 6]));
 }
@@ -288,7 +288,7 @@ fn linear(solver: Solver) {
     let paths = solve(solver, &graph, 1, 20, 2).unwrap();
     assert_eq!(paths.len(), 1);
     assert_eq!(paths[0].length(), 19);
-    assert_eq!(paths[0].weight, 19.0);
+    assert_eq!(paths[0].weight(), 19.0);
 }
 
 fn ring(solver: Solver) {
@@ -341,7 +341,7 @@ fn multi_hits_on_edge(solver: Solver) {
         ],
     );
     let paths = solve(solver, &graph, 1, 2, 3).unwrap();
-    let vertices: Vec<_> = paths.iter().map(|path| path.vertices.clone()).collect();
+    let vertices: Vec<_> = paths.iter().map(|path| path.vertex_list().to_vec()).collect();
     assert_eq!(paths.len(), 3);
     assert!(vertices.contains(&vec![1, 3, 7, 2]));
     assert!(vertices.contains(&vec![1, 4, 6, 2]));

@@ -92,7 +92,7 @@ fn simple_paths() {
 fn negative_cycles() {
     let g = dg(&[(1, 2, 1.0), (2, 3, -2.0), (3, 1, 0.5), (3, 4, 1.0)]);
     let error = BellmanFord::new(&g).get_paths(&1).unwrap_err();
-    let mut cycle = error.cycle().unwrap().vertices.clone();
+    let mut cycle = error.cycle().unwrap().vertex_list().to_vec();
     cycle.pop();
     cycle.sort();
     assert_eq!(cycle, [1, 2, 3]);
@@ -121,7 +121,7 @@ fn disjoint_paths() {
         .unwrap();
     assert_eq!(ep.len(), 3);
     assert!(ep.iter().all(|p| p.is_valid(&g)));
-    let all_edges: Vec<_> = ep.iter().flat_map(|p| p.edges.clone()).collect();
+    let all_edges: Vec<_> = ep.iter().flat_map(|p| p.edge_list().to_vec()).collect();
     let mut dedup = all_edges.clone();
     dedup.sort();
     dedup.dedup();
@@ -243,6 +243,6 @@ fn christofides_is_within_bound() {
             .unwrap();
         assert!(c.is_valid(&g) && c.length() == 9);
         let opt = HeldKarpTSP::new().get_tour(&g).unwrap().unwrap();
-        assert!(c.weight >= opt.weight - 1e-9 && c.weight <= 1.5 * opt.weight + 1e-9);
+        assert!(c.weight() >= opt.weight() - 1e-9 && c.weight() <= 1.5 * opt.weight() + 1e-9);
     }
 }

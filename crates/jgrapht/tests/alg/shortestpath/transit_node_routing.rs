@@ -93,12 +93,12 @@ mod precomputation {
         let backward = routing.access_vertices().backward(id);
         assert_eq!(forward.len(), 1);
         assert_eq!(forward[0].vertex, 1);
-        assert_eq!(forward[0].path.vertices, [1]);
-        assert!(forward[0].path.edges.is_empty());
-        assert_eq!(forward[0].path.weight, 0.0);
+        assert_eq!(forward[0].path.vertex_list(), [1]);
+        assert!(forward[0].path.edge_list().is_empty());
+        assert_eq!(forward[0].path.weight(), 0.0);
         assert_eq!(backward.len(), 1);
         assert_eq!(backward[0].vertex, 1);
-        assert_eq!(backward[0].path.vertices, [1]);
+        assert_eq!(backward[0].path.vertex_list(), [1]);
         // locality filter
         assert!(!routing.locality_filter().is_local(&1, &1));
     }
@@ -126,24 +126,24 @@ mod precomputation {
         let av = routing.access_vertices();
         assert_eq!(av.forward(cv1).len(), 1);
         assert_eq!(av.forward(cv1)[0].vertex, 2);
-        assert_eq!(av.forward(cv1)[0].path.vertices, [1, 2]);
-        assert_eq!(av.forward(cv1)[0].path.edges, [edge1]);
-        assert_eq!(av.forward(cv1)[0].path.weight, 1.0);
+        assert_eq!(av.forward(cv1)[0].path.vertex_list(), [1, 2]);
+        assert_eq!(av.forward(cv1)[0].path.edge_list(), [edge1]);
+        assert_eq!(av.forward(cv1)[0].path.weight(), 1.0);
         assert_eq!(av.backward(cv1).len(), 1);
         assert_eq!(av.backward(cv1)[0].vertex, 2);
-        assert_eq!(av.backward(cv1)[0].path.vertices, [2, 1]);
-        assert_eq!(av.backward(cv1)[0].path.edges, [edge2]);
+        assert_eq!(av.backward(cv1)[0].path.vertex_list(), [2, 1]);
+        assert_eq!(av.backward(cv1)[0].path.edge_list(), [edge2]);
         assert_eq!(av.forward(cv2).len(), 1);
         assert_eq!(av.backward(cv2).len(), 1);
         assert_eq!(av.forward(cv3).len(), 1);
         assert_eq!(av.forward(cv3)[0].vertex, 2);
-        assert_eq!(av.forward(cv3)[0].path.vertices, [3, 2]);
-        assert_eq!(av.forward(cv3)[0].path.edges, [edge4]);
-        assert_eq!(av.forward(cv3)[0].path.weight, 2.0);
+        assert_eq!(av.forward(cv3)[0].path.vertex_list(), [3, 2]);
+        assert_eq!(av.forward(cv3)[0].path.edge_list(), [edge4]);
+        assert_eq!(av.forward(cv3)[0].path.weight(), 2.0);
         assert_eq!(av.backward(cv3).len(), 1);
-        assert_eq!(av.backward(cv3)[0].path.vertices, [2, 3]);
-        assert_eq!(av.backward(cv3)[0].path.edges, [edge3]);
-        assert_eq!(av.backward(cv3)[0].path.weight, 2.0);
+        assert_eq!(av.backward(cv3)[0].path.vertex_list(), [2, 3]);
+        assert_eq!(av.backward(cv3)[0].path.edge_list(), [edge3]);
+        assert_eq!(av.backward(cv3)[0].path.weight(), 2.0);
         // locality filter
         let lf = routing.locality_filter();
         assert!(lf.is_local(&1, &1));
@@ -223,9 +223,9 @@ mod shortest_path {
         graph.add_vertex(1);
         let shortest_path = TransitNodeRoutingShortestPath::with_parallelism(&graph, 4);
         let path = shortest_path.path(&1, &1).unwrap().unwrap();
-        assert_eq!(path.vertices, [1]);
-        assert!(path.edges.is_empty());
-        assert_eq!(path.weight, 0.0);
+        assert_eq!(path.vertex_list(), [1]);
+        assert!(path.edge_list().is_empty());
+        assert_eq!(path.weight(), 0.0);
     }
 
     fn routing_for<'g>(
@@ -253,9 +253,9 @@ mod shortest_path {
         let h = hierarchy(&graph);
         let shortest_path = routing_for(&graph, &h, 1);
         let p = shortest_path.path(&1, &2).unwrap().unwrap();
-        assert_eq!((p.vertices, p.edges, p.weight), (vec![1, 2], vec![edge1], 1.0));
+        assert_eq!((p.vertex_list().to_vec(), p.edge_list().to_vec(), p.weight()), (vec![1, 2], vec![edge1], 1.0));
         let p = shortest_path.path(&2, &1).unwrap().unwrap();
-        assert_eq!((p.vertices, p.edges, p.weight), (vec![2, 1], vec![edge3], 1.0));
+        assert_eq!((p.vertex_list().to_vec(), p.edge_list().to_vec(), p.weight()), (vec![2, 1], vec![edge3], 1.0));
     }
 
     #[test]
@@ -267,7 +267,7 @@ mod shortest_path {
         let edge3 = graph.add_weighted_edge(&3, &2, 1.0).unwrap().unwrap();
         let h = hierarchy(&graph);
         let sp = routing_for(&graph, &h, 1);
-        let walk = |s, t| sp.path(&s, &t).unwrap().map(|p| (p.vertices, p.edges, p.weight));
+        let walk = |s, t| sp.path(&s, &t).unwrap().map(|p| (p.vertex_list().to_vec(), p.edge_list().to_vec(), p.weight()));
         assert_eq!(walk(1, 2), Some((vec![1, 2], vec![edge1], 1.0)));
         assert_eq!(walk(2, 1), None);
         assert_eq!(walk(2, 3), Some((vec![2, 3], vec![edge2], 2.0)));

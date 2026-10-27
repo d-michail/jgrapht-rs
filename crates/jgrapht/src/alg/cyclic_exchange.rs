@@ -110,7 +110,7 @@ where
             .windows(2)
             .filter_map(|w| self.graph.get_edge(&w[0], &w[1]).cloned())
             .collect();
-        GraphWalk::new(vertices, edges, weight)
+        GraphWalk::new_unchecked(vertices, edges, weight)
     }
 
     /// A negative cycle (first improving one, or the best one when `best_improvement`). If there

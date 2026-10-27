@@ -107,7 +107,7 @@ impl<'g, G: OutgoingGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, P
     fn path_is_valid(&self, path: &GraphWalk<G::Vertex, G::Edge>) -> bool {
         let mut weight = 0.0;
         for i in 0..path.edges.len() {
-            let partial = GraphWalk::new(
+            let partial = GraphWalk::new_unchecked(
                 path.vertices[..=i].to_vec(),
                 path.edges[..i].to_vec(),
                 weight,
@@ -196,7 +196,7 @@ impl<'g, G: OutgoingGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, P
                 .iter()
                 .map(|edge| self.graph.weight_of(edge))
                 .sum();
-            self.push_candidate(GraphWalk::new(
+            self.push_candidate(GraphWalk::new_unchecked(
                 vertices,
                 edges,
                 root_weight + spur_path.weight,
@@ -664,7 +664,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
     ) -> Result<(Option<GraphWalk<G::Vertex, G::Edge>>, usize)> {
         if source == sink {
             return Ok((
-                Some(GraphWalk::new(vec![source.clone()], Vec::new(), 0.0)),
+                Some(GraphWalk::new_unchecked(vec![source.clone()], Vec::new(), 0.0)),
                 0,
             ));
         }
@@ -732,7 +732,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
         }
         vertices.reverse();
         edges.reverse();
-        Ok((Some(GraphWalk::new(vertices, edges, weight)), expanded))
+        Ok((Some(GraphWalk::new_unchecked(vertices, edges, weight)), expanded))
     }
 
     fn compute_reverse_distances(&self, sink: &G::Vertex) -> Result<HashMap<G::Vertex, f64>> {
@@ -855,7 +855,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
         let ordinal = stats.candidate_ordinal;
         stats.candidate_ordinal += 1;
         Ok(Some(BoundedCandidate {
-            path: GraphWalk::new(vertices, edges, cost),
+            path: GraphWalk::new_unchecked(vertices, edges, cost),
             cost,
             first_deviation_index: task.spur_index,
             ordinal,

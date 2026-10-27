@@ -27,7 +27,7 @@ fn main() -> Result<()> {
     let path = Dijkstra::new(&graph)
         .path(&"a", &"d")?
         .expect("d is reachable");
-    println!("a -> d: {:?} (weight {})", path.vertices, path.weight);
+    println!("a -> d: {:?} (weight {})", path.vertex_list(), path.weight());
     println!("MST weight: {}", kruskal(&graph).weight);
     Ok(())
 }

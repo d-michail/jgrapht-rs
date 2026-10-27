@@ -75,19 +75,19 @@ fn test_path_between() {
     let algorithm = BellmanFordShortestPath::new(&graph);
 
     assert_eq!(
-        algorithm.get_path(&"v1", &"v2").unwrap().unwrap().edges,
+        algorithm.get_path(&"v1", &"v2").unwrap().unwrap().edge_list(),
         [e12]
     );
     assert_eq!(
-        algorithm.get_path(&"v1", &"v4").unwrap().unwrap().edges,
+        algorithm.get_path(&"v1", &"v4").unwrap().unwrap().edge_list(),
         [e12, e24]
     );
     assert_eq!(
-        algorithm.get_path(&"v1", &"v5").unwrap().unwrap().edges,
+        algorithm.get_path(&"v1", &"v5").unwrap().unwrap().edge_list(),
         [e12, e24, e45]
     );
     assert_eq!(
-        algorithm.get_path(&"v3", &"v4").unwrap().unwrap().edges,
+        algorithm.get_path(&"v3", &"v4").unwrap().unwrap().edge_list(),
         [e13, e12, e24]
     );
 }
@@ -99,7 +99,7 @@ fn test_undirected() {
         .get_paths(&"v3")
         .unwrap();
 
-    assert_eq!(paths.path(&"v5").unwrap().edges, [e13, e12, e24, e45]);
+    assert_eq!(paths.path(&"v5").unwrap().edge_list(), [e13, e12, e24, e45]);
     for (vertex, weight) in [
         ("v1", 3.0),
         ("v2", 5.0),
@@ -117,11 +117,11 @@ fn test_with_negative_edges() {
     let algorithm = BellmanFordShortestPath::new(&graph);
 
     assert_eq!(
-        algorithm.get_path(&"v1", &"v4").unwrap().unwrap().edges,
+        algorithm.get_path(&"v1", &"v4").unwrap().unwrap().edge_list(),
         [e13, e34]
     );
     assert_eq!(
-        algorithm.get_path(&"v1", &"v5").unwrap().unwrap().edges,
+        algorithm.get_path(&"v1", &"v5").unwrap().unwrap().edge_list(),
         [e15]
     );
 }
@@ -197,7 +197,7 @@ fn test_negative_cycle_detection_actual_cycle() {
 
     assert_eq!(cycle.start_vertex(), Some(&"x"));
     assert_eq!(cycle.end_vertex(), Some(&"x"));
-    assert_eq!(cycle.weight, -1.0);
+    assert_eq!(cycle.weight(), -1.0);
     assert_eq!(cycle.length(), 3);
     assert!(cycle.is_valid(&graph));
 }
@@ -231,7 +231,7 @@ fn test_negative_edge_undirected_graph_actual_cycle() {
 
     assert_eq!(cycle.start_vertex(), Some(&"x"));
     assert_eq!(cycle.end_vertex(), Some(&"x"));
-    assert_eq!(cycle.weight, -2.0);
+    assert_eq!(cycle.weight(), -2.0);
     assert_eq!(cycle.length(), 2);
     assert!(cycle.is_valid(&graph));
 }
@@ -280,7 +280,7 @@ fn test_negative_cycle() {
     let cycle = error.cycle().unwrap();
     assert_eq!(cycle.start_vertex(), Some(&"6"));
     assert_eq!(cycle.end_vertex(), Some(&"6"));
-    assert_eq!(cycle.weight, -3.0);
+    assert_eq!(cycle.weight(), -3.0);
     assert_eq!(cycle.length(), 5);
 }
 
@@ -305,6 +305,6 @@ fn test_negative_cycle_with_max_hops() {
     let cycle = error.cycle().unwrap();
     assert_eq!(cycle.start_vertex(), Some(&1));
     assert_eq!(cycle.end_vertex(), Some(&1));
-    assert_eq!(cycle.weight, -2.0);
+    assert_eq!(cycle.weight(), -2.0);
     assert_eq!(cycle.length(), 4);
 }

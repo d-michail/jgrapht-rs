@@ -40,17 +40,17 @@ fn test_path_between() {
     let (graph, [e12, e13, _, e24, _, e45]) = undirected_fixture();
     let algorithm = DijkstraShortestPath::new(&graph);
 
-    assert_eq!(algorithm.path(&"v1", &"v2").unwrap().unwrap().edges, [e12]);
+    assert_eq!(algorithm.path(&"v1", &"v2").unwrap().unwrap().edge_list(), [e12]);
     assert_eq!(
-        algorithm.path(&"v1", &"v4").unwrap().unwrap().edges,
+        algorithm.path(&"v1", &"v4").unwrap().unwrap().edge_list(),
         [e12, e24]
     );
     assert_eq!(
-        algorithm.path(&"v1", &"v5").unwrap().unwrap().edges,
+        algorithm.path(&"v1", &"v5").unwrap().unwrap().edge_list(),
         [e12, e24, e45]
     );
     assert_eq!(
-        algorithm.path(&"v3", &"v4").unwrap().unwrap().edges,
+        algorithm.path(&"v3", &"v4").unwrap().unwrap().edge_list(),
         [e13, e12, e24]
     );
 }
@@ -63,8 +63,8 @@ fn test_constructor() {
         .path(&"v3", &"v4")
         .unwrap()
         .unwrap();
-    assert_eq!(path.edges, [e13, e12, e24]);
-    assert_eq!(path.weight, 10.0);
+    assert_eq!(path.edge_list(), [e13, e12, e24]);
+    assert_eq!(path.weight(), 10.0);
 
     assert!(
         DijkstraShortestPath::new(&graph)
@@ -109,22 +109,22 @@ fn test_shortest_path_tree() {
     let p11 = paths.path(&"v1").unwrap();
     assert_eq!(p11.start_vertex(), Some(&"v1"));
     assert_eq!(p11.end_vertex(), Some(&"v1"));
-    assert_eq!(p11.weight, 0.0);
-    assert!(p11.edges.is_empty());
+    assert_eq!(p11.weight(), 0.0);
+    assert!(p11.edge_list().is_empty());
 
     let p12 = paths.path(&"v2").unwrap();
     assert_eq!(p12.start_vertex(), Some(&"v1"));
     assert_eq!(p12.end_vertex(), Some(&"v2"));
-    assert_eq!(p12.weight, 2.0);
-    assert_eq!(p12.edges, [e13, e32]);
+    assert_eq!(p12.weight(), 2.0);
+    assert_eq!(p12.edge_list(), [e13, e32]);
 
     let p13 = paths.path(&"v3").unwrap();
-    assert_eq!(p13.weight, 1.0);
-    assert_eq!(p13.edges, [e13]);
+    assert_eq!(p13.weight(), 1.0);
+    assert_eq!(p13.edge_list(), [e13]);
 
     let p14 = paths.path(&"v4").unwrap();
-    assert_eq!(p14.weight, 3.0);
-    assert_eq!(p14.edges, [e13, e32, e24]);
+    assert_eq!(p14.weight(), 3.0);
+    assert_eq!(p14.edge_list(), [e13, e32, e24]);
     assert!(paths.path(&"v5").is_none());
 }
 

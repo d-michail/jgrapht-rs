@@ -30,16 +30,16 @@ fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph
             match (expected, actual) {
                 (None, None) => {}
                 (Some(expected), Some(actual)) => {
-                    assert!((expected.weight - actual.weight).abs() < 0.01);
+                    assert!((expected.weight() - actual.weight()).abs() < 0.01);
                     assert!(actual.is_valid(graph));
-                    if check_hops && !actual.edges.is_empty() {
+                    if check_hops && !actual.edge_list().is_empty() {
                         assert_eq!(
                             floyd_warshall.first_hop(source, target).as_ref(),
-                            actual.vertices.get(1)
+                            actual.vertex_list().get(1)
                         );
                         assert_eq!(
                             floyd_warshall.last_hop(source, target).as_ref(),
-                            actual.vertices.get(actual.vertices.len() - 2)
+                            actual.vertex_list().get(actual.vertex_list().len() - 2)
                         );
                     }
                 }
@@ -77,10 +77,10 @@ fn test_weighted_edges() {
 
     assert_eq!(floyd_warshall.path_weight(&"a", &"b").unwrap(), 5.0);
     let path = floyd_warshall.path(&"a", &"b").unwrap().unwrap();
-    assert_eq!(path.edges, [edge]);
+    assert_eq!(path.edge_list(), [edge]);
     assert_eq!(path.start_vertex(), Some(&"a"));
     assert_eq!(path.end_vertex(), Some(&"b"));
-    assert_eq!(path.weight, 5.0);
+    assert_eq!(path.weight(), 5.0);
     assert_eq!(floyd_warshall.first_hop(&"a", &"b"), Some("b"));
     assert_eq!(floyd_warshall.last_hop(&"a", &"b"), Some("a"));
     assert!(floyd_warshall.path(&"b", &"a").unwrap().is_none());
@@ -127,22 +127,22 @@ fn pseudograph_test_1() {
         for (target, weight) in (1..=4).zip(weights) {
             assert_eq!(paths.weight(&target), weight);
         }
-        assert!(paths.path(&source).unwrap().edges.is_empty());
+        assert!(paths.path(&source).unwrap().edge_list().is_empty());
     }
     let paths1 = floyd_warshall.single_source(&1).unwrap();
-    assert_eq!(paths1.path(&2).unwrap().edges, [e12]);
-    assert_eq!(paths1.path(&3).unwrap().edges, [e12, e23]);
-    assert_eq!(paths1.path(&4).unwrap().edges, [e12, e23, e34]);
+    assert_eq!(paths1.path(&2).unwrap().edge_list(), [e12]);
+    assert_eq!(paths1.path(&3).unwrap().edge_list(), [e12, e23]);
+    assert_eq!(paths1.path(&4).unwrap().edge_list(), [e12, e23, e34]);
     let paths2 = floyd_warshall.single_source(&2).unwrap();
-    assert_eq!(paths2.path(&3).unwrap().edges, [e23]);
-    assert_eq!(paths2.path(&4).unwrap().edges, [e23, e34]);
+    assert_eq!(paths2.path(&3).unwrap().edge_list(), [e23]);
+    assert_eq!(paths2.path(&4).unwrap().edge_list(), [e23, e34]);
     assert_eq!(
         floyd_warshall
             .single_source(&3)
             .unwrap()
             .path(&4)
             .unwrap()
-            .edges,
+            .edge_list(),
         [e34]
     );
     assert_eq!(floyd_warshall.shortest_paths_count(), 6);
@@ -210,9 +210,9 @@ fn pseudograph_test_loops() {
         assert_eq!(path.start_vertex(), Some(&vertex));
         assert_eq!(path.end_vertex(), Some(&vertex));
         assert_eq!(path.length(), 0);
-        assert_eq!(path.weight, 0.0);
-        assert!(path.edges.is_empty());
-        assert_eq!(path.vertices, [vertex]);
+        assert_eq!(path.weight(), 0.0);
+        assert!(path.edge_list().is_empty());
+        assert_eq!(path.vertex_list(), [vertex]);
     }
     assert_eq!(floyd_warshall.path_weight(&1, &2).unwrap(), 5.0);
     assert_eq!(floyd_warshall.path_weight(&2, &1).unwrap(), 15.0);
@@ -250,11 +250,11 @@ where
         for target in graph.vertices() {
             assert!((dijkstra.weight(target) - floyd_paths.weight(target)).abs() < 1e-9);
             assert_eq!(
-                floyd_paths.path(target).map(|path| path.edges),
+                floyd_paths.path(target).map(|path| path.edge_list().to_vec()),
                 floyd_warshall
                     .path(source, target)
                     .unwrap()
-                    .map(|path| path.edges)
+                    .map(|path| path.edge_list().to_vec())
             );
         }
     }

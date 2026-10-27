@@ -15,7 +15,6 @@
 use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::java_int_hash_set::JavaIntHashSet;
-use crate::walk::GraphWalk;
 use indexmap::IndexSet;
 use std::collections::{HashSet, VecDeque};
 
@@ -102,15 +101,44 @@ type SeparatorWithEdge = (Separator, (usize, usize));
 ///
 /// # Rust notes
 ///
+/// Why a graph is not weakly chordal: an induced cycle of length at least five in the graph (a
+/// hole) or in its complement (an antihole), as a closed vertex list (the first vertex is repeated
+/// at the end).
+///
+/// It is a vertex list rather than a [`GraphWalk`](crate::GraphWalk): an antihole has no edges
+/// between consecutive vertices, and in a directed graph the hole's edges may not follow one
+/// direction.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WeakChordalityCertificate<V> {
+    /// An induced cycle of the graph.
+    Hole(Vec<V>),
+    /// An induced cycle of the complement graph.
+    Antihole(Vec<V>),
+}
+
+impl<V> WeakChordalityCertificate<V> {
+    /// The closed vertex list of the cycle.
+    pub fn vertex_list(&self) -> &[V] {
+        match self {
+            Self::Hole(vertices) | Self::Antihole(vertices) => vertices,
+        }
+    }
+
+    /// Whether the cycle is a hole (of the graph) rather than an antihole (of its complement).
+    pub fn is_hole(&self) -> bool {
+        matches!(self, Self::Hole(_))
+    }
+}
+
 /// `WeakChordalityInspector`: tests whether neither the graph nor its complement has an induced
 /// cycle of length at least five (Nikolopoulos and Palios), and finds such a hole or antihole.
 /// Directed graphs are treated as undirected.
 pub struct WeakChordalityInspector<'g, G: Graph> {
-    graph: &'g G,
+    _graph: &'g G,
     adj: Adj,
     vertices: Vec<G::Vertex>,
     weakly_chordal: Option<bool>,
-    certificate: Option<GraphWalk<G::Vertex, G::Edge>>,
+    certificate: Option<WeakChordalityCertificate<G::Vertex>>,
 }
 
 impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
@@ -137,7 +165,7 @@ impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
             }
         }
         WeakChordalityInspector {
-            graph,
+            _graph: graph,
             adj: Adj {
                 n,
                 edges,
@@ -157,7 +185,7 @@ impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
     }
 
     /// A hole or antihole (as a closed vertex list) if the graph is not weakly chordal.
-    pub fn get_certificate(&mut self) -> Option<&GraphWalk<G::Vertex, G::Edge>> {
+    pub fn get_certificate(&mut self) -> Option<&WeakChordalityCertificate<G::Vertex>> {
         self.lazy_compute_weak_chordality();
         self.certificate.as_ref()
     }
@@ -211,7 +239,7 @@ impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
                         target,
                         target_in_separator,
                     );
-                    self.certificate = Some(self.walk_of(&cycle, true));
+                    self.certificate = Some(self.certificate_of(&cycle, true));
                 }
                 return false;
             }
@@ -219,16 +247,14 @@ impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
         true
     }
 
-    /// The cycle as a walk: the edges of the graph for a hole, none for an antihole (whose
-    /// consecutive vertices are not adjacent).
-    fn walk_of(&self, cycle: &[usize], hole: bool) -> GraphWalk<G::Vertex, G::Edge> {
+    /// The cycle as a certificate: a hole of the graph or an antihole (a hole of the complement).
+    fn certificate_of(&self, cycle: &[usize], hole: bool) -> WeakChordalityCertificate<G::Vertex> {
         let vertices: Vec<G::Vertex> = cycle.iter().map(|&i| self.vertices[i].clone()).collect();
         if hole {
-            if let Ok(w) = GraphWalk::from_vertex_list(self.graph, vertices.clone(), 0.0) {
-                return w;
-            }
+            WeakChordalityCertificate::Hole(vertices)
+        } else {
+            WeakChordalityCertificate::Antihole(vertices)
         }
-        GraphWalk::new(vertices, Vec::new(), 0.0)
     }
 
     /// Computes the global separator list of the `graph`. More precisely, for every edge $e$
@@ -469,7 +495,7 @@ impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
                     cycle_target,
                     cycle_target_in_separator,
                 );
-                self.certificate = Some(self.walk_of(&cycle, false));
+                self.certificate = Some(self.certificate_of(&cycle, false));
                 return;
             }
         }

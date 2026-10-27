@@ -24,11 +24,16 @@ use std::hash::Hash;
 /// Both lists are always materialised: the empty walk has neither vertices nor edges, a
 /// zero-length walk one vertex and no edges, and otherwise `vertices.len() == edges.len() + 1`.
 /// The start and end vertex are the first and last entry of `vertices`.
+///
+/// The fields are private so that this cardinality invariant cannot be broken from outside; read
+/// them with [`GraphWalk::vertex_list`], [`GraphWalk::edge_list`] and [`GraphWalk::weight`], and
+/// build walks with [`GraphWalk::from_parts`], [`GraphWalk::from_vertex_list`],
+/// [`GraphWalk::from_edge_list`] or [`GraphWalk::try_new`].
 #[derive(Debug, Clone)]
 pub struct GraphWalk<V, E> {
-    pub vertices: Vec<V>,
-    pub edges: Vec<E>,
-    pub weight: f64,
+    pub(crate) vertices: Vec<V>,
+    pub(crate) edges: Vec<E>,
+    pub(crate) weight: f64,
 }
 
 fn invalid<T>(msg: impl Into<String>) -> Result<T> {
@@ -36,13 +41,40 @@ fn invalid<T>(msg: impl Into<String>) -> Result<T> {
 }
 
 impl<V, E> GraphWalk<V, E> {
-    /// A walk from already-consistent lists (no checking).
-    pub fn new(vertices: Vec<V>, edges: Vec<E>, weight: f64) -> Self {
+    /// A walk from lists the caller guarantees to be consistent (`vertices.len() == edges.len() + 1`,
+    /// or both empty). Library code that builds walks from a search result uses this; the checked
+    /// public form is [`GraphWalk::from_parts`].
+    pub(crate) fn new_unchecked(vertices: Vec<V>, edges: Vec<E>, weight: f64) -> Self {
+        debug_assert!(
+            (vertices.is_empty() && edges.is_empty()) || vertices.len() == edges.len() + 1,
+            "GraphWalk invariant: vertices.len() == edges.len() + 1"
+        );
         GraphWalk {
             vertices,
             edges,
             weight,
         }
+    }
+
+    /// A walk from a vertex list and an edge list, without looking at any graph.
+    ///
+    /// # Errors
+    ///
+    /// [`GraphError::InvalidGraphWalk`] unless both lists are empty (the empty walk) or
+    /// `vertices.len() == edges.len() + 1`. Use [`GraphWalk::verify`] to check the walk against a
+    /// graph.
+    pub fn from_parts(vertices: Vec<V>, edges: Vec<E>, weight: f64) -> Result<Self> {
+        let empty = vertices.is_empty() && edges.is_empty();
+        if !empty && vertices.len() != edges.len() + 1 {
+            return invalid(
+                "VertexList and edgeList do not correspond to the same path (cardinality of vertexList +1 must equal the cardinality of the edgeList)",
+            );
+        }
+        Ok(GraphWalk {
+            vertices,
+            edges,
+            weight,
+        })
     }
     /// The empty walk (`GraphWalk.emptyWalk`).
     pub fn empty() -> Self {
@@ -123,7 +155,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
         for w in vertices.windows(2) {
             let (e, we) = g
                 .edges_between(&w[0], &w[1])
-                .map(|e| (e, g.edge_weight(e).unwrap_or(1.0)))
+                .map(|e| (e, g.weight_of(e)))
                 .min_by(|a, b| a.1.total_cmp(&b.1))?;
             edges.push(e.clone());
             weight += we;
@@ -282,7 +314,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
         let directed = g.graph_type().directed;
         for (i, e) in self.edges.iter().enumerate() {
             let (u, v) = (&self.vertices[i], &self.vertices[i + 1]);
-            let (s, t) = g.edge_endpoints(e).expect("edge in graph");
+            let (s, t) = g.edge_endpoints(e).ok_or(GraphError::EdgeNotFound)?;
             let ok = if directed {
                 s == u && t == v
             } else {
@@ -306,7 +338,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
         let w: f64 = self
             .edges
             .iter()
-            .map(|e| g.edge_weight(e).unwrap_or(1.0))
+            .map(|e| g.weight_of(e))
             .sum();
         (w - self.weight).abs() <= 1e-9 * w.abs().max(1.0)
     }
@@ -324,10 +356,10 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
             let mut es = Vec::with_capacity(self.edges.len());
             let mut w = 0.0;
             for e in self.edges.iter().rev() {
-                let (s, t) = g.edge_endpoints(e).expect("edge in graph");
+                let (s, t) = g.edge_endpoints(e).ok_or(GraphError::EdgeNotFound)?;
                 match g.get_edge(t, s) {
                     Some(r) => {
-                        w += g.edge_weight(r).unwrap_or(1.0);
+                        w += g.weight_of(r);
                         es.push(r.clone());
                     }
                     None => {
@@ -434,11 +466,16 @@ impl<V: std::fmt::Display, E: std::fmt::Display> std::fmt::Display for GraphWalk
 /// Bidirectional mapping of vertices and edges from one graph (`V`, `E`) to another
 /// (`V2`, `E2`, defaulting to the same types).
 #[derive(Debug, Clone)]
+///
+/// The forward and backward maps are kept consistent by [`GraphMapping::map_vertex`] and
+/// [`GraphMapping::map_edge`], so they are private; look entries up with
+/// [`GraphMapping::vertex`], [`GraphMapping::vertex_inverse`], [`GraphMapping::edge`] and
+/// [`GraphMapping::edge_inverse`].
 pub struct GraphMapping<V, E, V2 = V, E2 = E> {
-    pub vertex_forward: HashMap<V, V2>,
-    pub vertex_backward: HashMap<V2, V>,
-    pub edge_forward: HashMap<E, E2>,
-    pub edge_backward: HashMap<E2, E>,
+    pub(crate) vertex_forward: HashMap<V, V2>,
+    pub(crate) vertex_backward: HashMap<V2, V>,
+    pub(crate) edge_forward: HashMap<E, E2>,
+    pub(crate) edge_backward: HashMap<E2, E>,
 }
 
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, V2: Clone + Eq + Hash, E2: Clone + Eq + Hash>

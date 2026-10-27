@@ -30,7 +30,7 @@ fn graph(vertices: std::ops::RangeInclusive<u32>, edges: &[(u32, u32, f64)]) -> 
 }
 
 fn weights(paths: &[jgrapht::GraphWalk<u32, jgrapht::DefaultEdge>]) -> Vec<f64> {
-    paths.iter().map(|path| path.weight).collect()
+    paths.iter().map(|path| path.weight()).collect()
 }
 
 fn assert_matches(graph: &DiGraph<u32>, source: u32, sink: u32, k: usize) {
@@ -43,7 +43,7 @@ fn assert_matches(graph: &DiGraph<u32>, source: u32, sink: u32, k: usize) {
     assert!(
         actual
             .windows(2)
-            .all(|pair| pair[0].weight <= pair[1].weight)
+            .all(|pair| pair[0].weight() <= pair[1].weight())
     );
 }
 
@@ -313,7 +313,7 @@ fn weights_are_non_decreasing() {
     assert!(
         paths
             .windows(2)
-            .all(|pair| pair[0].weight <= pair[1].weight)
+            .all(|pair| pair[0].weight() <= pair[1].weight())
     );
 }
 

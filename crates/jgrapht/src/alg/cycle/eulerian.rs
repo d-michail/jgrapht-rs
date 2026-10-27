@@ -377,6 +377,6 @@ impl<G: IncidenceGraph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
             it = run.enodes[it].next;
         }
         let _ = vertex_index;
-        Ok(GraphWalk::new(vertex_list, edges, total_weight))
+        Ok(GraphWalk::new_unchecked(vertex_list, edges, total_weight))
     }
 }

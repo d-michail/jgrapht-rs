@@ -355,7 +355,7 @@ mod path_enumeration {
     ];
 
     fn lengths<V, E>(paths: &[jgrapht::GraphWalk<V, E>]) -> Vec<f64> {
-        paths.iter().map(|p| p.weight).collect()
+        paths.iter().map(|p| p.weight()).collect()
     }
 
     #[test]

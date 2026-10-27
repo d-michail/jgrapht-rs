@@ -316,7 +316,7 @@ fn get_paths<G: DirectedGraph + OutgoingGraph>(
                 .map(|&edge| indexed.vertex(indexed.ends[edge].1)),
         );
         let weight = edge_path.iter().map(|&edge| indexed.w[edge]).sum();
-        result.push(GraphWalk::new(
+        result.push(GraphWalk::new_unchecked(
             vertices,
             edge_path
                 .iter()

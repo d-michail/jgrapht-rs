@@ -56,10 +56,10 @@ fn assert_main_path<G: Graph<Vertex = &'static str, Edge = DefaultEdge> + Incide
     assert_eq!(path.start_vertex(), Some(&"3"));
     assert_eq!(path.end_vertex(), Some(&"4"));
     assert_eq!(path.length(), 3);
-    assert_eq!(path.weight, 9.0);
-    assert_eq!(path.vertices, ["3", "1", "2", "4"]);
+    assert_eq!(path.weight(), 9.0);
+    assert_eq!(path.vertex_list(), ["3", "1", "2", "4"]);
     assert_eq!(
-        path.edges,
+        path.edge_list(),
         [
             *graph.get_edge(&"3", &"1").unwrap(),
             *graph.get_edge(&"1", &"2").unwrap(),
@@ -96,9 +96,9 @@ fn test_source_target_equal_undirected() {
     assert_eq!(path.start_vertex(), Some(&"3"));
     assert_eq!(path.end_vertex(), Some(&"3"));
     assert_eq!(path.length(), 0);
-    assert_eq!(path.weight, 0.0);
-    assert_eq!(path.vertices, ["3"]);
-    assert!(path.edges.is_empty());
+    assert_eq!(path.weight(), 0.0);
+    assert_eq!(path.vertex_list(), ["3"]);
+    assert!(path.edge_list().is_empty());
 }
 
 #[test]
@@ -134,8 +134,8 @@ fn test_single_edge_path() {
         .unwrap()
         .unwrap();
     assert_eq!(path.length(), 1);
-    assert_eq!(path.vertices, ["1", "2"]);
-    assert_eq!(path.edges, [*graph.get_edge(&"1", &"2").unwrap()]);
+    assert_eq!(path.vertex_list(), ["1", "2"]);
+    assert_eq!(path.edge_list(), [*graph.get_edge(&"1", &"2").unwrap()]);
 }
 
 #[test]
@@ -150,9 +150,9 @@ fn test_simple_1() {
         .unwrap()
         .unwrap();
     assert_eq!(path.length(), 1);
-    assert_eq!(path.weight, 1.0);
-    assert_eq!(path.vertices, ["4", "1"]);
-    assert_eq!(path.edges, [*graph.get_edge(&"4", &"1").unwrap()]);
+    assert_eq!(path.weight(), 1.0);
+    assert_eq!(path.vertex_list(), ["4", "1"]);
+    assert_eq!(path.edge_list(), [*graph.get_edge(&"4", &"1").unwrap()]);
 }
 
 #[test]
@@ -180,7 +180,7 @@ fn test_graph_all_pairs_directed() {
                 (true, false) | (false, true) => 201.0,
                 (false, false) => 202.0,
             };
-            assert_eq!(path.weight, expected);
+            assert_eq!(path.weight(), expected);
         }
     }
 }
@@ -199,7 +199,7 @@ where
                 (None, None) => {}
                 (Some(expected), Some(actual)) => {
                     assert_eq!(expected.length(), actual.length());
-                    assert!((expected.weight - actual.weight).abs() < 0.0001);
+                    assert!((expected.weight() - actual.weight()).abs() < 0.0001);
                     assert!(actual.is_valid(graph));
                     assert_eq!(expected.start_vertex(), actual.start_vertex());
                     assert_eq!(expected.end_vertex(), actual.end_vertex());

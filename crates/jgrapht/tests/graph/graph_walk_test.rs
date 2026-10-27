@@ -256,3 +256,41 @@ fn test_first_empty_walk_equality() {
     let gw2 = W::singleton(0, 0.0);
     assert_ne!(gw1, gw2);
 }
+
+mod invariants {
+    //! Rust-native: the walk's cardinality invariant is enforced by the safe constructor, and the
+    //! fields cannot be set directly from outside the crate.
+    use jgrapht::{DefaultEdge, GraphError, GraphWalk};
+
+    fn e(i: u64) -> DefaultEdge {
+        DefaultEdge(i)
+    }
+
+    #[test]
+    fn from_parts_accepts_consistent_lists() {
+        let empty = GraphWalk::<u32, DefaultEdge>::from_parts(vec![], vec![], 0.0).unwrap();
+        assert!(empty.is_empty());
+        let single = GraphWalk::<u32, DefaultEdge>::from_parts(vec![7], vec![], 0.0).unwrap();
+        assert_eq!(single.vertex_list(), [7]);
+        let walk = GraphWalk::from_parts(vec![1, 2, 3], vec![e(0), e(1)], 2.5).unwrap();
+        assert_eq!(walk.length(), 2);
+        assert_eq!(walk.weight(), 2.5);
+        assert_eq!(walk.start_vertex(), Some(&1));
+        assert_eq!(walk.end_vertex(), Some(&3));
+    }
+
+    #[test]
+    fn from_parts_rejects_inconsistent_lists() {
+        for (vertices, edges) in [
+            (vec![1u32, 2], vec![]),
+            (vec![1], vec![e(0)]),
+            (vec![], vec![e(0)]),
+            (vec![1, 2, 3, 4], vec![e(0)]),
+        ] {
+            assert!(matches!(
+                GraphWalk::from_parts(vertices, edges, 0.0),
+                Err(GraphError::InvalidGraphWalk(_))
+            ));
+        }
+    }
+}

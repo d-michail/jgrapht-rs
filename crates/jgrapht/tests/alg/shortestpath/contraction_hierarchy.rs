@@ -365,7 +365,7 @@ mod bidirectional_dijkstra {
         ]);
         let h = precompute(&graph);
         let dijkstra = ContractionHierarchyBidirectionalDijkstra::new(&h);
-        let vertices = |s, t| dijkstra.path(&s, &t).unwrap().unwrap().vertices;
+        let vertices = |s, t| dijkstra.path(&s, &t).unwrap().unwrap().vertex_list().to_vec();
         assert_eq!(vertices(1, 1), [1]);
         assert_eq!(vertices(1, 2), [1, 2]);
         assert_eq!(vertices(1, 3), [1, 4, 5, 6, 3]);

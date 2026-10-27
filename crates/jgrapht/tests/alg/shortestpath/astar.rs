@@ -96,9 +96,9 @@ fn test_labyrinth_1() {
         .path(&source, &target)
         .unwrap()
         .unwrap();
-    assert_eq!(path.weight, 47.0);
-    assert_eq!(path.edges.len(), 47);
-    assert_eq!(path.vertices.len(), 48);
+    assert_eq!(path.weight(), 47.0);
+    assert_eq!(path.edge_list().len(), 47);
+    assert_eq!(path.vertex_list().len(), 48);
 
     let euclidean = |source: &Node, target: &Node| {
         let x = source.0.abs_diff(target.0) as f64;
@@ -109,8 +109,8 @@ fn test_labyrinth_1() {
         .path(&source, &target)
         .unwrap()
         .unwrap();
-    assert_eq!(path.weight, 47.0);
-    assert_eq!(path.edges.len(), 47);
+    assert_eq!(path.weight(), 47.0);
+    assert_eq!(path.edge_list().len(), 47);
 }
 
 #[test]
@@ -146,8 +146,8 @@ fn test_multigraph() {
         .path(&n1, &n3)
         .unwrap()
         .unwrap();
-    assert_eq!(path.weight, 6.0);
-    assert_eq!(path.edges.len(), 2);
+    assert_eq!(path.weight(), 6.0);
+    assert_eq!(path.edge_list().len(), 2);
 }
 
 #[test]
@@ -179,5 +179,5 @@ fn test_inconsistent_heuristic() {
         .path(&3, &2)
         .unwrap()
         .unwrap();
-    assert!((path.weight - 0.9641320715228003).abs() < 1e-9);
+    assert!((path.weight() - 0.9641320715228003).abs() < 1e-9);
 }

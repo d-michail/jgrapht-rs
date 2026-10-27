@@ -31,7 +31,7 @@ fn test_empty_graph() {
         .single_source(&"S")
         .unwrap();
     assert_eq!(paths.weight(&"S"), 0.0);
-    assert_eq!(paths.path(&"S").unwrap().vertices, ["S"]);
+    assert_eq!(paths.path(&"S").unwrap().vertex_list(), ["S"]);
 }
 
 #[test]
@@ -67,7 +67,7 @@ fn test_simple_graph() {
         .path(&"S", &"Z")
         .unwrap()
         .unwrap();
-    assert_eq!(path.vertices, ["S", "Y", "Z"]);
+    assert_eq!(path.vertex_list(), ["S", "Y", "Z"]);
 
     let materialized = BidirectionalAStarShortestPath::new(&graph, heuristic)
         .single_source(&"S")
@@ -82,9 +82,9 @@ fn test_labyrinth_1() {
         .path(&source, &target)
         .unwrap()
         .unwrap();
-    assert_eq!(path.weight, 47.0);
-    assert_eq!(path.edges.len(), 47);
-    assert_eq!(path.vertices.len(), 48);
+    assert_eq!(path.weight(), 47.0);
+    assert_eq!(path.edge_list().len(), 47);
+    assert_eq!(path.vertex_list().len(), 48);
 
     let euclidean = |source: &Node, target: &Node| {
         let x = source.0.abs_diff(target.0) as f64;
@@ -95,8 +95,8 @@ fn test_labyrinth_1() {
         .path(&source, &target)
         .unwrap()
         .unwrap();
-    assert_eq!(path.weight, 47.0);
-    assert_eq!(path.edges.len(), 47);
+    assert_eq!(path.weight(), 47.0);
+    assert_eq!(path.edge_list().len(), 47);
 }
 
 #[test]
@@ -132,8 +132,8 @@ fn test_multigraph() {
         .path(&n1, &n3)
         .unwrap()
         .unwrap();
-    assert_eq!(path.weight, 6.0);
-    assert_eq!(path.edges.len(), 2);
+    assert_eq!(path.weight(), 6.0);
+    assert_eq!(path.edge_list().len(), 2);
 }
 
 #[test]
@@ -165,7 +165,7 @@ fn test_inconsistent_heuristic() {
         .path(&3, &2)
         .unwrap()
         .unwrap();
-    assert!((path.weight - 0.9641320715228003).abs() < 1e-9);
+    assert!((path.weight() - 0.9641320715228003).abs() < 1e-9);
 }
 
 #[test]
@@ -204,10 +204,10 @@ fn test_random_graphs() {
                 (None, None) => {}
                 (Some(expected), Some(actual)) => {
                     assert!(
-                        (expected.weight - actual.weight).abs() < 1e-9,
+                        (expected.weight() - actual.weight()).abs() < 1e-9,
                         "iteration {iteration}, {source}->{target}: expected {}, got {}",
-                        expected.weight,
-                        actual.weight
+                        expected.weight(),
+                        actual.weight()
                     );
                 }
                 pair => panic!("iteration {iteration}, {source}->{target}: {pair:?}"),

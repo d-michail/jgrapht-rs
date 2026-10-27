@@ -139,9 +139,9 @@ fn tours() {
     ] {
         assert!(t.is_valid(&g));
         assert_eq!(t.length(), 8);
-        assert!(t.weight >= opt.weight - 1e-9);
+        assert!(t.weight() >= opt.weight() - 1e-9);
         let improved = TwoOptHeuristicTSP::new().improve_tour(&g, &t).unwrap();
-        assert!(improved.weight <= t.weight + 1e-9 && improved.weight >= opt.weight - 1e-9);
+        assert!(improved.weight() <= t.weight() + 1e-9 && improved.weight() >= opt.weight() - 1e-9);
     }
     assert!(
         HeldKarpTSP::new()

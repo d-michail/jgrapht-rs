@@ -81,7 +81,7 @@ pub(crate) fn closed_vertex_list_to_tour<G: Graph>(
         tour_weight += graph.weight_of(e);
         edges.push(e.clone());
     }
-    Ok(GraphWalk::new(tour, edges, tour_weight))
+    Ok(GraphWalk::new_unchecked(tour, edges, tour_weight))
 }
 
 /// `edgeSetToTour`: walks the edges of `tour` depth first.
@@ -98,7 +98,7 @@ pub(crate) fn edge_set_to_tour<G: OutgoingGraph>(
 /// `getSingletonTour`.
 pub(crate) fn singleton_tour<G: Graph>(graph: &G) -> GraphWalk<G::Vertex, G::Edge> {
     let start = graph.vertices().next().expect("one vertex").clone();
-    GraphWalk::new(vec![start], Vec::new(), 0.0)
+    GraphWalk::new_unchecked(vec![start], Vec::new(), 0.0)
 }
 
 pub(crate) fn require_not_empty<G: Graph>(graph: &G) -> Result<()> {

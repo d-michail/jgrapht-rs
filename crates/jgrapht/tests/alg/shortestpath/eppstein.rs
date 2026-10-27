@@ -33,7 +33,7 @@ fn weights(
     iterator: impl Iterator<Item = jgrapht::GraphWalk<u32, jgrapht::DefaultEdge>>,
     count: usize,
 ) -> Vec<f64> {
-    iterator.take(count).map(|path| path.weight).collect()
+    iterator.take(count).map(|path| path.weight()).collect()
 }
 
 #[test]
@@ -69,14 +69,14 @@ fn empty_singleton_and_unique_path_cases() {
         .unwrap()
         .next()
         .unwrap();
-    assert_eq!(singleton.vertices, [1]);
-    assert_eq!(singleton.weight, 0.0);
+    assert_eq!(singleton.vertex_list(), [1]);
+    assert_eq!(singleton.weight(), 0.0);
 
     let chain = graph(&[(1, 2, 1.0), (2, 3, 1.0)]);
     let mut iterator = EppsteinShortestPathIterator::new(&chain, &1, &3).unwrap();
     let path = iterator.next().unwrap();
-    assert_eq!(path.vertices, [1, 2, 3]);
-    assert_eq!(path.weight, 2.0);
+    assert_eq!(path.vertex_list(), [1, 2, 3]);
+    assert_eq!(path.weight(), 2.0);
     assert!(path.is_valid(&chain));
     assert_eq!(iterator.next(), None);
 }
@@ -161,7 +161,7 @@ fn java_cycle_golden_weights_and_valid_walks() {
     let mut iterator = EppsteinShortestPathIterator::new(&two_cycle, &1, &2).unwrap();
     for expected in [1.0, 3.0, 5.0, 7.0, 9.0] {
         let path = iterator.next().unwrap();
-        assert_eq!(path.weight, expected);
+        assert_eq!(path.weight(), expected);
         assert!(path.is_valid(&two_cycle));
     }
 
@@ -226,7 +226,7 @@ fn java_rest_heap_and_k_shortest_golden_weights() {
         .get_paths(&1, &3, 6)
         .unwrap();
     assert_eq!(
-        paths.iter().map(|path| path.weight).collect::<Vec<_>>(),
+        paths.iter().map(|path| path.weight()).collect::<Vec<_>>(),
         [2.0, 4.0, 6.0, 6.0, 8.0, 8.0]
     );
 }
@@ -275,7 +275,7 @@ fn java_k_shortest_facade_contracts() {
         .get_paths(&1, &12, 12)
         .unwrap();
     assert_eq!(
-        paths.iter().map(|path| path.weight).collect::<Vec<_>>(),
+        paths.iter().map(|path| path.weight()).collect::<Vec<_>>(),
         [55.0, 58.0, 59.0, 61.0, 62.0, 64.0, 65.0, 68.0, 68.0, 71.0]
     );
 }
@@ -300,12 +300,12 @@ fn java_random_graph_workload_returns_distinct_ordered_valid_walks() {
             .unwrap()
             .take(10)
             .collect();
-        assert!(paths.windows(2).all(|pair| pair[0].weight <= pair[1].weight));
+        assert!(paths.windows(2).all(|pair| pair[0].weight() <= pair[1].weight()));
         assert!(paths.iter().all(|path| path.is_valid(&graph)));
         assert_eq!(
             paths
                 .iter()
-                .map(|path| path.edges.clone())
+                .map(|path| path.edge_list().to_vec())
                 .collect::<HashSet<_>>()
                 .len(),
             paths.len()

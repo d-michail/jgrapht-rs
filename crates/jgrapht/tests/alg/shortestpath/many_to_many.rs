@@ -133,7 +133,7 @@ fn assert_path(
 ) {
     assert!((paths.weight(&source, &target) - weight).abs() < 1e-9);
     assert_eq!(
-        paths.path(&source, &target).unwrap().vertices,
+        paths.path(&source, &target).unwrap().vertex_list(),
         vertices,
         "{source}->{target}"
     );
@@ -260,8 +260,8 @@ fn assert_correct_paths<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingG
             match (expected_path, actual_path) {
                 (None, None) => assert_eq!(paths.weight(source, target), f64::INFINITY),
                 (Some(expected), Some(actual)) => {
-                    assert!((expected.weight - actual.weight).abs() < 1e-9);
-                    assert_eq!(expected.vertices, actual.vertices);
+                    assert!((expected.weight() - actual.weight()).abs() < 1e-9);
+                    assert_eq!(expected.vertex_list(), actual.vertex_list());
                 }
                 pair => panic!("{source}->{target}: {pair:?}"),
             }

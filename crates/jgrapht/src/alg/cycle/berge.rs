@@ -148,7 +148,7 @@ impl Core {
     ) -> Option<Walk> {
         if s1 == b1 {
             if b1 == m {
-                Some(Walk::new(vec![s1], Vec::new(), 0.0))
+                Some(Walk::new_unchecked(vec![s1], Vec::new(), 0.0))
             } else {
                 None
             }
@@ -182,7 +182,7 @@ impl Core {
             let mut vertices = path_t.vertex_list().to_vec();
             vertices.extend_from_slice(&path_s.vertex_list()[1..]);
             let w = weight(g, &edges);
-            Some(Walk::new(vertices, edges, w))
+            Some(Walk::new_unchecked(vertices, edges, w))
         }
     }
 
@@ -1120,11 +1120,11 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> BergeGrap
             let vertices: Vec<V> = cycle.iter().map(|&i| vs[i].clone()).collect();
             self.certificate_in_complement = *in_complement;
             self.certificate = if *in_complement {
-                Some(GraphWalk::new(vertices, Vec::new(), 0.0))
+                Some(GraphWalk::new_unchecked(vertices, Vec::new(), 0.0))
             } else {
                 GraphWalk::from_vertex_list(g, vertices.clone(), 0.0)
                     .ok()
-                    .or_else(|| Some(GraphWalk::new(vertices, Vec::new(), 0.0)))
+                    .or_else(|| Some(GraphWalk::new_unchecked(vertices, Vec::new(), 0.0)))
             };
         }
     }

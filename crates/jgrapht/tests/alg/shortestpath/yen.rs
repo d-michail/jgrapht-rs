@@ -167,15 +167,15 @@ fn collect_loopless<G: Graph<Vertex = u32, Edge = DefaultEdge> + IncidenceGraph>
         .inspect(|path| {
             assert!(path.is_valid(graph));
             assert_eq!(
-                path.vertices.iter().collect::<HashSet<_>>().len(),
-                path.vertices.len()
+                path.vertex_list().iter().collect::<HashSet<_>>().len(),
+                path.vertex_list().len()
             );
         })
         .collect()
 }
 
 fn weights(paths: &[GraphWalk<u32, DefaultEdge>]) -> Vec<f64> {
-    paths.iter().map(|path| path.weight).collect()
+    paths.iter().map(|path| path.weight()).collect()
 }
 
 mod yen_shortest_path_iterator_test {
@@ -217,7 +217,7 @@ mod yen_shortest_path_iterator_test {
         graph.add_vertex(1);
         let paths = collect_loopless(&graph, 1, 1);
         assert_eq!(weights(&paths), [0.0]);
-        assert_eq!(paths[0].vertices, [1]);
+        assert_eq!(paths[0].vertex_list(), [1]);
     }
 
     #[test]
@@ -228,7 +228,7 @@ mod yen_shortest_path_iterator_test {
         let second = graph.add_weighted_edge(&2, &3, 1.0).unwrap().unwrap();
         let paths = collect_loopless(&graph, 1, 3);
         assert_eq!(weights(&paths), [2.0]);
-        assert_eq!(paths[0].edges, [first, second]);
+        assert_eq!(paths[0].edge_list(), [first, second]);
     }
 
     #[test]
@@ -336,10 +336,10 @@ mod yen_shortest_path_iterator_test {
         let expected_1 = vec![e1, e6, e10, e12];
         let expected_2 = vec![e1, e6, e11, e12];
         assert!(
-            (paths[0].edges == expected_1 && paths[1].edges == expected_2)
-                || (paths[0].edges == expected_2 && paths[1].edges == expected_1)
+            (paths[0].edge_list() == expected_1 && paths[1].edge_list() == expected_2)
+                || (paths[0].edge_list() == expected_2 && paths[1].edge_list() == expected_1)
         );
-        assert_eq!(paths[2].edges, [e1, e5, e14, e13, e12]);
+        assert_eq!(paths[2].edge_list(), [e1, e5, e14, e13, e12]);
     }
 
     #[test]
@@ -504,13 +504,13 @@ mod yen_k_shortest_path_test {
                 .unwrap();
             let expected: Vec<_> = all
                 .into_iter()
-                .filter(|path| path.edges.iter().all(|edge| !forbidden.contains(edge)))
+                .filter(|path| path.edge_list().iter().all(|edge| !forbidden.contains(edge)))
                 .collect();
             assert_eq!(validated, expected);
             assert_eq!(
                 validated
                     .iter()
-                    .map(|path| path.edges.clone())
+                    .map(|path| path.edge_list().to_vec())
                     .collect::<HashSet<_>>()
                     .len(),
                 validated.len()

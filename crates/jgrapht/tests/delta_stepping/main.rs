@@ -92,9 +92,9 @@ fn test_line_graph() {
             edges.push(g.add_weighted_edge(&i, &(i + 1), 1.0).unwrap());
         }
         let path = delta_stepping(&g).path(&0, &(n - 1)).unwrap().unwrap();
-        assert!((path.weight - (n - 1) as f64).abs() < 1e-9);
-        assert_eq!(path.vertices, (0..n).collect::<Vec<_>>());
-        assert_eq!(path.edges.len(), edges.len());
+        assert!((path.weight() - (n - 1) as f64).abs() < 1e-9);
+        assert_eq!(path.vertex_list(), (0..n).collect::<Vec<_>>());
+        assert_eq!(path.edge_list().len(), edges.len());
     }
 }
 
@@ -105,8 +105,8 @@ fn test_supply_comparator() {
     g.add_weighted_edge(&"v0", &"v1", 1.0).unwrap();
     g.add_weighted_edge(&"v1", &"v2", 1.0).unwrap();
     let path = delta_stepping(&g).path(&"v0", &"v2").unwrap().unwrap();
-    assert!((path.weight - 2.0).abs() < 1e-9);
-    assert_eq!(path.vertices, ["v0", "v1", "v2"]);
+    assert!((path.weight() - 2.0).abs() < 1e-9);
+    assert_eq!(path.vertex_list(), ["v0", "v1", "v2"]);
 }
 
 /// Vertices whose ordering is constant (`ComparableVertex`) or absent (`NonComparableVertex`).
@@ -118,14 +118,14 @@ fn test_comparable_and_non_comparable_vertices() {
     g.add_vertices([V(1), V(2)]);
     g.add_weighted_edge(&V(1), &V(2), 1.0).unwrap();
     let path = delta_stepping(&g).path(&V(1), &V(2)).unwrap().unwrap();
-    assert!((path.weight - 1.0).abs() < 1e-9);
-    assert_eq!(path.vertices, [V(1), V(2)]);
+    assert!((path.weight() - 1.0).abs() < 1e-9);
+    assert_eq!(path.vertex_list(), [V(1), V(2)]);
 }
 
 #[test]
 fn test_get_path() {
     let g = simple_graph();
-    let vertices = |t| delta_stepping(&g).path(&S, &t).unwrap().unwrap().vertices;
+    let vertices = |t| delta_stepping(&g).path(&S, &t).unwrap().unwrap().vertex_list().to_vec();
     assert_eq!(vertices(S), [S]);
     assert_eq!(vertices(T), [S, Y, T]);
     assert_eq!(vertices(X), [S, Y, T, X]);
@@ -183,7 +183,7 @@ fn test_get_paths_2() {
         for sink in 0..n {
             match (expected.path(&sink), actual.path(&sink)) {
                 (None, None) => {}
-                (Some(a), Some(b)) => assert!((a.weight - b.weight).abs() < 1e-9),
+                (Some(a), Some(b)) => assert!((a.weight() - b.weight()).abs() < 1e-9),
                 (a, b) => panic!("reachability differs for {sink}: {a:?} vs {b:?}"),
             }
         }

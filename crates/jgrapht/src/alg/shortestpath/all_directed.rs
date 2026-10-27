@@ -285,7 +285,7 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>> AllD
                 if !self.path_validator.is_valid_path(&partial, edge) {
                     continue;
                 }
-                let path = GraphWalk::new(
+                let path = GraphWalk::new_unchecked(
                     vec![source.clone(), target.clone()],
                     vec![edge.clone()],
                     self.graph.weight_of(edge),

@@ -139,7 +139,7 @@ fn require_directed_or_undirected<G: Graph>(graph: &G) -> Result<()> {
 
 fn singleton_path<G: Graph>(graph: &G) -> GraphWalk<G::Vertex, G::Edge> {
     let only = graph.vertices().next().expect("one vertex").clone();
-    GraphWalk::new(vec![only], Vec::new(), 0.0)
+    GraphWalk::new_unchecked(vec![only], Vec::new(), 0.0)
 }
 
 fn vertex_list_to_path<G: Graph>(
@@ -147,7 +147,7 @@ fn vertex_list_to_path<G: Graph>(
     graph: &G,
 ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
     if vertices.len() == 1 {
-        return Ok(GraphWalk::new(vertices, Vec::new(), 0.0));
+        return Ok(GraphWalk::new_unchecked(vertices, Vec::new(), 0.0));
     }
     let mut edges = Vec::with_capacity(vertices.len() - 1);
     let mut weight = 0.0;
@@ -158,7 +158,7 @@ fn vertex_list_to_path<G: Graph>(
         weight += graph.weight_of(e);
         edges.push(e.clone());
     }
-    Ok(GraphWalk::new(vertices, edges, weight))
+    Ok(GraphWalk::new_unchecked(vertices, edges, weight))
 }
 
 /// Distinct neighbours (loops dropped) in first-seen order.
