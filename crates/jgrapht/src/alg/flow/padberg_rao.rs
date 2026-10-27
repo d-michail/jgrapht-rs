@@ -110,6 +110,10 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
         if odd_vertices.iter().any(|v| !self.network.contains_vertex(v)) {
             return Err(GraphError::VertexNotFound);
         }
+        if odd_vertices.is_empty() {
+            // no vertex is odd, so no cut-set can be odd
+            return Ok(None);
+        }
         self.odd_vertices = odd_vertices;
         self.gomory_hu_tree = Some(self.gusfield.gomory_hu_tree()?);
         let weight = if use_tree_compression {
