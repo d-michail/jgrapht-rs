@@ -377,7 +377,9 @@ impl<G: Graph> GraphExporter<G> for Graph6Exporter {
                     }
                 }
                 let mut current = 0usize;
-                for (low, high) in edges {
+                let mut edge_index = 0usize;
+                while edge_index < edges.len() {
+                    let (low, high) = edges[edge_index];
                     if high > current + 1 {
                         bits.bit(true);
                         bits.integer(high as u64, width);
@@ -386,9 +388,11 @@ impl<G: Graph> GraphExporter<G> for Graph6Exporter {
                         bits.bit(true);
                         bits.integer(low as u64, width);
                         current += 1;
+                        edge_index += 1;
                     } else {
                         bits.bit(false);
                         bits.integer(low as u64, width);
+                        edge_index += 1;
                     }
                 }
                 while bits.used != 0 {
