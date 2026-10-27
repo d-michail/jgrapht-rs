@@ -23,13 +23,31 @@ use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
 /// Naive many-to-many implementation, running a point-to-point algorithm for every pair.
-pub struct DefaultManyToManyShortestPaths<'g, G: Graph> {
+pub struct DefaultManyToManyShortestPaths<'g, G: Graph + 'g> {
     graph: &'g G,
+    algorithm_factory: Box<dyn Fn(&'g G) -> Box<dyn ShortestPathAlgorithm<G> + 'g> + 'g>,
 }
 
-impl<'g, G: Graph> DefaultManyToManyShortestPaths<'g, G> {
+impl<'g, G: Graph + 'g> DefaultManyToManyShortestPaths<'g, G> {
     pub fn new(graph: &'g G) -> Self {
-        Self { graph }
+        Self {
+            graph,
+            algorithm_factory: Box::new(|graph| {
+                Box::new(BidirectionalDijkstraShortestPath::new(graph))
+            }),
+        }
+    }
+
+    /// Supply the point-to-point algorithm used for every source/target pair.
+    pub fn with_algorithm<A, F>(graph: &'g G, factory: F) -> Self
+    where
+        A: ShortestPathAlgorithm<G> + 'g,
+        F: Fn(&'g G) -> A + 'g,
+    {
+        Self {
+            graph,
+            algorithm_factory: Box::new(move |graph| Box::new(factory(graph))),
+        }
     }
 
     pub fn get_many_to_many_paths(
@@ -40,7 +58,7 @@ impl<'g, G: Graph> DefaultManyToManyShortestPaths<'g, G> {
         let sources: HashSet<_> = sources.into_iter().collect();
         let targets: HashSet<_> = targets.into_iter().collect();
         validate_sets(self.graph, &sources, &targets)?;
-        let algorithm = BidirectionalDijkstraShortestPath::new(self.graph);
+        let algorithm = (self.algorithm_factory)(self.graph);
         let mut paths = HashMap::new();
         for source in &sources {
             for target in &targets {
@@ -50,6 +68,43 @@ impl<'g, G: Graph> DefaultManyToManyShortestPaths<'g, G> {
             }
         }
         Ok(ManyToManyPaths::from_parts(sources, targets, paths))
+    }
+}
+
+impl<G: Graph> ShortestPathAlgorithm<G> for DefaultManyToManyShortestPaths<'_, G> {
+    fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
+        if !self.graph.contains_vertex(source) {
+            return Err(GraphError::VertexNotFound);
+        }
+        let algorithm = (self.algorithm_factory)(self.graph);
+        let mut result = SingleSourcePaths {
+            source: source.clone(),
+            dist: HashMap::new(),
+            pred: HashMap::new(),
+        };
+        for target in self.graph.vertices() {
+            let Some(path) = algorithm.path(source, target)? else {
+                continue;
+            };
+            result.dist.insert(target.clone(), path.weight);
+            if let (Some(edge), Some(parent)) = (
+                path.edges.last(),
+                path.vertices.get(path.vertices.len().saturating_sub(2)),
+            ) {
+                result
+                    .pred
+                    .insert(target.clone(), (edge.clone(), parent.clone()));
+            }
+        }
+        Ok(result)
+    }
+
+    fn path(
+        &self,
+        source: &G::Vertex,
+        sink: &G::Vertex,
+    ) -> Result<Option<crate::walk::GraphWalk<G::Vertex, G::Edge>>> {
+        (self.algorithm_factory)(self.graph).path(source, sink)
     }
 }
 
@@ -102,6 +157,12 @@ impl<'g, G: Graph> DijkstraManyToManyShortestPaths<'g, G> {
     ) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         let targets: HashSet<_> = self.graph.vertices().cloned().collect();
         forward_tree(self.graph, source, &targets)
+    }
+}
+
+impl<G: Graph> ShortestPathAlgorithm<G> for DijkstraManyToManyShortestPaths<'_, G> {
+    fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
+        DijkstraManyToManyShortestPaths::single_source(self, source)
     }
 }
 

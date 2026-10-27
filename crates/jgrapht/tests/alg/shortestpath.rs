@@ -52,6 +52,8 @@ mod incidence_errors;
 mod int_vertex_dijkstra;
 #[path = "shortestpath/johnson.rs"]
 mod johnson;
+#[path = "shortestpath/many_to_many.rs"]
+mod many_to_many;
 #[path = "shortestpath/multi_objective.rs"]
 mod multi_objective;
 #[path = "shortestpath/path_results.rs"]

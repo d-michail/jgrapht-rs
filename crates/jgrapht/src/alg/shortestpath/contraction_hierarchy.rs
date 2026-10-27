@@ -675,3 +675,17 @@ impl<'h, 'g, G: Graph> CHManyToManyShortestPaths<'h, 'g, G> {
         })
     }
 }
+
+impl<G: Graph> ShortestPathAlgorithm<G> for CHManyToManyShortestPaths<'_, '_, G> {
+    fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
+        ContractionHierarchyBidirectionalDijkstra::new(self.hierarchy).single_source(source)
+    }
+
+    fn path(
+        &self,
+        source: &G::Vertex,
+        sink: &G::Vertex,
+    ) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
+        ContractionHierarchyBidirectionalDijkstra::new(self.hierarchy).path(source, sink)
+    }
+}
