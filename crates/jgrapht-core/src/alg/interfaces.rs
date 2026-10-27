@@ -202,3 +202,23 @@ pub trait StrongConnectivityAlgorithm {
         c
     }
 }
+
+/// A planar embedding: for every vertex its incident edges in rotation order
+/// (`PlanarityTestingAlgorithm.Embedding`).
+#[derive(Debug, Clone)]
+pub struct Embedding<V: Eq + Hash, E> {
+    map: IndexMap<V, Vec<E>>,
+}
+
+impl<V: Eq + Hash, E> Embedding<V, E> {
+    pub fn new(map: IndexMap<V, Vec<E>>) -> Self {
+        Embedding { map }
+    }
+    /// The edges around `v` in clockwise or counter-clockwise order.
+    pub fn edges_around(&self, v: &V) -> Option<&[E]> {
+        self.map.get(v).map(|l| l.as_slice())
+    }
+    pub fn iter(&self) -> impl Iterator<Item = (&V, &[E])> {
+        self.map.iter().map(|(v, l)| (v, l.as_slice()))
+    }
+}
