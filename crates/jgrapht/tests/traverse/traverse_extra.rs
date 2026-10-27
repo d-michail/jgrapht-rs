@@ -27,20 +27,20 @@ fn dg(edges: &[(u32, u32)]) -> DiGraph<u32> {
 #[test]
 fn bfs_dfs_orders() {
     let g = dg(&[(1, 2), (1, 3), (2, 4), (3, 4), (4, 5)]);
-    let mut bfs = Bfs::new(&g, &1);
+    let mut bfs = Bfs::new(&g, &1).unwrap();
     let order: Vec<_> = bfs.by_ref().copied().collect();
     assert_eq!(order, [1, 2, 3, 4, 5]);
     assert_eq!(bfs.depth(&5), Some(3));
-    let dfs: Vec<_> = Dfs::new(&g, &1).copied().collect();
+    let dfs: Vec<_> = Dfs::new(&g, &1).unwrap().copied().collect();
     assert_eq!(dfs, [1, 2, 4, 5, 3]);
-    let post: Vec<_> = DfsPostOrder::new(&g, &1).copied().collect();
+    let post: Vec<_> = DfsPostOrder::new(&g, &1).unwrap().copied().collect();
     assert_eq!(post, [5, 4, 2, 3, 1]);
 }
 
 #[test]
 fn all_components_and_direction() {
     let g = dg(&[(1, 2), (3, 4)]);
-    assert_eq!(Bfs::new(&g, &2).count(), 1); // directed: 2 has no out-edges
+    assert_eq!(Bfs::new(&g, &2).unwrap().count(), 1); // directed: 2 has no out-edges
     assert_eq!(Bfs::all(&g).count(), 4);
     assert_eq!(Dfs::all(&g).count(), 4);
     assert_eq!(DfsPostOrder::all(&g).count(), 4);
@@ -63,16 +63,21 @@ fn closest_first_and_radius() {
         let e = *g.get_edge(&a, &b).unwrap();
         g.set_edge_weight(&e, w).unwrap();
     }
-    let r: Vec<_> = ClosestFirst::new(&g, &1).map(|(v, d)| (*v, d)).collect();
+    let r: Vec<_> = ClosestFirst::new(&g, &1)
+        .unwrap()
+        .map(|item| item.map(|(v, d)| (*v, d)))
+        .collect::<jgrapht::Result<_>>()
+        .unwrap();
     assert_eq!(r, [(1, 0.0), (2, 1.0), (3, 2.0), (4, 3.0)]);
-    assert_eq!(ClosestFirst::with_radius(&g, &1, 2.0).count(), 3);
+    assert_eq!(ClosestFirst::with_radius(&g, &1, 2.0).unwrap().count(), 3);
 }
 
 #[test]
 fn random_walk() {
     let g = dg(&[(1, 2), (2, 3)]);
     let w: Vec<_> = RandomWalk::new(&g, &1, 10, false, StdRng::seed_from_u64(1))
-        .copied()
+        .unwrap()
+        .map(|v| *v.unwrap())
         .collect();
     assert_eq!(w, [1, 2, 3]);
 }

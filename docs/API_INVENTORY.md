@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1470 | 344 | 117 | 356 | 13 | 19 | 421 | 200 |
+| `jgrapht` | 1473 | 345 | 119 | 361 | 14 | 19 | 421 | 194 |
 | `jgrapht-io` | 152 | 78 | 9 | 12 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -1558,6 +1558,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/cross.rs` | `Strategy::into_strategy` | state query | `S` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::is_cross_component_traversal` | infallible | `bool` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::is_exhausted` | infallible | `bool` |
+| `jgrapht/src/traverse/cross.rs` | `Strategy::output` | infallible | `Self::Output` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::provide_next` | state query | `&'g G::Vertex` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::remove_traversal_listener` | state query | `bool` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::seen_data` | Option | `Option<&S::Data>` |
@@ -1565,6 +1566,8 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/cross.rs` | `Strategy::set_edge_selector` | infallible | `()` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::strategy` | state query | `&S` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::strategy_mut` | state query | `&mut S` |
+| `jgrapht/src/traverse/cross.rs` | `Strategy::take_error` | Option | `Option<GraphError>` |
+| `jgrapht/src/traverse/cross.rs` | `Strategy::try_next` | Result<Option> | `Result<Option<&'g G::Vertex>>` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::with_strategy` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/events.rs` | `TraversalListener::connected_component_finished` | infallible | `()` |
 | `jgrapht/src/traverse/events.rs` | `TraversalListener::connected_component_started` | infallible | `()` |
@@ -1578,9 +1581,9 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/ordered.rs` | `Advance::advance` | Option | `Option<&'g V>` |
 | `jgrapht/src/traverse/ordered.rs` | `Advance::has_next` | infallible | `bool` |
 | `jgrapht/src/traverse/ordered.rs` | `Advance::inner` | state query | `&A` |
-| `jgrapht/src/traverse/ordered.rs` | `Advance::is_cross_component_traversal` | infallible | `bool` |
+| `jgrapht/src/traverse/ordered.rs` | `Advance::output` | infallible | `Self::Output` |
 | `jgrapht/src/traverse/ordered.rs` | `Advance::remove_traversal_listener` | state query | `bool` |
-| `jgrapht/src/traverse/ordered.rs` | `Advance::set_cross_component_traversal` | Result | `Result<()>` |
+| `jgrapht/src/traverse/ordered.rs` | `Advance::take_error` | Option | `Option<GraphError>` |
 | `jgrapht/src/traverse/ordered.rs` | `DegeneracyOrderingIterator::new` | unchecked constructor | `Self` |
 | `jgrapht/src/traverse/ordered.rs` | `LexBreadthFirstIterator::new` | unchecked constructor | `Self` |
 | `jgrapht/src/traverse/ordered.rs` | `MaximumCardinalityIterator::new` | unchecked constructor | `Self` |
@@ -1591,20 +1594,20 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/simple.rs` | `topological_sort` | Option | `Option<Vec<&G::Vertex>>` |
 | `jgrapht/src/traverse/simple.rs` | `Bfs::all` | infallible | `Self` |
 | `jgrapht/src/traverse/simple.rs` | `Bfs::depth` | Option | `Option<usize>` |
-| `jgrapht/src/traverse/simple.rs` | `Bfs::new` | unchecked constructor | `Self` |
+| `jgrapht/src/traverse/simple.rs` | `Bfs::new` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/simple.rs` | `Dfs::all` | infallible | `Self` |
-| `jgrapht/src/traverse/simple.rs` | `Dfs::new` | unchecked constructor | `Self` |
+| `jgrapht/src/traverse/simple.rs` | `Dfs::new` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/simple.rs` | `DfsPostOrder::all` | infallible | `Self` |
-| `jgrapht/src/traverse/simple.rs` | `DfsPostOrder::new` | unchecked constructor | `Self` |
+| `jgrapht/src/traverse/simple.rs` | `DfsPostOrder::new` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/simple.rs` | `TopologicalOrder::is_complete` | infallible | `bool` |
 | `jgrapht/src/traverse/simple.rs` | `TopologicalOrder::new` | unchecked constructor | `Self` |
 | `jgrapht/src/traverse/simple_ordering.rs` | `DegeneracyOrdering::degeneracy` | state query | `usize` |
 | `jgrapht/src/traverse/simple_ordering.rs` | `DegeneracyOrdering::new` | unchecked constructor | `Self` |
 | `jgrapht/src/traverse/simple_ordering.rs` | `LexBfs::new` | unchecked constructor | `Self` |
 | `jgrapht/src/traverse/simple_ordering.rs` | `MaximumCardinality::new` | unchecked constructor | `Self` |
-| `jgrapht/src/traverse/simple_weighted.rs` | `ClosestFirst::new` | unchecked constructor | `Self` |
-| `jgrapht/src/traverse/simple_weighted.rs` | `ClosestFirst::with_radius` | unchecked constructor | `Self` |
-| `jgrapht/src/traverse/simple_weighted.rs` | `RandomWalk::new` | unchecked constructor | `Self` |
+| `jgrapht/src/traverse/simple_weighted.rs` | `ClosestFirst::new` | Result | `Result<Self>` |
+| `jgrapht/src/traverse/simple_weighted.rs` | `ClosestFirst::with_radius` | Result | `Result<Self>` |
+| `jgrapht/src/traverse/simple_weighted.rs` | `RandomWalk::new` | Result | `Result<Self>` |
 | `jgrapht/src/util/heap.rs` | `JavaPairingHeap::new` | unchecked constructor | `Self` |
 | `jgrapht/src/util/java.rs` | `java_hash_order` | infallible | `Vec<T>` |
 | `jgrapht/src/util/java.rs` | `java_hash_set_order` | infallible | `Vec<T>` |

@@ -60,6 +60,32 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 9: traversals report errors
+
+* `Bfs::new`, `Dfs::new`, `DfsPostOrder::new`, `ClosestFirst::new`, `ClosestFirst::with_radius` and
+  `RandomWalk::new` return `Result` and reject a start vertex that is not in the graph with
+  `GraphError::VertexNotFound`. `::all` (whole graph) is unchanged. A negative or NaN radius is
+  `InvalidParameter { name: "radius", .. }`. The faithful iterators report a missing start vertex
+  as `VertexNotFound` instead of `InvalidArgument`.
+* Errors that can only appear while iterating are items. `ClosestFirstIterator` (was an `assert!`
+  panic on a negative weight), `ClosestFirst`, `RandomWalk`, `RandomWalkVertexIterator` and
+  `TopologicalOrderIterator` yield `Result<..>`; after the first `Err` they end. The error takes the
+  place of the vertex that could not be expanded.
+
+  ```rust
+  // before
+  let order: Vec<_> = TopologicalOrderIterator::new(&g)?.collect(); // a cycle ended it silently
+  assert!(!it.inner().is_cyclic());
+  // after
+  let order = TopologicalOrderIterator::new(&g)?.collect::<Result<Vec<_>>>()?; // Err(InvalidGraph(Acyclic))
+  ```
+* `BreadthFirstIterator` and `DepthFirstIterator` still yield bare vertices (they cannot fail);
+  generic code can call `CrossComponentIterator::try_next`.
+* The ordered iterators lost `is_cross_component_traversal` and `set_cross_component_traversal`
+  (they always cover every component; the setter could only fail).
+* `TransitiveClosure::close_directed_acyclic_graph` now returns `InvalidGraph(Acyclic)` for a
+  cyclic graph instead of closing only the vertices ahead of the cycle.
+
 ## Step 8: typed errors
 
 `GraphError` gained variants that replace message matching. Match the variant, never the text.

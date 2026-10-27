@@ -27,13 +27,26 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Produces the next vertex of an ordering.
 pub trait Advance<'g, V> {
+    /// What the iterator yields: the vertex itself for an ordering that cannot fail, or a
+    /// `Result` for one that can (topological order reports a cycle).
+    type Output;
+    /// Converts one step into [`Advance::Output`]. An ordering whose `Output` is a bare vertex
+    /// never records an error, so it never receives an `Err`.
+    fn output(item: Result<&'g V>) -> Self::Output;
     fn advance(&mut self) -> Option<&'g V>;
+    /// The reason the last [`Advance::advance`] returned `None`, if it was a failure rather than
+    /// the end of the ordering. The iterator yields it once and then ends.
+    fn take_error(&mut self) -> Option<GraphError> {
+        None
+    }
 }
 
 /// Adds one-vertex lookahead and traversal events to an [`Advance`] source.
 pub struct Ordered<'g, G: Graph + 'g, A> {
     adv: A,
     cur: Option<&'g G::Vertex>,
+    error: Option<GraphError>,
+    done: bool,
     listeners: TraversalListeners<'g, G::Vertex, G::Edge>,
 }
 
@@ -42,6 +55,8 @@ impl<'g, G: IncidenceGraph + 'g, A: Advance<'g, G::Vertex>> Ordered<'g, G, A> {
         Ordered {
             adv,
             cur: None,
+            error: None,
+            done: false,
             listeners: TraversalListeners::default(),
         }
     }
@@ -54,47 +69,39 @@ impl<'g, G: IncidenceGraph + 'g, A: Advance<'g, G::Vertex>> Ordered<'g, G, A> {
     pub fn remove_traversal_listener(&mut self, id: usize) -> bool {
         self.listeners.remove(id)
     }
-    /// These iterators always traverse every component.
-    pub fn is_cross_component_traversal(&self) -> bool {
-        true
-    }
-    /// Disabling cross-component traversal is not possible.
-    pub fn set_cross_component_traversal(&mut self, cross: bool) -> Result<()> {
-        if cross {
-            Ok(())
-        } else {
-            Err(GraphError::InvalidArgument(
-                "Iterator is always cross-component".into(),
-            ))
-        }
-    }
     /// The underlying ordering state (e.g. [`TopologicalAdvance::is_cyclic`]).
     pub fn inner(&self) -> &A {
         &self.adv
     }
     pub fn has_next(&mut self) -> bool {
-        if self.cur.is_some() {
+        if self.done {
+            return false;
+        }
+        if self.cur.is_some() || self.error.is_some() {
             return true;
         }
         self.cur = self.adv.advance();
-        if let Some(v) = self.cur {
-            self.listeners.vertex_traversed(v);
+        match self.cur {
+            Some(v) => self.listeners.vertex_traversed(v),
+            None => self.error = self.adv.take_error(),
         }
-        self.cur.is_some()
+        self.cur.is_some() || self.error.is_some()
     }
 }
 
 impl<'g, G: IncidenceGraph + 'g, A: Advance<'g, G::Vertex>> Iterator for Ordered<'g, G, A> {
-    type Item = &'g G::Vertex;
-    fn next(&mut self) -> Option<&'g G::Vertex> {
+    type Item = A::Output;
+    fn next(&mut self) -> Option<A::Output> {
         if !self.has_next() {
             return None;
         }
-        let v = self.cur.take();
-        if let Some(v) = v {
-            self.listeners.vertex_finished(v);
+        if let Some(e) = self.error.take() {
+            self.done = true;
+            return Some(A::output(Err(e)));
         }
-        v
+        let v = self.cur.take()?;
+        self.listeners.vertex_finished(v);
+        Some(A::output(Ok(v)))
     }
 }
 
@@ -126,6 +133,7 @@ pub struct TopologicalAdvance<'g, G: Graph + 'g> {
     in_degree: HashMap<&'g G::Vertex, usize>,
     remaining: usize,
     cyclic: bool,
+    reported: bool,
 }
 
 impl<'g, G: IncidenceGraph + 'g> TopologicalAdvance<'g, G> {
@@ -136,6 +144,17 @@ impl<'g, G: IncidenceGraph + 'g> TopologicalAdvance<'g, G> {
 }
 
 impl<'g, G: IncidenceGraph + 'g + OutgoingGraph> Advance<'g, G::Vertex> for TopologicalAdvance<'g, G> {
+    type Output = Result<&'g G::Vertex>;
+    fn output(item: Result<&'g G::Vertex>) -> Self::Output {
+        item
+    }
+    fn take_error(&mut self) -> Option<GraphError> {
+        if self.cyclic && !self.reported {
+            self.reported = true;
+            return Some(GraphError::InvalidGraph(crate::GraphProperty::Acyclic));
+        }
+        None
+    }
     fn advance(&mut self) -> Option<&'g G::Vertex> {
         let result = self.queue.poll();
         match result {
@@ -164,8 +183,10 @@ impl<'g, G: IncidenceGraph + 'g + OutgoingGraph> Advance<'g, G::Vertex> for Topo
 }
 
 /// Topological order of a directed acyclic graph (sources first, FIFO among ready vertices, or
-/// by a comparator using `java.util.PriorityQueue` semantics). A cycle ends the iteration early
-/// and records whether traversal stopped on a cycle in its ordering state.
+/// by a comparator using `java.util.PriorityQueue` semantics). Items are `Result`s: when the
+/// remaining vertices lie on or behind a cycle the iterator yields one
+/// `Err(GraphError::InvalidGraph(GraphProperty::Acyclic))` and then ends (JGraphT throws
+/// `NotDirectedAcyclicGraphException`). Collect with `collect::<Result<Vec<_>>>()`.
 pub type TopologicalOrderIterator<'g, G> = Ordered<'g, G, TopologicalAdvance<'g, G>>;
 
 impl<'g, G: DirectedGraph + 'g + IncomingGraph + OutgoingGraph + IncidenceGraph> TopologicalOrderIterator<'g, G> {
@@ -203,6 +224,7 @@ impl<'g, G: DirectedGraph + 'g + IncomingGraph + OutgoingGraph + IncidenceGraph>
             in_degree,
             remaining,
             cyclic: false,
+            reported: false,
         }))
     }
 }
@@ -283,6 +305,10 @@ impl<'g, G: IncidenceGraph + 'g> LexAdvance<'g, G> {
 }
 
 impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> Advance<'g, G::Vertex> for LexAdvance<'g, G> {
+    type Output = &'g G::Vertex;
+    fn output(item: Result<&'g G::Vertex>) -> Self::Output {
+        item.expect("this ordering cannot fail")
+    }
     fn advance(&mut self) -> Option<&'g G::Vertex> {
         let v = self.poll()?;
         let g = self.g;
@@ -371,6 +397,10 @@ impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> MaxCardAdvance<'g, G> {
 }
 
 impl<'g, G: IncidenceGraph + 'g> Advance<'g, G::Vertex> for MaxCardAdvance<'g, G> {
+    type Output = &'g G::Vertex;
+    fn output(item: Result<&'g G::Vertex>) -> Self::Output {
+        item.expect("this ordering cannot fail")
+    }
     fn advance(&mut self) -> Option<&'g G::Vertex> {
         if self.remaining == 0 {
             return None;
@@ -432,6 +462,10 @@ pub struct DegeneracyAdvance<'g, G: Graph + 'g> {
 }
 
 impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> Advance<'g, G::Vertex> for DegeneracyAdvance<'g, G> {
+    type Output = &'g G::Vertex;
+    fn output(item: Result<&'g G::Vertex>) -> Self::Output {
+        item.expect("this ordering cannot fail")
+    }
     fn advance(&mut self) -> Option<&'g G::Vertex> {
         while self.min_degree < self.buckets.len() && self.buckets[self.min_degree].is_empty() {
             self.min_degree += 1;

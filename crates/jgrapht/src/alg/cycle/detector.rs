@@ -89,6 +89,11 @@ impl<'g, G: Graph + 'g + IncidenceGraph> Strategy<'g, G> for ProbeStrategy<'g, G
         }
     }
 
+    type Output = &'g G::Vertex;
+    fn output(result: crate::Result<&'g G::Vertex>) -> Self::Output {
+        result.expect("cycle probing cannot fail")
+    }
+
     fn provide_next(&mut self, c: &mut Core<'g, G, Self::Data>) -> &'g G::Vertex {
         let v = self.inner.provide_next(c);
         while let Some(last) = self.path.last() {

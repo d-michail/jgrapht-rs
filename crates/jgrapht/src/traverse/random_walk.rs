@@ -15,11 +15,14 @@
 use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::java::RandomSource;
-use crate::{GraphError, Result};
+use crate::{GraphError, Result, WeightProblem};
 use std::collections::HashMap;
 
 /// Random walk over outgoing edges (JGraphT's `RandomWalkVertexIterator`): yields the start
 /// vertex, then up to `max_hops` further vertices, stopping early at a sink.
+///
+/// A weighted walk rejects negative and NaN weights on the edges leaving a vertex: the walk yields
+/// one `Err(GraphError::InvalidWeight(..))` in place of the vertex it could not leave, then ends.
 pub struct RandomWalkVertexIterator<'g, G: Graph + 'g, R> {
     g: &'g G,
     weighted: bool,
@@ -27,6 +30,7 @@ pub struct RandomWalkVertexIterator<'g, G: Graph + 'g, R> {
     max_hops: u64,
     hops: u64,
     next_vertex: Option<&'g G::Vertex>,
+    error: Option<GraphError>,
     rng: R,
 }
 
@@ -39,9 +43,7 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource> RandomWalkVerte
         rng: R,
     ) -> Result<Self> {
         if !g.contains_vertex(start) {
-            return Err(GraphError::InvalidArgument(
-                "Random walk must start at a graph vertex".into(),
-            ));
+            return Err(GraphError::VertexNotFound);
         }
         Ok(RandomWalkVertexIterator {
             g,
@@ -50,6 +52,7 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource> RandomWalkVerte
             max_hops,
             hops: 0,
             next_vertex: Some(start),
+            error: None,
             rng,
         })
     }
@@ -67,6 +70,13 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource> RandomWalkVerte
             return;
         }
         let edge = if self.weighted {
+            if g.out_edges_of(cur)
+                .any(|e| g.edge_weight(e).is_some_and(|w| w.is_nan() || w < 0.0))
+            {
+                self.error = Some(GraphError::InvalidWeight(WeightProblem::NegativeOrNaN));
+                self.next_vertex = None;
+                return;
+            }
             let total = *self.out_weight.entry(cur).or_insert_with(|| {
                 g.out_edges_of(cur)
                     .map(|e| g.edge_weight(e).unwrap_or(1.0))
@@ -92,10 +102,13 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource> RandomWalkVerte
 }
 
 impl<'g, G: OutgoingGraph + 'g, R: RandomSource> Iterator for RandomWalkVertexIterator<'g, G, R> {
-    type Item = &'g G::Vertex;
-    fn next(&mut self) -> Option<&'g G::Vertex> {
+    type Item = Result<&'g G::Vertex>;
+    fn next(&mut self) -> Option<Result<&'g G::Vertex>> {
         let v = self.next_vertex?;
         self.compute_next();
-        Some(v)
+        match self.error.take() {
+            Some(e) => Some(Err(e)),
+            None => Some(Ok(v)),
+        }
     }
 }

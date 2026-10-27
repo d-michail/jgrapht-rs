@@ -112,7 +112,7 @@ macro_rules! run_checked {
         // like `collectResult`: append each vertex, comma separated, as it is produced
         let mut first = true;
         while it.has_next() {
-            let v = it.next().unwrap();
+            let v = it.try_next().unwrap().unwrap();
             if !first {
                 result.borrow_mut().push(',');
             }
@@ -384,7 +384,7 @@ mod closest_first {
         let g = create_directed_graph();
         let start = g.vertices().find(|v| **v == "1").unwrap();
         let it = ClosestFirstIterator::from_start_with_radius(&g, start, 301.0).unwrap();
-        assert_eq!(collect_result(it), "1,2,3,5,6,7");
+        assert_eq!(collect_result(it.map(|v| v.unwrap())), "1,2,3,5,6,7");
     }
 
     #[test]
@@ -424,7 +424,7 @@ mod closest_first {
             .map(|s| graph.vertices().find(|v| *v == s).unwrap())
             .collect();
         let it = ClosestFirstIterator::from_starts_with_radius(&graph, starts, 2.0).unwrap();
-        assert_eq!(collect_result(it), "3,1,8,7,4,9,2,6");
+        assert_eq!(collect_result(it.map(|v| v.unwrap())), "3,1,8,7,4,9,2,6");
     }
 }
 
@@ -535,11 +535,13 @@ mod edge_selection_test {
 mod topological_order {
     use super::*;
 
-    fn order<'g, G: DirectedGraph>(it: impl Iterator<Item = &'g G::Vertex>) -> Vec<G::Vertex>
+    fn order<'g, G: DirectedGraph>(
+        it: impl Iterator<Item = jgrapht::Result<&'g G::Vertex>>,
+    ) -> Vec<G::Vertex>
     where
         G::Vertex: 'g,
     {
-        it.cloned().collect()
+        it.map(|v| v.unwrap().clone()).collect()
     }
 
     #[test]
@@ -657,7 +659,7 @@ mod topological_order {
         }
         let got: Vec<&str> = TopologicalOrderIterator::new(&graph)
             .unwrap()
-            .copied()
+            .map(|v| *v.unwrap())
             .collect();
         assert_eq!(got, ["v0", "v3", "v1", "v2", "v4", "v5"]);
     }
@@ -691,7 +693,21 @@ mod topological_order {
             graph.add_edge(&a, &b).unwrap();
         }
         let mut it = TopologicalOrderIterator::new(&graph).unwrap();
-        while it.next().is_some() {}
+        // the vertices ahead of the cycle come out, then the cycle is reported once
+        let mut yielded = 0;
+        let error = loop {
+            match it.next() {
+                Some(Ok(_)) => yielded += 1,
+                Some(Err(e)) => break e,
+                None => panic!("the cycle must be reported"),
+            }
+        };
+        assert_eq!(yielded, 3);
+        assert_eq!(
+            error,
+            GraphError::InvalidGraph(jgrapht::GraphProperty::Acyclic)
+        );
+        assert!(it.next().is_none());
         assert!(it.inner().is_cyclic());
     }
 
@@ -710,18 +726,13 @@ mod topological_order {
         };
         let got: Vec<i32> = TopologicalOrderIterator::with_comparator(&graph, cf)
             .unwrap()
-            .copied()
+            .map(|v| *v.unwrap())
             .collect();
         assert_eq!(got, [2, 3, 0, 1]);
     }
 
-    #[test]
-    fn test_try_to_disable_cross_component() {
-        let graph = DiGraph::<i32>::pseudo();
-        let mut it = TopologicalOrderIterator::new(&graph).unwrap();
-        assert!(it.set_cross_component_traversal(false).is_err());
-        assert!(it.set_cross_component_traversal(true).is_ok());
-    }
+    // JGraphT's `testTryToDisableCrossComponent` has no Rust counterpart: the ordered iterators
+    // always cover every component and have no `set_cross_component_traversal` to misuse.
 }
 
 // ---------------------------------------------------------------- tracking listener shared by the ordering iterators
@@ -1046,7 +1057,7 @@ mod random_walk {
             StdRng::seed_from_u64((1) as u64),
         )
         .unwrap();
-        assert_eq!(it.next(), Some(&"123"));
+        assert_eq!(it.next(), Some(Ok(&"123")));
         assert_eq!(it.next(), None);
     }
 
@@ -1098,7 +1109,7 @@ mod random_walk {
         )
         .unwrap();
         for (step, v) in it.enumerate() {
-            assert_eq!(*v, (step % 5).to_string());
+            assert_eq!(*v.unwrap(), (step % 5).to_string());
         }
     }
 

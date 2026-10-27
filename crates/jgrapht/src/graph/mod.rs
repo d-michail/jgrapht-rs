@@ -42,6 +42,18 @@ use std::hash::Hash;
 ///
 /// Iterator-returning methods borrow from the graph; no intermediate sets are built.
 /// For undirected graphs `edge_source`/`edge_target` return the endpoints in insertion order.
+///
+/// # Integrity contract
+///
+/// The trait is safe to implement, but algorithms rely on these invariants and may panic or
+/// return meaningless results when an implementation breaks them:
+///
+/// * every edge yielded by [`Graph::edges`] or by an incidence query has endpoints that are
+///   vertices of the graph and a weight;
+/// * [`Graph::edge_source`], [`Graph::edge_target`] and [`Graph::edge_weight`] return `None` only
+///   for an edge that is not in the graph;
+/// * [`Graph::edges_between`] is empty if either vertex is absent, and incidence queries return
+///   nothing for an absent vertex.
 pub trait Graph {
     type Vertex: Clone + Eq + Hash;
     type Edge: Clone + Eq + Hash;

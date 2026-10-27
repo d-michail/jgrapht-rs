@@ -35,9 +35,9 @@ const EDGES: [(usize, usize, f64); 5] = [
 #[test]
 fn traversals_and_forward_searches_run_without_an_incoming_index() {
     let g = SparseIntDirectedWeightedGraph::<NoIncoming>::from_edges(4, &EDGES).unwrap();
-    assert_eq!(Bfs::new(&g, &0).count(), 4);
-    assert_eq!(Dfs::new(&g, &0).count(), 4);
-    assert_eq!(DfsPostOrder::new(&g, &0).count(), 4);
+    assert_eq!(Bfs::new(&g, &0).unwrap().count(), 4);
+    assert_eq!(Dfs::new(&g, &0).unwrap().count(), 4);
+    assert_eq!(DfsPostOrder::new(&g, &0).unwrap().count(), 4);
     assert_eq!(Dijkstra::new(&g).path_weight(&0, &3).unwrap(), 4.0);
     assert_eq!(BfsShortestPath::new(&g).path_weight(&0, &3).unwrap(), 2.0);
 }

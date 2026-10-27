@@ -17,3 +17,4 @@
 
 mod traverse_tests;
 mod traverse_extra;
+mod traverse_errors;

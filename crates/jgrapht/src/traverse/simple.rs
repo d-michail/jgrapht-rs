@@ -18,6 +18,7 @@
 use crate::graph::IncidenceGraph;
 use crate::graph::{OutgoingGraph};
 use crate::graph::{DirectedGraph, Graph, GraphExt};
+use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::vec::IntoIter;
 
@@ -31,7 +32,15 @@ pub struct Bfs<'g, G: Graph> {
 }
 
 impl<'g, G: OutgoingGraph> Bfs<'g, G> {
-    pub fn new(g: &'g G, start: &'g G::Vertex) -> Self {
+    /// Searches the component of `start`.
+    ///
+    /// # Errors
+    ///
+    /// [`GraphError::VertexNotFound`] if `start` is not a vertex of `g`.
+    pub fn new(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
+        if !g.contains_vertex(start) {
+            return Err(GraphError::VertexNotFound);
+        }
         let mut b = Bfs {
             g,
             queue: VecDeque::new(),
@@ -40,7 +49,7 @@ impl<'g, G: OutgoingGraph> Bfs<'g, G> {
             rest: Vec::new().into_iter(),
         };
         b.enqueue_root(start);
-        b
+        Ok(b)
     }
     /// Covers every component, starting from the vertices in graph order.
     pub fn all(g: &'g G) -> Self {
@@ -93,13 +102,21 @@ pub struct Dfs<'g, G: Graph> {
 }
 
 impl<'g, G: OutgoingGraph> Dfs<'g, G> {
-    pub fn new(g: &'g G, start: &'g G::Vertex) -> Self {
-        Dfs {
+    /// Searches the component of `start`.
+    ///
+    /// # Errors
+    ///
+    /// [`GraphError::VertexNotFound`] if `start` is not a vertex of `g`.
+    pub fn new(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
+        if !g.contains_vertex(start) {
+            return Err(GraphError::VertexNotFound);
+        }
+        Ok(Dfs {
             g,
             stack: vec![start],
             seen: HashSet::new(),
             rest: Vec::new().into_iter(),
-        }
+        })
     }
     pub fn all(g: &'g G) -> Self {
         Dfs {
@@ -142,7 +159,15 @@ pub struct DfsPostOrder<'g, G: Graph> {
 }
 
 impl<'g, G: OutgoingGraph> DfsPostOrder<'g, G> {
-    pub fn new(g: &'g G, start: &'g G::Vertex) -> Self {
+    /// Searches the component of `start`.
+    ///
+    /// # Errors
+    ///
+    /// [`GraphError::VertexNotFound`] if `start` is not a vertex of `g`.
+    pub fn new(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
+        if !g.contains_vertex(start) {
+            return Err(GraphError::VertexNotFound);
+        }
         let mut s = Self {
             g,
             stack: Vec::new(),
@@ -150,7 +175,7 @@ impl<'g, G: OutgoingGraph> DfsPostOrder<'g, G> {
             rest: Vec::new().into_iter(),
         };
         s.push(start);
-        s
+        Ok(s)
     }
     pub fn all(g: &'g G) -> Self {
         DfsPostOrder {
@@ -236,8 +261,11 @@ impl<'g, G: DirectedGraph + IncidenceGraph> Iterator for TopologicalOrder<'g, G>
         self.yielded += 1;
         let g = self.g;
         for n in g.out_neighbors_of(v) {
-            let d = self.indeg.get_mut(n).expect("known vertex");
-            *d -= 1;
+            // an edge to a non-vertex violates the `Graph` integrity contract; ignore it
+            let Some(d) = self.indeg.get_mut(n) else {
+                continue;
+            };
+            *d = d.saturating_sub(1);
             if *d == 0 {
                 self.queue.push_back(n);
             }

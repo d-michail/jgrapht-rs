@@ -56,6 +56,18 @@ pub trait Strategy<'g, G: OutgoingGraph + 'g>: Sized {
         e: &'g G::Edge,
     );
     fn provide_next(&mut self, c: &mut Core<'g, G, Self::Data>) -> &'g G::Vertex;
+
+    /// What the iterator yields: the vertex itself for a strategy that cannot fail, or a
+    /// `Result` for one that can (closest-first rejects invalid edge weights while iterating).
+    type Output;
+    /// Converts one step of the traversal into [`Strategy::Output`]. A strategy whose `Output` is
+    /// a bare vertex never receives an `Err`, because it never records an error.
+    fn output(result: Result<&'g G::Vertex>) -> Self::Output;
+    /// An error recorded while encountering vertices. The engine reports it as the next step of
+    /// the iteration and stops.
+    fn take_error(&mut self) -> Option<GraphError> {
+        None
+    }
 }
 
 type EdgeSelector<'g, G> =
@@ -80,6 +92,7 @@ pub struct CrossComponentIterator<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>>
     start_vertex: Option<&'g G::Vertex>,
     state: State,
     selector: Option<EdgeSelector<'g, G>>,
+    failed: bool,
 }
 
 impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
@@ -102,6 +115,7 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>> CrossCompone
             start_vertex: None,
             state: State::Before,
             selector: None,
+            failed: false,
         };
         let first = match starts {
             None => it.entire_iterator().next(),
@@ -114,9 +128,7 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>> CrossCompone
         };
         if let Some(v) = first {
             if !g.contains_vertex(v) {
-                return Err(GraphError::InvalidArgument(
-                    "graph must contain the start vertex".into(),
-                ));
+                return Err(GraphError::VertexNotFound);
             }
             // resolve to the graph's own reference so lifetimes tie to the graph
             it.start_vertex = Some(v);
@@ -220,12 +232,27 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>> CrossCompone
     }
 }
 
-impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> Iterator for CrossComponentIterator<'g, G, S> {
-    type Item = &'g G::Vertex;
-    fn next(&mut self) -> Option<&'g G::Vertex> {
+impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
+    /// The next vertex, or the error that ended the traversal. After an error the iterator is
+    /// exhausted.
+    ///
+    /// Strategies that cannot fail never return `Err`, so [`Iterator::next`] on them yields
+    /// vertices directly; this is the fallible form for generic code.
+    pub fn try_next(&mut self) -> Result<Option<&'g G::Vertex>> {
+        if self.failed {
+            return Ok(None);
+        }
+        let step = self.step();
+        if step.is_err() {
+            self.failed = true;
+        }
+        step
+    }
+
+    fn step(&mut self) -> Result<Option<&'g G::Vertex>> {
         self.encounter_start_vertex();
         if !self.has_next() {
-            return None;
+            return Ok(None);
         }
         if self.state == State::Before {
             self.state = State::Within;
@@ -234,7 +261,17 @@ impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> Iterator for CrossComponentI
         let v = self.strategy.provide_next(&mut self.core);
         self.core.listeners.vertex_traversed(v);
         self.add_unseen_children_of(v);
-        Some(v)
+        match self.strategy.take_error() {
+            Some(e) => Err(e),
+            None => Ok(Some(v)),
+        }
+    }
+}
+
+impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> Iterator for CrossComponentIterator<'g, G, S> {
+    type Item = S::Output;
+    fn next(&mut self) -> Option<S::Output> {
+        self.try_next().transpose().map(S::output)
     }
 }
 
@@ -278,6 +315,10 @@ impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for BfsStrategy<'g, G> {
     }
     fn provide_next(&mut self, _: &mut Core<'g, G, Self::Data>) -> &'g G::Vertex {
         self.queue.pop_front().expect("non-empty queue")
+    }
+    type Output = &'g G::Vertex;
+    fn output(result: Result<&'g G::Vertex>) -> Self::Output {
+        result.expect("breadth-first traversal cannot fail")
     }
 }
 
@@ -415,6 +456,10 @@ impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for DfsStrategy<'g, G> {
         c.seen.insert(v, VisitColor::Gray);
         v
     }
+    type Output = &'g G::Vertex;
+    fn output(result: Result<&'g G::Vertex>) -> Self::Output {
+        result.expect("depth-first traversal cannot fail")
+    }
 }
 
 pub type DepthFirstIterator<'g, G> = CrossComponentIterator<'g, G, DfsStrategy<'g, G>>;
@@ -459,6 +504,8 @@ pub struct CfData<'g, G: OutgoingGraph + 'g, Hd> {
 pub struct ClosestFirstStrategy<'g, G: OutgoingGraph + 'g, H> {
     heap: H,
     radius: f64,
+    /// The first invalid edge weight met while expanding a vertex; reported by the iterator.
+    error: Option<GraphError>,
     _g: std::marker::PhantomData<&'g G>,
 }
 
@@ -467,15 +514,21 @@ where
     G: OutgoingGraph + 'g,
     H: AddressableHeap<OrderedF64, &'g G::Vertex>,
 {
+    /// Length of the path to `v` through `e`, or `None` after recording the invalid weight.
     fn path_length(
+        &mut self,
         c: &Core<'g, G, CfData<'g, G, H::Handle>>,
         v: &'g G::Vertex,
         e: &'g G::Edge,
-    ) -> f64 {
+    ) -> Option<f64> {
         let w = c.g.edge_weight(e).unwrap_or(1.0);
-        assert!(w >= 0.0, "negative edge weights not allowed");
+        if w.is_nan() || w < 0.0 {
+            self.error
+                .get_or_insert(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+            return None;
+        }
         let other = c.g.opposite_vertex(e, v).expect("edge touches vertex");
-        c.seen[other].key + w
+        Some(c.seen[other].key + w)
     }
 }
 
@@ -504,7 +557,10 @@ where
     ) {
         let len = match e {
             None => 0.0,
-            Some(e) => Self::path_length(c, v, e),
+            Some(e) => match self.path_length(c, v, e) {
+                Some(len) => len,
+                None => return,
+            },
         };
         let handle = self.heap.insert(OrderedF64(len), v);
         c.seen.insert(
@@ -526,7 +582,9 @@ where
         if c.seen[v].frozen {
             return;
         }
-        let cand = Self::path_length(c, v, e);
+        let Some(cand) = self.path_length(c, v, e) else {
+            return;
+        };
         let d = c.seen.get_mut(v).expect("seen");
         if cand < d.key {
             d.edge = Some(e);
@@ -543,8 +601,19 @@ where
         d.handle = None;
         v
     }
+    type Output = Result<&'g G::Vertex>;
+    fn output(result: Result<&'g G::Vertex>) -> Self::Output {
+        result
+    }
+    fn take_error(&mut self) -> Option<GraphError> {
+        self.error.take()
+    }
 }
 
+/// Closest-first (Dijkstra order) traversal. Its items are `Result`s: a negative or NaN edge weight
+/// is yielded once as `Err(GraphError::InvalidWeight(..))` in place of the vertex whose outgoing
+/// edge carries it, and the iterator then ends (JGraphT throws `IllegalArgumentException`). Collect
+/// with `collect::<Result<Vec<_>>>()` or call [`CrossComponentIterator::try_next`].
 pub type ClosestFirstIterator<'g, G, H = PairingHeap<OrderedF64, &'g <G as Graph>::Vertex>> =
     CrossComponentIterator<'g, G, ClosestFirstStrategy<'g, G, H>>;
 
@@ -594,6 +663,9 @@ where
         radius: f64,
         heap: H,
     ) -> Result<Self> {
+        if radius.is_nan() || radius < 0.0 {
+            return Err(GraphError::must_be_non_negative("radius"));
+        }
         if starts.is_none() && radius != f64::INFINITY {
             return Err(GraphError::InvalidArgument(
                 "radius may not be specified for cross-component traversal".into(),
@@ -607,6 +679,7 @@ where
         let strategy = ClosestFirstStrategy {
             heap,
             radius,
+            error: None,
             _g: std::marker::PhantomData,
         };
         let mut it = CrossComponentIterator::with_strategy(g, starts, strategy)?;

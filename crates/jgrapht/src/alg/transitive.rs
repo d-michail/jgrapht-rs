@@ -94,7 +94,7 @@ impl TransitiveClosure {
         let mut ordered_vertices: VecDeque<G::Vertex> =
             VecDeque::with_capacity(graph.vertex_count());
         for v in TopologicalOrderIterator::new(&*graph)? {
-            ordered_vertices.push_front(v.clone());
+            ordered_vertices.push_front(v?.clone());
         }
 
         for vertex in &ordered_vertices {
