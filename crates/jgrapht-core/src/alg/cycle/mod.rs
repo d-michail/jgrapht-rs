@@ -9,6 +9,7 @@ mod detector;
 mod eulerian;
 mod howard;
 mod legacy;
+mod separator;
 mod simple_cycles;
 
 pub use basis::{
@@ -20,6 +21,7 @@ pub use detector::{CycleDetector, simple_cycle_to_graph_path};
 pub use eulerian::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
 pub use howard::{HowardMinimumMeanCycle, MinimumCycleMeanAlgorithm};
 pub use legacy::*;
+pub use separator::ChordalGraphMinimalVertexSeparatorFinder;
 pub use simple_cycles::{
     DirectedSimpleCycles, HawickJamesSimpleCycles, JohnsonSimpleCycles,
     SzwarcfiterLauerSimpleCycles, TarjanSimpleCycles, TiernanSimpleCycles,

@@ -3741,3 +3741,161 @@ mod chordality_inspector_test {
         }
     }
 }
+
+// ChordalGraphMinimalVertexSeparatorFinderTest
+
+mod chordal_graph_minimal_vertex_separator_finder_test {
+    use super::*;
+    use jgrapht::alg::cycle::ChordalGraphMinimalVertexSeparatorFinder;
+    use std::collections::HashSet;
+
+    type Separators = Vec<(HashSet<i32>, usize)>;
+
+    /// Parallel edges in the data are ignored, as `addEdge` does for a graph without them.
+    fn undirected(edges: &[&[i32]]) -> UGraph<i32> {
+        let mut g = UGraph::<i32>::with_loops().weighted();
+        for e in edges {
+            g.add_vertex(e[0]);
+            g.add_vertex(e[1]);
+            g.add_edge(&e[0], &e[1]).unwrap();
+        }
+        g
+    }
+
+    fn separators(graph: &UGraph<i32>) -> Option<(HashSet<Vec<i32>>, Separators)> {
+        let mut finder = ChordalGraphMinimalVertexSeparatorFinder::new(graph);
+        let keys: Option<HashSet<Vec<i32>>> = finder.get_minimal_separators().map(|s| {
+            s.into_iter()
+                .map(|v| {
+                    let mut v = v.clone();
+                    v.sort_unstable();
+                    v
+                })
+                .collect()
+        });
+        let with: Option<Separators> =
+            finder
+                .get_minimal_separators_with_multiplicities()
+                .map(|m| {
+                    m.iter()
+                        .map(|(k, c)| (k.iter().copied().collect(), *c))
+                        .collect()
+                });
+        keys.zip(with)
+    }
+
+    fn check(graph: &UGraph<i32>, expected: &[(&[i32], usize)]) {
+        let (keys, with) = separators(graph).expect("chordal graph");
+        let expected_sets: Vec<(HashSet<i32>, usize)> = expected
+            .iter()
+            .map(|(s, c)| (s.iter().copied().collect(), *c))
+            .collect();
+        assert_eq!(expected_sets.len(), keys.len());
+        assert_eq!(expected_sets.len(), with.len());
+        for entry in &expected_sets {
+            assert!(with.contains(entry), "missing {entry:?}");
+        }
+    }
+
+    #[test]
+    fn get_minimal_separators1() {
+        check(&UGraph::<i32>::with_loops(), &[]);
+    }
+
+    #[test]
+    fn get_minimal_separators2() {
+        check(
+            &undirected(&[&[1, 2], &[1, 3], &[2, 3], &[2, 4], &[3, 4]]),
+            &[(&[2, 3], 1)],
+        );
+    }
+
+    #[test]
+    fn get_minimal_separators3() {
+        let g = undirected(&[
+            &[1, 2],
+            &[1, 3],
+            &[2, 3],
+            &[3, 4],
+            &[3, 5],
+            &[3, 6],
+            &[3, 8],
+            &[3, 10],
+            &[3, 11],
+            &[4, 5],
+            &[4, 6],
+            &[5, 6],
+            &[6, 7],
+            &[6, 8],
+            &[6, 10],
+            &[6, 11],
+            &[7, 8],
+            &[7, 10],
+            &[8, 9],
+            &[8, 10],
+            &[9, 10],
+        ]);
+        check(
+            &g,
+            &[(&[3], 1), (&[3, 6], 2), (&[8, 10], 1), (&[6, 8, 10], 1)],
+        );
+    }
+
+    #[test]
+    fn get_minimal_separators4() {
+        let g = undirected(&[
+            &[1, 2],
+            &[2, 8],
+            &[2, 9],
+            &[3, 8],
+            &[3, 9],
+            &[4, 6],
+            &[4, 8],
+            &[5, 6],
+            &[5, 8],
+            &[6, 7],
+            &[6, 8],
+            &[6, 9],
+            &[7, 8],
+            &[7, 9],
+            &[8, 9],
+            &[8, 10],
+            &[8, 11],
+            &[8, 12],
+            &[9, 10],
+            &[9, 11],
+            &[9, 12],
+            &[10, 11],
+            &[11, 12],
+        ]);
+        check(
+            &g,
+            &[(&[2], 1), (&[6, 8], 2), (&[8, 9], 3), (&[8, 9, 11], 1)],
+        );
+    }
+
+    #[test]
+    fn get_minimal_separators5() {
+        let g = undirected(&[&[1, 2], &[1, 3], &[2, 4], &[3, 4]]);
+        assert!(separators(&g).is_none());
+    }
+
+    #[test]
+    fn get_minimal_separators6() {
+        let g = undirected(&[
+            &[1, 1],
+            &[1, 1],
+            &[1, 2],
+            &[2, 3],
+            &[2, 3],
+            &[2, 3],
+            &[2, 5],
+            &[3, 3],
+            &[3, 4],
+            &[5, 3],
+            &[5, 3],
+            &[5, 4],
+        ]);
+        check(&g, &[(&[2], 1), (&[3, 5], 1)]);
+    }
+}
