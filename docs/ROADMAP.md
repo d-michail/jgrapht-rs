@@ -8,7 +8,7 @@ Status on 2026-10-27. Source of truth for what is ported: `crates/jgrapht/tests/
 |---|---|---|
 | core `graph/`, views, events, `traverse/`, `util/`, `generate/` (incl. netgen) | ported, tests ported (about 400 tests passing, `tests/{alg,graph,generate,traverse,util}`) | done |
 | core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1f (isomorphism, flow, tour, cycle done; 1458 ported tests pass in `tests/{alg,graph,generate,traverse,util}`); 1g (matching) and 1i (shortest paths) still functional. See `FIDELITY_ROADMAP.md` for deviations from Java |
-| `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | not started |
+| `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | started: shared layer plus DIMACS, CSV, graph6/sparse6/digraph6, JSON, baseline GML/GraphML, Lemon and Matrix; Java test-parity expansion and DOT/GEXF/TSPLIB remain |
 | `jgrapht::graph::{sparse,map}` | 22 files (about 2.5k loc), 4 test files | specialized graph backends not started; they belong in the main crate (Phase 3b) |
 | other modules (ext, guava, unimi-dsi, osm, demo) | see "Out of scope" | no |
 
@@ -57,6 +57,11 @@ After the sequential `DeltaStepping` is verified by the Java `DeltaStepping` tes
 - Tests: equality with Dijkstra on random graphs and on the Java test graphs for 1..N threads; a benchmark in `benches/`.
 
 ## Phase 3: `jgrapht-io` (the Java `nio` package)
+
+Implementation status is tracked in `crates/jgrapht-io/tests/STATUS.md`. A first vertical tranche is
+now present with the shared Rust API, deterministic attributes, structured errors, event-driven
+parsing, DIMACS, CSV, graph6/sparse6/digraph6, JSON, baseline GML/GraphML, and Lemon/Matrix exporters.
+Formats are not marked complete until their full upstream test files have been ported.
 
 Workspace crate `crates/jgrapht-io` (lib name `jgrapht_io`), depending on `jgrapht`. All formats stay together as modules in this one companion crate; do not create a crate per format. The Java package has 62 files, 28 test files, about 283 tests and about 14k loc, of which about 30% are the event-driven importer variants.
 

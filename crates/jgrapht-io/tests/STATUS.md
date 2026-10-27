@@ -1,0 +1,23 @@
+# `jgrapht-io` port status
+
+The sibling Java `jgrapht-io` checkout is the behavioral oracle. A format is **done** only after all
+applicable upstream tests have been ported; **partial** means the public implementation exists but
+the complete Java test matrix has not yet been brought across.
+
+| Area | State | Current coverage |
+|---|---|---|
+| shared layer | partial | attributes and types, structured errors, importer/exporter traits, event stream, exporter providers, integer IDs |
+| DIMACS | partial | event numbering modes, weighted/unweighted graph import, custom factories, malformed input, Java-compatible export layout |
+| CSV / DSV | partial | quoting, edge and adjacency lists, weighted import/export, node-ID and weighted matrix modes |
+| graph6 / sparse6 / digraph6 | partial | known graph6 encoding and round trips for simple, directed, looped and parallel-edge graphs |
+| JSON | partial | strict hand-written parser, mixed IDs, typed/nested attributes, weights, factories, compact deterministic exporter |
+| GML | partial | hand-written nested-list parser, vertices, edges and weights; attribute and parameter parity remains |
+| Lemon | partial | base output, Java string escaping and edge weights |
+| Matrix | partial | sparse adjacency, Laplacian and normalized Laplacian exporters |
+| DOT | todo | — |
+| GraphML | partial | `quick-xml` streaming import, typed keys/defaults, configurable edge weights and deterministic basic export |
+| GEXF | todo | — |
+| TSPLIB | todo | — |
+
+Current Rust integration tests: 19. The remaining work is to port the upstream tests format by
+format and close every behavior gap they expose.

@@ -8,3 +8,6 @@ license.workspace = true
 
 [dependencies]
 jgrapht = { path = "../jgrapht", version = "0.1.0" }
+indexmap = "2"
+quick-xml = "0.41"
+thiserror = "2"
