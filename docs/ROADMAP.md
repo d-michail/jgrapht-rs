@@ -63,6 +63,8 @@ now present with the shared Rust API, deterministic attributes, structured error
 parsing and baseline implementations of every planned format: DIMACS, CSV, graph6/sparse6/digraph6,
 JSON, GML, DOT, GraphML, GEXF, Lemon, Matrix and TSPLIB.
 Formats are not marked complete until their full upstream test files have been ported.
+DIMACS is the first completed format; its 23 applicable shared/provider, event importer, graph
+importer and exporter tests now pass against the upstream fixtures.
 
 Workspace crate `crates/jgrapht-io` (lib name `jgrapht_io`), depending on `jgrapht`. All formats stay together as modules in this one companion crate; do not create a crate per format. The Java package has 62 files, 28 test files, about 283 tests and about 14k loc, of which about 30% are the event-driven importer variants.
 

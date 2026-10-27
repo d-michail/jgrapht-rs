@@ -7,7 +7,7 @@ the complete Java test matrix has not yet been brought across.
 | Area | State | Current coverage |
 |---|---|---|
 | shared layer | partial | attributes and types, structured errors, importer/exporter traits, event stream, exporter providers, integer IDs |
-| DIMACS | partial | event numbering modes, weighted/unweighted graph import, custom factories, malformed input, Java-compatible export layout |
+| DIMACS | done | all 23 applicable `IntegerIdProvider`, event-driven importer, graph importer and exporter tests ported with the upstream Mycielski fixtures |
 | CSV / DSV | partial | quoting, edge and adjacency lists, weighted import/export, node-ID and weighted matrix modes |
 | graph6 / sparse6 / digraph6 | partial | known graph6 encoding and round trips for simple, directed, looped and parallel-edge graphs |
 | JSON | partial | strict hand-written parser, mixed IDs, typed/nested attributes, weights, factories, compact deterministic exporter |
@@ -19,6 +19,6 @@ the complete Java test matrix has not yet been brought across.
 | GEXF | partial | `quick-xml` node/edge/weight import and deterministic basic export; declared attributes and visualization parity remain |
 | TSPLIB | partial | coordinate instances, nine distance types, complete weighted graphs, metadata and embedded tours |
 
-Current Rust integration tests: 28, including injected reader/writer failures and importer reuse.
+Current Rust integration tests: 46, including injected reader/writer failures and importer reuse.
 The remaining work is to port the upstream tests format by
 format and close every behavior gap they expose.
