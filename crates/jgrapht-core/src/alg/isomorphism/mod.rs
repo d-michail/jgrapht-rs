@@ -1,10 +1,8 @@
 //! Graph, subgraph and tree isomorphism.
 //!
-//! The function-style helpers (`is_isomorphic`, `find_subgraph`, ...) are kept in [`legacy`]
-//! and re-exported; the JGraphT inspectors live in the sibling modules.
+//! The JGraphT inspectors (`VF2GraphIsomorphismInspector`, the AHU tree inspectors, ...).
 
 mod ahu;
-mod legacy;
 mod mapping;
 mod ordering;
 mod refinement;
@@ -14,7 +12,6 @@ pub use ahu::{
     AHUForestIsomorphismInspector, AHURootedTreeIsomorphismInspector,
     AHUUnrootedTreeIsomorphismInspector,
 };
-pub use legacy::*;
 pub use mapping::{IsomorphicGraphMapping, NULL_NODE};
 pub use ordering::GraphOrdering;
 pub use refinement::{ColorRefinementIsomorphismInspector, IsomorphismUndecidable};

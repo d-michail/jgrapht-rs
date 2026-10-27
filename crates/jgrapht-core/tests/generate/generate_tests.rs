@@ -6,7 +6,7 @@
 //! Not ported: the `netgen` tests (network generator not implemented yet).
 
 use jgrapht::alg::connectivity::connected_components;
-use jgrapht::alg::isomorphism::count_isomorphisms;
+use jgrapht::alg::isomorphism::VF2GraphIsomorphismInspector;
 use jgrapht::alg::metrics::{GraphMeasurer, girth};
 use jgrapht::generate::named::{self, build};
 use jgrapht::generate::*;
@@ -277,7 +277,10 @@ mod named_graph_generator_test {
         assert_eq!(girth(g), girth_);
     }
     fn automorphisms(g: &UGraph<usize>, expected: usize) {
-        assert_eq!(count_isomorphisms(g, g), expected);
+        assert_eq!(
+            VF2GraphIsomorphismInspector::new(g, g).unwrap().iter().count(),
+            expected
+        );
     }
     const INF: Option<usize> = None;
 

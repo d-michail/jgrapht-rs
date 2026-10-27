@@ -36,7 +36,7 @@ The old function API runs algorithms that differ from Java. Each helper becomes 
 
 | # | Helper | Replace by | Callers to update |
 |---|---|---|---|
-| C1 | `isomorphism/legacy.rs` (backtracking) | VF2 / AHU / colour-refinement inspectors; delete the non-induced variants (no Java counterpart) | `generate_tests`, anything using `count_isomorphisms` |
+| C1 | **done** `isomorphism/legacy.rs` (backtracking, deleted along with the non-induced variants; the older tests and `generate_tests` use `VF2GraphIsomorphismInspector` and `VF2SubgraphIsomorphismInspector`) | VF2 / AHU / colour-refinement inspectors | |
 | C2 | **done** `flow/legacy.rs`: `max_flow`, `edmonds_karp`, `dinic`, `push_relabel`, `minimum_st_cut`, `gomory_hu_tree` (deleted; Goldberg and k-connectivity now use `PushRelabelMFImpl` and `EdmondsKarpMFImpl`, the old `goldberg_densest_subgraph` is gone) | the class implementations in `flow/` | |
 | C3 | `flow/legacy.rs`: `min_cost_flow` (SPFA successive shortest paths) and its `MinimumCostFlowProblem` struct | `CapacityScalingMinimumCostFlow`. Remaining callers: `paths.rs` (goes with C13/1i, Suurballe) and netgen, which must return `MinimumCostFlowProblemImpl` | `paths.rs`, `generate/netgen` |
 | C4 | **done** `flow/legacy.rs`: `stoer_wagner` (deleted, callers use B1) | B1 | |
