@@ -187,6 +187,44 @@ mod tests {
         solve(weights, (1 << weights.len()) - 1, maximize, &mut memo)
     }
 
+    fn exact_sparse_weight(weights: &[Vec<Option<f64>>], maximize: bool) -> f64 {
+        fn solve(
+            weights: &[Vec<Option<f64>>],
+            mask: usize,
+            maximize: bool,
+            memo: &mut [Option<f64>],
+        ) -> f64 {
+            if mask == 0 {
+                return 0.0;
+            }
+            if let Some(value) = memo[mask] {
+                return value;
+            }
+            let first = mask.trailing_zeros() as usize;
+            let rest = mask & !(1 << first);
+            let mut best = solve(weights, rest, maximize, memo);
+            let mut candidates = rest;
+            while candidates != 0 {
+                let second = candidates.trailing_zeros() as usize;
+                candidates &= !(1 << second);
+                let Some(edge_weight) = weights[first][second] else {
+                    continue;
+                };
+                let value = edge_weight + solve(weights, rest & !(1 << second), maximize, memo);
+                best = if maximize {
+                    best.max(value)
+                } else {
+                    best.min(value)
+                };
+            }
+            memo[mask] = Some(best);
+            best
+        }
+
+        let mut memo = vec![None; 1 << weights.len()];
+        solve(weights, (1 << weights.len()) - 1, maximize, &mut memo)
+    }
+
     #[test]
     fn maximum_and_minimum_general_matching() {
         let mut graph = UGraph::<usize>::simple().weighted();
@@ -245,6 +283,48 @@ mod tests {
                         error < BLOSSOM_V_EPSILON,
                         "error={error}, seed={seed}, options={options}, objective={objective:?}"
                     );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn sparse_reduction_matches_exact_solver_for_all_options() {
+        for seed in 0..10 {
+            let n = 7;
+            let mut graph = UGraph::<usize>::simple().weighted();
+            let mut weights = vec![vec![None; n]; n];
+            for vertex in 0..n {
+                graph.add_vertex(vertex);
+            }
+            for source in 0..n {
+                for target in source + 1..n {
+                    let hash = (source + 3) * 31 + (target + 11) * 47 + seed * 59;
+                    if hash % 4 == 0 {
+                        continue;
+                    }
+                    let weight = (hash % 39) as f64 - 19.0;
+                    weights[source][target] = Some(weight);
+                    weights[target][source] = Some(weight);
+                    graph.add_weighted_edge(&source, &target, weight).unwrap();
+                }
+            }
+            for options in BlossomVOptions::all_options() {
+                for (objective, maximize) in [
+                    (ObjectiveSense::Minimize, false),
+                    (ObjectiveSense::Maximize, true),
+                ] {
+                    let mut algorithm = KolmogorovWeightedMatching::with_options_and_objective(
+                        &graph, options, objective,
+                    )
+                    .unwrap();
+                    let matching = algorithm.get_matching().unwrap();
+                    assert_eq!(
+                        matching.weight(),
+                        exact_sparse_weight(&weights, maximize),
+                        "seed={seed}, options={options}, objective={objective:?}"
+                    );
+                    assert!(algorithm.test_optimality().unwrap());
                 }
             }
         }

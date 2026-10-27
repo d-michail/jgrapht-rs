@@ -23,6 +23,7 @@ pub(crate) struct BlossomVInitializer<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> BlossomVInitializer<'g, G> {
+    #[cfg(test)]
     pub(crate) fn new(graph: &'g G) -> Self {
         Self {
             graph,

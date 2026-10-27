@@ -92,9 +92,10 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
 - **F3b algorithm core complete:** the simple, greedy, and fractional initializers; primal grow,
   augment, shrink, and expand operations; both global dual-update strategies; weighted perfect and
   general matching classes; statistics; optimality/error checks; and dual solutions are ported.
-  Eighteen focused tests pass, including all nine Java fractional-initializer cases and exhaustive
-  exact-oracle sweeps across all 24 option combinations for both objectives. The remaining F3 work
-  is the full Java public fixture corpus and any defects it exposes.
+  Twenty-one focused tests pass, including all nine Java fractional-initializer cases, exhaustive
+  complete and sparse exact-oracle sweeps across all 24 option combinations for both objectives,
+  no-solution cases, parallel edges, and self-loops. The remaining F3 work is the full Java public
+  fixture corpus and any defects it exposes.
 
 **F4. Dependents of Blossom V.** `ChristofidesThreeHalvesApproxMetricTSP` (uses `KolmogorovWeightedPerfectMatching` on the odd-degree vertices; port the Java class and its tests, then delete `christofides_tour` in `tour/legacy.rs`, C6) and `ChinesePostman` (class and tests, C15).
 

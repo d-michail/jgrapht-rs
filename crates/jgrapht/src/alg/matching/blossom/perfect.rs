@@ -475,6 +475,45 @@ mod tests {
     use super::*;
     use crate::graph::{GraphMut, GraphMutExt, UGraph};
 
+    fn assert_dual_solution<G: Graph>(
+        graph: &G,
+        matching: &Matching<G::Vertex, G::Edge>,
+        solution: &BlossomVDualSolution<'_, G>,
+        objective: ObjectiveSense,
+    ) {
+        assert_eq!(matching.len() * 2, graph.vertex_count());
+        for (vertices, &dual) in solution.dual_variables() {
+            assert_eq!(vertices.len() % 2, 1);
+            if vertices.len() > 1 {
+                match objective {
+                    ObjectiveSense::Minimize => assert!(dual >= -BLOSSOM_V_EPSILON),
+                    ObjectiveSense::Maximize => assert!(dual <= BLOSSOM_V_EPSILON),
+                }
+            }
+        }
+        for edge in graph.edges() {
+            let source = graph.edge_source(edge).unwrap();
+            let target = graph.edge_target(edge).unwrap();
+            if source == target {
+                continue;
+            }
+            let mut slack = graph.edge_weight(edge).unwrap_or(1.0);
+            for (vertices, &dual) in solution.dual_variables() {
+                if vertices.contains(source) != vertices.contains(target) {
+                    slack -= dual;
+                }
+            }
+            if matching.edges().contains(edge) {
+                assert!(slack.abs() < BLOSSOM_V_EPSILON, "matched slack={slack}");
+            } else {
+                match objective {
+                    ObjectiveSense::Minimize => assert!(slack >= -BLOSSOM_V_EPSILON),
+                    ObjectiveSense::Maximize => assert!(slack <= BLOSSOM_V_EPSILON),
+                }
+            }
+        }
+    }
+
     fn exact_perfect_weight(weights: &[Vec<f64>], maximize: bool) -> f64 {
         fn solve(
             weights: &[Vec<f64>],
@@ -506,6 +545,49 @@ mod tests {
                 } else {
                     best.min(value)
                 };
+            }
+            memo[mask] = Some(best);
+            best
+        }
+
+        let mut memo = vec![None; 1 << weights.len()];
+        solve(weights, (1 << weights.len()) - 1, maximize, &mut memo)
+    }
+
+    fn exact_sparse_perfect_weight(weights: &[Vec<Option<f64>>], maximize: bool) -> Option<f64> {
+        fn solve(
+            weights: &[Vec<Option<f64>>],
+            mask: usize,
+            maximize: bool,
+            memo: &mut [Option<Option<f64>>],
+        ) -> Option<f64> {
+            if mask == 0 {
+                return Some(0.0);
+            }
+            if let Some(value) = memo[mask] {
+                return value;
+            }
+            let first = mask.trailing_zeros() as usize;
+            let rest = mask & !(1 << first);
+            let mut best: Option<f64> = None;
+            let mut candidates = rest;
+            while candidates != 0 {
+                let second = candidates.trailing_zeros() as usize;
+                candidates &= !(1 << second);
+                let Some(edge_weight) = weights[first][second] else {
+                    continue;
+                };
+                let Some(suffix) = solve(weights, rest & !(1 << second), maximize, memo) else {
+                    continue;
+                };
+                let value = edge_weight + suffix;
+                best = Some(best.map_or(value, |current| {
+                    if maximize {
+                        current.max(value)
+                    } else {
+                        current.min(value)
+                    }
+                }));
             }
             memo[mask] = Some(best);
             best
@@ -568,6 +650,25 @@ mod tests {
     }
 
     #[test]
+    fn parallel_edges_are_distinct_and_self_loops_are_ignored() {
+        let mut graph = UGraph::<usize>::pseudo().weighted();
+        graph.add_vertex(0);
+        graph.add_vertex(1);
+        graph.add_weighted_edge(&0, &0, -100.0).unwrap();
+        graph.add_weighted_edge(&0, &1, 7.0).unwrap();
+        graph.add_weighted_edge(&0, &1, -3.0).unwrap();
+
+        let mut minimum = KolmogorovWeightedPerfectMatching::new(&graph).unwrap();
+        let mut maximum =
+            KolmogorovWeightedPerfectMatching::with_objective(&graph, ObjectiveSense::Maximize)
+                .unwrap();
+        assert_eq!(minimum.get_matching().unwrap().weight(), -3.0);
+        assert_eq!(maximum.get_matching().unwrap().weight(), 7.0);
+        assert!(minimum.test_optimality().unwrap());
+        assert!(maximum.test_optimality().unwrap());
+    }
+
+    #[test]
     fn all_options_match_exact_solver_on_small_complete_graphs() {
         for seed in 0..8 {
             let vertex_count = if seed < 2 { 4 } else { 6 };
@@ -609,6 +710,59 @@ mod tests {
                         .dual_variables()
                         .keys()
                         .all(|vertices| vertices.len() % 2 == 1));
+                    let matching = algorithm.get_matching().unwrap();
+                    assert_dual_solution(&graph, &matching, &dual, objective);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn all_options_match_exact_solver_on_sparse_graphs() {
+        for seed in 0..16 {
+            let vertex_count = if seed < 2 { 4 } else { 8 };
+            let mut weights = vec![vec![None; vertex_count]; vertex_count];
+            let mut edges = Vec::new();
+            for source in 0..vertex_count {
+                for target in source + 1..vertex_count {
+                    let hash = (source + 5) * 41 + (target + 7) * 67 + seed * 73;
+                    if hash % 5 < 2 {
+                        continue;
+                    }
+                    let value = (hash % 43) as f64 - 21.0;
+                    weights[source][target] = Some(value);
+                    weights[target][source] = Some(value);
+                    edges.push((source, target, value));
+                }
+            }
+            let graph = weighted_graph(vertex_count, &edges);
+            for options in BlossomVOptions::all_options() {
+                for (objective, maximize) in [
+                    (ObjectiveSense::Minimize, false),
+                    (ObjectiveSense::Maximize, true),
+                ] {
+                    let expected = exact_sparse_perfect_weight(&weights, maximize);
+                    let mut algorithm =
+                        KolmogorovWeightedPerfectMatching::with_options_and_objective(
+                            &graph, options, objective,
+                        )
+                        .unwrap();
+                    let result = algorithm.get_matching();
+                    match expected {
+                        Some(expected) => {
+                            let matching = result.unwrap();
+                            assert_eq!(
+                                matching.weight(),
+                                expected,
+                                "seed={seed}, options={options}, objective={objective:?}"
+                            );
+                            assert!(algorithm.test_optimality().unwrap());
+                        }
+                        None => assert!(
+                            result.is_err(),
+                            "seed={seed}, options={options}, objective={objective:?}"
+                        ),
+                    }
                 }
             }
         }
