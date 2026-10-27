@@ -13,6 +13,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Graphviz DOT import and export.
+//!
+//! DOT is Graphviz's textual graph-description language. This module supports
+//! directed and undirected graphs, scoped default attributes, edge chains,
+//! subgraphs, quoted identifiers, and HTML identifiers.
+
+#![deny(missing_docs)]
 
 use crate::{
     Attribute, AttributeMap, AttributeType, BaseExporter, GraphExporter, GraphImporter,
@@ -406,6 +412,13 @@ type GraphAttrConsumer = Box<dyn FnMut(&str, &Attribute) -> Result<()>>;
 type VertexAttrConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
 type EdgeAttrConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()>>;
 
+/// Imports a graph from Graphviz DOT.
+///
+/// The destination graph's directionality must match the DOT `graph` or
+/// `digraph` declaration and it must support any loops or parallel edges in the
+/// input. Vertex identifiers are reported to the vertex-attribute consumer
+/// under the key `ID`; a named graph identifier is similarly reported to the
+/// graph-attribute consumer.
 pub struct DotImporter<V, E = DefaultEdge> {
     vertex_factory: Option<VertexFactory<V>>,
     vertex_attrs_factory: Option<VertexAttrsFactory<V>>,
@@ -415,6 +428,7 @@ pub struct DotImporter<V, E = DefaultEdge> {
     edge_attr_consumer: Option<EdgeAttrConsumer<E>>,
 }
 impl<V, E> DotImporter<V, E> {
+    /// Creates an importer which uses the destination graph's suppliers.
     pub fn new() -> Self {
         Self {
             vertex_factory: None,
@@ -425,10 +439,18 @@ impl<V, E> DotImporter<V, E> {
             edge_attr_consumer: None,
         }
     }
+    /// Sets a factory which creates vertices from DOT identifiers.
+    ///
+    /// Configuring this factory replaces any attributes-aware vertex factory.
     pub fn set_vertex_factory(&mut self, f: impl FnMut(&str) -> V + 'static) {
         self.vertex_factory = Some(Box::new(f));
         self.vertex_attrs_factory = None;
     }
+    /// Sets a factory which creates vertices from identifiers and attributes.
+    ///
+    /// The attribute map contains the defaults and explicit attributes known
+    /// when the vertex is created. Configuring this factory replaces the
+    /// identifier-only vertex factory.
     pub fn set_vertex_with_attributes_factory(
         &mut self,
         f: impl FnMut(&str, &AttributeMap) -> V + 'static,
@@ -436,24 +458,32 @@ impl<V, E> DotImporter<V, E> {
         self.vertex_attrs_factory = Some(Box::new(f));
         self.vertex_factory = None;
     }
+    /// Sets a factory which creates edges from their DOT attributes.
     pub fn set_edge_with_attributes_factory(
         &mut self,
         f: impl FnMut(&AttributeMap) -> E + 'static,
     ) {
         self.edge_attrs_factory = Some(Box::new(f));
     }
+    /// Sets the consumer notified for every graph attribute.
+    ///
+    /// A named graph's identifier is also reported under the key `ID`.
     pub fn set_graph_attribute_consumer(
         &mut self,
         f: impl FnMut(&str, &Attribute) -> Result<()> + 'static,
     ) {
         self.graph_attr_consumer = Some(Box::new(f));
     }
+    /// Sets the consumer notified for every vertex attribute.
+    ///
+    /// Each DOT vertex identifier is also reported under the key `ID`.
     pub fn set_vertex_attribute_consumer(
         &mut self,
         f: impl FnMut(&V, &str, &Attribute) -> Result<()> + 'static,
     ) {
         self.vertex_attr_consumer = Some(Box::new(f));
     }
+    /// Sets the consumer notified for every edge attribute.
     pub fn set_edge_attribute_consumer(
         &mut self,
         f: impl FnMut(&E, &str, &Attribute) -> Result<()> + 'static,
@@ -572,6 +602,10 @@ fn is_valid_unquoted_id(value: &str) -> bool {
     matches!(chars.next(), Some(c) if c == '_' || c.is_alphabetic())
         && chars.all(|c| c == '_' || c.is_alphanumeric())
 }
+/// Returns whether `value` is a syntactically valid DOT identifier.
+///
+/// Valid identifiers are alphabetic/underscore names, DOT numeric literals,
+/// double-quoted strings, or HTML strings enclosed in angle brackets.
 pub fn is_valid_id(value: &str) -> bool {
     (value.len() >= 2 && value.starts_with('"') && value.ends_with('"'))
         || (value.len() >= 2 && value.starts_with('<') && value.ends_with('>'))
@@ -597,13 +631,22 @@ fn render_attributes(attrs: AttributeMap) -> String {
 }
 
 #[derive(Debug, Clone)]
+/// A subgraph definition included by [`DotExporter`].
+///
+/// Vertices and edges must belong to the graph being exported. Both attribute
+/// maps preserve insertion order.
 pub struct DotSubgraph<V, E> {
+    /// Vertices whose identifiers are repeated inside the subgraph block.
     pub vertices: Vec<V>,
+    /// Edges whose endpoint statements are repeated inside the subgraph block.
     pub edges: Vec<E>,
+    /// Graph attributes written as assignments inside the subgraph block.
     pub graph_attributes: AttributeMap,
+    /// Attributes attached to the subgraph's cluster statement.
     pub cluster_attributes: AttributeMap,
 }
 impl<V, E> DotSubgraph<V, E> {
+    /// Creates a subgraph with the supplied members and no attributes.
     pub fn new(vertices: impl IntoIterator<Item = V>, edges: impl IntoIterator<Item = E>) -> Self {
         Self {
             vertices: vertices.into_iter().collect(),
@@ -614,6 +657,12 @@ impl<V, E> DotSubgraph<V, E> {
     }
 }
 type SubgraphProvider<V, E> = Box<dyn Fn() -> IndexMap<String, DotSubgraph<V, E>>>;
+/// Exports a graph in Graphviz DOT format.
+///
+/// Vertices receive sequential integer identifiers by default. A graph ID,
+/// graph/vertex/edge attributes, and named subgraphs can be supplied through
+/// providers. Generated graph, vertex, and subgraph identifiers are validated
+/// against DOT's identifier grammar.
 pub struct DotExporter<V, E> {
     base: BaseExporter<V, E>,
     subgraph_provider: Option<SubgraphProvider<V, E>>,
@@ -622,6 +671,7 @@ impl<V, E> DotExporter<V, E>
 where
     V: Clone + Eq + Hash + 'static,
 {
+    /// Creates an exporter with sequential integer vertex identifiers.
     pub fn new() -> Self {
         let mut ids = IntegerIdProvider::new();
         Self {
@@ -629,24 +679,35 @@ where
             subgraph_provider: None,
         }
     }
+    /// Creates an exporter using `p` to generate vertex identifiers.
     pub fn with_vertex_id_provider(p: impl FnMut(&V) -> String + 'static) -> Self {
         Self {
             base: BaseExporter::new(p),
             subgraph_provider: None,
         }
     }
+    /// Sets the provider used to generate the graph identifier.
+    ///
+    /// The default graph identifier is `G`.
     pub fn set_graph_id_provider(&mut self, p: impl FnMut() -> String + 'static) {
         self.base.set_graph_id_provider(p);
     }
+    /// Sets the provider of graph attributes.
     pub fn set_graph_attribute_provider(&mut self, p: impl Fn() -> AttributeMap + 'static) {
         self.base.set_graph_attribute_provider(p);
     }
+    /// Sets the provider of vertex attributes.
     pub fn set_vertex_attribute_provider(&mut self, p: impl Fn(&V) -> AttributeMap + 'static) {
         self.base.set_vertex_attribute_provider(p);
     }
+    /// Sets the provider of edge attributes.
     pub fn set_edge_attribute_provider(&mut self, p: impl Fn(&E) -> AttributeMap + 'static) {
         self.base.set_edge_attribute_provider(p);
     }
+    /// Sets the provider of named subgraphs.
+    ///
+    /// The returned map's keys are DOT subgraph identifiers and its iteration
+    /// order determines output order.
     pub fn set_subgraph_provider(
         &mut self,
         p: impl Fn() -> IndexMap<String, DotSubgraph<V, E>> + 'static,
