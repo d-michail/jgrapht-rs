@@ -1,0 +1,198 @@
+use super::base::{
+    HamiltonianCycleAlgorithm, HamiltonianCycleImprovementAlgorithm, check_graph,
+    closed_vertex_list_to_tour, singleton_tour,
+};
+use super::simple::{RandomTourTSP, reverse};
+use crate::error::{GraphError, Result};
+use crate::graph::{Graph, GraphExt};
+use crate::util::java::RandomSource;
+use crate::walk::GraphWalk;
+use std::collections::HashMap;
+
+type Tour<G> = Result<Option<GraphWalk<<G as Graph>::Vertex, <G as Graph>::Edge>>>;
+
+/// `TwoOptHeuristicTSP`: repeatedly applies the best improving 2-opt move to a tour produced by an
+/// initializer (a random tour by default), `passes` times, and keeps the best result.
+pub struct TwoOptHeuristicTSP<'a, G: Graph> {
+    passes: usize,
+    initializer: Box<dyn HamiltonianCycleAlgorithm<G> + 'a>,
+    min_cost_improvement: f64,
+}
+
+struct State<V> {
+    n: usize,
+    dist: Vec<Vec<f64>>,
+    index: HashMap<V, usize>,
+    rev_index: Vec<V>,
+}
+
+impl<'a, G: Graph + 'a> TwoOptHeuristicTSP<'a, G> {
+    /// One pass from a random tour.
+    pub fn new() -> Self {
+        Self::with_passes(1)
+    }
+
+    pub fn with_passes(passes: usize) -> Self {
+        Self::with_all(passes, Box::new(RandomTourTSP::new()), 1e-8).expect("one pass at least")
+    }
+
+    pub fn with_seed(passes: usize, seed: u64) -> Result<Self> {
+        use rand::SeedableRng;
+        Self::with_rng(passes, rand::rngs::StdRng::seed_from_u64(seed))
+    }
+
+    pub fn with_rng(passes: usize, rng: impl RandomSource + 'a) -> Result<Self> {
+        Self::with_all(passes, Box::new(RandomTourTSP::with_rng(rng)), 1e-8)
+    }
+
+    pub fn with_initializer(initializer: impl HamiltonianCycleAlgorithm<G> + 'a) -> Self {
+        Self::with_all(1, Box::new(initializer), 1e-8).expect("one pass at least")
+    }
+
+    /// `minCostImprovement`: a move must shorten the tour by more than this (absolute value).
+    pub fn with_all(
+        passes: usize,
+        initializer: Box<dyn HamiltonianCycleAlgorithm<G> + 'a>,
+        min_cost_improvement: f64,
+    ) -> Result<Self> {
+        if passes < 1 {
+            return Err(GraphError::InvalidArgument(
+                "passes must be at least one".into(),
+            ));
+        }
+        Ok(TwoOptHeuristicTSP {
+            passes,
+            initializer,
+            min_cost_improvement: min_cost_improvement.abs(),
+        })
+    }
+
+    fn init(graph: &G) -> State<G::Vertex> {
+        let n = graph.vertex_count();
+        let rev_index: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let index: HashMap<G::Vertex, usize> = rev_index
+            .iter()
+            .enumerate()
+            .map(|(i, v)| (v.clone(), i))
+            .collect();
+        let mut dist = vec![vec![0.0; n]; n];
+        for e in graph.edges() {
+            let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
+            let weight = graph.edge_weight(e).unwrap_or(1.0);
+            let (si, ti) = (index[s], index[t]);
+            dist[si][ti] = weight;
+            dist[ti][si] = weight;
+        }
+        State {
+            n,
+            dist,
+            index,
+            rev_index,
+        }
+    }
+
+    fn create_initial_tour(&mut self, graph: &G, state: &State<G::Vertex>) -> Result<Vec<usize>> {
+        let tour = self
+            .initializer
+            .get_tour(graph)?
+            .ok_or_else(|| GraphError::InvalidArgument("Not a valid tour".into()))?;
+        Self::path_to_tour(&tour, state)
+    }
+
+    fn improve(&self, mut tour: Vec<usize>, state: &State<G::Vertex>) -> Vec<usize> {
+        let (n, dist) = (state.n, &state.dist);
+        loop {
+            let mut min_change = -self.min_cost_improvement;
+            let (mut mini, mut minj) = (usize::MAX, usize::MAX);
+            for i in 0..n.saturating_sub(2) {
+                for j in i + 2..n {
+                    let (ci, ci1, cj, cj1) = (tour[i], tour[i + 1], tour[j], tour[j + 1]);
+                    let change = (dist[ci][cj] + dist[ci1][cj1]) - (dist[ci][ci1] + dist[cj][cj1]);
+                    if change < min_change {
+                        min_change = change;
+                        mini = i;
+                        minj = j;
+                    }
+                }
+            }
+            if mini != usize::MAX && minj != usize::MAX {
+                reverse(&mut tour, mini as isize + 1, minj as isize);
+            } else {
+                return tour;
+            }
+        }
+    }
+
+    fn tour_to_path(
+        graph: &G,
+        tour: &[usize],
+        state: &State<G::Vertex>,
+    ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
+        let vertices = tour.iter().map(|&vi| state.rev_index[vi].clone()).collect();
+        closed_vertex_list_to_tour(vertices, graph)
+    }
+
+    fn path_to_tour(
+        path: &GraphWalk<G::Vertex, G::Edge>,
+        state: &State<G::Vertex>,
+    ) -> Result<Vec<usize>> {
+        let n = state.n;
+        let vertex_list = path.vertex_list();
+        if vertex_list.len() != n + 1 {
+            return Err(GraphError::InvalidArgument("Not a valid tour".into()));
+        }
+        let mut visited = vec![false; n];
+        let mut tour = vec![0usize; n + 1];
+        for i in 0..n {
+            let vi = *state
+                .index
+                .get(&vertex_list[i])
+                .ok_or_else(|| GraphError::InvalidArgument("Not a valid tour".into()))?;
+            if visited[vi] {
+                return Err(GraphError::InvalidArgument("Not a valid tour".into()));
+            }
+            visited[vi] = true;
+            tour[i] = vi;
+        }
+        tour[n] = tour[0];
+        Ok(tour)
+    }
+}
+
+impl<'a, G: Graph + 'a> Default for TwoOptHeuristicTSP<'a, G> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a, G: Graph + 'a> HamiltonianCycleAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
+    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+        check_graph(graph)?;
+        if graph.vertex_count() == 1 {
+            return Ok(Some(singleton_tour(graph)));
+        }
+        let state = Self::init(graph);
+        let initial = self.create_initial_tour(graph, &state)?;
+        let mut best = Self::tour_to_path(graph, &self.improve(initial, &state), &state)?;
+        for _ in 1..self.passes {
+            let initial = self.create_initial_tour(graph, &state)?;
+            let other = Self::tour_to_path(graph, &self.improve(initial, &state), &state)?;
+            if other.weight() < best.weight() {
+                best = other;
+            }
+        }
+        Ok(Some(best))
+    }
+}
+
+impl<'a, G: Graph + 'a> HamiltonianCycleImprovementAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
+    fn improve_tour(
+        &mut self,
+        graph: &G,
+        tour: &GraphWalk<G::Vertex, G::Edge>,
+    ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
+        let state = Self::init(graph);
+        let initial = Self::path_to_tour(tour, &state)?;
+        Self::tour_to_path(graph, &self.improve(initial, &state), &state)
+    }
+}

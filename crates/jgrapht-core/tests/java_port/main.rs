@@ -20,6 +20,7 @@ mod alg_planar_tests;
 mod alg_scoring_tests;
 mod alg_small_tests;
 mod alg_spanning_tests;
+mod alg_tour_tests;
 mod alg_util_tests;
 mod alg_vertexcover_tests;
 mod common;
