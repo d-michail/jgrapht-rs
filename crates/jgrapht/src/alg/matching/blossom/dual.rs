@@ -26,9 +26,41 @@ const NO_PERFECT_MATCHING_THRESHOLD: f64 = 1e10;
 const NO_PERFECT_MATCHING: &str = "There is no perfect matching in the specified graph";
 const PROCESSED_TREE: usize = usize::MAX;
 
+/// This class is used by `KolmogorovWeightedPerfectMatching` to perform dual updates, thus
+/// increasing the dual objective function value and creating new tight edges.
+///
+/// This class currently supports three types of dual updates: single tree, multiple trees fixed
+/// delta, and multiple tree variable delta. The first one is used to updates duals of a single tree,
+/// when at least one of the `BlossomVOptions#updateDualsBefore` or
+/// `BlossomVOptions#updateDualsAfter` is true. The latter two are used to update the duals
+/// globally and are defined by the `BlossomVOptions`.
+///
+/// There are two type of constraints on a dual change of a tree: in-tree and cross-tree. In-tree
+/// constraints are imposed by the infinity edges, (+, +) in-tree edges and "-" blossoms. Cross-tree
+/// constraints are imposed by (+, +), (+, -) and (-, +) cross-tree edges. With respect to this
+/// classification of constraints the following strategies of changing the duals can be used:
+///
+/// - Single tree strategy greedily increases the duals of the tree with respect to the in-tree and
+/// cross-tree constraints. This can result in a zero-change update. If a tight (+, +) cross-tree
+/// edge is encountered during this operation, an immediate augmentation is performed
+/// afterwards.
+///
+/// - Multiple tree fixed delta approach considers only in-tree constraints and constraints imposed
+/// by the (+, +) cross-tree edges. Since this approach increases the trees' epsilons by the same
+/// amount, it doesn't need to consider other two dual constraints. If a tight (+, +) cross-tree edge
+/// is encountered during this operation, an immediate augmentation is performed afterwards.
+///
+/// - Multiple tree variable delta approach considers all types of constraints. It determines a
+/// connected components in the auxiliary graph, where only tight (-, +) and (+, -) cross-tree edges
+/// are present. For these connected components it computes the same dual change, therefore the
+/// constraints imposed by the (-, +) and (+, -) cross-tree edges can't be violated. If a tight (+,
+/// +) cross-tree edge is encountered during this operation, an immediate augmentation is performed
+/// afterwards.
 pub(crate) struct BlossomVDualUpdater;
 
 impl BlossomVDualUpdater {
+    /// Performs global dual update. Operates on the whole graph and updates duals according to the
+    /// strategy defined by `BlossomVOptions#dualUpdateStrategy`.
     pub(crate) fn update_duals<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         strategy: DualUpdateStrategy,
@@ -63,6 +95,9 @@ impl BlossomVDualUpdater {
         Ok(dual_change)
     }
 
+    /// Updates the duals of the single tree. This method takes into account both in-tree and
+    /// cross-tree constraints. If possible, it also finds a cross-tree (+, +) edge of minimum slack
+    /// and performs an augmentation.
     pub(crate) fn update_duals_single<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         tree: TreeId,
@@ -109,6 +144,11 @@ impl BlossomVDualUpdater {
         }
     }
 
+    /// Computes and returns the value which can be assigned to the `tree.eps` so that it
+    /// doesn't violate in-tree constraints. In other words, `getEps(tree) - tree.eps` is the
+    /// resulting dual change wrt. in-tree constraints. The computed value is always greater than or
+    /// equal to the `tree.eps`, can violate the cross-tree constraints, and can be equal to
+    /// `KolmogorovWeightedPerfectMatching#INFINITY`.
     fn get_eps<G: Graph>(state: &BlossomVState<'_, G>, tree: TreeId) -> f64 {
         let value = &state.arena.trees[tree];
         let mut eps = INFINITY;
@@ -124,6 +164,7 @@ impl BlossomVDualUpdater {
         eps
     }
 
+    /// Updates duals by iterating through trees and greedily increasing their dual variables.
     fn multiple_tree_fixed_delta<G: Graph>(
         state: &mut BlossomVState<'_, G>,
     ) -> Result<Option<EdgeId>> {

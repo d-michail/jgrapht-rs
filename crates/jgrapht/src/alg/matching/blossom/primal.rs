@@ -19,9 +19,64 @@ use crate::util::OrderedF64;
 use std::mem;
 use std::time::Instant;
 
+/// This class is used by `KolmogorovWeightedPerfectMatching` for performing primal operations:
+/// grow, augment, shrink and expand. This class operates on alternating trees, blossom structures,
+/// and node states. It changes them after applying any primal operation. Also, this class can add
+/// and subtract some values from nodes' dual variables; it never changes their actual dual
+/// variables.
+///
+/// The augment operation is used to increase the cardinality of the matching. It is applied to a
+/// tight (+, +) cross-tree edge. Its main purpose is to alter the matching on the simple path
+/// between tree roots through the tight edge, destroy the previous tree structures, update the state
+/// of the node, and change the presence of edges in the priority queues. This operation doesn't
+/// destroy the tree structure; this technique is called *lazy tree structure destroying*. The
+/// information of the nodes from the tree structure block is overwritten when a node is being added
+/// to another tree. This operation doesn't change the matching in the contracted blossoms.
+///
+/// The grow operation is used to add new nodes to a given tree. This operation is applied only to
+/// tight infinity edges. It always adds even number of nodes. This operation can grow the tree
+/// recursively in the depth-first order. If it encounters a tight (+, +) cross-tree edge, it stops
+/// growing and performs immediate augmentation.
+///
+/// The shrink operation contracts an odd node circuit and introduces a new pseudonode. It is applied
+/// to tight (+, +) in-tree edges. It changes the state so than the contracted nodes don't appear in
+/// the surface graph. If during the changing of the endpoints of boundary edge a tight (+, +)
+/// cross-tree edge is encountered, an immediate augmentation is performed.
+///
+/// The expand operation brings the contracted blossom nodes to the surface graph. It is applied only
+/// to a "-" blossom with zero dual variable. The operation determines the two branches of a blossom:
+/// an even and an odd one. The formercontains an even number of edges and can be empty, the latter
+/// contains an odd number of edges and necessarily contains at least one edge. An even branch is
+/// inserted into the tree. The state of the algorithm is changes respectively (node duals, tree
+/// structure, etc.). If some boundary edge in a tight (+, +) cross-tree edge, an immediate
+/// augmentation is performed.
+///
+/// The immediate augmentations are used to speed up the algorithm. More detailed description of the
+/// primal operations can be found in their Javadoc.
 pub(crate) struct BlossomVPrimalUpdater;
 
 impl BlossomVPrimalUpdater {
+    /// Performs grow operation. This is invoked on the plus-infinity `growEdge`, which
+    /// connects a "+" node in the tree and an infinity matched node. The `growEdge` and the
+    /// matched free edge are added to the tree structure. Two new nodes are added to the tree: minus
+    /// node and plus node. Let's call the node incident to the `growEdge` and opposite to the
+    /// minusNode the "tree node".
+    ///
+    /// As the result, following actions are performed:
+    ///
+    /// - Add new child to the children of tree node and minus node
+    /// - Set parent edges of minus and plus nodes
+    /// - If minus node is a blossom, add it to the heap of "-" blossoms
+    /// - Remove growEdge from the heap of infinity edges
+    /// - Remove former infinity edges and add new (+, +) in-tree and cross-tree edges, (+, -)
+    /// cross tree edges to the appropriate heaps (due to the changes of the labels of the minus and
+    /// plus nodes)
+    /// - Add new infinity edge from the plus node
+    /// - Add new tree edges is necessary
+    /// - Subtract tree.eps from the slacks of all edges incident to the minus node
+    /// - Add tree.eps to the slacks of all edges incident to the plus node
+    ///
+    /// If the `manyGrows` flag is true, performs recursive growing of the tree.
     pub(crate) fn grow<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         grow_edge: EdgeId,
@@ -80,6 +135,25 @@ impl BlossomVPrimalUpdater {
         state.statistics.grow_time_ns += start.elapsed().as_nanos();
     }
 
+    /// Performs augment operation. This is invoked on a tight (+, +) cross-tree edge. It increases
+    /// the matching by 1, converts the trees on both sides into the set of free matched edges, and
+    /// applies lazy delta spreading.
+    ///
+    /// For each tree the following actions are performed:
+    ///
+    /// - Labels of all nodes change to INFINITY
+    /// - tree.eps is subtracted from "-" nodes' duals and added to the "+" nodes' duals
+    /// - tree.eps is subtracted from all edges incident to "+" nodes and added to all edges
+    /// incident to "-" nodes. Consecutively, the slacks of the (+, -) in-tree edges stay
+    /// unchanged
+    /// - Former (-, +) and (+, +) are substituted with the (+, inf) edges (removed and added to
+    /// appropriate heaps).
+    /// - The cardinality of the matching is increased by 1
+    /// - Tree structure references are set to null
+    /// - Tree roots are removed from the linked list of tree roots
+    ///
+    /// These actions change only the surface graph. They don't change the nodes and edges in the
+    /// pseudonodes.
     pub(crate) fn augment<G: Graph>(state: &mut BlossomVState<'_, G>, edge: EdgeId) {
         let start = Instant::now();
         for dir in 0..2 {
@@ -90,6 +164,24 @@ impl BlossomVPrimalUpdater {
         state.statistics.augment_time_ns += start.elapsed().as_nanos();
     }
 
+    /// Performs shrink operation. This is invoked on a tight (+, +) in-tree edge. The result of this
+    /// operation is the substitution of an odd circuit with a single node. This means that we
+    /// consider the set of nodes of odd cardinality as a single node.
+    ///
+    /// In the shrink operation the following main actions are performed:
+    ///
+    /// - Lazy dual updates are applied to all inner edges and nodes on the circuit. Thus, the
+    /// inner edges and nodes in the pseudonodes have valid slacks and dual variables
+    /// - The endpoints of the boundary edges are moved to the new blossom node, which has label
+    /// `BlossomVNode.Label#PLUS`
+    /// - Lazy dual updates are applied to boundary edges and newly created blossom
+    /// - Children of blossom nodes are moved to the blossom, their parent edges are changed
+    /// respectively
+    /// - The blossomSibling references are set so that they form a circular linked list
+    /// - If the blossom becomes a tree root, it substitutes the previous tree's root in the linked
+    /// list of tree roots
+    /// - Since the newly created blossom with "+" label can change the classification of edges,
+    /// their presence in heaps is updated
     pub(crate) fn shrink<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         forming_edge: EdgeId,
@@ -145,6 +237,27 @@ impl BlossomVPrimalUpdater {
         blossom
     }
 
+    /// Performs expand operation. This is invoked on a previously contracted pseudonode. The result
+    /// of this operation is bringing the nodes in the blossom to the surface graph. An even branch
+    /// of the blossom is inserted into the tree structure. Endpoints of the edges incident to the
+    /// blossom are moved one layer down. The slack of the inner and boundary edges are update
+    /// according to the lazy delta spreading technique.
+    ///
+    /// **Note:** only "-" blossoms can be expanded. At that moment their dual variables are
+    /// always zero. This is the reason why they don't need to be stored to compute the dual
+    /// solution.
+    ///
+    /// In the expand operation the following actions are performed:
+    ///
+    /// - Endpoints of the boundary edges are updated
+    /// - The matching in the blossom is changed. **Note:** the resulting matching doesn't
+    /// depend on the previous matching
+    /// - isOuter flags are updated
+    /// - node.tree are updated
+    /// - Tree structure is updated including parent edges and tree children of the nodes on the
+    /// even branch
+    /// - The endpoints of some edges change their labels to "+" => their slacks are changed
+    /// according to the lazy delta spreading and their presence in heaps also changes
     pub(crate) fn expand<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         blossom: NodeId,
@@ -218,6 +331,18 @@ impl BlossomVPrimalUpdater {
         }
     }
 
+    /// Expands an even branch of the blossom. Here it is assumed that the blossomSiblings are
+    /// directed in the way that the even branch goes from `blossomRoot` to
+    /// `branchesEndpoint`.
+    ///
+    /// The method traverses the nodes twice: first it changes the tree structure, updates the
+    /// labeling and flags, adds children, and changes the matching. After that it changes the slacks
+    /// of the edges according to the lazy delta spreading and their presence in heaps. This
+    /// operation is done in two steps because the later step requires correct labeling of the nodes
+    /// on the branch.
+    ///
+    /// **Note:** this branch may consist of only one node. In this case `blossomRoot` and
+    /// `branchesEndpoint` are the same nodes
     fn expand_even_branch<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         blossom_root: NodeId,
@@ -297,6 +422,13 @@ impl BlossomVPrimalUpdater {
         augment_edge
     }
 
+    /// Expands the nodes on an odd branch. Here it is assumed that the blossomSiblings are directed
+    /// in the way the odd branch goes from `branchesEndpoint` to `blossomRoot`.
+    ///
+    /// The method traverses the nodes only once setting the labels, flags, updating the matching,
+    /// removing former (+, -) edges and creating new (+, inf) edges in the corresponding heaps. The
+    /// method doesn't process the `blossomRoot` and `branchesEndpoint` as they belong to
+    /// the even branch.
     fn expand_odd_branch<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         blossom_root: NodeId,
@@ -324,6 +456,14 @@ impl BlossomVPrimalUpdater {
         }
     }
 
+    /// Changes dual information of the `plusNode` and edge incident to it. This method relies
+    /// on the labeling produced by the first traversal of the
+    /// `BlossomVPrimalUpdater#expandEvenBranch(BlossomVNode, BlossomVNode, BlossomVNode)` and
+    /// on the isProcessed flags of the nodes on the even branch that have been traversed already. It
+    /// also assumes that all blossom nodes are marked.
+    ///
+    /// Since one of endpoints of the edges previously incident to the blossom changes its label, we
+    /// have to update the slacks of the boundary edges incindent to the `plusNode`.
     fn expand_plus_node<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         plus: NodeId,
@@ -394,6 +534,8 @@ impl BlossomVPrimalUpdater {
         augment_edge
     }
 
+    /// Expands a minus node from the odd branch. Changes the slacks of inner (-,-) and (-, inf)
+    /// edges.
     fn expand_minus_node<G: Graph>(state: &mut BlossomVState<'_, G>, minus: NodeId) {
         let tree = state.arena.nodes[minus].tree.expect("minus node tree");
         let eps = state.arena.trees[tree].eps;
@@ -409,6 +551,7 @@ impl BlossomVPrimalUpdater {
         }
     }
 
+    /// Expands an infinity node from the odd branch
     fn expand_infinity_node<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         node: NodeId,
@@ -448,6 +591,7 @@ impl BlossomVPrimalUpdater {
             .expect("blossom sibling endpoint")
     }
 
+    /// Reverses the direction of blossomSibling references
     fn reverse_blossom_siblings(arena: &mut BlossomArena, blossom_node: NodeId) {
         let mut previous_edge = arena.nodes[blossom_node]
             .blossom_sibling
@@ -468,6 +612,8 @@ impl BlossomVPrimalUpdater {
         }
     }
 
+    /// Checks whether the direction of blossomSibling references is suitable for the expand
+    /// operation, i.e. an even branch goes from `blossomRoot` to `branchesEndpoint`.
     fn forward_direction(
         arena: &BlossomArena,
         blossom_root: NodeId,
@@ -482,6 +628,9 @@ impl BlossomVPrimalUpdater {
         hops % 2 == 0
     }
 
+    /// Updates the tree structure in the shrink operation. Moves the endpoints of the boundary edges
+    /// to the `blossom`, moves the children of the nodes on the circuit to the blossom,
+    /// updates edges's slacks and presence in heaps accordingly.
     fn update_tree_structure<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         blossom_root: NodeId,
@@ -541,6 +690,8 @@ impl BlossomVPrimalUpdater {
         augment_edge
     }
 
+    /// Processes a plus node on an odd circuit in the shrink operation. Moves endpoints of the
+    /// boundary edges, updates slacks of incident edges.
     fn shrink_plus_node<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         plus: NodeId,
@@ -574,6 +725,8 @@ impl BlossomVPrimalUpdater {
         augment_edge
     }
 
+    /// Processes a minus node from an odd circuit in the shrink operation. Moves the endpoints of
+    /// the boundary edges, updates their slacks
     fn shrink_minus_node<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         minus: NodeId,
@@ -633,6 +786,11 @@ impl BlossomVPrimalUpdater {
         }
     }
 
+    /// Creates a circular linked list of blossom nodes.
+    ///
+    /// **Note:** this method heavily relies on the property of the
+    /// `BlossomVEdge.BlossomNodesIterator` that it returns the blossomRoot while processing
+    /// the first branch (with direction 0).
     fn set_blossom_siblings(arena: &mut BlossomArena, blossom_root: NodeId, forming_edge: EdgeId) {
         let mut previous_edge = forming_edge;
         for (current, direction) in arena.blossom_nodes(blossom_root, forming_edge) {
@@ -647,6 +805,8 @@ impl BlossomVPrimalUpdater {
         }
     }
 
+    /// Finds a blossom root of the circuit created by the `edge`. More precisely, finds an lca
+    /// of `edge.head[0]` and `edge.head[1]`.
     fn find_blossom_root(arena: &mut BlossomArena, forming_edge: EdgeId) -> NodeId {
         let mut endpoints = [
             arena.edges[forming_edge].head[0].expect("forming edge endpoint"),
@@ -692,6 +852,8 @@ impl BlossomVPrimalUpdater {
         root
     }
 
+    /// Processes a minus node in the grow operation. Applies lazy delta spreading, adds new (-,+)
+    /// cross-tree edges, removes former (+, inf) edges.
     fn process_minus_node_grow<G: Graph>(state: &mut BlossomVState<'_, G>, minus: NodeId) {
         let tree = state.arena.nodes[minus].tree.expect("minus node tree");
         let eps = state.arena.trees[tree].eps;
@@ -722,6 +884,13 @@ impl BlossomVPrimalUpdater {
         }
     }
 
+    /// Processes a plus node during the grow operation. Applies lazy delta spreading, removes former
+    /// (+, inf) edges, adds new (+, +) in-tree and cross-tree edges, new (+, -) cross-tree edges.
+    /// When the `manyGrows` flag is on, collects the tight (+, inf) edges on grows them as
+    /// well.
+    ///
+    /// **Note:** the recursive grows must be done ofter the grow operation on the current edge is
+    /// over. This ensures correct state of the heaps and the edges' slacks.
     fn process_plus_node_grow<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         node: NodeId,
@@ -804,6 +973,12 @@ impl BlossomVPrimalUpdater {
         state.statistics.grow_num += 1;
     }
 
+    /// Converts a tree into a set of free matched edges. Changes the matching starting from
+    /// `firstNode` all the way up to the firstNode.tree.root. It changes the labeling of the
+    /// nodes, applies lazy delta spreading, updates edges' presence in the heaps. This method also
+    /// deletes unnecessary tree edges.
+    ///
+    /// This method doesn't change the nodes and edge contracted in the blossoms.
     fn augment_branch<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         first_node: NodeId,

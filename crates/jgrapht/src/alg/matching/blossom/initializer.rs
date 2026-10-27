@@ -31,6 +31,36 @@ enum FractionalAction {
     Augment,
 }
 
+/// Is used to start the Kolmogorov's Blossom V algorithm. Performs initialization of the algorithm's
+/// internal data structures and finds an initial matching according to the strategy specified in
+/// `options`.
+///
+/// The initialization process involves converting the graph into internal representation, allocating
+/// trees for unmatched vertices, and creating an auxiliary graph whose nodes correspond to
+/// alternating trees. The only part that varies is the strategy to find an initial matching to speed
+/// up the main part of the algorithm.
+///
+/// The simple initialization (option `BlossomVOptions.InitializationType#NONE`) doesn't find
+/// any matching and initializes the data structures by allocating $|V|$ single vertex trees. This is
+/// the fastest initialization strategy; however, it slows the main algorithm down.
+///
+/// The greedy initialization (option `BlossomVOptions.InitializationType#GREEDY` runs in two
+/// phases. First, for every node it determines an edge of minimum weight and assigns half of that
+/// weight to the node's dual variable. This ensures that the slacks of all edges are non-negative.
+/// After that it goes through all nodes again, greedily increases its dual variable and chooses an
+/// incident matching edge if it is possible. After that every node is incident to at least one tight
+/// edge. The resulting matching is an output of this initialization strategy.
+///
+/// The fractional matching initialization (option
+/// `BlossomVOptions.InitializationType#FRACTIONAL`) is both the most complicated and the most
+/// efficient type of initialization. The linear programming formulation of the fractional matching
+/// problem is identical to the one used for bipartite graphs. More precisely: <oi>
+/// - Minimize the $sum_{e\in E}x_e\times c_e$ subject to:
+/// - For all nodes: $\sum_{e is incident to v}x_e = 1$
+/// - For all edges: $x_e \ge 0$ </oi> **Note:** for an optimal solution in general graphs
+/// we have to require the variables $x_e$ to be $0$ or $1$. For more information on this type of
+/// initialization, see: *David Applegate and William J. Cook. \Solving Large-Scale Matching
+/// Problems". In: Network Flows And Matching. 1991.*
 pub(crate) struct BlossomVInitializer<'g, G: Graph> {
     graph: &'g G,
     weight_scale: f64,
