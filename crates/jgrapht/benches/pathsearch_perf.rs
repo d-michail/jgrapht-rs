@@ -17,6 +17,7 @@ use jgrapht::alg::tour::{
     BacktrackingHamiltonianPath, HamiltonianPathAlgorithm, HeldKarpHamiltonianPath,
 };
 use jgrapht::traverse::topological_sort;
+use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
 
 fn k_shortest_paths(c: &mut Criterion) {
@@ -183,25 +184,177 @@ fn dag(c: &mut Criterion) {
     });
 }
 
-fn hamiltonian_path(c: &mut Criterion) {
-    let n = 12;
-    let mut rng = Lcg(55);
-    let mut g = DiGraph::<usize>::simple();
-    g.add_vertices(0..n);
-    for u in 0..n {
-        for v in 0..n {
-            if u != v && rng.unit() < 0.5 {
-                g.add_edge(&u, &v).unwrap();
-            }
+#[derive(Clone, Copy)]
+enum HamiltonianFamily {
+    Path,
+    Cycle,
+    Complete,
+    Sparse,
+    StarNegative,
+    ModularBridges,
+    DagPositive,
+}
+
+impl HamiltonianFamily {
+    const ALL: [Self; 7] = [
+        Self::Path,
+        Self::Cycle,
+        Self::Complete,
+        Self::Sparse,
+        Self::StarNegative,
+        Self::ModularBridges,
+        Self::DagPositive,
+    ];
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Path => "path",
+            Self::Cycle => "cycle",
+            Self::Complete => "complete",
+            Self::Sparse => "sparse",
+            Self::StarNegative => "star_negative",
+            Self::ModularBridges => "modular_bridges",
+            Self::DagPositive => "dag_positive",
         }
     }
+
+    fn ordinal(self) -> u64 {
+        match self {
+            Self::Path => 0,
+            Self::Cycle => 1,
+            Self::Complete => 2,
+            Self::Sparse => 3,
+            Self::StarNegative => 4,
+            Self::ModularBridges => 5,
+            Self::DagPositive => 6,
+        }
+    }
+}
+
+enum HamiltonianGraph {
+    Undirected(UGraph<usize>),
+    Directed(DiGraph<usize>),
+}
+
+fn undirected_graph(n: usize) -> UGraph<usize> {
+    let mut graph = UGraph::<usize>::simple();
+    graph.add_vertices(0..n);
+    graph
+}
+
+fn hamiltonian_graph(family: HamiltonianFamily, n: usize) -> HamiltonianGraph {
+    let seed = 0xBEEF_CAFE_1234_5678u64 ^ ((n as u64) << 16) ^ family.ordinal();
+    let mut random = JavaRandom::new(seed as i64);
+    match family {
+        HamiltonianFamily::Path => {
+            let mut graph = undirected_graph(n);
+            for vertex in 0..n - 1 {
+                graph.add_edge(&vertex, &(vertex + 1)).unwrap();
+            }
+            HamiltonianGraph::Undirected(graph)
+        }
+        HamiltonianFamily::Cycle => {
+            let mut graph = undirected_graph(n);
+            for vertex in 0..n {
+                graph.add_edge(&vertex, &((vertex + 1) % n)).unwrap();
+            }
+            HamiltonianGraph::Undirected(graph)
+        }
+        HamiltonianFamily::Complete => {
+            let mut graph = undirected_graph(n);
+            for source in 0..n {
+                for target in source + 1..n {
+                    graph.add_edge(&source, &target).unwrap();
+                }
+            }
+            HamiltonianGraph::Undirected(graph)
+        }
+        HamiltonianFamily::Sparse => {
+            let mut graph = undirected_graph(n);
+            let probability = 3.0 / n as f64;
+            for source in 0..n {
+                for target in source + 1..n {
+                    if random.next_double() < probability {
+                        graph.add_edge(&source, &target).unwrap();
+                    }
+                }
+            }
+            HamiltonianGraph::Undirected(graph)
+        }
+        HamiltonianFamily::StarNegative => {
+            let mut graph = undirected_graph(n);
+            for leaf in 1..n {
+                graph.add_edge(&0, &leaf).unwrap();
+            }
+            HamiltonianGraph::Undirected(graph)
+        }
+        HamiltonianFamily::ModularBridges => {
+            let mut graph = undirected_graph(n);
+            let mut index = 0;
+            while index + 3 <= n {
+                graph.add_edge(&index, &(index + 1)).unwrap();
+                graph.add_edge(&(index + 1), &(index + 2)).unwrap();
+                graph.add_edge(&index, &(index + 2)).unwrap();
+                if index + 3 < n {
+                    graph.add_edge(&(index + 2), &(index + 3)).unwrap();
+                }
+                index += 3;
+            }
+            for vertex in index..n {
+                graph.add_edge(&(vertex - 1), &vertex).unwrap();
+            }
+            HamiltonianGraph::Undirected(graph)
+        }
+        HamiltonianFamily::DagPositive => {
+            let mut graph = DiGraph::<usize>::simple();
+            graph.add_vertices(0..n);
+            for vertex in 0..n - 1 {
+                graph.add_edge(&vertex, &(vertex + 1)).unwrap();
+            }
+            for _ in 0..(n / 3).max(1) {
+                let source = random.next_int_bound((n - 2) as i32) as usize;
+                let target =
+                    source + 2 + random.next_int_bound((n - source - 2).max(1) as i32) as usize;
+                graph.add_edge(&source, &target.min(n - 1)).unwrap();
+            }
+            HamiltonianGraph::Directed(graph)
+        }
+    }
+}
+
+fn hamiltonian_path(c: &mut Criterion) {
     let mut group = c.benchmark_group("hamiltonian_path");
-    group.bench_function("held_karp", |b| {
-        b.iter(|| black_box(HeldKarpHamiltonianPath::new().get_path(&g).unwrap()))
-    });
-    group.bench_function("backtracking", |b| {
-        b.iter(|| black_box(BacktrackingHamiltonianPath::new().get_path(&g).unwrap()))
-    });
+    for n in [8, 12, 16] {
+        for family in HamiltonianFamily::ALL {
+            let graph = hamiltonian_graph(family, n);
+            group.bench_function(
+                BenchmarkId::new(format!("{}/backtracking", family.name()), n),
+                |b| {
+                    b.iter(|| match &graph {
+                        HamiltonianGraph::Undirected(graph) => {
+                            black_box(BacktrackingHamiltonianPath::new().get_path(graph).unwrap())
+                        }
+                        HamiltonianGraph::Directed(graph) => {
+                            black_box(BacktrackingHamiltonianPath::new().get_path(graph).unwrap())
+                        }
+                    })
+                },
+            );
+            group.bench_function(
+                BenchmarkId::new(format!("{}/held_karp", family.name()), n),
+                |b| {
+                    b.iter(|| match &graph {
+                        HamiltonianGraph::Undirected(graph) => {
+                            black_box(HeldKarpHamiltonianPath::new().get_path(graph).unwrap())
+                        }
+                        HamiltonianGraph::Directed(graph) => {
+                            black_box(HeldKarpHamiltonianPath::new().get_path(graph).unwrap())
+                        }
+                    })
+                },
+            );
+        }
+    }
     group.finish();
 }
 
