@@ -64,6 +64,9 @@ pub struct ChordalGraphMinimalVertexSeparatorFinder<'g, G: UndirectedGraph> {
 }
 
 impl<'g, G: UndirectedGraph> ChordalGraphMinimalVertexSeparatorFinder<'g, G> {
+    /// Creates new `ChordalGraphMinimalVertexSeparatorFinder` instance. The
+    /// `ChordalityInspector` used in this implementation uses the
+    /// `org.jgrapht.traverse.MaximumCardinalityIterator` iterator
     pub fn new(graph: &'g G) -> Self {
         ChordalGraphMinimalVertexSeparatorFinder {
             graph,

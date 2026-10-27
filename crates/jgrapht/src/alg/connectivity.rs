@@ -594,6 +594,8 @@ impl<G: DirectedGraph> StrongConnectivityAlgorithm for GabowStrongConnectivityIn
     fn graph(&self) -> &G {
         self.graph
     }
+    /// Computes a `List` of `Set`s, where each set contains vertices which together form
+    /// a strongly connected component within the given graph.
     fn strongly_connected_sets(&self) -> &[HashSet<G::Vertex>] {
         &self.sets
     }
@@ -678,10 +680,12 @@ impl<'g, G: DirectedGraph> KosarajuStrongConnectivityInspector<'g, G> {
 
 impl<G: DirectedGraph> StrongConnectivityAlgorithm for KosarajuStrongConnectivityInspector<'_, G> {
     type G = G;
+    /// Return the underlying graph.
     fn graph(&self) -> &G {
         self.graph
-    /// Return the underlying graph.
     }
+    /// Computes a `List` of `Set`s, where each set contains vertices which together form
+    /// a strongly connected component within the given graph.
     fn strongly_connected_sets(&self) -> &[HashSet<G::Vertex>] {
         &self.sets
     }
@@ -752,8 +756,8 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
             cutpoints: Vec<usize>,
             bridges: Vec<E>,
         }
-        fn build_block<E>(st: &mut State<E>, cut: i64) {
         /// Each time a cutpoint is discovered, this method computes the biconnected component
+        fn build_block<E>(st: &mut State<E>, cut: i64) {
             let mut comp = Vec::new();
             while let Some(&(s, t)) = st.stack.last() {
                 if st.disc[s] < cut && st.disc[t] < cut {
@@ -886,10 +890,18 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
         }
     }
 
+    /// Returns the [cutpoints](http://mathworld.wolfram.com/ArticulationVertex.html)
+    /// (articulation points) of the graph. A vertex is a cutpoint if removal of that vertex (and all
+    /// edges incident to that vertex) would increase the number of (weakly) connected components in
+    /// the graph.
     pub fn cutpoints(&self) -> &IndexSet<G::Vertex> {
         &self.cutpoints
     }
 
+    /// Returns the graph's bridges. An edge is a
+    /// [bridge](http://mathworld.wolfram.com/GraphBridge.html) if removal of that edge
+    /// would increase the number of (weakly) connected components in the graph. Note that this
+    /// definition remains applicable in case of multigraphs or pseudographs.
     pub fn bridges(&self) -> &IndexSet<G::Edge> {
         &self.bridges
     }
@@ -932,18 +944,18 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
         Ok(&self.connected_sets[*i])
     }
 
-    pub fn is_biconnected(&self) -> bool {
     /// Tests if the inspected graph is biconnected. A biconnected graph is a connected graph on two
     /// or more vertices having no cutpoints.
+    pub fn is_biconnected(&self) -> bool {
         self.graph.vertex_count() >= 2 && self.blocks.len() == 1
     }
 
-    pub fn is_connected(&self) -> bool {
     /// Test if the inspected graph is connected. A graph is connected when, while ignoring edge
     /// directionality, there exists a path between every pair of vertices. In a connected graph,
     /// there are no unreachable vertices. When the inspected graph is a *directed* graph, this
     /// method returns true if and only if the inspected graph is *weakly* connected. An empty
     /// graph is *not* considered connected.
+    pub fn is_connected(&self) -> bool {
         self.connected_sets.len() == 1
     }
 }
@@ -979,8 +991,8 @@ pub struct BlockCutpointGraph<V: Eq + Hash> {
 }
 
 impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
-    pub fn new<G: Graph<Vertex = V>>(graph: &G) -> Self {
     /// Constructs a Block-Cutpoint graph
+    pub fn new<G: Graph<Vertex = V>>(graph: &G) -> Self {
         let bi = BiconnectivityInspector::new(graph);
         let block_count = bi.blocks().len();
         let mut nodes: Vec<HashSet<V>> = bi.blocks().to_vec();
@@ -1032,16 +1044,16 @@ impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
         0..self.block_count
     }
 
+    /// Returns the cutpoints of the initial graph.
     pub fn cutpoints(&self) -> &IndexSet<V> {
         &self.cutpoints
     }
 
-    pub fn is_cutpoint(&self, v: &V) -> bool {
     /// Returns `true` if the vertex is a cutpoint, `false` otherwise.
+    pub fn is_cutpoint(&self, v: &V) -> bool {
         self.cutpoints.contains(v)
     }
 }
-    /// Returns the cutpoints of the initial graph.
 
 // ---------------------------------------------------------------------------------------------
 // KConnectivityFlowAlgorithm
@@ -1096,8 +1108,8 @@ pub struct KConnectivityFlowAlgorithm<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
-    pub fn new(graph: &'g G) -> Self {
     /// Constructs a k-connectivity algorithm for the given graph. This
+    pub fn new(graph: &'g G) -> Self {
         Self::with_flow(
             graph,
             |g, s, t| {
@@ -1159,6 +1171,7 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
         }
     }
 
+    /// Computes the edge connectivity of the graph.
     pub fn edge_connectivity(&mut self) -> usize {
         if self.edge_connectivity.is_none() {
             self.edge_connectivity = Some(if self.graph.graph_type().directed {
@@ -1168,7 +1181,6 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
             });
         }
         self.edge_connectivity.unwrap()
-    /// Computes the edge connectivity of the graph.
     }
 
     /// Vertex connectivity; an error for the empty graph.
@@ -1185,13 +1197,13 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
         Ok(self.vertex_connectivity.unwrap())
     }
 
-    pub fn is_k_edge_connected(&mut self, k: usize) -> bool {
     /// Return if the graph is `k` edge connected
+    pub fn is_k_edge_connected(&mut self, k: usize) -> bool {
         k <= self.edge_connectivity()
     }
 
-    pub fn is_k_vertex_connected(&mut self, k: usize) -> Result<bool> {
     /// Return if the graph is `k` vertex connected
+    pub fn is_k_vertex_connected(&mut self, k: usize) -> Result<bool> {
         Ok(k <= self.vertex_connectivity()?)
     }
 
@@ -1240,6 +1252,7 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
         min
     }
 
+    /// Compute the edge connectivity for an undirected graph
     fn undirected_edge_connectivity(&self) -> usize {
         let mut dominating: Vec<&G::Vertex> = Vec::new();
         let mut covered: HashSet<G::Vertex> = HashSet::new();
@@ -1249,7 +1262,6 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
                 covered.insert(v.clone());
                 covered.extend(self.graph.neighbor_list_of(v));
             }
-    /// Compute the edge connectivity for an undirected graph
         }
         let Some((reference, rest)) = dominating.split_first() else {
             return 0;
@@ -1261,6 +1273,7 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
         min.min(self.min_degree_value)
     }
 
+    /// Compute the edge connectivity for an directed graph
     fn directed_edge_connectivity(&self) -> usize {
         let vs: Vec<&G::Vertex> = self.graph.vertices().collect();
         let mut min = usize::MAX;
@@ -1270,7 +1283,6 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
             }
         }
         min
-    /// Compute the edge connectivity for an directed graph
     }
 }
 

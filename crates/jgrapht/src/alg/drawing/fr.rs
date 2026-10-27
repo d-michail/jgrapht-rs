@@ -38,6 +38,19 @@ struct QNode {
     points: Option<Vec<Point2D>>,
 }
 
+/// A simple [QuadTree](https://en.wikipedia.org/wiki/Quadtree) for indexing during force
+/// calculations in the Fruchterman and Reingold Force-Directed Placement Algorithm.
+///
+/// See the following paper for the definition of a QuadTree.
+///
+/// - Raphael Finkel and J.L. Bentley. Quad Trees: A Data Structure for Retrieval on Composite
+/// Keys. Acta Informatica, 4(1):1--9, 1974.
+///
+/// The tree supports adding points one by one and maintains the centroid and total number of points
+/// on each tree node.
+///
+/// # Rust notes
+///
 /// Quad tree over points for Barnes–Hut style approximations (`FRQuadTree`).
 #[derive(Debug, Clone)]
 pub struct FRQuadTree {

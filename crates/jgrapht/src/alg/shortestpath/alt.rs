@@ -61,6 +61,7 @@ pub struct ALTAdmissibleHeuristic<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> ALTAdmissibleHeuristic<'g, G> {
+    /// Constructs a new `AStarAdmissibleHeuristic` using a set of landmarks.
     pub fn new<I>(graph: &'g G, landmarks: I) -> Result<Self>
     where
         I: IntoIterator<Item = G::Vertex>,
@@ -110,9 +111,9 @@ impl<'g, G: Graph> ALTAdmissibleHeuristic<'g, G> {
         self.graph
     }
 
-    pub fn cost_estimate(&self, source: &G::Vertex, target: &G::Vertex) -> f64 {
     /// An admissible heuristic estimate from a source vertex to a target vertex. The estimate is
     /// always non-negative and never overestimates the true distance.
+    pub fn cost_estimate(&self, source: &G::Vertex, target: &G::Vertex) -> f64 {
         if source == target {
             return 0.0;
         }
@@ -144,7 +145,6 @@ impl<'g, G: Graph> ALTAdmissibleHeuristic<'g, G> {
         estimate
     }
 
-    pub fn is_consistent(&self) -> bool {
     /// Returns true if the heuristic is a *consistent* or *monotone* heuristic wrt the
     /// provided `graph`. A heuristic is monotonic if its estimate is always less than or equal
     /// to the estimated distance from any neighboring vertex to the goal, plus the step cost of
@@ -153,6 +153,7 @@ impl<'g, G: Graph> ALTAdmissibleHeuristic<'g, G> {
     /// $d(u,v)$ is the weight of edge $(u,v)$ and $h(u)$ is the estimated cost to reach the target
     /// node from vertex u. Most natural admissible heuristics, such as Manhattan or Euclidean
     /// distance, are consistent heuristics.
+    pub fn is_consistent(&self) -> bool {
         true
     }
 }

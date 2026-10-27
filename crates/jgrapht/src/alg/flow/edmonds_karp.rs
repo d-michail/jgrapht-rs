@@ -63,6 +63,10 @@ pub struct EdmondsKarpMFImpl<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> EdmondsKarpMFImpl<'g, G> {
+    /// Constructs `MaximumFlow` instance to work with *a copy of* `network`.
+    /// Current source and sink are set to `null`. If `network` is weighted, then
+    /// capacities are weights, otherwise all capacities are equal to one. Doubles are compared using
+    /// `DEFAULT_EPSILON` tolerance.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }

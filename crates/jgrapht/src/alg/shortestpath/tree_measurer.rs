@@ -31,6 +31,10 @@ impl<'g, G: Graph> TreeMeasurer<'g, G> {
         Self { graph }
     }
 
+    /// Compute the [graph center](http://mathworld.wolfram.com/GraphCenter.html). The
+    /// center of a graph is the set of vertices of graph eccentricity equal to the graph radius.
+    ///
+    /// Note: The input graph must be undirected.
     pub fn graph_center(&self) -> Result<Vec<G::Vertex>> {
         if self.graph.graph_type().directed {
             return Err(GraphError::InvalidArgument(

@@ -329,13 +329,13 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
         Ok(())
     }
 
+    /// Set of heavy edges.
     pub fn heavy_edges(&self) -> &HashSet<G::Edge> {
         &self.heavy_edges
-    /// Set of heavy edges.
     }
+    /// Set of light edges.
     pub fn light_edges(&self) -> &HashSet<G::Edge> {
         &self.light_edges
-    /// Set of light edges.
     }
 
     /// The paths as walks (with their vertex count as weight, like JGraphT).
@@ -362,8 +362,6 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
     pub fn component_of(&self, v: &G::Vertex) -> Option<usize> {
         self.component[*self.vertex_map.get(v)?]
     }
-    pub fn vertex_map(&self) -> &HashMap<G::Vertex, usize> {
-        &self.vertex_map
     /// Return the vertex map, a mapping from vertices to unique integers.
     ///
     /// For each vertex $v \in V$, let $vertexMap(v) = x$ such that no two vertices share the
@@ -371,9 +369,9 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
     /// reverse mapping from integers to vertices.
     ///
     /// Note: The structure returned is immutable.
+    pub fn vertex_map(&self) -> &HashMap<G::Vertex, usize> {
+        &self.vertex_map
     }
-    pub fn index_list(&self) -> &[G::Vertex] {
-        &self.index_list
     /// Return the index list, a mapping from unique integers to vertices.
     ///
     /// For each vertex $v \in V$, let $vertexMap(v) = x$ such that no two vertices share the
@@ -381,42 +379,44 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
     /// reverse mapping from integers to vertices.
     ///
     /// Note: The structure returned is immutable.
+    pub fn index_list(&self) -> &[G::Vertex] {
+        &self.index_list
     }
     /// Path index of the vertex with the given index (`None` for vertices outside the trees).
     pub fn path_array(&self) -> &[Option<usize>] {
         &self.path
     }
+    /// Return the internal positionInPath array. For each vertex $v$,
+    /// $positionInPathArray[normalizeVertex(v)] = k$ iff $v$ appears as the $k-th$ vertex on its
+    /// path (0-indexed) or $-1$ if $v$ doesn't belong to any path.
     pub fn position_in_path_array(&self) -> &[Option<usize>] {
         &self.position_in_path
-    /// Return the internal positionInPath array. For each vertex $v$,
-    /// $positionInPathArray\[normalizeVertex(v)\] = k$ iff $v$ appears as the $k-th$ vertex on its
-    /// path (0-indexed) or $-1$ if $v$ doesn't belong to any path.
     }
-    pub fn first_node_in_path_array(&self) -> &[usize] {
-        &self.first_node_in_path
     /// Return the internal firstNodeInPath array. For each path $i$, $firstNodeInPath\[i\] =
     /// normalizeVertex(v)$ iff $v$ appears as the first vertex on the path.
+    pub fn first_node_in_path_array(&self) -> &[usize] {
+        &self.first_node_in_path
     }
-    pub fn parent_array(&self) -> &[Option<usize>] {
-        &self.parent
     /// Return the internal parent array. For each vertex $v \in V$,
     /// $parentArray[normalizeVertex(v)] = normalizeVertex(u)$ if $getParent(v) = u$ or $-1$ if
     /// $getParent(v) = null$.
+    pub fn parent_array(&self) -> &[Option<usize>] {
+        &self.parent
     }
-    pub fn depth_array(&self) -> &[Option<usize>] {
-        &self.depth
     /// Return the internal depth array. For each vertex $v \in V$,
     /// $depthArray[normalizeVertex(v)] = getDepth(v)$
+    pub fn depth_array(&self) -> &[Option<usize>] {
+        &self.depth
     }
+    /// Return the internal sizeSubtree array. For each vertex $v$,
+    /// $sizeSubtreeArray[normalizeVertex(v)] = getSizeSubtree(v)$
     pub fn size_subtree_array(&self) -> &[usize] {
         &self.size_subtree
-    /// Return the internal sizeSubtree array. For each vertex $v$,
-    /// $sizeSubtreeArray\[normalizeVertex(v)\] = getSizeSubtree(v)$
     }
-    pub fn component_array(&self) -> &[Option<usize>] {
-        &self.component
     /// Return the internal component array. For each vertex $v$,
     /// $componentArray[normalizeVertex(v)] = getComponent(v)$
+    pub fn component_array(&self) -> &[Option<usize>] {
+        &self.component
     }
 }
 
@@ -439,6 +439,38 @@ pub struct DmDecomposition<V> {
     pub perfect_matched_sets: Vec<HashSet<V>>,
 }
 
+/// This class computes a Dulmage-Mendelsohn Decomposition of a bipartite graph. A Dulmage–Mendelsohn
+/// decomposition is a partition of the vertices of a bipartite graph into subsets, with the property
+/// that two adjacent vertices belong to the same subset if and only if they are paired with each
+/// other in a perfect matching of the graph. This particular implementation is capable of computing
+/// both a coarse and a fine Dulmage-Mendelsohn Decomposition.
+///
+/// The Dulmage-Mendelsohn Decomposition is based on a maximum-matching of the graph $G$. This
+/// implementation uses the Hopcroft-Karp maximum matching algorithm by default.
+///
+/// A coarse Dulmage-Mendelsohn Decomposition is a partitioning into three subsets. Where $D$ is the
+/// set of vertices in G that are not matched in the maximum matching of $G$, these subsets are:
+///
+/// - The vertices in $D \cap U$ and their neighbors
+/// - The vertices in $D \cap V$ and their neighbors
+/// - The remaining vertices
+///
+/// A fine Dulmage-Mendelsohn Decomposition further partitions the remaining vertices into
+/// strongly-connected sets. This implementation uses Kosaraju's algorithm for the
+/// strong-connectivity analysis.
+///
+/// The Dulmage-Mendelsohn Decomposition was introduced in:
+/// Dulmage, A.L., Mendelsohn, N.S. Coverings of bipartitegraphs, Canadian J. Math., 10, 517-534,
+/// 1958.
+///
+/// The implementation of this class is based on:
+/// Bunus P., Fritzson P., Methods for Structural Analysis and Debugging of Modelica Models, 2nd
+/// International Modelica Conference 2002
+///
+/// The runtime complexity of this class is $O(V + E)$.
+///
+/// # Rust notes
+///
 /// Dulmage–Mendelsohn decomposition of a bipartite graph (`DulmageMendelsohnDecomposition`).
 pub struct DulmageMendelsohnDecomposition<'g, G: Graph> {
 /// This class computes a Dulmage-Mendelsohn Decomposition of a bipartite graph. A Dulmage–Mendelsohn
@@ -482,10 +514,10 @@ impl<'g, G: Graph> DulmageMendelsohnDecomposition<'g, G>
 where
     G::Vertex: Eq + Hash,
 {
-    pub fn new(
-        graph: &'g G,
     /// Construct the algorithm for a given bipartite graph $G=(V_1,V_2,E)$ and it's partitions $V_1$
     /// and $V_2$, where $V_1\cap V_2=\emptyset$.
+    pub fn new(
+        graph: &'g G,
         partition1: HashSet<G::Vertex>,
         partition2: HashSet<G::Vertex>,
     ) -> Self {
@@ -507,10 +539,9 @@ where
         self.decompose(&matching, fine)
     }
 
+    /// Perform the decomposition, using a pre-calculated bipartite matching
     pub fn decompose(
         &self,
-    /// Perform the decomposition, using a pre-calculated bipartite matching
-    /// Perform the decomposition, using a pre-calculated bipartite matching
         matching: &Matching<G::Vertex, G::Edge>,
         fine: bool,
     ) -> Result<DmDecomposition<G::Vertex>> {

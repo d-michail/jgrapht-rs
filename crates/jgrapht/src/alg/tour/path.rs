@@ -233,15 +233,13 @@ fn build_adjacency<G: Graph>(
 pub struct DagHamiltonianPath;
 
 impl DagHamiltonianPath {
+    /// Constructs a new instance.
     pub fn new() -> Self {
         DagHamiltonianPath
-    /// Constructs a new instance.
     }
 }
 
 impl<G: Graph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
-    fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
-        if !graph.graph_type().directed {
     /// Computes a Hamiltonian path in the given graph and returns a tri-state
     /// `HamiltonianPathSearchResult`.
     ///
@@ -261,6 +259,8 @@ impl<G: Graph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
     /// Implementations that accept an execution budget (e.g. a maximum state count) may also
     /// return `ABORTED`; such bounded variants must never report `PROVEN_ABSENT`
     /// for a search that was stopped early.
+    fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
+        if !graph.graph_type().directed {
             return Err(GraphError::InvalidArgument("Graph must be directed".into()));
         }
         require_not_empty(graph)?;
@@ -337,11 +337,6 @@ impl<G: Graph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
     }
 }
 
-/// `HeldKarpHamiltonianPath`: bitmask dynamic programming, `O(2^n n²)`; a hard limit of 30
-/// vertices.
-pub struct HeldKarpHamiltonianPath {
-    max_vertices: usize,
-    states_expanded: u64,
 /// Dynamic-programming algorithm for the
 /// [Hamiltonian path problem](https://en.wikipedia.org/wiki/Hamiltonian_path).
 ///
@@ -378,6 +373,11 @@ pub struct HeldKarpHamiltonianPath {
 ///
 /// # Rust notes
 ///
+/// `HeldKarpHamiltonianPath`: bitmask dynamic programming, `O(2^n n²)`; a hard limit of 30
+/// vertices.
+pub struct HeldKarpHamiltonianPath {
+    max_vertices: usize,
+    states_expanded: u64,
 }
 
 impl HeldKarpHamiltonianPath {
@@ -386,10 +386,10 @@ impl HeldKarpHamiltonianPath {
     const UNVISITED: i8 = -1;
     const START_SENTINEL: i8 = -2;
 
-    pub fn new() -> Self {
-        HeldKarpHamiltonianPath {
     /// Constructs a new instance with the default vertex ceiling
     /// (`DEFAULT_MAX_VERTICES`).
+    pub fn new() -> Self {
+        HeldKarpHamiltonianPath {
             max_vertices: Self::DEFAULT_MAX_VERTICES,
             states_expanded: 0,
         }
@@ -413,9 +413,9 @@ impl HeldKarpHamiltonianPath {
         })
     }
 
+    /// Returns the maximum number of vertices this instance will accept.
     pub fn max_vertices(&self) -> usize {
         self.max_vertices
-    /// Returns the maximum number of vertices this instance will accept.
     }
 
     /// The number of states expanded by the last search.
@@ -431,8 +431,6 @@ impl Default for HeldKarpHamiltonianPath {
 }
 
 impl<G: Graph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath {
-    fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
-        require_directed_or_undirected(graph)?;
     /// Computes a Hamiltonian path in the given graph and returns a tri-state
     /// `HamiltonianPathSearchResult`.
     ///
@@ -452,6 +450,8 @@ impl<G: Graph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath {
     /// Implementations that accept an execution budget (e.g. a maximum state count) may also
     /// return `ABORTED`; such bounded variants must never report `PROVEN_ABSENT`
     /// for a search that was stopped early.
+    fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
+        require_directed_or_undirected(graph)?;
         self.states_expanded = 0;
         require_not_empty(graph)?;
         let n = graph.vertex_count();
@@ -527,6 +527,79 @@ impl<G: Graph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath {
     }
 }
 
+/// Exact backtracking algorithm for the
+/// [Hamiltonian path problem](https://en.wikipedia.org/wiki/Hamiltonian_path) on
+/// directed and undirected graphs.
+///
+/// The algorithm performs depth-first search over simple paths. From each candidate start vertex
+/// it tries to extend the current path by an unused adjacent vertex; the first path that visits
+/// every vertex exactly once is returned. If the exhaustive search proves that no such path
+/// exists, a `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` result is returned.
+///
+/// The unbounded `getPath(Graph)` entry point only returns `PATH_FOUND` or
+/// `PROVEN_ABSENT`. The bounded `searchWithStateLimit(Graph, long)` variant may
+/// additionally return `HamiltonianPathSearchResult.Status#ABORTED` when the search hits
+/// its state budget before completing.
+///
+/// This implementation is a straightforward exact DFS / backtracking solver for Hamiltonian
+/// path existence, using standard pruning and candidate-ordering ideas rather than reproducing
+/// any single published algorithm verbatim. For background see Rubin, F., "A Search Procedure
+/// for Hamilton Paths and Circuits", JACM 21(4), 1974 (backtracking search); the
+/// minimum-remaining-values candidate ordering is in the spirit of Warnsdorff's rule (Warnsdorff,
+/// "Des Rösselsprunges einfachste und allgemeinste Lösung", 1823) and of
+/// constraint-satisfaction reachability propagation (Tsang, "Foundations of Constraint
+/// Satisfaction", 1993); the structural prechecks (block / cut-vertex / bridge / SCC) are
+/// well-known necessary conditions from graph theory (see Diestel, "Graph Theory", chapter 3,
+/// for the underlying decompositions).
+///
+/// The general Hamiltonian path problem is NP-complete. This implementation is exact and runs in
+/// exponential time in the worst case, so callers should expect it to be suitable for relatively
+/// small graphs (the practical limit depends heavily on graph structure: sparse and highly
+/// constrained graphs are typically tractable for much larger `n` than dense random
+/// graphs).
+///
+/// The implementation applies the following correctness-preserving prechecks and search
+/// heuristics, none of which can cause a false negative:
+///
+/// - If the graph contains exactly one vertex, the singleton path is returned.
+/// - If an undirected graph is not connected, no Hamiltonian path can exist, so a
+/// `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` result is returned without DFS
+/// search.
+/// - If an undirected graph has more than two vertices of degree 1, no Hamiltonian path can
+/// exist (a Hamiltonian path has at most two endpoints, and any degree-1 vertex must be one of
+/// them).
+/// - For undirected graphs, every cut vertex (articulation point) must belong to at most two
+/// biconnected blocks. A Hamiltonian path visits each vertex once with at most two path-edges
+/// incident to it, so it cannot enter more than two blocks meeting at a single cut vertex.
+/// - For undirected graphs, the bridge tree (whose nodes are the 2-edge-connected components
+/// and whose edges are the original graph's bridges) must itself be a path. Equivalently, no
+/// 2-edge-connected component may have more than two incident bridges, since a Hamiltonian
+/// path enters and leaves each such component at most once.
+/// - For directed graphs, the strongly connected component condensation must itself admit a
+/// Hamiltonian path. Any Hamiltonian path in the original directed graph projects to one on the
+/// condensation DAG; when that condensation has no Hamiltonian path, the original graph cannot
+/// either.
+/// - At every search step the current endpoint must be able to reach every still-unvisited
+/// vertex through unvisited intermediaries. Otherwise the branch is pruned.
+/// - Candidate next vertices are tried in ascending order of their remaining (unvisited)
+/// onward degree. This is a minimum-remaining-values style heuristic: vertices with few onward
+/// options tend to fail or commit early, which generally reduces search.
+///
+/// Empty graphs are rejected with an `IllegalArgumentException`, matching the convention
+/// used by other Hamiltonian / TSP solvers in JGraphT (for example
+/// `org.jgrapht.alg.tour.HeldKarpTSP`). Graphs with self-loops are accepted but self-loops
+/// are ignored, since they cannot be part of a simple path. In multigraphs, parallel edges
+/// between the same pair of vertices collapse into a single DFS branch and the returned path
+/// picks an arbitrary representative edge via `Graph#getEdge`; the result is not
+/// weight-optimised across parallel edges.
+///
+/// The returned `GraphPath` is a `GraphWalk` whose vertex list contains every vertex
+/// of the graph exactly once, whose consecutive vertices are connected by an edge of the graph
+/// (respecting direction in directed graphs), and whose weight is the sum of the chosen edges'
+/// weights according to `Graph#getEdgeWeight(Object)`.
+///
+/// # Rust notes
+///
 /// `BacktrackingHamiltonianPath`: depth-first search with cheap necessary-condition prechecks,
 /// reachability pruning and a fewest-onward-neighbours ordering.
 #[derive(Default)]
@@ -610,9 +683,9 @@ pub struct BacktrackingHamiltonianPath {
 }
 
 impl BacktrackingHamiltonianPath {
+    /// Constructs a new instance.
     pub fn new() -> Self {
         Self::default()
-    /// Constructs a new instance.
     }
 
     /// The number of states expanded by the last search.
@@ -692,17 +765,14 @@ impl BacktrackingHamiltonianPath {
         ))
     }
 
-    fn cheap_undirected_prechecks<G: Graph>(graph: &G) -> bool {
-        if !ConnectivityInspector::new().is_connected(graph) {
     /// Cheap necessary conditions for the existence of a Hamiltonian path in an undirected graph.
     /// Returns `false` if the graph trivially has no Hamiltonian path, `true`
     /// otherwise. A `true` result does not guarantee a path exists.
+    fn cheap_undirected_prechecks<G: Graph>(graph: &G) -> bool {
+        if !ConnectivityInspector::new().is_connected(graph) {
             return false;
         }
         let mut leaves = 0;
-    /// Cheap necessary conditions for the existence of a Hamiltonian path in an undirected graph.
-    /// Returns `false` if the graph trivially has no Hamiltonian path, `true`
-    /// otherwise. A `true` result does not guarantee a path exists.
         for v in graph.vertices() {
             if Self::effective_undirected_degree(graph, v) == 1 {
                 leaves += 1;
@@ -716,30 +786,30 @@ impl BacktrackingHamiltonianPath {
             && Self::bridge_tree_degree_within_path_budget(graph, &bcc)
     }
 
-    fn cut_vertex_block_degree_within_path_budget<G: Graph>(
-        bcc: &BiconnectivityInspector<'_, G>,
-    ) -> bool {
-        bcc.cutpoints()
-            .iter()
     /// Necessary condition: in the block-cut tree of an undirected graph, every cut vertex must
     /// belong to at most two biconnected blocks. A cut vertex incident to more than two blocks
     /// disconnects the graph into more than two components on removal, but a Hamiltonian path
     /// uses at most two edges at any internal vertex, so it cannot weave through more than two
     /// such components.
+    fn cut_vertex_block_degree_within_path_budget<G: Graph>(
+        bcc: &BiconnectivityInspector<'_, G>,
+    ) -> bool {
+        bcc.cutpoints()
+            .iter()
             .all(|cut| bcc.blocks_of(cut).map(|b| b.len() <= 2).unwrap_or(true))
     }
 
-    fn bridge_tree_degree_within_path_budget<G: Graph>(
-        graph: &G,
-        bcc: &BiconnectivityInspector<'_, G>,
-    ) -> bool {
-        let bridges = bcc.bridges();
     /// Necessary condition: in the bridge tree (where 2-edge-connected components are nodes and
     /// bridges are edges) every component must have at most two incident bridges. A Hamiltonian
     /// path passing through a 2-edge-connected component enters and leaves it at most once, so
     /// it can use at most two of the component's incident bridges. This prune catches some
     /// graphs the cut-vertex check misses, in particular those where each bridge attaches to a
     /// different vertex inside a single component.
+    fn bridge_tree_degree_within_path_budget<G: Graph>(
+        graph: &G,
+        bcc: &BiconnectivityInspector<'_, G>,
+    ) -> bool {
+        let bridges = bcc.bridges();
         if bridges.len() <= 2 {
             return true; // the bridge tree then has degree <= 2 everywhere
         }
@@ -807,24 +877,24 @@ impl BacktrackingHamiltonianPath {
         best == count
     }
 
+    /// Degree of `v` in an undirected graph, ignoring self-loops since they cannot
+    /// participate in a simple path.
     fn effective_undirected_degree<G: Graph>(graph: &G, v: &G::Vertex) -> usize {
         graph
             .edges_of(v).unwrap()
             .filter(|e| graph.opposite_vertex(e, v).is_some_and(|o| o != v))
             .count()
-    /// Degree of `v` in an undirected graph, ignoring self-loops since they cannot
-    /// participate in a simple path.
     }
 
+    /// Recursive DFS extension. Returns `true` and leaves `pathIdx` filled with a
+    /// Hamiltonian vertex sequence as soon as one is discovered. Applies reachability pruning
+    /// and minimum-remaining-values candidate ordering.
     fn extend(
         &mut self,
         adjacency: &[Vec<usize>],
         path_idx: &mut [usize],
         visited: &mut [bool],
         depth: usize,
-    /// Recursive DFS extension. Returns `true` and leaves `pathIdx` filled with a
-    /// Hamiltonian vertex sequence as soon as one is discovered. Applies reachability pruning
-    /// and minimum-remaining-values candidate ordering.
         n: usize,
     ) -> bool {
         if self.aborted {
@@ -878,18 +948,18 @@ impl BacktrackingHamiltonianPath {
         false
     }
 
-    fn all_remaining_reachable(
-        adjacency: &[Vec<usize>],
-        visited: &[bool],
-        start: usize,
-        remaining: usize,
-    ) -> bool {
     /// Returns `true` when every still-unvisited vertex is reachable from `start`
     /// through unvisited vertices using the supplied adjacency (which respects edge direction in
     /// directed graphs). Returning `false` proves the current branch cannot be completed
     /// into a Hamiltonian path. The check itself never causes a false negative because Hamiltonian
     /// path existence from the current endpoint requires every remaining vertex to be reachable
     /// from it.
+    fn all_remaining_reachable(
+        adjacency: &[Vec<usize>],
+        visited: &[bool],
+        start: usize,
+        remaining: usize,
+    ) -> bool {
         if remaining == 0 {
             return true;
         }
@@ -919,14 +989,33 @@ impl BacktrackingHamiltonianPath {
         found == remaining
     }
 
+    /// Counts the unvisited neighbours of `v` reachable in one step along the supplied
+    /// adjacency.
     fn onward_degree(adjacency: &[Vec<usize>], visited: &[bool], v: usize) -> usize {
         adjacency[v].iter().filter(|&&w| !visited[w]).count()
     }
 }
 
 impl<G: Graph> HamiltonianPathAlgorithm<G> for BacktrackingHamiltonianPath {
-    /// Counts the unvisited neighbours of `v` reachable in one step along the supplied
-    /// adjacency.
+    /// Computes a Hamiltonian path in the given graph and returns a tri-state
+    /// `HamiltonianPathSearchResult`.
+    ///
+    /// The return value distinguishes:
+    ///
+    /// - `HamiltonianPathSearchResult.Status#PATH_FOUND` — the algorithm produced a
+    /// Hamiltonian path; it is accessible via
+    /// `get_path`.
+    /// - `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` — the algorithm ran to
+    /// completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
+    /// exists.
+    /// - `HamiltonianPathSearchResult.Status#ABORTED` — the algorithm performed a bounded
+    /// search that hit its limit before completing. Whether a Hamiltonian path exists in the
+    /// graph is unknown.
+    ///
+    /// Unbounded implementations only return `PATH_FOUND` or `PROVEN_ABSENT`.
+    /// Implementations that accept an execution budget (e.g. a maximum state count) may also
+    /// return `ABORTED`; such bounded variants must never report `PROVEN_ABSENT`
+    /// for a search that was stopped early.
     fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         self.search(graph, 0)
     }

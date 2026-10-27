@@ -694,16 +694,18 @@ impl<V: Clone + Eq + Hash> BrownBacktrackColoring<V> {
         }
     }
 
+    /// Returns the [chromatic number](http://mathworld.wolfram.com/ChromaticNumber.html)
+    /// of the input graph
     pub fn chromatic_number(&self) -> usize {
         self.coloring.get_or_init(|| self.compute()).count
     }
 }
 
 impl<V: Clone + Eq + Hash> VertexColoringAlgorithm<V> for BrownBacktrackColoring<V> {
+    /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<V>> {
         Ok(self.coloring.get_or_init(|| self.compute()).clone())
     }
-    /// Computes a vertex coloring.
 }
 
 /// Optimal colouring of a chordal graph (`ChordalGraphColoring`): the vertices are coloured in the
@@ -732,9 +734,9 @@ pub struct ChordalGraphColoring<'g, G: UndirectedGraph> {
 }
 
 impl<'g, G: UndirectedGraph> ChordalGraphColoring<'g, G> {
-    pub fn new(graph: &'g G) -> Self {
     /// Creates a new ChordalGraphColoring instance. The `ChordalityInspector` used in this
     /// implementation uses the default `MaximumCardinalityIterator` iterator.
+    pub fn new(graph: &'g G) -> Self {
         Self::with_order(graph, IterationOrder::Mcs)
     }
 
@@ -746,8 +748,8 @@ impl<'g, G: UndirectedGraph> ChordalGraphColoring<'g, G> {
         }
     }
 
-    fn lazy_compute_coloring(&mut self) {
     /// Lazily computes the coloring of the graph.
+    fn lazy_compute_coloring(&mut self) {
         if self.coloring.is_none() && self.chordality_inspector.is_chordal() {
             let perfect_elimination_order: Vec<G::Vertex> = self
                 .chordality_inspector
@@ -983,6 +985,7 @@ fn split_refinement_color(
         rep.coloring[v] = new_color;
     }
 }
+
 /// Color refinement algorithm that finds the coarsest stable coloring of a graph based on a given
 /// `alpha` coloring as described in the following
 /// [paper](https://doi.org/10.1007/s00224-016-9686-0): C. Berkholz, P. Bonsma, and M.
@@ -993,7 +996,6 @@ fn split_refinement_color(
 ///
 /// # Rust notes
 ///
-
 /// Colour refinement (`ColorRefinementAlgorithm`): the coarsest equitable partition refining
 /// `alpha`, where a vertex's signature is the multiset of its *successors'* colours (for directed
 /// graphs only outgoing edges count, as in JGraphT; parallel edges count once).
@@ -1029,9 +1031,9 @@ impl<'g, G: Graph> ColorRefinementAlgorithm<'g, G> {
 }
 
 impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlgorithm<'_, G> {
-    fn coloring(&self) -> Result<Coloring<G::Vertex>> {
     /// Calculates a canonical surjective k-coloring of the given graph such that the classes of the
     /// coloring form the coarsest stable partition that refines alpha.
+    fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let g = self.graph;
         let vs: Vec<&G::Vertex> = g.vertices().collect();
         let index: HashMap<&G::Vertex, usize> =

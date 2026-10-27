@@ -19,6 +19,22 @@ use crate::{GraphError, Result};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
+/// A light-weight version of the closest-first iterator for a directed or undirected graphs. For
+/// this iterator to work correctly the graph must not be modified during iteration. Currently there
+/// are no means to ensure that, nor to fail-fast. The results of such modifications are undefined.
+///
+/// The metric for *closest* here is the weighted path length from a start vertex, i.e.
+/// Graph.getEdgeWeight(Edge) is summed to calculate path length. Negative edge weights will result
+/// in an IllegalArgumentException. Optionally, path length may be bounded by a finite radius. This
+/// iterator can use a custom heap implementation.
+///
+/// NOTE: This is an internal iterator for use in shortest paths algorithms. For an iterator that is
+/// suitable to return to the users see `org.jgrapht.traverse.ClosestFirstIterator`. This
+/// implementation is faster since it does not support graph traversal listeners nor disconnected
+/// components.
+///
+/// # Rust notes
+///
 /// Lightweight closest-first Dijkstra iterator.
 ///
 /// Vertices are yielded when their distance becomes final. The predecessor

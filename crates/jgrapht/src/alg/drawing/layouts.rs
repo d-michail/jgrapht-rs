@@ -477,9 +477,9 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
 }
 
 impl<G: Graph> LayoutAlgorithm2D<G> for TwoLayeredBipartiteLayout2D<G::Vertex> {
+    /// Layout a graph.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         let (left, mut right) = self.compute_partitions(graph)?;
-    /// Layout a graph.
         self.draw_first(&left, model)?;
         if right.is_empty() {
             return Err(GraphError::InvalidArgument(

@@ -17,13 +17,13 @@ use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use std::collections::{HashMap, HashSet};
 
+
 /// Computes an Eulerian cycle of an Eulerian graph. An
 /// [Eulerian graph](http://mathworld.wolfram.com/EulerianGraph.html) is a graph
 /// containing an [Eulerian cycle](http://mathworld.wolfram.com/EulerianCycle.html).
 ///
 /// # Rust notes
 ///
-
 /// `EulerianCycleAlgorithm`.
 pub trait EulerianCycleAlgorithm<G: Graph> {
     fn get_eulerian_cycle(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>>;
@@ -49,6 +49,7 @@ struct EdgeNode {
     source_node: usize,
     target_node: usize,
 }
+
 /// An implementation of Hierholzer's algorithm for finding an Eulerian cycle in Eulerian graphs. The
 /// algorithm works with directed and undirected graphs which may contain loops and/or multiple
 /// (parallel) edges. The running time is linear, i.e. $O(|E|)$ where $|E|$ is the cardinality of the
@@ -62,7 +63,6 @@ struct EdgeNode {
 ///
 /// # Rust notes
 ///
-
 /// `HierholzerEulerianCycle`: Hierholzer's linear-time construction of an Eulerian cycle, with the
 /// partial cycles spliced into the final one through doubly linked lists.
 #[derive(Default)]
@@ -235,8 +235,8 @@ impl Run {
     }
 }
 
-    /// Constructs a new Hierholzer Eulerian cycle algorithm.
 impl HierholzerEulerianCycle {
+    /// Constructs a new Hierholzer Eulerian cycle algorithm.
     pub fn new() -> Self {
         HierholzerEulerianCycle
     }
@@ -303,6 +303,7 @@ impl HierholzerEulerianCycle {
     /// Compute an Eulerian cycle of a graph.
     /// Compute an Eulerian cycle of a graph.
 impl<G: Graph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
+    /// Compute an Eulerian cycle of a graph.
     fn get_eulerian_cycle(&mut self, g: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         if !self.try_is_eulerian(g)? {
             return Err(GraphError::InvalidArgument("Graph is not Eulerian".into()));

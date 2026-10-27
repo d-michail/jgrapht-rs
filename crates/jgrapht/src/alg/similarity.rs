@@ -250,6 +250,7 @@ where
         })
     }
 
+    /// Computes edit distance for `tree1` and `tree2`.
     pub fn distance(&mut self) -> f64 {
         self.run();
         self.tree_distances[self.tree1.vertex_count() - 1][self.tree2.vertex_count() - 1]
@@ -276,10 +277,10 @@ where
         self.executed = true;
     }
 
-    fn tree_distance(
     /// Computes edit distance and list of edit operations for vertex $v1$ from `tree1` which
     /// has tree ordering index equal to $i$ and vertex $v2$ from `tree2` which has tree
     /// ordering index equal to $j$. Both $v1$ and $v2$ must be keyroots in the corresponding trees.
+    fn tree_distance(
         &mut self,
         i: usize,
         j: usize,
@@ -424,9 +425,9 @@ where
         }
     }
 
-    fn restore_operations_list(
     /// Restores list of edit operations which have been cached in `cachedOperations` during
     /// the edit distance computation. Starting from a cache entry at index $(i,j)$.
+    fn restore_operations_list(
         &self,
         cached: &[Vec<Option<CacheEntry<G::Vertex>>>],
         i: usize,

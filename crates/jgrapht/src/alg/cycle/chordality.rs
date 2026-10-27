@@ -66,6 +66,8 @@ pub struct ChordalityInspector<'g, G: UndirectedGraph> {
 }
 
 impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
+    /// Creates a chordality inspector for `graph`, which uses
+    /// `MaximumCardinalityIterator` as a default iterator.
     pub fn new(graph: &'g G) -> Self {
         Self::with_order(graph, IterationOrder::Mcs)
     }
@@ -80,9 +82,9 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
         }
     }
 
+    /// Returns the type of iterator used in this `ChordalityInspector`
     pub fn iteration_order(&self) -> IterationOrder {
         self.iteration_order
-    /// Returns the type of iterator used in this `ChordalityInspector`
     }
 
     /// Whether the edge `{a, b}` exists in either direction.
@@ -176,6 +178,9 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
         }
     }
 
+    /// Returns the predecessors of `vertex` in the order defined by `map`. More
+    /// precisely, returns those of `vertex`, whose mapped index in `map` is less then
+    /// the index of `vertex`.
     fn predecessors<'a>(
         &self,
         vertex_in_order: &HashMap<&'a G::Vertex, usize>,

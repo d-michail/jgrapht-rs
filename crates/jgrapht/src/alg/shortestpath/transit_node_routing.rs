@@ -124,6 +124,34 @@ impl<'h, 'g, G: Graph> TransitNodeRouting<'h, 'g, G> {
     }
 }
 
+/// Parallel implementation of the [transit node routing route planning precomputation technique](https://en.wikipedia.org/wiki/Transit_node_routing).
+///
+/// This implementation is based on the `ContractionHierarchyPrecomputation`.
+///
+/// The precomputation algorithm is described in the article: Arz, Julian & Luxen, Dennis &
+/// Sanders, Peter. (2013). Transit Node Routing Reconsidered. 7933. 10.1007/978-3-642-38527-8_7.
+///
+/// As mentioned is the original paper, TNR in itself is not a complete algorithm, but a framework
+/// which is used to speed up shortest paths computations. Formally the framework consists of the
+/// following parts:
+///
+/// - set $T ⊆ V$ of transit vertices;
+/// - distance table $D_{T} : T × T → {\rm I\!R}^{+}_{0}$ of shortest path distances between the
+/// transit vertices;
+/// - forward (backward) access vertex mapping $A^{↑} : V → 2^{T}$ ($A^{↓} : V → 2^{T}$). For any
+/// shortest $s$–$t$-path $P$ containing transit vertices, $A^{↑}(s)$ ($A^{↓}(t)$) must contain the
+/// first (last) transit vertex on $P$;
+/// - locality filter $L : V × V → \{true, false\}$. $L(s, t)$ must be $true$ when no shortest path
+/// between $s$ and $t$ contains a transit vertex. False positives are allowed, i.e., $L(s, t)$ may
+/// sometimes be $true$ even when a shortest path contains a transit vertex.
+///
+/// To implement the TNR framework means to define how to select transit vertices and how to compute
+/// distance table $D_{T}$, access vertices and locality filter. This implementation selects transit
+/// vertices to be to $k$ vertices form the contraction hierarchy. For the details of how other parts
+/// of this TNR work please refer to the original paper.
+///
+/// # Rust notes
+///
 /// Precompute transit vertices, access vertices, transit paths and locality data.
 pub struct TransitNodeRoutingPrecomputation<'h, 'g, G: Graph> {
     hierarchy: &'h ContractionHierarchy<'g, G>,

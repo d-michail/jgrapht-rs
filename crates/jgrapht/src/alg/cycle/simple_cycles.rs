@@ -662,26 +662,26 @@ impl HawickJamesState<'_> {
 }
 
 impl<'g, G: DirectedGraph> HawickJamesSimpleCycles<'g, G> {
-    pub fn new() -> Self {
     /// Create a simple cycle finder with an unspecified graph.
+    pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn with_graph(graph: &'g G) -> Self {
     /// Set the graph
+    pub fn with_graph(graph: &'g G) -> Self {
         HawickJamesSimpleCycles {
             graph: Some(graph),
             ..Self::default()
         }
     }
 
-    pub fn graph(&self) -> Option<&'g G> {
     /// Get the graph
+    pub fn graph(&self) -> Option<&'g G> {
         self.graph
     }
 
-    pub fn set_graph(&mut self, graph: &'g G) {
     /// Set the graph
+    pub fn set_graph(&mut self, graph: &'g G) {
         self.graph = Some(graph);
     }
 
@@ -692,9 +692,9 @@ impl<'g, G: DirectedGraph> HawickJamesSimpleCycles<'g, G> {
         self.has_limit = true;
     }
 
-    pub fn clear_path_limit(&mut self) {
     /// This is the default behaviour of the algorithm. It will keep looking as long as there are
     /// paths available.
+    pub fn clear_path_limit(&mut self) {
         self.has_limit = false;
     }
 

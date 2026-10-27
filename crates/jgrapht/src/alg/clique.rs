@@ -165,7 +165,6 @@ use std::time::{Duration, Instant};
 /// Shared state of the Bron–Kerbosch finders (`BaseBronKerboschCliqueFinder`).
 struct BronKerboschBase<'g, G: Graph> {
     graph: &'g G,
-    /// `None`: no time limit
     timeout: Option<Duration>,
     time_limit_reached: bool,
     cliques: Option<Vec<HashSet<G::Vertex>>>,
@@ -223,8 +222,8 @@ pub struct BronKerboschCliqueFinder<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> BronKerboschCliqueFinder<'g, G> {
-    pub fn new(graph: &'g G) -> Self {
     /// Constructs a new clique finder.
+    pub fn new(graph: &'g G) -> Self {
         BronKerboschCliqueFinder {
             base: BronKerboschBase::new(graph, None),
         }
@@ -239,9 +238,9 @@ impl<'g, G: Graph> BronKerboschCliqueFinder<'g, G> {
             base: BronKerboschBase::new(graph, Some(timeout)),
         })
     }
-    pub fn is_time_limit_reached(&self) -> bool {
     /// Check the computation has stopped due to a time limit or due to computing all maximal
     /// cliques.
+    pub fn is_time_limit_reached(&self) -> bool {
         self.base.time_limit_reached
     }
 
@@ -330,8 +329,8 @@ pub struct PivotBronKerboschCliqueFinder<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> PivotBronKerboschCliqueFinder<'g, G> {
-    pub fn new(graph: &'g G) -> Self {
     /// Constructs a new clique finder.
+    pub fn new(graph: &'g G) -> Self {
         PivotBronKerboschCliqueFinder {
             base: BronKerboschBase::new(graph, None),
         }
@@ -344,14 +343,14 @@ impl<'g, G: Graph> PivotBronKerboschCliqueFinder<'g, G> {
             base: BronKerboschBase::new(graph, Some(timeout)),
         })
     }
-    pub fn is_time_limit_reached(&self) -> bool {
     /// Check the computation has stopped due to a time limit or due to computing all maximal
     /// cliques.
+    pub fn is_time_limit_reached(&self) -> bool {
         self.base.time_limit_reached
     }
 
-    fn choose_pivot(&self, p: &IndexSet<G::Vertex>, x: &IndexSet<G::Vertex>) -> Option<G::Vertex> {
     /// Choose a pivot.
+    fn choose_pivot(&self, p: &IndexSet<G::Vertex>, x: &IndexSet<G::Vertex>) -> Option<G::Vertex> {
         let g = self.base.graph;
         let mut best: Option<(usize, &G::Vertex)> = None;
         for u in p.iter().chain(x.iter()) {
@@ -366,10 +365,9 @@ impl<'g, G: Graph> PivotBronKerboschCliqueFinder<'g, G> {
         best.map(|(_, u)| u.clone())
     }
 
+    /// Recursive implementation of the Bron-Kerbosch with pivot.
     fn find_cliques(
         &mut self,
-    /// Recursive implementation of the Bron-Kerbosch with pivot.
-    /// Recursive implementation of the Bron-Kerbosch with pivot.
         p: &mut IndexSet<G::Vertex>,
         r: &IndexSet<G::Vertex>,
         x: &mut IndexSet<G::Vertex>,
@@ -459,8 +457,8 @@ pub struct DegeneracyBronKerboschCliqueFinder<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> DegeneracyBronKerboschCliqueFinder<'g, G> {
-    pub fn new(graph: &'g G) -> Self {
     /// Constructs a new clique finder.
+    pub fn new(graph: &'g G) -> Self {
         DegeneracyBronKerboschCliqueFinder {
             inner: PivotBronKerboschCliqueFinder::new(graph),
         }
@@ -470,9 +468,9 @@ impl<'g, G: Graph> DegeneracyBronKerboschCliqueFinder<'g, G> {
             inner: PivotBronKerboschCliqueFinder::with_timeout(graph, timeout)?,
         })
     }
-    pub fn is_time_limit_reached(&self) -> bool {
     /// Check the computation has stopped due to a time limit or due to computing all maximal
     /// cliques.
+    pub fn is_time_limit_reached(&self) -> bool {
         self.inner.is_time_limit_reached()
     }
 }
@@ -536,9 +534,9 @@ pub struct ChordalGraphMaxCliqueFinder<'g, G: UndirectedGraph> {
 }
 
 impl<'g, G: UndirectedGraph> ChordalGraphMaxCliqueFinder<'g, G> {
-    pub fn new(graph: &'g G) -> Self {
     /// Creates a new ChordalGraphMaxCliqueFinder instance. The `ChordalityInspector` used in
     /// this implementation uses the default `MaximumCardinalityIterator` iterator.
+    pub fn new(graph: &'g G) -> Self {
         Self::with_order(graph, IterationOrder::Mcs)
     }
 
@@ -551,10 +549,9 @@ impl<'g, G: UndirectedGraph> ChordalGraphMaxCliqueFinder<'g, G> {
         }
     }
 
+    /// Lazily computes some maximum clique of the `graph`.
     fn lazy_compute_maximum_clique(&mut self) {
-    /// Lazily computes some maximum clique of the `graph`.
         if self.maximum_clique.is_none() && self.is_chordal {
-    /// Lazily computes some maximum clique of the `graph`.
             let mut cgc = ChordalGraphColoring::with_order(self.graph, self.iteration_order);
             let coloring = cgc.coloring();
             let perfect_elimination_order = cgc.perfect_elimination_order();
@@ -588,12 +585,6 @@ impl<'g, G: UndirectedGraph> ChordalGraphMaxCliqueFinder<'g, G> {
     }
 }
 
-/// Decomposition of a graph into atoms by clique minimal separators, via a minimal triangulation
-/// (MCS-M); Berry, Pogorelcnik, Simonet (`CliqueMinimalSeparatorDecomposition`).
-pub struct CliqueMinimalSeparatorDecomposition<'g, G: Graph> {
-    graph: &'g G,
-    chordal_graph: Option<crate::UGraph<G::Vertex>>,
-    fill_edges: Vec<(G::Vertex, G::Vertex)>,
 /// Clique Minimal Separator Decomposition using MCS-M+ and Atoms algorithm as described in Berry et
 /// al. An Introduction to Clique Minimal Separator Decomposition (2010), DOI:10.3390/a3020197,
 /// [http://www.mdpi.com/1999-4893/3/2/197](http://www.mdpi.com/1999-4893/3/2/197)
@@ -605,6 +596,12 @@ pub struct CliqueMinimalSeparatorDecomposition<'g, G: Graph> {
 ///
 /// # Rust notes
 ///
+/// Decomposition of a graph into atoms by clique minimal separators, via a minimal triangulation
+/// (MCS-M); Berry, Pogorelcnik, Simonet (`CliqueMinimalSeparatorDecomposition`).
+pub struct CliqueMinimalSeparatorDecomposition<'g, G: Graph> {
+    graph: &'g G,
+    chordal_graph: Option<crate::UGraph<G::Vertex>>,
+    fill_edges: Vec<(G::Vertex, G::Vertex)>,
     meo: Vec<G::Vertex>,
     generators: Vec<G::Vertex>,
     separators: Option<Vec<HashableSet<G::Vertex>>>,
@@ -613,12 +610,12 @@ pub struct CliqueMinimalSeparatorDecomposition<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
+    /// Setup a clique minimal separator decomposition on undirected graph `g`. Loops and
+    /// multiple (parallel) edges are removed, i.e. the graph is transformed to a simple graph.
     pub fn new(graph: &'g G) -> Result<Self> {
         props::require_undirected(graph)?;
         Ok(CliqueMinimalSeparatorDecomposition {
             graph,
-    /// Setup a clique minimal separator decomposition on undirected graph `g`. Loops and
-    /// multiple (parallel) edges are removed, i.e. the graph is transformed to a simple graph.
             chordal_graph: None,
             fill_edges: Vec::new(),
             meo: Vec::new(),
@@ -642,18 +639,15 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
         copy
     }
 
+    /// Compute the minimal triangulation of the graph. Implementation of Algorithm MCS-M+ as
+    /// described in Berry et al. (2010), DOI:10.3390/a3020197
+    /// [http://www.mdpi.com/1999-4893/3/2/197](http://www.mdpi.com/1999-4893/3/2/197)
     fn compute_minimal_triangulation(&mut self) {
         if self.chordal_graph.is_some() {
             return;
         }
-    /// Compute the minimal triangulation of the graph. Implementation of Algorithm MCS-M+ as
-    /// described in Berry et al. (2010), DOI:10.3390/a3020197
-    /// [http://www.mdpi.com/1999-4893/3/2/197](http://www.mdpi.com/1999-4893/3/2/197)
         let mut chordal = crate::UGraph::<G::Vertex>::simple();
         chordal.add_vertices(self.graph.vertices().cloned());
-    /// Compute the minimal triangulation of the graph. Implementation of Algorithm MCS-M+ as
-    /// described in Berry et al. (2010), DOI:10.3390/a3020197
-    /// [http://www.mdpi.com/1999-4893/3/2/197](http://www.mdpi.com/1999-4893/3/2/197)
         let mut gprime = Self::simple_copy(self.graph);
         let mut s: i64 = -1;
         let mut labels: indexmap::IndexMap<G::Vertex, i64> =
@@ -709,28 +703,25 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
         self.chordal_graph = Some(chordal);
     }
 
+    /// Check whether the subgraph of `graph` induced by the given `vertices` is
+    /// complete, i.e. a clique.
     fn is_clique(g: &G, vertices: &HashSet<G::Vertex>) -> bool {
         vertices.iter().all(|a| {
             vertices
                 .iter()
                 .all(|b| a == b || g.contains_edge_between(a, b))
         })
-    /// Check whether the subgraph of `graph` induced by the given `vertices` is
-    /// complete, i.e. a clique.
     }
 
-    fn compute_atoms(&mut self) {
     /// Compute the unique decomposition of the input graph $G$ (atoms of $G$). Implementation of
     /// algorithm Atoms as described in Berry et al. (2010), DOI:10.3390/a3020197,
     /// [http://www.mdpi.com/1999-4893/3/2/197](http://www.mdpi.com/1999-4893/3/2/197)
+    fn compute_atoms(&mut self) {
         if self.atoms.is_some() {
             return;
         }
         self.compute_minimal_triangulation();
         let mut separators: Vec<HashableSet<G::Vertex>> = Vec::new();
-    /// Compute the unique decomposition of the input graph $G$ (atoms of $G$). Implementation of
-    /// algorithm Atoms as described in Berry et al. (2010), DOI:10.3390/a3020197,
-    /// [http://www.mdpi.com/1999-4893/3/2/197](http://www.mdpi.com/1999-4893/3/2/197)
         let mut gprime = Self::simple_copy(self.graph);
         let mut hprime = Self::simple_copy_of_ugraph(self.chordal_graph.as_ref().unwrap());
         let mut atoms: Vec<HashableSet<G::Vertex>> = Vec::new();
@@ -782,9 +773,9 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
 
     fn simple_copy_of_ugraph(g: &crate::UGraph<G::Vertex>) -> crate::UGraph<G::Vertex> {
         g.clone()
-    /// Check if the graph is chordal.
     }
 
+    /// Check if the graph is chordal.
     pub fn is_chordal(&mut self) -> bool {
         self.compute_minimal_triangulation();
         self.chordal_graph.as_ref().unwrap().edge_count() == self.graph.edge_count()
@@ -800,11 +791,11 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
     /// A minimal triangulation (chordal supergraph) of the graph.
     pub fn minimal_triangulation(&mut self) -> &crate::UGraph<G::Vertex> {
         self.compute_minimal_triangulation();
-    /// Get the generators of the separators of the triangulated graph, i.e. all vertices that
-    /// generate a minimal separator of triangulated graph.
         self.chordal_graph.as_ref().unwrap()
     }
 
+    /// Get the generators of the separators of the triangulated graph, i.e. all vertices that
+    /// generate a minimal separator of triangulated graph.
     pub fn generators(&mut self) -> &[G::Vertex] {
         self.compute_minimal_triangulation();
         &self.generators
@@ -813,16 +804,16 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
     /// The minimal elimination ordering.
     pub fn meo(&mut self) -> &[G::Vertex] {
         self.compute_minimal_triangulation();
-    /// Get the atoms generated by the decomposition.
         &self.meo
     }
 
+    /// Get the atoms generated by the decomposition.
     pub fn atoms(&mut self) -> &[HashableSet<G::Vertex>] {
         self.compute_atoms();
-    /// Get the clique minimal separators.
         self.atoms.as_deref().unwrap()
     }
 
+    /// Get the clique minimal separators.
     pub fn separators(&mut self) -> &[HashableSet<G::Vertex>] {
         self.compute_atoms();
         self.separators.as_deref().unwrap()
@@ -831,10 +822,10 @@ impl<'g, G: Graph> CliqueMinimalSeparatorDecomposition<'g, G> {
     /// For each clique minimal separator, how many full components it has.
     pub fn full_component_count(&mut self) -> &HashMap<HashableSet<G::Vertex>, usize> {
         self.compute_atoms();
-    /// Get the original graph.
         &self.full_component_count
     }
 
+    /// Get the original graph.
     pub fn graph(&self) -> &G {
         self.graph
     }
