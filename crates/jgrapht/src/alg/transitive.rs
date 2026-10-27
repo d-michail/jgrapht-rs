@@ -55,9 +55,9 @@ impl TransitiveClosure {
             for v1 in &vertex_set {
                 new_edge_targets.clear();
 
-                for v1_out_edge in graph.out_edges_of(v1).unwrap() {
+                for v1_out_edge in graph.out_edges_of(v1)? {
                     let v2 = graph.edge_target(v1_out_edge).expect("edge target");
-                    for v2_out_edge in graph.out_edges_of(v2).unwrap() {
+                    for v2_out_edge in graph.out_edges_of(v2)? {
                         let v3 = graph.edge_target(v2_out_edge).expect("edge target");
 
                         if v1 == v3 {
@@ -93,8 +93,8 @@ impl TransitiveClosure {
         }
 
         for vertex in &ordered_vertices {
-            for successor in graph.successor_list_of(vertex) {
-                for closure_vertex in graph.successor_list_of(&successor) {
+            for successor in graph.try_successor_list_of(vertex)? {
+                for closure_vertex in graph.try_successor_list_of(&successor)? {
                     graph.add_edge(vertex, &closure_vertex)?;
                 }
             }
