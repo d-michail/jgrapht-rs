@@ -1603,6 +1603,9 @@ mod sparse_edmonds_maximum_cardinality_matching_test {
 
 mod blossom_v_public_tests {
     use super::*;
+    use crate::blossom_data::{
+        GENERAL_WEIGHTED_CASES, PERFECT_FAILURE_CASES, PERFECT_WEIGHTED_CASES, WeightedCase,
+    };
     use jgrapht::alg::matching::blossom::{
         BlossomVOptions, KolmogorovWeightedMatching, KolmogorovWeightedPerfectMatching,
         ObjectiveSense,
@@ -1620,15 +1623,28 @@ mod blossom_v_public_tests {
         graph
     }
 
-    fn check_perfect(edges: WeightedEdges, minimum: f64, maximum: f64) {
-        let graph = weighted_graph(edges);
+    fn weighted_graph_for_case(case: &WeightedCase) -> UG {
+        let mut graph = if case.pseudograph {
+            UG::pseudo().weighted()
+        } else {
+            UG::simple().weighted()
+        };
+        for &(source, target, weight) in case.edges {
+            graph.add_vertex(source);
+            graph.add_vertex(target);
+            graph.add_weighted_edge(&source, &target, weight).unwrap();
+        }
+        graph
+    }
+
+    fn check_perfect_graph(graph: &UG, minimum: f64, maximum: f64) {
         for options in BlossomVOptions::all_options() {
             for (objective, expected) in [
                 (ObjectiveSense::Minimize, minimum),
                 (ObjectiveSense::Maximize, maximum),
             ] {
                 let mut algorithm = KolmogorovWeightedPerfectMatching::with_options_and_objective(
-                    &graph, options, objective,
+                    graph, options, objective,
                 )
                 .unwrap();
                 let matching = algorithm.get_matching().unwrap();
@@ -1637,6 +1653,11 @@ mod blossom_v_public_tests {
                 assert!(algorithm.test_optimality().unwrap());
             }
         }
+    }
+
+    fn check_perfect(edges: WeightedEdges, minimum: f64, maximum: f64) {
+        let graph = weighted_graph(edges);
+        check_perfect_graph(&graph, minimum, maximum);
     }
 
     fn check_general(edges: WeightedEdges, minimum: f64, maximum: f64) {
@@ -1952,6 +1973,52 @@ mod blossom_v_public_tests {
         ];
         for &(edges, minimum, maximum) in cases {
             check_general(edges, minimum, maximum);
+        }
+    }
+
+    #[test]
+    fn kolmogorov_weighted_perfect_matching_java_cases_16_through_40() {
+        for case in PERFECT_WEIGHTED_CASES {
+            let graph = weighted_graph_for_case(case);
+            check_perfect_graph(&graph, case.minimum, case.maximum);
+        }
+
+        let mut complete = UG::simple().weighted();
+        complete.add_vertices(0..20);
+        for source in 0..20 {
+            for target in source + 1..20 {
+                complete.add_weighted_edge(&source, &target, 1.0).unwrap();
+            }
+        }
+        check_perfect_graph(&complete, 10.0, 10.0);
+    }
+
+    #[test]
+    fn kolmogorov_weighted_matching_java_cases_6_through_19() {
+        for case in GENERAL_WEIGHTED_CASES {
+            assert!(
+                !case.pseudograph,
+                "unexpected pseudograph in case {}",
+                case.id
+            );
+            check_general(case.edges, case.minimum, case.maximum);
+        }
+    }
+
+    #[test]
+    fn kolmogorov_weighted_perfect_matching_java_failure_cases_41_through_50() {
+        for case in PERFECT_FAILURE_CASES {
+            let mut graph = weighted_graph(case.edges);
+            graph.add_vertices(case.extra_vertices.iter().copied());
+            for options in BlossomVOptions::all_options() {
+                let result = KolmogorovWeightedPerfectMatching::with_options(&graph, options)
+                    .and_then(|mut algorithm| algorithm.get_matching().map(|_| ()));
+                assert!(
+                    result.is_err(),
+                    "upstream case {} unexpectedly succeeded",
+                    case.id
+                );
+            }
         }
     }
 }

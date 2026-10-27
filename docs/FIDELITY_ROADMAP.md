@@ -84,7 +84,7 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
 
 **F2 (done). Remove the legacy matching helpers.** `alg/cover.rs`, the decomposition and netgen tests, and the older clique/cover, path and matching/color integration tests now use `HopcroftKarpMaximumCardinalityBipartiteMatching`, `DenseEdmondsMaximumCardinalityMatching`, `GreedyWeightedMatching`, `PathGrowingWeightedMatching`, and `MaximumWeightBipartiteMatching` through `MatchingAlgorithm`. The small exact weighted oracle moved into its test. `matching/legacy.rs` and all of its function re-exports were deleted. The current legacy Christofides helper has its own temporary subset-DP implementation, so it did not require retaining matching legacy code. C12 is done.
 
-**F3. Kolmogorov Blossom V** (`org/jgrapht/alg/matching/blossom/v5`, 5917 lines): `BlossomVOptions`, `BlossomVState`, `BlossomVNode`, `BlossomVEdge`, `BlossomVTree`, `BlossomVTreeEdge`, `BlossomVInitializer`, `BlossomVPrimalUpdater`, `BlossomVDualUpdater`, `KolmogorovWeightedPerfectMatching`, `KolmogorovWeightedMatching`, `ObjectiveSense`. Port into `src/alg/matching/blossom/` with arena/index based nodes, edges and trees (no pointers), same data structures and update rules as Java (priority queues of edges per tree, slack/dual bookkeeping, `ObjectiveSense`, options such as `InitializationType`, `UpdateDualsAfter`, `DualUpdateStrategy`). Port the Java tests in this order, running them after each step: `BlossomVStateTest`, `BlossomVTreeEdgeTest`, `BlossomVTreeTest`, `BlossomVNodeTest`, `BlossomVInitializerTest`, `BlossomVDualUpdaterTest`, `BlossomVPrimalUpdaterTest`, `KolmogorovWeightedMatchingTest` (19), `KolmogorovWeightedPerfectMatchingTest` (52); `BlossomVDebugger` is a test helper. Commit per step. Java's tests are sensitive to tie-breaking and iteration order: keep insertion order everywhere Java iterates a list.
+**F3 (done). Kolmogorov Blossom V** (`org/jgrapht/alg/matching/blossom/v5`, 5917 lines): `BlossomVOptions`, `BlossomVState`, `BlossomVNode`, `BlossomVEdge`, `BlossomVTree`, `BlossomVTreeEdge`, `BlossomVInitializer`, `BlossomVPrimalUpdater`, `BlossomVDualUpdater`, `KolmogorovWeightedPerfectMatching`, `KolmogorovWeightedMatching`, `ObjectiveSense`. Port into `src/alg/matching/blossom/` with arena/index based nodes, edges and trees (no pointers), same data structures and update rules as Java (priority queues of edges per tree, slack/dual bookkeeping, `ObjectiveSense`, options such as `InitializationType`, `UpdateDualsAfter`, `DualUpdateStrategy`). Port the Java tests in this order, running them after each step: `BlossomVStateTest`, `BlossomVTreeEdgeTest`, `BlossomVTreeTest`, `BlossomVNodeTest`, `BlossomVInitializerTest`, `BlossomVDualUpdaterTest`, `BlossomVPrimalUpdaterTest`, `KolmogorovWeightedMatchingTest` (19), `KolmogorovWeightedPerfectMatchingTest` (52); `BlossomVDebugger` is a test helper. Commit per step. Java's tests are sensitive to tie-breaking and iteration order: keep insertion order everywhere Java iterates a list.
 
 - **F3a foundation complete:** `BlossomVOptions`, `ObjectiveSense`, and the arena-backed node,
   edge, tree, and tree-edge structures are implemented with stable indices, intrusive linked lists,
@@ -92,11 +92,14 @@ Known deviation: `PathGrowingWeightedMatching` picks the start vertex as the fir
 - **F3b algorithm core complete:** the simple, greedy, and fractional initializers; primal grow,
   augment, shrink, and expand operations; both global dual-update strategies; weighted perfect and
   general matching classes; statistics; optimality/error checks; and dual solutions are ported.
-  Twenty-one focused tests pass, including all nine Java fractional-initializer cases, exhaustive
+  Twenty-two focused tests pass, including all nine Java fractional-initializer cases, exhaustive
   complete and sparse exact-oracle sweeps across all 24 option combinations for both objectives,
-  no-solution cases, parallel edges, and self-loops. The remaining F3 work is the full Java public
-  fixture corpus and any defects it exposes. Public fixture progress: 16/52 perfect-matching cases
-  and 5/19 general-matching cases pass for every option/objective combination.
+  no-solution cases, parallel edges, self-loops, and rejection of a deliberately corrupted dual.
+- **F3c public fixture corpus complete:** all 52 perfect-matching and all 19 general-matching Java
+  cases pass for every applicable option/objective combination. This includes the complete graph,
+  large triangulations, pseudographs, isolated vertices, and graphs without perfect matchings. The
+  large edge lists are generated into `tests/alg/blossom_data.rs` by
+  `scripts/port_blossom_fixtures.py`, retaining the upstream case numbers.
 
 **F4. Dependents of Blossom V.** `ChristofidesThreeHalvesApproxMetricTSP` (uses `KolmogorovWeightedPerfectMatching` on the odd-degree vertices; port the Java class and its tests, then delete `christofides_tour` in `tour/legacy.rs`, C6) and `ChinesePostman` (class and tests, C15).
 

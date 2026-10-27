@@ -24,6 +24,7 @@ mod alg_tour_tests;
 mod alg_transitive_tests;
 mod alg_util_tests;
 mod alg_vertexcover_tests;
+mod blossom_data;
 mod brown_data;
 mod matching_data;
 mod clustering_data;

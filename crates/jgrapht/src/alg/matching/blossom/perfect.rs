@@ -620,6 +620,18 @@ mod tests {
     }
 
     #[test]
+    fn invalid_dual_solution_is_rejected() {
+        let graph = weighted_graph(
+            4,
+            &[(0, 1, 7.0), (1, 2, 4.0), (2, 3, 3.0), (3, 0, 4.0)],
+        );
+        let mut algorithm = KolmogorovWeightedPerfectMatching::new(&graph).unwrap();
+        algorithm.get_matching().unwrap();
+        algorithm.state.as_mut().unwrap().arena.nodes[0].dual += 1.0;
+        assert!(!algorithm.test_optimality().unwrap());
+    }
+
+    #[test]
     fn minimum_and_maximum_perfect_matching_on_k4() {
         let graph = weighted_graph(
             4,
