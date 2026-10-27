@@ -80,8 +80,8 @@ pub use transit_node_routing::{
 };
 pub use tree_measurer::TreeMeasurer;
 pub use yen::{
-    BoundedPrunedYenKShortestPath, BoundedPrunedYenStats, YenKShortestPath,
-    YenShortestPathIterator, yen_k_shortest_paths,
+    AStarSpurEngine, BoundedPrunedYenKShortestPath, BoundedPrunedYenStats, DijkstraSpurEngine,
+    SpurShortestPathEngine, YenKShortestPath, YenShortestPathIterator, yen_k_shortest_paths,
 };
 
 use crate::Result;

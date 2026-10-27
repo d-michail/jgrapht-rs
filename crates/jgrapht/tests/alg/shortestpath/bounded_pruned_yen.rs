@@ -12,8 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::alg::shortestpath::{BoundedPrunedYenKShortestPath, YenKShortestPath};
-use jgrapht::{DiGraph, GraphMut, GraphMutExt};
+use jgrapht::alg::shortestpath::{
+    AStarSpurEngine, BoundedPrunedYenKShortestPath, DijkstraSpurEngine, YenKShortestPath,
+};
+use jgrapht::{DiGraph, Graph, GraphMut, GraphMutExt};
 use rand::{Rng, SeedableRng, rngs::StdRng};
 
 fn graph(vertices: std::ops::RangeInclusive<u32>, edges: &[(u32, u32, f64)]) -> DiGraph<u32> {
@@ -43,6 +45,126 @@ fn assert_matches(graph: &DiGraph<u32>, source: u32, sink: u32, k: usize) {
             .windows(2)
             .all(|pair| pair[0].weight <= pair[1].weight)
     );
+}
+
+fn assert_matches_both(graph: &DiGraph<u32>, source: u32, sink: u32, k: usize) {
+    let expected = weights(
+        &YenKShortestPath::new(graph)
+            .get_paths(&source, &sink, k)
+            .unwrap(),
+    );
+    let dijkstra = BoundedPrunedYenKShortestPath::with_engine(graph, DijkstraSpurEngine::new());
+    let astar = BoundedPrunedYenKShortestPath::with_engine(graph, AStarSpurEngine::new());
+    assert_eq!(
+        weights(&dijkstra.get_paths(&source, &sink, k).unwrap()),
+        expected
+    );
+    assert_eq!(
+        weights(&astar.get_paths(&source, &sink, k).unwrap()),
+        expected
+    );
+    assert_eq!(dijkstra.engine_name(), "Dijkstra");
+    assert_eq!(astar.engine_name(), "AStar");
+    if source != sink && !expected.is_empty() {
+        assert!(astar.stats().expanded_vertices > 0);
+    }
+}
+
+fn layered_dag(layers: u32, width: u32, seed: u64) -> DiGraph<u32> {
+    let sink = 1 + layers * width;
+    let mut graph = graph(0..=sink, &[]);
+    let mut rng = StdRng::seed_from_u64(seed);
+    for target in 1..=width {
+        graph
+            .add_weighted_edge(&0, &target, rng.random_range(1..=5) as f64)
+            .unwrap();
+    }
+    for layer in 0..layers - 1 {
+        let first = 1 + layer * width;
+        let next = first + width;
+        for source in first..first + width {
+            for target in next..next + width {
+                if rng.random_bool(0.5) {
+                    graph
+                        .add_weighted_edge(&source, &target, rng.random_range(1..=5) as f64)
+                        .unwrap();
+                }
+            }
+        }
+    }
+    let last = 1 + (layers - 1) * width;
+    for source in last..last + width {
+        graph
+            .add_weighted_edge(&source, &sink, rng.random_range(1..=5) as f64)
+            .unwrap();
+    }
+    graph
+}
+
+fn random_dag_with_chain(n: u32, extra_edges: u32, seed: u64) -> DiGraph<u32> {
+    let mut graph = graph(0..=n - 1, &[]);
+    let mut rng = StdRng::seed_from_u64(seed);
+    for source in 0..n - 1 {
+        graph
+            .add_weighted_edge(&source, &(source + 1), rng.random_range(1..=5) as f64)
+            .unwrap();
+    }
+    let mut placed = 0;
+    let mut attempts = 0;
+    while placed < extra_edges && attempts < extra_edges * 10 + 50 {
+        attempts += 1;
+        let source = rng.random_range(0..n - 1);
+        let target = rng.random_range(source + 1..n);
+        if graph.contains_edge_between(&source, &target) {
+            continue;
+        }
+        graph
+            .add_weighted_edge(&source, &target, rng.random_range(1..=10) as f64)
+            .unwrap();
+        placed += 1;
+    }
+    graph
+}
+
+fn random_digraph(n: u32, edges: u32, seed: u64) -> DiGraph<u32> {
+    let mut graph = graph(0..=n - 1, &[]);
+    let mut rng = StdRng::seed_from_u64(seed);
+    let mut placed = 0;
+    let mut attempts = 0;
+    while placed < edges && attempts < edges * 10 + 50 {
+        attempts += 1;
+        let source = rng.random_range(0..n);
+        let target = rng.random_range(0..n);
+        if source == target || graph.contains_edge_between(&source, &target) {
+            continue;
+        }
+        graph
+            .add_weighted_edge(&source, &target, rng.random_range(1..=9) as f64)
+            .unwrap();
+        placed += 1;
+    }
+    graph
+}
+
+fn grid(rows: u32, columns: u32, seed: u64) -> DiGraph<u32> {
+    let mut graph = graph(0..=rows * columns - 1, &[]);
+    let mut rng = StdRng::seed_from_u64(seed);
+    for row in 0..rows {
+        for column in 0..columns {
+            let source = row * columns + column;
+            if column + 1 < columns {
+                graph
+                    .add_weighted_edge(&source, &(source + 1), rng.random_range(1..=3) as f64)
+                    .unwrap();
+            }
+            if row + 1 < rows {
+                graph
+                    .add_weighted_edge(&source, &(source + columns), rng.random_range(1..=3) as f64)
+                    .unwrap();
+            }
+        }
+    }
+    graph
 }
 
 #[test]
@@ -162,4 +284,82 @@ fn negative_weight_reachable_to_sink_is_rejected() {
             .get_paths(&1, &2, 1)
             .is_err()
     );
+}
+
+#[test]
+fn tie_equal_weights_matches_standard_yen() {
+    let graph = graph(1..=4, &[(1, 2, 1.0), (2, 4, 1.0), (1, 3, 1.0), (3, 4, 1.0)]);
+    assert_matches_both(&graph, 1, 4, 4);
+}
+
+#[test]
+fn random_dag_and_grid_match_standard_yen() {
+    assert_matches_both(&random_dag_with_chain(80, 241, 99), 0, 79, 20);
+    assert_matches_both(&grid(8, 8, 7), 0, 63, 10);
+}
+
+#[test]
+fn astar_engine_matches_standard_yen_and_counts_expansions() {
+    let graph = layered_dag(5, 5, 42);
+    assert_matches_both(&graph, 0, 26, 15);
+}
+
+#[test]
+fn weights_are_non_decreasing() {
+    let graph = layered_dag(6, 4, 1);
+    let paths = BoundedPrunedYenKShortestPath::new(&graph)
+        .get_paths(&0, &25, 30)
+        .unwrap();
+    assert!(
+        paths
+            .windows(2)
+            .all(|pair| pair[0].weight <= pair[1].weight)
+    );
+}
+
+#[test]
+fn large_k_dense_dag_matches_standard_yen() {
+    let graph = layered_dag(4, 5, 314);
+    assert_matches_both(&graph, 0, 21, 500);
+}
+
+#[test]
+fn both_engines_match_standard_yen_across_seeds() {
+    for seed in 1..=5 {
+        let graph = layered_dag(5, 4, seed);
+        assert_matches_both(&graph, 0, 21, 12);
+    }
+}
+
+#[test]
+fn fuzz_random_dags_and_cyclic_graphs_match_standard_yen() {
+    let mut meta = StdRng::seed_from_u64(20_260_509);
+    for _ in 0..40 {
+        let n = meta.random_range(8..=87);
+        let extras = meta.random_range(0..2 * n);
+        let k = meta.random_range(1..=25) as usize;
+        let seed = meta.random();
+        assert_matches_both(&random_dag_with_chain(n, extras, seed), 0, n - 1, k);
+    }
+    for _ in 0..30 {
+        let n = meta.random_range(6..=45);
+        let edges = n + meta.random_range(0..2 * n);
+        let k = meta.random_range(1..=20) as usize;
+        let seed = meta.random();
+        assert_matches_both(&random_digraph(n, edges, seed), 0, n - 1, k);
+    }
+}
+
+#[test]
+fn fuzz_grids_and_chains_match_standard_yen() {
+    for seed in [11, 22, 33, 44, 55] {
+        for rows in [3, 5, 8] {
+            for columns in [3, 5, 8] {
+                let graph = grid(rows, columns, seed);
+                assert_matches_both(&graph, 0, rows * columns - 1, 8);
+            }
+        }
+    }
+    let chain = random_dag_with_chain(20, 0, 99);
+    assert_matches_both(&chain, 0, 19, 5);
 }

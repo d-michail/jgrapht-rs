@@ -313,6 +313,69 @@ pub struct BoundedPrunedYenStats {
     candidate_ordinal: u64,
 }
 
+mod spur_engine_private {
+    pub trait Sealed {}
+}
+
+/// Shortest-path backend used to materialize bounded/pruned Yen spur tasks.
+pub trait SpurShortestPathEngine: spur_engine_private::Sealed + Copy {
+    #[doc(hidden)]
+    fn uses_astar(self) -> bool;
+
+    /// Symbolic engine name used in diagnostics and benchmarks.
+    fn name(self) -> &'static str;
+}
+
+/// Dijkstra spur backend used by [`BoundedPrunedYenKShortestPath`] by default.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct DijkstraSpurEngine;
+
+impl DijkstraSpurEngine {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl spur_engine_private::Sealed for DijkstraSpurEngine {}
+
+impl SpurShortestPathEngine for DijkstraSpurEngine {
+    fn uses_astar(self) -> bool {
+        false
+    }
+
+    fn name(self) -> &'static str {
+        "Dijkstra"
+    }
+}
+
+/// A* spur backend using original-graph reverse distances as an admissible heuristic.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct AStarSpurEngine;
+
+impl AStarSpurEngine {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl spur_engine_private::Sealed for AStarSpurEngine {}
+
+impl SpurShortestPathEngine for AStarSpurEngine {
+    fn uses_astar(self) -> bool {
+        true
+    }
+
+    fn name(self) -> &'static str {
+        "AStar"
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+enum SpurEngineKind {
+    Dijkstra,
+    AStar,
+}
+
 struct SpurTask<V> {
     parent_index: usize,
     spur_index: usize,
@@ -414,6 +477,7 @@ struct BoundedCandidate<V, E> {
 /// ordinals, matching the Java implementation's priority queues.
 pub struct BoundedPrunedYenKShortestPath<'g, G: Graph> {
     graph: &'g G,
+    engine: SpurEngineKind,
     stats: RefCell<BoundedPrunedYenStats>,
 }
 
@@ -421,7 +485,29 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
     pub fn new(graph: &'g G) -> Self {
         Self {
             graph,
+            engine: SpurEngineKind::Dijkstra,
             stats: RefCell::new(BoundedPrunedYenStats::default()),
+        }
+    }
+
+    /// Bind the algorithm to a graph and choose its spur shortest-path backend.
+    pub fn with_engine<E: SpurShortestPathEngine>(graph: &'g G, engine: E) -> Self {
+        Self {
+            graph,
+            engine: if engine.uses_astar() {
+                SpurEngineKind::AStar
+            } else {
+                SpurEngineKind::Dijkstra
+            },
+            stats: RefCell::new(BoundedPrunedYenStats::default()),
+        }
+    }
+
+    /// Symbolic name of the configured spur engine.
+    pub fn engine_name(&self) -> &'static str {
+        match self.engine {
+            SpurEngineKind::Dijkstra => "Dijkstra",
+            SpurEngineKind::AStar => "AStar",
         }
     }
 
@@ -444,7 +530,14 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
         }
 
         let reverse_distances = self.compute_reverse_distances(sink)?;
-        let Some(first) = self.find_spur(source, sink, &HashSet::new(), &HashSet::new())? else {
+        let Some(first) = self.find_spur(
+            source,
+            sink,
+            &HashSet::new(),
+            &HashSet::new(),
+            &reverse_distances,
+        )?
+        else {
             return Ok(Vec::new());
         };
 
@@ -462,7 +555,7 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
             &reverse_distances,
             &mut tasks,
             &mut task_heap,
-        );
+        )?;
 
         while accepted.len() < k {
             while let Some(Reverse((OrderedF64(lower_bound), _, _))) = task_heap.peek().copied() {
@@ -480,7 +573,9 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
                 debug_assert_eq!(tasks[task_index].lower_bound, heap_bound);
                 debug_assert_eq!(tasks[task_index].ordinal, heap_ordinal);
                 self.stats.borrow_mut().spur_tasks_materialized += 1;
-                let Some(candidate) = self.materialize(&tasks[task_index], &accepted)? else {
+                let Some(candidate) =
+                    self.materialize(&tasks[task_index], &accepted, &reverse_distances)?
+                else {
                     self.stats.borrow_mut().unreachable_spurs += 1;
                     continue;
                 };
@@ -525,7 +620,7 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
                 &reverse_distances,
                 &mut tasks,
                 &mut task_heap,
-            );
+            )?;
         }
 
         self.stats.borrow_mut().deferred_tasks_left = task_heap.len();
@@ -538,6 +633,7 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
         sink: &G::Vertex,
         banned_vertices: &HashSet<G::Vertex>,
         banned_edges: &HashSet<G::Edge>,
+        reverse_distances: &HashMap<G::Vertex, f64>,
     ) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
         self.stats.borrow_mut().shortest_path_calls += 1;
         let masked = MaskSubgraph::new(
@@ -545,7 +641,95 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
             |vertex: &G::Vertex| banned_vertices.contains(vertex),
             |edge: &G::Edge| banned_edges.contains(edge),
         );
-        Dijkstra::new(&masked).path(source, sink)
+        match self.engine {
+            SpurEngineKind::Dijkstra => Dijkstra::new(&masked).path(source, sink),
+            SpurEngineKind::AStar => {
+                let (path, expanded) = Self::astar_spur(&masked, source, sink, reverse_distances)?;
+                self.stats.borrow_mut().expanded_vertices += expanded;
+                Ok(path)
+            }
+        }
+    }
+
+    fn astar_spur<M: Graph<Vertex = G::Vertex, Edge = G::Edge>>(
+        graph: &M,
+        source: &G::Vertex,
+        sink: &G::Vertex,
+        reverse_distances: &HashMap<G::Vertex, f64>,
+    ) -> Result<(Option<GraphWalk<G::Vertex, G::Edge>>, usize)> {
+        if source == sink {
+            return Ok((
+                Some(GraphWalk::new(vec![source.clone()], Vec::new(), 0.0)),
+                0,
+            ));
+        }
+
+        let heuristic = |vertex: &G::Vertex| {
+            reverse_distances
+                .get(vertex)
+                .copied()
+                .filter(|value| value.is_finite())
+                .unwrap_or(0.0)
+        };
+        let mut distance = HashMap::from([(source.clone(), 0.0)]);
+        let mut predecessor: HashMap<G::Vertex, (G::Edge, G::Vertex)> = HashMap::new();
+        let mut entries = vec![(source.clone(), 0.0)];
+        let mut heap = BinaryHeap::from([Reverse((OrderedF64(heuristic(source)), 0u64, 0usize))]);
+        let mut ordinal = 0u64;
+        let mut expanded = 0usize;
+
+        while let Some(Reverse((_, _, entry_index))) = heap.pop() {
+            let (vertex, value) = entries[entry_index].clone();
+            if value != distance[&vertex] {
+                continue;
+            }
+            expanded += 1;
+            if &vertex == sink {
+                break;
+            }
+            let outgoing = graph
+                .try_outgoing_of(&vertex)?
+                .map(|(edge, target)| (edge.clone(), target.clone()))
+                .collect::<Vec<_>>();
+            for (edge, target) in outgoing {
+                let weight = graph.edge_weight(&edge).unwrap_or(1.0);
+                if weight.is_nan() || weight < 0.0 {
+                    return Err(GraphError::InvalidArgument(
+                        "bounded-pruned Yen requires non-negative edge weights".into(),
+                    ));
+                }
+                let candidate = value + weight;
+                if candidate < distance.get(&target).copied().unwrap_or(f64::INFINITY) {
+                    distance.insert(target.clone(), candidate);
+                    predecessor.insert(target.clone(), (edge, vertex.clone()));
+                    entries.push((target.clone(), candidate));
+                    ordinal += 1;
+                    heap.push(Reverse((
+                        OrderedF64(candidate + heuristic(&target)),
+                        ordinal,
+                        entries.len() - 1,
+                    )));
+                }
+            }
+        }
+
+        let Some(&weight) = distance.get(sink).filter(|value| value.is_finite()) else {
+            return Ok((None, expanded));
+        };
+        let mut vertices = vec![sink.clone()];
+        let mut edges = Vec::new();
+        let mut current = sink.clone();
+        while &current != source {
+            let Some((edge, parent)) = predecessor.get(&current) else {
+                return Ok((None, expanded));
+            };
+            edges.push(edge.clone());
+            vertices.push(parent.clone());
+            current = parent.clone();
+        }
+        vertices.reverse();
+        edges.reverse();
+        Ok((Some(GraphWalk::new(vertices, edges, weight)), expanded))
     }
 
     fn compute_reverse_distances(&self, sink: &G::Vertex) -> Result<HashMap<G::Vertex, f64>> {
@@ -593,10 +777,10 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
         reverse_distances: &HashMap<G::Vertex, f64>,
         tasks: &mut Vec<SpurTask<G::Vertex>>,
         task_heap: &mut BinaryHeap<Reverse<(OrderedF64, u64, usize)>>,
-    ) {
+    ) -> Result<()> {
         let path = &accepted[path_index];
         if path.vertices.len() < 2 {
-            return;
+            return Ok(());
         }
         let deviation = first_deviation_index[path_index];
         let mut banned_vertices = HashSet::new();
@@ -608,7 +792,7 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
                     Some(reverse) if reverse.is_finite() => {
                         let banned_edges =
                             self.compute_yen_banned_edges(&path.vertices, spur_index, accepted);
-                        if self.has_legal_exit(spur, &banned_vertices, &banned_edges) {
+                        if self.has_legal_exit(spur, &banned_vertices, &banned_edges)? {
                             let mut stats = self.stats.borrow_mut();
                             let ordinal = stats.spur_tasks_created as u64;
                             stats.spur_tasks_created += 1;
@@ -637,19 +821,27 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
                 .edge_weight(&path.edges[spur_index])
                 .unwrap_or(1.0);
         }
+        Ok(())
     }
 
     fn materialize(
         &self,
         task: &SpurTask<G::Vertex>,
         accepted: &[GraphWalk<G::Vertex, G::Edge>],
+        reverse_distances: &HashMap<G::Vertex, f64>,
     ) -> Result<Option<BoundedCandidate<G::Vertex, G::Edge>>> {
         let parent = &accepted[task.parent_index];
         let banned_edges =
             self.compute_yen_banned_edges(&parent.vertices, task.spur_index, accepted);
         let spur_node = &parent.vertices[task.spur_index];
         let sink = parent.vertices.last().expect("path has a sink");
-        let Some(spur) = self.find_spur(spur_node, sink, &task.banned_vertices, &banned_edges)?
+        let Some(spur) = self.find_spur(
+            spur_node,
+            sink,
+            &task.banned_vertices,
+            &banned_edges,
+            reverse_distances,
+        )?
         else {
             return Ok(None);
         };
@@ -670,6 +862,10 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
         }))
     }
 
+    /// Compute the set of edges that standard Yen would ban at `spurIndex` given the
+    /// current `accepted` list. An edge is banned iff there exists a previously accepted
+    /// path whose first `spurIndex+1` vertices match `parentVertices` and whose
+    /// `spurIndex`-th edge would otherwise be the next edge of the spur.
     fn compute_yen_banned_edges(
         &self,
         parent_vertices: &[G::Vertex],
@@ -686,26 +882,22 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
             .collect()
     }
 
+    /// True iff the spur node has at least one outgoing edge that survives the current bans
+    /// (banned-vertex set + banned-edge set). When this is false the spur is provably impossible
+    /// and the task can be skipped exactly — adding more bans later can only remove legal edges,
+    /// never add them, so a "false" verdict here is stable through the rest of the run.
     fn has_legal_exit(
         &self,
         spur: &G::Vertex,
         banned_vertices: &HashSet<G::Vertex>,
         banned_edges: &HashSet<G::Edge>,
-    ) -> bool {
-        self.graph
-            .outgoing_of(spur)
-            .any(|(edge, target)| !banned_edges.contains(edge) && !banned_vertices.contains(target))
+    ) -> Result<bool> {
+        Ok(self.graph.try_outgoing_of(spur)?.any(|(edge, target)| {
+            !banned_edges.contains(edge) && !banned_vertices.contains(target)
+        }))
     }
 }
 
 fn approx_eq(a: f64, b: f64) -> bool {
     (a - b).abs() <= 1e-12 * a.abs().max(b.abs()).max(1.0)
 }
-    /// Compute the set of edges that standard Yen would ban at `spurIndex` given the
-    /// current `accepted` list. An edge is banned iff there exists a previously accepted
-    /// path whose first `spurIndex+1` vertices match `parentVertices` and whose
-    /// `spurIndex`-th edge would otherwise be the next edge of the spur.
-    /// True iff the spur node has at least one outgoing edge that survives the current bans
-    /// (banned-vertex set + banned-edge set). When this is false the spur is provably impossible
-    /// and the task can be skipped exactly — adding more bans later can only remove legal edges,
-    /// never add them, so a "false" verdict here is stable through the rest of the run.
