@@ -1,7 +1,11 @@
-use jgrapht::alg::planarity::is_planar;
+use jgrapht::alg::planar::BoyerMyrvoldPlanarityInspector;
 use jgrapht::generate::*;
 use jgrapht::*;
 use rand::{Rng, SeedableRng, rngs::StdRng};
+
+fn is_planar<G: Graph>(g: &G) -> bool {
+    BoyerMyrvoldPlanarityInspector::new(g).is_planar()
+}
 
 fn build<G: GraphMut<Vertex = usize>>(mut g: G, mut f: impl GraphGenerator) -> G {
     f.generate_indexed(&mut g).unwrap();

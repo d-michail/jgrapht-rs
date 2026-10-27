@@ -24,7 +24,6 @@ pub mod metrics;
 pub mod partition;
 pub mod paths;
 pub mod planar;
-pub mod planarity;
 pub mod scoring;
 pub mod shortestpath;
 pub mod similarity;

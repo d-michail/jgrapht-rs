@@ -285,7 +285,7 @@ pub fn is_perfect<G: Graph>(g: &G) -> bool {
 }
 
 pub fn is_planar<G: Graph>(g: &G) -> bool {
-    crate::alg::planarity::is_planar(g)
+    crate::alg::planar::BoyerMyrvoldPlanarityInspector::new(g).is_planar()
 }
 
 /// Vertices of degree `degree` reachable from `start` without passing through another vertex of
