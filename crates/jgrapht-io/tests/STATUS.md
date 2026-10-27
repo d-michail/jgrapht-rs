@@ -6,7 +6,7 @@ the complete Java test matrix has not yet been brought across.
 
 | Area | State | Current coverage |
 |---|---|---|
-| shared layer | partial | attributes and types, structured errors, importer/exporter traits, event stream, exporter providers, integer IDs |
+| shared layer | done | all 13 upstream classes audited; attributes and types, structured errors, string/stream importer and exporter traits, event contracts, complete exporter-provider management and stable/configurable integer IDs covered |
 | DIMACS | done | all 23 applicable `IntegerIdProvider`, event-driven importer, graph importer and exporter tests ported with the upstream Mycielski fixtures |
 | CSV / DSV | done | all 32 applicable DSV, importer and exporter tests ported; Visio export, multiline quoting, custom delimiters and every matrix parameter combination covered |
 | graph6 / sparse6 / digraph6 | done | all 30 upstream importer/exporter cases ported, including canonical encodings, large named graphs, pseudographs, factories and randomized round trips |
@@ -19,6 +19,5 @@ the complete Java test matrix has not yet been brought across.
 | GEXF | done | all 11 upstream exporter, simple importer and event importer cases ported, including typed declarations, metadata, nested-graph exclusion, consumers, options, labels, edge types and weights |
 | TSPLIB | done | all 24 upstream importer cases ported, including rich metadata, nine distance types, complete weighted graphs, distinctness checks, embedded and standalone tours, and validation failures |
 
-Current Rust integration tests: 309, including injected reader/writer failures and importer reuse.
-The remaining work is to port the upstream tests format by
-format and close every behavior gap they expose.
+Current Rust integration tests: 314, including injected reader/writer failures, importer reuse and
+direct shared-layer parity coverage. All planned formats and the shared layer are complete.

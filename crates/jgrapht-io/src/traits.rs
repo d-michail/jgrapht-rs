@@ -30,4 +30,11 @@ pub trait EventDrivenImporter {
     where
         R: Read,
         F: FnMut(ImportEvent<Self::Vertex, Self::Edge>) -> Result<()>;
+
+    fn import_str<F>(&mut self, input: &str, emit: F) -> Result<()>
+    where
+        F: FnMut(ImportEvent<Self::Vertex, Self::Edge>) -> Result<()>,
+    {
+        self.import_events(Cursor::new(input.as_bytes()), emit)
+    }
 }

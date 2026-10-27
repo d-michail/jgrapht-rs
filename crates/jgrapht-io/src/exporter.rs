@@ -70,8 +70,24 @@ impl<V, E> BaseExporter<V, E> {
         self.graph_id_provider = Some(Box::new(provider));
     }
 
+    pub fn has_graph_id_provider(&self) -> bool {
+        self.graph_id_provider.is_some()
+    }
+
+    pub fn clear_graph_id_provider(&mut self) {
+        self.graph_id_provider = None;
+    }
+
     pub fn set_graph_attribute_provider(&mut self, provider: impl Fn() -> AttributeMap + 'static) {
         self.graph_attribute_provider = Some(Box::new(provider));
+    }
+
+    pub fn has_graph_attribute_provider(&self) -> bool {
+        self.graph_attribute_provider.is_some()
+    }
+
+    pub fn clear_graph_attribute_provider(&mut self) {
+        self.graph_attribute_provider = None;
     }
 
     pub fn set_vertex_id_provider(&mut self, provider: impl FnMut(&V) -> String + 'static) {
@@ -85,12 +101,36 @@ impl<V, E> BaseExporter<V, E> {
         self.vertex_attribute_provider = Some(Box::new(provider));
     }
 
+    pub fn has_vertex_attribute_provider(&self) -> bool {
+        self.vertex_attribute_provider.is_some()
+    }
+
+    pub fn clear_vertex_attribute_provider(&mut self) {
+        self.vertex_attribute_provider = None;
+    }
+
     pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
         self.edge_id_provider = Some(Box::new(provider));
     }
 
+    pub fn has_edge_id_provider(&self) -> bool {
+        self.edge_id_provider.is_some()
+    }
+
+    pub fn clear_edge_id_provider(&mut self) {
+        self.edge_id_provider = None;
+    }
+
     pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
         self.edge_attribute_provider = Some(Box::new(provider));
+    }
+
+    pub fn has_edge_attribute_provider(&self) -> bool {
+        self.edge_attribute_provider.is_some()
+    }
+
+    pub fn clear_edge_attribute_provider(&mut self) {
+        self.edge_attribute_provider = None;
     }
 
     pub fn graph_id(&mut self) -> Option<String> {
@@ -101,6 +141,10 @@ impl<V, E> BaseExporter<V, E> {
         self.graph_attribute_provider
             .as_ref()
             .map(|provider| provider())
+    }
+
+    pub fn graph_attribute(&self, key: &str) -> Option<crate::Attribute> {
+        self.graph_attributes()?.shift_remove(key)
     }
 
     pub fn vertex_id(&mut self, vertex: &V) -> Result<String> {
@@ -118,6 +162,10 @@ impl<V, E> BaseExporter<V, E> {
             .map(|provider| provider(vertex))
     }
 
+    pub fn vertex_attribute(&self, vertex: &V, key: &str) -> Option<crate::Attribute> {
+        self.vertex_attributes(vertex)?.shift_remove(key)
+    }
+
     pub fn edge_id(&mut self, edge: &E) -> Option<String> {
         self.edge_id_provider
             .as_mut()
@@ -128,6 +176,10 @@ impl<V, E> BaseExporter<V, E> {
         self.edge_attribute_provider
             .as_ref()
             .map(|provider| provider(edge))
+    }
+
+    pub fn edge_attribute(&self, edge: &E, key: &str) -> Option<crate::Attribute> {
+        self.edge_attributes(edge)?.shift_remove(key)
     }
 }
 
