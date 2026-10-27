@@ -2401,3 +2401,683 @@ mod paton_cycle_base_test {
         assert!((344.0 - cb.weight()).abs() <= 1e-9);
     }
 }
+
+// HierholzerEulerianCycleTest
+
+mod hierholzer_eulerian_cycle_test {
+    use super::*;
+    use jgrapht::alg::cycle::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
+    use jgrapht::generate::{Complete, GnpRandomGraphGenerator, GraphGenerator};
+    use jgrapht::graph::props::is_eulerian;
+    use jgrapht::graph::{Direction, GraphExt};
+    use rand::rngs::StdRng;
+    use rand::{Rng, SeedableRng};
+    use std::collections::HashSet;
+
+    fn assert_eulerian<G: Graph>(g: &G, cycle: &GraphWalk<G::Vertex, G::Edge>) {
+        assert!(is_eulerian(g));
+        assert!(g.vertex_count() > 0);
+        if g.edge_count() == 0 {
+            assert!(cycle.start_vertex().is_none());
+            assert!(cycle.end_vertex().is_none());
+            assert!(cycle.edge_list().is_empty());
+        } else {
+            let directed = g.graph_type().directed;
+            assert!(cycle.start_vertex().is_some());
+            assert!(cycle.start_vertex() == cycle.end_vertex());
+            assert_eq!(g.edge_count(), cycle.length());
+            let mut dup = HashSet::new();
+            let mut prev: Option<&G::Edge> = None;
+            for cur in cycle.edge_list() {
+                assert!(dup.insert(cur.clone()));
+                if let Some(prev) = prev {
+                    let (cs, ct) = g.edge_endpoints(cur).unwrap();
+                    let (ps, pt) = g.edge_endpoints(prev).unwrap();
+                    if directed {
+                        assert!(cs == pt);
+                    } else {
+                        assert!(cs == ps || cs == pt || ct == ps || ct == pt);
+                    }
+                }
+                prev = Some(cur);
+            }
+        }
+    }
+
+    fn complete<D: Direction>(ty: GraphType, n: usize) -> BaseGraph<i32, DefaultEdge, D> {
+        let mut g =
+            BaseGraph::<i32, DefaultEdge, D>::with_graph_type(ty).with_vertex_factory(|i| i as i32);
+        Complete(n).generate_default(&mut g).unwrap();
+        g
+    }
+
+    #[test]
+    fn test_null_eulerian() {
+        let mut g1 = UGraph::<i32>::pseudo();
+        assert!(!HierholzerEulerianCycle::new().is_eulerian(&g1));
+        let mut g2 = DiGraph::<i32>::pseudo();
+        assert!(!HierholzerEulerianCycle::new().is_eulerian(&g2));
+    }
+
+    #[test]
+    fn test_empty_eulerian() {
+        let mut g1 = UGraph::<i32>::pseudo();
+        g1.add_vertex(1);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g1));
+        g1.add_vertex(2);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g1));
+        g1.add_vertex(3);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g1));
+        let mut g2 = DiGraph::<i32>::pseudo();
+        g2.add_vertex(1);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g2));
+        g2.add_vertex(2);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g2));
+        g2.add_vertex(3);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g2));
+    }
+
+    #[test]
+    fn test_undirected_disconnected_eulerian() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertex(1);
+        g.add_vertex(2);
+        g.add_vertex(3);
+        g.add_vertex(4);
+        g.add_vertex(5);
+        g.add_vertex(6);
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&4, &2).unwrap();
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn test_undirected_disconnected_non_eulerian() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertex(1);
+        g.add_vertex(2);
+        g.add_vertex(3);
+        g.add_vertex(4);
+        g.add_vertex(5);
+        g.add_vertex(6);
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&4, &2).unwrap();
+        g.add_edge(&5, &6).unwrap();
+        assert!(!HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn test_directed_disconnected_eulerian() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertex(1);
+        g.add_vertex(2);
+        g.add_vertex(3);
+        g.add_vertex(4);
+        g.add_vertex(5);
+        g.add_vertex(6);
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&4, &2).unwrap();
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn test_directed_disconnected_non_eulerian() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertex(1);
+        g.add_vertex(2);
+        g.add_vertex(3);
+        g.add_vertex(4);
+        g.add_vertex(5);
+        g.add_vertex(6);
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&4, &2).unwrap();
+        g.add_edge(&5, &6).unwrap();
+        assert!(!HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn test_undirected_eulerian_2() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertices([1, 2, 3, 4, 5, 6]);
+        g.add_edge(&1, &2).unwrap();
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &1).unwrap();
+        g.add_edge(&4, &5).unwrap();
+        g.add_edge(&5, &6).unwrap();
+        g.add_edge(&6, &4).unwrap();
+        assert!(!HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn test_undirected_eulerian_3() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertices([1, 2, 3, 4, 5, 6]);
+        g.add_edge(&1, &2).unwrap();
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &1).unwrap();
+        g.add_edge(&4, &5).unwrap();
+        g.add_edge(&5, &6).unwrap();
+        g.add_edge(&6, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn test_undirected_eulerian_4() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertex(1);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn test_directed_eulerian_2() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertices([1]);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+        g.add_edge(&1, &1).unwrap();
+        g.add_edge(&1, &1).unwrap();
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+        g.add_vertices([2]);
+        g.add_edge(&2, &1).unwrap();
+        assert!(!HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn test_directed_eulerian_3() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertices([1, 2, 3, 4, 5]);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+        g.add_edge(&1, &2).unwrap();
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&4, &5).unwrap();
+        g.add_edge(&5, &1).unwrap();
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+        g.add_edge(&2, &1).unwrap();
+        g.add_edge(&3, &2).unwrap();
+        g.add_edge(&4, &3).unwrap();
+        g.add_edge(&5, &4).unwrap();
+        assert!(!HierholzerEulerianCycle::new().is_eulerian(&g));
+        g.add_edge(&1, &1).unwrap();
+        g.add_edge(&2, &2).unwrap();
+        g.add_edge(&3, &3).unwrap();
+        g.add_edge(&4, &4).unwrap();
+        g.add_edge(&5, &5).unwrap();
+        assert!(!HierholzerEulerianCycle::new().is_eulerian(&g));
+        g.add_edge(&1, &5).unwrap();
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn test_empty_with_single_vertex_undirected() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertex(1);
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn test_empty_multiple_vertices_undirected() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertex(1);
+        g.add_vertex(2);
+        g.add_vertex(3);
+        g.add_vertex(4);
+        g.add_vertex(5);
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn test_empty_with_single_vertex_directed() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertex(1);
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn test_empty_multiple_vertices_directed() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertex(1);
+        g.add_vertex(2);
+        g.add_vertex(3);
+        g.add_vertex(4);
+        g.add_vertex(5);
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn test_eulerian_cycle_undirected_1() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertices([1, 2, 3, 4, 5, 6]);
+        g.add_edge(&1, &2).unwrap();
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &1).unwrap();
+        g.add_edge(&4, &5).unwrap();
+        g.add_edge(&5, &6).unwrap();
+        g.add_edge(&6, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn test_eulerian_cycle_undirected_2() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertices([1, 2, 3, 4, 5, 6, 7, 8]);
+        g.add_edge(&1, &2).unwrap();
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &1).unwrap();
+        g.add_edge(&4, &5).unwrap();
+        g.add_edge(&5, &6).unwrap();
+        g.add_edge(&6, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&5, &7).unwrap();
+        g.add_edge(&5, &7).unwrap();
+        g.add_edge(&7, &8).unwrap();
+        g.add_edge(&7, &8).unwrap();
+        g.add_edge(&5, &8).unwrap();
+        g.add_edge(&5, &8).unwrap();
+        g.add_edge(&8, &8).unwrap();
+        g.add_edge(&8, &8).unwrap();
+        g.add_edge(&3, &3).unwrap();
+        g.add_edge(&3, &3).unwrap();
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn test_eulerian_cycle_undirected_4() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertices([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+        g.add_edge(&1, &2).unwrap();
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &1).unwrap();
+        g.add_edge(&4, &5).unwrap();
+        g.add_edge(&5, &6).unwrap();
+        g.add_edge(&6, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&5, &7).unwrap();
+        g.add_edge(&5, &7).unwrap();
+        g.add_edge(&7, &8).unwrap();
+        g.add_edge(&7, &8).unwrap();
+        g.add_edge(&5, &8).unwrap();
+        g.add_edge(&5, &8).unwrap();
+        g.add_edge(&8, &8).unwrap();
+        g.add_edge(&8, &8).unwrap();
+        g.add_edge(&3, &3).unwrap();
+        g.add_edge(&3, &3).unwrap();
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn test_eulerian_cycle_directed_1() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertices([1, 2, 3, 4, 5, 6]);
+        g.add_edge(&1, &2).unwrap();
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &1).unwrap();
+        g.add_edge(&4, &5).unwrap();
+        g.add_edge(&5, &6).unwrap();
+        g.add_edge(&6, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&4, &3).unwrap();
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn test_eulerian_cycle_directed_2() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertices([1, 2, 3, 4, 5, 6, 7, 8]);
+        g.add_edge(&1, &2).unwrap();
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &1).unwrap();
+        g.add_edge(&4, &5).unwrap();
+        g.add_edge(&5, &6).unwrap();
+        g.add_edge(&6, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&4, &3).unwrap();
+        g.add_edge(&5, &7).unwrap();
+        g.add_edge(&7, &8).unwrap();
+        g.add_edge(&8, &5).unwrap();
+        g.add_edge(&5, &7).unwrap();
+        g.add_edge(&7, &8).unwrap();
+        g.add_edge(&8, &5).unwrap();
+        g.add_edge(&8, &8).unwrap();
+        g.add_edge(&8, &8).unwrap();
+        g.add_edge(&8, &8).unwrap();
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn test_eulerian_cycle_directed_3() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertices([1, 2, 3, 4, 5, 6, 7, 8]);
+        g.add_edge(&1, &2).unwrap();
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&2, &4).unwrap();
+        g.add_edge(&4, &2).unwrap();
+        g.add_edge(&3, &6).unwrap();
+        g.add_edge(&3, &5).unwrap();
+        g.add_edge(&5, &3).unwrap();
+        g.add_edge(&6, &8).unwrap();
+        g.add_edge(&6, &7).unwrap();
+        g.add_edge(&7, &6).unwrap();
+        g.add_edge(&8, &1).unwrap();
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn test_eulerian_cycle_directed_5() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertices([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+        g.add_edge(&1, &2).unwrap();
+        g.add_edge(&2, &3).unwrap();
+        g.add_edge(&3, &1).unwrap();
+        g.add_edge(&4, &5).unwrap();
+        g.add_edge(&5, &6).unwrap();
+        g.add_edge(&6, &4).unwrap();
+        g.add_edge(&3, &4).unwrap();
+        g.add_edge(&4, &3).unwrap();
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn undirected_eulerian1() {
+        let g = complete::<jgrapht::graph::Undirected>(GraphType::simple(), 6);
+        assert!(!HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn undirected_eulerian5() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertices(1..=6);
+        for (a, b) in [
+            (1, 2),
+            (2, 3),
+            (3, 1),
+            (4, 5),
+            (5, 6),
+            (6, 4),
+            (3, 4),
+            (3, 4),
+        ] {
+            g.add_edge(&a, &b).unwrap();
+        }
+        for i in 1..=6 {
+            g.add_edge(&i, &i).unwrap();
+        }
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn undirected_eulerian6() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertices(1..=6);
+        for (a, b) in [(1, 2), (2, 3), (3, 1), (4, 5), (5, 6), (6, 4)] {
+            g.add_edge(&a, &b).unwrap();
+        }
+        for i in 1..=6 {
+            g.add_edge(&i, &i).unwrap();
+        }
+        assert!(!HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn undirected_eulerian7() {
+        let g = complete::<jgrapht::graph::Undirected>(GraphType::simple(), 5);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g));
+    }
+
+    #[test]
+    fn directed_eulerian1() {
+        let g1 = complete::<jgrapht::graph::Directed>(GraphType::simple(), 6);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g1));
+        let g2 = complete::<jgrapht::graph::Directed>(GraphType::simple(), 7);
+        assert!(HierholzerEulerianCycle::new().is_eulerian(&g2));
+    }
+
+    #[test]
+    fn eulerian_cycle_directed4() {
+        let mut g = DiGraph::<i32>::pseudo();
+        g.add_vertices(1..=8);
+        for (a, b) in [
+            (1, 2),
+            (2, 4),
+            (2, 3),
+            (4, 2),
+            (3, 5),
+            (3, 6),
+            (5, 3),
+            (6, 7),
+            (6, 8),
+            (7, 6),
+            (8, 1),
+        ] {
+            g.add_edge(&a, &b).unwrap();
+        }
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn eulerian_cycle_undirected3() {
+        let mut rng = StdRng::seed_from_u64(17);
+        for size in (13..52).step_by(2) {
+            let mut g = complete::<jgrapht::graph::Undirected>(GraphType::pseudograph(), size);
+            let vertices: Vec<i32> = g.vertices().copied().collect();
+            for v in vertices {
+                for _ in 0..=rng.random_range(0..10) {
+                    g.add_edge(&v, &v).unwrap();
+                }
+            }
+            let edges: Vec<DefaultEdge> = g.edges().cloned().collect();
+            for e in edges {
+                let (s, t) = {
+                    let (s, t) = g.edge_endpoints(&e).unwrap();
+                    (*s, *t)
+                };
+                for _ in 0..=2 * rng.random_range(0..10) {
+                    g.add_edge(&s, &t).unwrap();
+                }
+            }
+            let cycle = HierholzerEulerianCycle::new()
+                .get_eulerian_cycle(&g)
+                .unwrap();
+            assert_eulerian(&g, &cycle);
+        }
+    }
+
+    #[test]
+    fn eulerian_cycle_directed() {
+        let mut rng = StdRng::seed_from_u64(17);
+        for size in (5..52).step_by(2) {
+            let mut g = complete::<jgrapht::graph::Directed>(GraphType::pseudograph(), size);
+            let vertices: Vec<i32> = g.vertices().copied().collect();
+            for v in vertices {
+                for _ in 0..=rng.random_range(0..10) {
+                    g.add_edge(&v, &v).unwrap();
+                }
+            }
+            let edges: Vec<DefaultEdge> = g.edges().cloned().collect();
+            for e in edges {
+                let (s, t) = {
+                    let (s, t) = g.edge_endpoints(&e).unwrap();
+                    (*s, *t)
+                };
+                for _ in 0..=2 * rng.random_range(0..10) {
+                    g.add_edge(&s, &t).unwrap();
+                    g.add_edge(&t, &s).unwrap();
+                }
+            }
+            let cycle = HierholzerEulerianCycle::new()
+                .get_eulerian_cycle(&g)
+                .unwrap();
+            assert_eulerian(&g, &cycle);
+        }
+    }
+
+    fn random_graph<D: Direction>(
+        rng: &mut StdRng,
+        seed: u64,
+        loops: bool,
+        extra_loops: bool,
+    ) -> BaseGraph<i32, DefaultEdge, D> {
+        let mut g = BaseGraph::<i32, DefaultEdge, D>::pseudo().with_vertex_factory(|i| i as i32);
+        GnpRandomGraphGenerator::new(50, 0.7, StdRng::seed_from_u64(seed), loops)
+            .unwrap()
+            .generate_default(&mut g)
+            .unwrap();
+        let edges: Vec<DefaultEdge> = g.edges().cloned().collect();
+        for e in edges {
+            let (s, t) = {
+                let (s, t) = g.edge_endpoints(&e).unwrap();
+                (*s, *t)
+            };
+            g.add_edge(&t, &s).unwrap();
+        }
+        if extra_loops {
+            let vertices: Vec<i32> = g.vertices().copied().collect();
+            for v in vertices {
+                for _ in 0..=rng.random_range(0..10) {
+                    g.add_edge(&v, &v).unwrap();
+                }
+            }
+        }
+        g
+    }
+
+    #[test]
+    fn random_undirected() {
+        let mut rng = StdRng::seed_from_u64(1);
+        for i in 0..100 {
+            let g = random_graph::<jgrapht::graph::Undirected>(&mut rng, i, true, true);
+            let cycle = HierholzerEulerianCycle::new()
+                .get_eulerian_cycle(&g)
+                .unwrap();
+            assert_eulerian(&g, &cycle);
+        }
+    }
+
+    #[test]
+    fn random_undirected_fixed_seed() {
+        let mut rng = StdRng::seed_from_u64(17);
+        for i in 0..100 {
+            let g = random_graph::<jgrapht::graph::Undirected>(&mut rng, 17 + i, false, false);
+            let cycle = HierholzerEulerianCycle::new()
+                .get_eulerian_cycle(&g)
+                .unwrap();
+            assert_eulerian(&g, &cycle);
+        }
+    }
+
+    #[test]
+    fn random_directed() {
+        let mut rng = StdRng::seed_from_u64(2);
+        for i in 0..100 {
+            let g = random_graph::<jgrapht::graph::Directed>(&mut rng, i, true, true);
+            let cycle = HierholzerEulerianCycle::new()
+                .get_eulerian_cycle(&g)
+                .unwrap();
+            assert_eulerian(&g, &cycle);
+        }
+    }
+
+    #[test]
+    fn random_directed_fixed_seed() {
+        let mut rng = StdRng::seed_from_u64(17);
+        for i in 0..100 {
+            let g = random_graph::<jgrapht::graph::Directed>(&mut rng, 17 + i, false, false);
+            let cycle = HierholzerEulerianCycle::new()
+                .get_eulerian_cycle(&g)
+                .unwrap();
+            assert_eulerian(&g, &cycle);
+        }
+    }
+
+    #[test]
+    fn eulerian_cycle_undirected_vertex_list() {
+        let mut g = UGraph::<i32>::pseudo();
+        g.add_vertices([4, 3, 2]);
+        let e42 = g.add_edge(&4, &2).unwrap().unwrap();
+        let e34 = g.add_edge(&3, &4).unwrap().unwrap();
+        let e32 = g.add_edge(&3, &2).unwrap().unwrap();
+        let cycle = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eq!(e32, cycle.edge_list()[0]);
+        assert_eq!(e34, cycle.edge_list()[1]);
+        assert_eq!(e42, cycle.edge_list()[2]);
+        assert_eq!(&[2, 3, 4, 2], cycle.vertex_list());
+        assert_eulerian(&g, &cycle);
+    }
+
+    #[test]
+    fn pseudograph() {
+        // GitHub issue 388
+        let mut g = UGraph::<char>::pseudo().weighted();
+        g.add_vertices(['A', 'B', 'C', 'D', 'E']);
+        for (a, b, w) in [
+            ('A', 'B', 8.0),
+            ('A', 'C', 5.0),
+            ('A', 'D', 6.0),
+            ('B', 'C', 5.0),
+            ('B', 'E', 6.0),
+            ('C', 'D', 5.0),
+            ('C', 'E', 5.0),
+            ('D', 'E', 8.0),
+            ('A', 'D', 8.0),
+            ('B', 'E', 8.0),
+        ] {
+            g.add_weighted_edge(&a, &b, w).unwrap();
+        }
+        let gp = HierholzerEulerianCycle::new()
+            .get_eulerian_cycle(&g)
+            .unwrap();
+        assert_eq!(Some(&'E'), gp.start_vertex());
+        assert_eq!(
+            &['E', 'B', 'E', 'D', 'A', 'D', 'C', 'B', 'A', 'C', 'E'],
+            gp.vertex_list()
+        );
+        assert_eulerian(&g, &gp);
+    }
+}

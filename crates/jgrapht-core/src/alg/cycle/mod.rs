@@ -5,6 +5,7 @@
 
 mod basis;
 mod detector;
+mod eulerian;
 mod legacy;
 mod simple_cycles;
 
@@ -13,6 +14,7 @@ pub use basis::{
     StackBFSFundamentalCycleBasis,
 };
 pub use detector::{CycleDetector, simple_cycle_to_graph_path};
+pub use eulerian::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
 pub use legacy::*;
 pub use simple_cycles::{
     DirectedSimpleCycles, HawickJamesSimpleCycles, JohnsonSimpleCycles,
