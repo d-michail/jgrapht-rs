@@ -99,8 +99,10 @@ impl BlossomVDualUpdater {
             state.arena.trees[tree].eps = eps;
         }
         state.statistics.dual_updates_time_ns += start.elapsed().as_nanos();
-        if augment_edge.is_some() && eps_augment <= state.arena.trees[tree].eps {
-            BlossomVPrimalUpdater::augment(state, augment_edge.expect("augment edge"));
+        if let Some(augment_edge) = augment_edge
+            && eps_augment <= state.arena.trees[tree].eps
+        {
+            BlossomVPrimalUpdater::augment(state, augment_edge);
             Ok(false)
         } else {
             Ok(delta > DEFAULT_EPSILON)

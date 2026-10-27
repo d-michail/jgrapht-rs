@@ -74,16 +74,16 @@ where
                 })
             })
         };
-        let remap: HashMap<_, _> = (!directly_indexed)
-            .then(|| {
-                vertices
-                    .iter()
-                    .copied()
-                    .enumerate()
-                    .map(|(index, vertex)| (vertex, index))
-                    .collect()
-            })
-            .unwrap_or_default();
+        let remap: HashMap<_, _> = if directly_indexed {
+            HashMap::new()
+        } else {
+            vertices
+                .iter()
+                .copied()
+                .enumerate()
+                .map(|(index, vertex)| (vertex, index))
+                .collect()
+        };
         if directly_indexed {
             vertices.sort_by_key(|vertex| vertex.dense_index(n).expect("dense integer vertex"));
         }

@@ -260,9 +260,11 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
         while let Some(path) = incomplete.pop_front() {
             let length = path.edges.len();
             let leaf = path.vertices.last().expect("non-empty path");
-            let path_vertices: HashSet<_> = simple_paths_only
-                .then(|| path.vertices.iter().collect())
-                .unwrap_or_default();
+            let path_vertices: HashSet<_> = if simple_paths_only {
+                path.vertices.iter().collect()
+            } else {
+                HashSet::new()
+            };
             for (edge, child) in self.graph.outgoing_of(leaf) {
                 let Some(&remaining) = edge_to_target.get(edge) else {
                     continue;
