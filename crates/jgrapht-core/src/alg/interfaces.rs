@@ -3,7 +3,9 @@
 
 use crate::Result;
 use crate::graph::Graph;
+use crate::walk::GraphWalk;
 use indexmap::{IndexMap, IndexSet};
+use std::collections::HashSet;
 use std::hash::Hash;
 
 /// A partition of the vertices into disjoint sets (`PartitioningAlgorithm.Partitioning`).
@@ -46,4 +48,27 @@ pub trait CentersLocationAlgorithm<V: Eq + Hash + Clone> {
     /// Client to its closest center; an error before [`centers`](Self::centers) ran.
     fn assignment(&self) -> Result<&IndexMap<V, V>>;
     fn covering_radius(&self) -> Result<f64>;
+}
+
+/// A decomposition of a tree into vertex-disjoint paths (`TreeToPathDecompositionAlgorithm.PathDecomposition`).
+#[derive(Debug, Clone)]
+pub struct PathDecomposition<V, E> {
+    edges: HashSet<E>,
+    paths: Vec<GraphWalk<V, E>>,
+}
+
+impl<V, E> PathDecomposition<V, E> {
+    pub fn new(edges: HashSet<E>, paths: Vec<GraphWalk<V, E>>) -> Self {
+        PathDecomposition { edges, paths }
+    }
+    /// The edges lying on the paths.
+    pub fn edges(&self) -> &HashSet<E> {
+        &self.edges
+    }
+    pub fn paths(&self) -> &[GraphWalk<V, E>] {
+        &self.paths
+    }
+    pub fn number_of_paths(&self) -> usize {
+        self.paths.len()
+    }
 }

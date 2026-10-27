@@ -5,6 +5,7 @@
     clippy::useless_vec
 )]
 
+mod alg_decomposition_tests;
 mod alg_small_tests;
 mod alg_util_tests;
 mod common;

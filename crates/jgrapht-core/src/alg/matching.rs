@@ -19,6 +19,10 @@ impl<E> Matching<E> {
     pub fn is_empty(&self) -> bool {
         self.edges.is_empty()
     }
+    /// Whether every vertex of `g` is matched.
+    pub fn is_perfect<G: Graph<Edge = E>>(&self, g: &G) -> bool {
+        2 * self.edges.len() == g.vertex_count()
+    }
 }
 
 /// The heaviest edge between two vertex indices.
@@ -130,6 +134,39 @@ pub fn hopcroft_karp<G: Graph>(g: &G) -> Result<Matching<G::Edge>> {
         .ok_or_else(|| GraphError::InvalidArgument("graph is not bipartite".into()))?;
     let left: Vec<usize> = (0..ix.n()).filter(|&v| !side[v]).collect();
     let mate = hopcroft_karp_mates(&simple_adj(&ix), &left);
+    Ok(matching_of(&ix, &mate))
+}
+
+/// Maximum cardinality matching of a bipartite graph whose two sides are given
+/// (`HopcroftKarpMaximumCardinalityBipartiteMatching(graph, partition1, partition2)`).
+pub fn hopcroft_karp_with_partitions<G: Graph>(
+    g: &G,
+    partition1: &HashSet<G::Vertex>,
+    partition2: &HashSet<G::Vertex>,
+) -> Result<Matching<G::Edge>> {
+    if partition1.len() + partition2.len() != g.vertex_count()
+        || g.vertices()
+            .any(|v| !partition1.contains(v) && !partition2.contains(v))
+        || partition1.iter().any(|v| partition2.contains(v))
+    {
+        return Err(GraphError::InvalidArgument(
+            "the partitions do not partition the vertices".into(),
+        ));
+    }
+    let ix = Indexed::new(g);
+    let adj = simple_adj(&ix);
+    for (v, nbrs) in adj.iter().enumerate() {
+        let side = partition1.contains(ix.vs[v]);
+        if nbrs.iter().any(|&u| partition1.contains(ix.vs[u]) == side) {
+            return Err(GraphError::InvalidArgument(
+                "the partitions are not a bipartition of the graph".into(),
+            ));
+        }
+    }
+    let left: Vec<usize> = (0..ix.n())
+        .filter(|&v| partition1.contains(ix.vs[v]))
+        .collect();
+    let mate = hopcroft_karp_mates(&adj, &left);
     Ok(matching_of(&ix, &mate))
 }
 

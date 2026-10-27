@@ -53,3 +53,4 @@ Note: `rheaps` 0.16.2 matches JHeaps' tie-breaking for insert/pop, decrease-key 
 | `alg/partition/BipartitePartitioningTest` | `alg_small_tests::bipartite_partitioning_test` | done |
 | `alg/centers/GonAlgorithmTest` | `alg_small_tests::gon_algorithm_test` | done (`GonHeuristic` is a faithful port; `kroA200.tsp` in `fixtures/`) |
 | `alg/densesubgraph/*` (Goldberg, NodeWeights, NodeWeightsPerEdge, test base) | `alg_small_tests::goldberg_maximum_density_subgraph_tests` | done (the min-cut algorithm argument is a function over the flow network) |
+| `alg/decomposition/HeavyPathDecompositionTest`, `DulmageMendelsohnDecompositionTest` | `alg_decomposition_tests` | done (null-argument tests n/a) |

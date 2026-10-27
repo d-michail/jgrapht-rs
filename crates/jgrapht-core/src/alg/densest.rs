@@ -128,7 +128,9 @@ pub fn default_min_cut<V: Clone + Eq + std::hash::Hash + 'static>() -> MinCutFn<
     Box::new(|net, s, t| {
         // JGraphT's push-relabel never uses an arc with negative capacity (the edge-density
         // variant can produce them), which is the same as capacity 0.
-        let negative = net.edges().any(|e| net.edge_weight(e).is_some_and(|w| w < 0.0));
+        let negative = net
+            .edges()
+            .any(|e| net.edge_weight(e).is_some_and(|w| w < 0.0));
         let cut = if negative {
             let mut clamped = net.clone();
             let edges: Vec<_> = clamped.edges().cloned().collect();
