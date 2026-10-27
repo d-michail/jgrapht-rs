@@ -13,6 +13,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Basic GEXF 1.2 import and export support.
+//!
+//! GEXF (Graph Exchange XML Format) is an XML graph format used by Gephi.
+//! This module supports static graphs, typed node and edge attributes, labels,
+//! weights, edge types, and document metadata.
+
+#![deny(missing_docs)]
 
 use crate::exporter::format_f64;
 use crate::{
@@ -308,6 +314,12 @@ type VertexFactory<V> = Box<dyn FnMut(&str) -> V>;
 type VertexAttributeConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
 type EdgeAttributeConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()>>;
 
+/// Imports a graph from a GEXF data source.
+///
+/// The destination graph must support any loops and parallel edges in the
+/// input. GEXF `defaultedgetype` and per-edge `type` values do not change the
+/// destination graph's directionality. Edge weights are applied only when the
+/// destination is weighted. Vertex identifiers are reported under `ID`.
 pub struct GexfImporter<V, E = DefaultEdge> {
     vertex_factory: Option<VertexFactory<V>>,
     vertex_attribute_consumer: Option<VertexAttributeConsumer<V>>,
@@ -316,6 +328,7 @@ pub struct GexfImporter<V, E = DefaultEdge> {
 }
 
 impl<V, E> GexfImporter<V, E> {
+    /// Creates an importer which uses the destination graph's suppliers.
     pub fn new() -> Self {
         Self {
             vertex_factory: None,
@@ -324,24 +337,40 @@ impl<V, E> GexfImporter<V, E> {
             schema_validation: true,
         }
     }
+    /// Sets a factory which creates vertices from GEXF identifiers.
+    ///
+    /// The factory may be called for an endpoint before its node declaration
+    /// when edges precede nodes in the document.
     pub fn set_vertex_factory(&mut self, factory: impl FnMut(&str) -> V + 'static) {
         self.vertex_factory = Some(Box::new(factory));
     }
+    /// Sets the consumer notified for every vertex attribute.
+    ///
+    /// Node identifiers are additionally reported under the key `ID`.
     pub fn set_vertex_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&V, &str, &Attribute) -> Result<()> + 'static,
     ) {
         self.vertex_attribute_consumer = Some(Box::new(consumer));
     }
+    /// Sets the consumer notified for every edge attribute.
+    ///
+    /// Edge identifiers, sources, and targets are additionally reported under
+    /// `ID`, `source`, and `target`, respectively.
     pub fn set_edge_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&E, &str, &Attribute) -> Result<()> + 'static,
     ) {
         self.edge_attribute_consumer = Some(Box::new(consumer));
     }
+    /// Sets the schema-validation option.
+    ///
+    /// The streaming Rust parser currently records this compatibility option
+    /// but does not perform XML Schema validation.
     pub fn set_schema_validation(&mut self, enabled: bool) {
         self.schema_validation = enabled;
     }
+    /// Returns the configured schema-validation option.
     pub const fn schema_validation(&self) -> bool {
         self.schema_validation
     }
@@ -453,20 +482,32 @@ fn escape(value: &str) -> String {
         .replace('"', "&quot;")
 }
 
+/// An event-driven GEXF edge: `(source_id, target_id, weight)`.
 pub type GexfEdge = (String, String, Option<f64>);
 
+/// Imports GEXF as a stream of vertices, edges, and attributes.
+///
+/// Vertices are represented by their GEXF identifiers. Edges contain source
+/// and target identifiers plus an optional weight. Registered attribute
+/// definitions determine the types attached to attribute events.
 pub struct GexfEventDrivenImporter {
     schema_validation: bool,
 }
 impl GexfEventDrivenImporter {
+    /// Creates an event-driven GEXF importer.
     pub fn new() -> Self {
         Self {
             schema_validation: true,
         }
     }
+    /// Sets the schema-validation option.
+    ///
+    /// The streaming Rust parser currently records this compatibility option
+    /// but does not perform XML Schema validation.
     pub fn set_schema_validation(&mut self, enabled: bool) {
         self.schema_validation = enabled;
     }
+    /// Returns the configured schema-validation option.
     pub const fn schema_validation(&self) -> bool {
         self.schema_validation
     }
@@ -518,9 +559,18 @@ impl EventDrivenImporter for GexfEventDrivenImporter {
     }
 }
 
+/// Compatibility name for the simple GEXF graph importer.
 pub type SimpleGexfImporter<V, E = DefaultEdge> = GexfImporter<V, E>;
+/// Compatibility name for the simple event-driven GEXF importer.
 pub type SimpleGexfEventDrivenImporter = GexfEventDrivenImporter;
 
+/// Exports a graph as GEXF 1.2 XML.
+///
+/// Vertices receive sequential integer identifiers and edges receive
+/// sequential identifiers starting at zero. Metadata export is enabled by
+/// default; labels, weights, and per-edge type values are opt-in. Custom node
+/// and edge attributes must be registered before their provider values are
+/// emitted.
 pub struct GexfExporter<V, E> {
     base: BaseExporter<V, E>,
     parameters: std::collections::HashSet<GexfParameter>,
@@ -535,28 +585,45 @@ pub struct GexfExporter<V, E> {
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// Options which modify GEXF export behavior.
 pub enum GexfParameter {
+    /// Export graph edge weights.
     ExportEdgeWeights,
+    /// Export edge labels from the edge attribute named `label`.
     ExportEdgeLabels,
+    /// Export each edge's directed or undirected type.
     ExportEdgeTypes,
+    /// Export creator, description, and keyword metadata.
     ExportMeta,
 }
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// The graph component to which a registered GEXF attribute applies.
 pub enum GexfAttributeCategory {
+    /// A node (vertex) attribute.
     Node,
+    /// An edge attribute.
     Edge,
 }
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// An attribute type supported by GEXF.
 pub enum GexfAttributeType {
+    /// Boolean value.
     Boolean,
+    /// Integer value.
     Integer,
+    /// Long integer value.
     Long,
+    /// Single-precision floating-point value.
     Float,
+    /// Double-precision floating-point value.
     Double,
+    /// String value.
     String,
+    /// List of string values.
     ListString,
+    /// URI value.
     AnyUri,
 }
 impl GexfAttributeType {
@@ -586,6 +653,10 @@ where
     V: Clone + Eq + Hash + 'static,
     E: Clone + Eq + Hash + 'static,
 {
+    /// Creates a GEXF exporter with default integer identifier providers.
+    ///
+    /// Vertex identifiers start at one, edge identifiers start at zero, and
+    /// metadata export is enabled with `The JGraphT Library` as the creator.
     pub fn new() -> Self {
         let mut ids = IntegerIdProvider::new();
         let mut edge_ids = IntegerIdProvider::with_start(0);
@@ -605,9 +676,13 @@ where
             next_edge_attribute: 0,
         }
     }
+    /// Enables or disables exporting graph edge weights.
+    ///
+    /// This is a convenience wrapper for [`GexfParameter::ExportEdgeWeights`].
     pub fn set_export_edge_weights(&mut self, enabled: bool) {
         self.set_parameter(GexfParameter::ExportEdgeWeights, enabled);
     }
+    /// Enables or disables an export option.
     pub fn set_parameter(&mut self, parameter: GexfParameter, enabled: bool) {
         if enabled {
             self.parameters.insert(parameter);
@@ -615,27 +690,56 @@ where
             self.parameters.remove(&parameter);
         }
     }
+    /// Returns whether an export option is enabled.
     pub fn parameter(&self, parameter: GexfParameter) -> bool {
         self.parameters.contains(&parameter)
     }
+    /// Sets the creator written in the metadata section.
+    ///
+    /// The value is emitted only when [`GexfParameter::ExportMeta`] is enabled.
     pub fn set_creator(&mut self, value: impl Into<String>) {
         self.creator = Some(value.into());
     }
+    /// Sets the keywords written in the metadata section.
+    ///
+    /// The value is emitted only when [`GexfParameter::ExportMeta`] is enabled.
     pub fn set_keywords(&mut self, value: impl Into<String>) {
         self.keywords = Some(value.into());
     }
+    /// Sets the description written in the metadata section.
+    ///
+    /// The value is emitted only when [`GexfParameter::ExportMeta`] is enabled.
     pub fn set_description(&mut self, value: impl Into<String>) {
         self.description = Some(value.into());
     }
+    /// Sets the provider of vertex attributes.
+    ///
+    /// Only attributes registered with [`Self::register_attribute`] are
+    /// emitted.
     pub fn set_vertex_attribute_provider(
         &mut self,
         provider: impl Fn(&V) -> AttributeMap + 'static,
     ) {
         self.base.set_vertex_attribute_provider(provider);
     }
+    /// Sets the provider of edge attributes.
+    ///
+    /// Only registered attributes are emitted, except that the `label`
+    /// attribute supplies edge labels when [`GexfParameter::ExportEdgeLabels`]
+    /// is enabled.
     pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
         self.base.set_edge_attribute_provider(provider);
     }
+    /// Registers a node or edge attribute for export.
+    ///
+    /// `default` suppresses values equal to the declared default, while
+    /// `options` is written as the GEXF attribute's options declaration.
+    /// Node names `id` and `label` are reserved. Edge names `id`, `type`,
+    /// `label`, `source`, `target`, and `weight` are reserved. Name matching
+    /// for this check is ASCII case-insensitive.
+    ///
+    /// Registering an existing name replaces its definition and assigns it a
+    /// new numeric attribute identifier.
     pub fn register_attribute(
         &mut self,
         name: impl Into<String>,
