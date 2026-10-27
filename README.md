@@ -8,10 +8,11 @@ sets, views are plain wrapper types, and fallible operations return `Result` ins
 Heap-based algorithms (Dijkstra, A\*, Prim, Johnson, ...) use the priority queues from
 [`rheaps`](https://crates.io/crates/rheaps), the Rust port of JHeaps.
 
-> Status: pre-release. The API is not stable and the crates are not yet published.
+> **Status:** pre-release. The API is unstable, and neither crate is published yet. The workspace
+> requires Rust 1.88 or newer.
 >
-> The core graph, traversal, generator, algorithm (except the remaining shortest-path fidelity
-> work), sparse/map backend, and graph-I/O test suites are ported. See the
+> The graph, traversal, generator, sparse/map backend, and graph-I/O ports are complete. Most
+> algorithm packages are also complete; the remaining fidelity work is in shortest paths. See the
 > [core status register](crates/jgrapht/tests/STATUS.md),
 > [I/O status register](crates/jgrapht-io/tests/STATUS.md), and
 > [fidelity roadmap](docs/FIDELITY_ROADMAP.md) for the exact coverage and documented deviations.
@@ -47,7 +48,11 @@ fn main() -> Result<()> {
 }
 ```
 
-Run it with `cargo run --example quickstart`.
+From the repository root, run it with:
+
+```sh
+cargo run --example quickstart
+```
 
 ## Design
 
@@ -60,7 +65,7 @@ Run it with `cargo run --example quickstart`.
 | `AsSubgraph`, `EdgeReversedGraph`, ... | `view` wrappers: `AsSubgraph`, `MaskSubgraph`, `EdgeReversed`, `AsUndirected`, `AsWeighted`, `AsUnweighted`, `Unmodifiable`, `GraphUnion` |
 | `ListenableGraph`                      | `event::Listenable` + `GraphListener`                               |
 | `GraphPath` / `GraphWalk`              | `GraphWalk`                                                        |
-| `GraphIterator`s                       | `traverse` iterators (`Bfs`, `Dfs`, `TopologicalOrder`, ...)        |
+| `GraphIterator`                        | `traverse` iterators (`Bfs`, `Dfs`, `TopologicalOrder`, ...)        |
 | generators                             | `generate` (`GraphGenerator` trait)                                |
 | `*Algorithm` interfaces                | small traits (e.g. `ShortestPathAlgorithm`) plus plain functions   |
 
@@ -75,7 +80,7 @@ Edges are values too: use the built-in `DefaultEdge`, or your own type via
   lexicographic BFS, maximum cardinality search, degeneracy ordering
 - **Connectivity & structure:** connected and strongly connected components (Tarjan,
   Kosaraju), condensation, articulation points/bridges/blocks and the block–cut tree, Eulerian
-  circuits and trails, simple cycles, cycle bases, chordal graphs, transitive closure/reduction,
+  circuits, simple cycles, cycle bases, chordal graphs, transitive closure/reduction,
   LCA, Boyer–Myrvold planarity testing and embedding, (sub)graph isomorphism,
   Hamiltonian cycles/paths, negative cycle detection, simple paths and edge-disjoint shortest paths
 - **Spanning trees & flows:** Kruskal, Prim, Borůvka, minimum/maximum arborescences
