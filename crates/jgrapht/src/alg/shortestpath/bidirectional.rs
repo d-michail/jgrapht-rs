@@ -207,9 +207,9 @@ where
             break;
         };
         let adjacent: Vec<_> = if scan_forward {
-            graph.outgoing_of(vertex).collect()
+            graph.try_outgoing_of(vertex)?.collect()
         } else {
-            graph.incoming_of(vertex).collect()
+            graph.try_incoming_of(vertex)?.collect()
         };
         for (edge, successor) in adjacent {
             if successor == vertex {
@@ -334,9 +334,9 @@ impl<G: Graph> BidirectionalDijkstra<'_, G> {
             let v = me.nodes[i];
             me.settled.insert(v);
             let edges: Vec<_> = if forward {
-                g.outgoing_of(v).collect()
+                g.try_outgoing_of(v)?.collect()
             } else {
-                g.incoming_of(v).collect()
+                g.try_incoming_of(v)?.collect()
             };
             for (e, n) in edges {
                 let w = g.edge_weight(e).unwrap_or(1.0);

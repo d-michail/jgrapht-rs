@@ -507,7 +507,7 @@ fn reverse_shortest_path_tree<G: Graph>(
         }
         settled[vertex_index] = true;
         let vertex = vertices[vertex_index];
-        for (edge, source) in graph.incoming_of(vertex) {
+        for (edge, source) in graph.try_incoming_of(vertex)? {
             let weight = graph.edge_weight(edge).unwrap_or(1.0);
             if weight.is_nan() || weight < 0.0 {
                 return Err(GraphError::InvalidArgument(

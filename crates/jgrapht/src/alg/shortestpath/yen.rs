@@ -423,7 +423,7 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
             if value > distance[vertex] {
                 continue;
             }
-            for (edge, predecessor) in self.graph.incoming_of(vertex) {
+            for (edge, predecessor) in self.graph.try_incoming_of(vertex)? {
                 let weight = self.graph.edge_weight(edge).unwrap_or(1.0);
                 if weight.is_nan() || weight < 0.0 {
                     return Err(GraphError::InvalidArgument(

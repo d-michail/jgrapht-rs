@@ -22,41 +22,74 @@ pub trait GraphExt: Graph {
     }
 
     /// Adjacent vertices, ignoring direction. Parallel edges yield repeats.
+    fn try_neighbors_of<'a>(
+        &'a self,
+        v: &'a Self::Vertex,
+    ) -> Result<impl Iterator<Item = &'a Self::Vertex>> {
+        Ok(self
+            .edges_of(v)?
+            .filter_map(move |e| self.opposite_vertex(e, v)))
+    }
+
+    /// Adjacent vertices, ignoring direction. Parallel edges yield repeats.
+    ///
+    /// Prefer [`GraphExt::try_neighbors_of`] in fallible APIs. This compatibility helper panics
+    /// when the graph does not provide the required incidence index.
     fn neighbors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex> {
-        self.edges_of(v)
-            .unwrap()
-            .filter_map(move |e| self.opposite_vertex(e, v))
+        self.try_neighbors_of(v).unwrap()
     }
 
     /// Edges leaving `v` with the vertex they lead to. Directed graphs follow edge direction,
     /// undirected graphs yield every incident edge.
-    fn outgoing_of<'a>(
+    fn try_outgoing_of<'a>(
         &'a self,
         v: &'a Self::Vertex,
-    ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)> {
-        self.out_edges_of(v).unwrap().filter_map(move |e| {
+    ) -> Result<impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>> {
+        Ok(self.out_edges_of(v)?.filter_map(move |e| {
             let (s, t) = self.edge_endpoints(e)?;
             if self.is_edge_directed(e) {
                 (s == v).then_some((e, t))
             } else {
                 Some((e, if s == v { t } else { s }))
             }
-        })
+        }))
     }
 
-    /// Edges entering `v` with the vertex they come from (all incident edges if undirected).
-    fn incoming_of<'a>(
+    /// Edges leaving `v` with the vertex they lead to.
+    ///
+    /// Prefer [`GraphExt::try_outgoing_of`] in fallible APIs. This compatibility helper panics
+    /// when the graph does not provide outgoing incidence.
+    fn outgoing_of<'a>(
         &'a self,
         v: &'a Self::Vertex,
     ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)> {
-        self.in_edges_of(v).unwrap().filter_map(move |e| {
+        self.try_outgoing_of(v).unwrap()
+    }
+
+    /// Edges entering `v` with the vertex they come from (all incident edges if undirected).
+    fn try_incoming_of<'a>(
+        &'a self,
+        v: &'a Self::Vertex,
+    ) -> Result<impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>> {
+        Ok(self.in_edges_of(v)?.filter_map(move |e| {
             let (s, t) = self.edge_endpoints(e)?;
             if self.is_edge_directed(e) {
                 (t == v).then_some((e, s))
             } else {
                 Some((e, if s == v { t } else { s }))
             }
-        })
+        }))
+    }
+
+    /// Edges entering `v` with the vertex they come from.
+    ///
+    /// Prefer [`GraphExt::try_incoming_of`] in fallible APIs. This compatibility helper panics
+    /// when the graph does not provide incoming incidence.
+    fn incoming_of<'a>(
+        &'a self,
+        v: &'a Self::Vertex,
+    ) -> impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)> {
+        self.try_incoming_of(v).unwrap()
     }
 
     /// Vertices reachable over one edge (see [`GraphExt::outgoing_of`]); repeats for parallel edges.

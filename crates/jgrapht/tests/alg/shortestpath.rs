@@ -24,6 +24,8 @@ mod disjoint_paths;
 mod eppstein;
 #[path = "shortestpath/foundational_classes.rs"]
 mod foundational_classes;
+#[path = "shortestpath/incidence_errors.rs"]
+mod incidence_errors;
 #[path = "shortestpath/int_vertex_dijkstra.rs"]
 mod int_vertex_dijkstra;
 #[path = "shortestpath/johnson.rs"]

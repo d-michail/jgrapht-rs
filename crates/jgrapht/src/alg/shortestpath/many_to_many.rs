@@ -148,7 +148,7 @@ fn reverse_tree<G: Graph>(
         if remaining.is_empty() {
             break;
         }
-        for (edge, previous) in graph.incoming_of(vertices[vertex]) {
+        for (edge, previous) in graph.try_incoming_of(vertices[vertex])? {
             let weight = graph.edge_weight(edge).unwrap_or(1.0);
             if weight.is_nan() || weight < 0.0 {
                 return Err(GraphError::InvalidArgument(

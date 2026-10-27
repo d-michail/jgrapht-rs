@@ -124,9 +124,9 @@ fn distances<G: Graph>(
         }
         settled.insert(vertex);
         let adjacent: Vec<_> = if reverse {
-            graph.incoming_of(vertex).collect()
+            graph.try_incoming_of(vertex)?.collect()
         } else {
-            graph.outgoing_of(vertex).collect()
+            graph.try_outgoing_of(vertex)?.collect()
         };
         for (edge, target) in adjacent {
             let candidate = value + graph.edge_weight(edge).unwrap_or(1.0);
