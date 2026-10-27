@@ -17,8 +17,8 @@ the complete Java test matrix has not yet been brought across.
 | DOT | done | all 52 upstream importer/exporter/utility cases ported, including scoped defaults, nested endpoint subgraphs, ports, strict graphs, HTML values, factories, consumers and subgraph export |
 | GraphML | done | all 49 upstream exporter, graph importer, simple importer, event importer and integer edge-list cases ported, including typed defaults, nested graphs, validation, factories, consumers and registered attributes |
 | GEXF | done | all 11 upstream exporter, simple importer and event importer cases ported, including typed declarations, metadata, nested-graph exclusion, consumers, options, labels, edge types and weights |
-| TSPLIB | partial | coordinate instances, nine distance types, complete weighted graphs, metadata and embedded tours |
+| TSPLIB | done | all 24 upstream importer cases ported, including rich metadata, nine distance types, complete weighted graphs, distinctness checks, embedded and standalone tours, and validation failures |
 
-Current Rust integration tests: 285, including injected reader/writer failures and importer reuse.
+Current Rust integration tests: 309, including injected reader/writer failures and importer reuse.
 The remaining work is to port the upstream tests format by
 format and close every behavior gap they expose.
