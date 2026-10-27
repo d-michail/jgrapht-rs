@@ -132,6 +132,7 @@ impl<'g, G: Graph> GreedyMultiplicativeSpanner<'g, G> {
         })
     }
 
+    /// Computes a graph spanner.
     pub fn spanner(&self) -> Result<Spanner<G::Edge>> {
         let weighted = self.graph.graph_type().weighted;
         let ix = Indexed::new(self.graph);

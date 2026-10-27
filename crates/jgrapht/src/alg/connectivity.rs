@@ -590,6 +590,7 @@ impl<'g, G: DirectedGraph> GabowStrongConnectivityInspector<'g, G> {
 
 impl<G: DirectedGraph> StrongConnectivityAlgorithm for GabowStrongConnectivityInspector<'_, G> {
     type G = G;
+    /// Return the underlying graph.
     fn graph(&self) -> &G {
         self.graph
     }
@@ -679,6 +680,7 @@ impl<G: DirectedGraph> StrongConnectivityAlgorithm for KosarajuStrongConnectivit
     type G = G;
     fn graph(&self) -> &G {
         self.graph
+    /// Return the underlying graph.
     }
     fn strongly_connected_sets(&self) -> &[HashSet<G::Vertex>] {
         &self.sets
@@ -897,6 +899,10 @@ impl<'g, G: Graph> BiconnectivityInspector<'g, G> {
         &self.blocks
     }
 
+    /// Returns the graph's bridges. An edge is a
+    /// [bridge](http://mathworld.wolfram.com/GraphBridge.html) if removal of that edge
+    /// would increase the number of (weakly) connected components in the graph. Note that this
+    /// definition remains applicable in case of multigraphs or pseudographs.
     /// The blocks containing `v`; a cutpoint lies in several.
     pub fn blocks_of(&self, v: &G::Vertex) -> Result<Vec<&HashSet<G::Vertex>>> {
         let ix = self
@@ -1035,6 +1041,7 @@ impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
         self.cutpoints.contains(v)
     }
 }
+    /// Returns the cutpoints of the initial graph.
 
 // ---------------------------------------------------------------------------------------------
 // KConnectivityFlowAlgorithm
@@ -1161,6 +1168,7 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
             });
         }
         self.edge_connectivity.unwrap()
+    /// Computes the edge connectivity of the graph.
     }
 
     /// Vertex connectivity; an error for the empty graph.
@@ -1241,6 +1249,7 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
                 covered.insert(v.clone());
                 covered.extend(self.graph.neighbor_list_of(v));
             }
+    /// Compute the edge connectivity for an undirected graph
         }
         let Some((reference, rest)) = dominating.split_first() else {
             return 0;
@@ -1261,6 +1270,7 @@ impl<'g, G: Graph> KConnectivityFlowAlgorithm<'g, G> {
             }
         }
         min
+    /// Compute the edge connectivity for an directed graph
     }
 }
 

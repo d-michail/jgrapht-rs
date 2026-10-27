@@ -109,6 +109,7 @@ impl<'g, G: Graph> MaximumWeightBipartiteMatching<'g, G> {
         &self.matching_weight
     }
 
+    /// Returns the weight of the matching.
     fn weight(&self, e: &G::Edge) -> Result<DBig> {
         big_decimal(self.graph.edge_weight(e).unwrap_or(1.0))
     }
@@ -295,6 +296,7 @@ impl<'g, G: Graph> MaximumWeightBipartiteMatching<'g, G> {
     }
 }
 impl<G: Graph> MatchingAlgorithm<G::Vertex, G::Edge> for MaximumWeightBipartiteMatching<'_, G> {
+    /// Compute a matching for a given graph.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         // test input instance

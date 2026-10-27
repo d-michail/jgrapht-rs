@@ -222,9 +222,11 @@ impl<'g, G: Graph> AHURootedTreeIsomorphismInspector<'g, G> {
 }
 
 impl<'g, G: Graph> IsomorphismInspector<'g, G> for AHURootedTreeIsomorphismInspector<'g, G> {
+    /// Get an iterator over all calculated (isomorphic) mappings between two graphs.
     fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_> {
         Box::new(self.mapping().into_iter())
     }
+    /// Check if an isomorphism exists.
     fn isomorphism_exists(&self) -> bool {
         self.forward().is_some()
     }
@@ -350,9 +352,11 @@ impl<'g, G: Graph> AHUUnrootedTreeIsomorphismInspector<'g, G> {
 }
 
 impl<'g, G: Graph> IsomorphismInspector<'g, G> for AHUUnrootedTreeIsomorphismInspector<'g, G> {
+    /// Get an iterator over all calculated (isomorphic) mappings between two graphs.
     fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_> {
         Box::new(self.mapping().into_iter())
     }
+    /// Check if an isomorphism exists.
     fn isomorphism_exists(&self) -> bool {
         self.rooted().is_some()
     }
@@ -488,9 +492,11 @@ impl<'g, G: Graph> AHUForestIsomorphismInspector<'g, G> {
 }
 
 impl<'g, G: Graph> IsomorphismInspector<'g, G> for AHUForestIsomorphismInspector<'g, G> {
+    /// Get an iterator over all calculated (isomorphic) mappings between two graphs.
     fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_> {
         Box::new(self.mapping().into_iter())
     }
+    /// Check if an isomorphism exists.
     fn isomorphism_exists(&self) -> bool {
         self.mapping().is_some()
     }

@@ -310,6 +310,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for TransitNodeRoutingShortestPath<'_, '
         Ok(result)
     }
 
+    /// Get a shortest path from a source vertex to a sink vertex.
     fn path(
         &self,
         source: &G::Vertex,

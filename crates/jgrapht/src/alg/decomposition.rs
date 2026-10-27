@@ -331,9 +331,11 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
 
     pub fn heavy_edges(&self) -> &HashSet<G::Edge> {
         &self.heavy_edges
+    /// Set of heavy edges.
     }
     pub fn light_edges(&self) -> &HashSet<G::Edge> {
         &self.light_edges
+    /// Set of light edges.
     }
 
     /// The paths as walks (with their vertex count as weight, like JGraphT).
@@ -362,9 +364,23 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
     }
     pub fn vertex_map(&self) -> &HashMap<G::Vertex, usize> {
         &self.vertex_map
+    /// Return the vertex map, a mapping from vertices to unique integers.
+    ///
+    /// For each vertex $v \in V$, let $vertexMap(v) = x$ such that no two vertices share the
+    /// same x and all x's are integers between $0$ and $|V| - 1$. Let $indexList(x) = v$ be the
+    /// reverse mapping from integers to vertices.
+    ///
+    /// Note: The structure returned is immutable.
     }
     pub fn index_list(&self) -> &[G::Vertex] {
         &self.index_list
+    /// Return the index list, a mapping from unique integers to vertices.
+    ///
+    /// For each vertex $v \in V$, let $vertexMap(v) = x$ such that no two vertices share the
+    /// same x and all x's are integers between $0$ and $|V| - 1$. Let $indexList(x) = v$ be the
+    /// reverse mapping from integers to vertices.
+    ///
+    /// Note: The structure returned is immutable.
     }
     /// Path index of the vertex with the given index (`None` for vertices outside the trees).
     pub fn path_array(&self) -> &[Option<usize>] {
@@ -372,21 +388,35 @@ impl<'g, G: Graph> HeavyPathDecomposition<'g, G> {
     }
     pub fn position_in_path_array(&self) -> &[Option<usize>] {
         &self.position_in_path
+    /// Return the internal positionInPath array. For each vertex $v$,
+    /// $positionInPathArray\[normalizeVertex(v)\] = k$ iff $v$ appears as the $k-th$ vertex on its
+    /// path (0-indexed) or $-1$ if $v$ doesn't belong to any path.
     }
     pub fn first_node_in_path_array(&self) -> &[usize] {
         &self.first_node_in_path
+    /// Return the internal firstNodeInPath array. For each path $i$, $firstNodeInPath\[i\] =
+    /// normalizeVertex(v)$ iff $v$ appears as the first vertex on the path.
     }
     pub fn parent_array(&self) -> &[Option<usize>] {
         &self.parent
+    /// Return the internal parent array. For each vertex $v \in V$,
+    /// $parentArray[normalizeVertex(v)] = normalizeVertex(u)$ if $getParent(v) = u$ or $-1$ if
+    /// $getParent(v) = null$.
     }
     pub fn depth_array(&self) -> &[Option<usize>] {
         &self.depth
+    /// Return the internal depth array. For each vertex $v \in V$,
+    /// $depthArray[normalizeVertex(v)] = getDepth(v)$
     }
     pub fn size_subtree_array(&self) -> &[usize] {
         &self.size_subtree
+    /// Return the internal sizeSubtree array. For each vertex $v$,
+    /// $sizeSubtreeArray\[normalizeVertex(v)\] = getSizeSubtree(v)$
     }
     pub fn component_array(&self) -> &[Option<usize>] {
         &self.component
+    /// Return the internal component array. For each vertex $v$,
+    /// $componentArray[normalizeVertex(v)] = getComponent(v)$
     }
 }
 

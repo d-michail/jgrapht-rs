@@ -103,6 +103,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for BidirectionalDijkstraShortestPath<'_
         materialize_single_source(self.graph, source, |target| self.path(source, target))
     }
 
+    /// Get a shortest path from a source vertex to a sink vertex.
     fn path(
         &self,
         source: &G::Vertex,

@@ -296,6 +296,11 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Tests the planarity of the `graph`. Returns true if the input graph is planar, false
+    /// otherwise. If this method returns true, the combinatorial embedding of the `graph` is
+    /// provided after the call to the `PlanarityTestingAlgorithm#getEmbedding()`. Otherwise, a
+    /// Kuratowski subdivision is provided after the call to the
+    /// `PlanarityTestingAlgorithm#getKuratowskiSubdivision()`.
     pub fn is_planar(&mut self) -> bool {
         self.lazy_test_planarity()
     }
@@ -639,6 +644,7 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Returns the opposite node of the `node`
     fn opposite(&self, e: EdgeId, x: NodeId) -> NodeId {
         let edge = &self.edges[e];
         if edge.source == x {
@@ -1362,6 +1368,9 @@ impl<'g, G: Graph> BoyerMyrvoldPlanarityInspector<'g, G> {
         }
     }
 
+    /// Effectively is a method for finding node `z` in the notations of the original paper.
+    /// The search proceeds in the reverse order of the path from the `backEdge` to the node
+    /// `w`
     fn next_on_path(&self, w: NodeId, back_edge: EdgeId) -> NodeId {
         let source = self.edges[back_edge].source;
         if source == w {

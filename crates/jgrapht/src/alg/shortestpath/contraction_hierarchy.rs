@@ -653,6 +653,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for ContractionHierarchyBidirectionalDij
         Ok(result)
     }
 
+    /// Get a shortest path from a source vertex to a sink vertex.
     fn path(
         &self,
         source: &G::Vertex,
@@ -785,6 +786,8 @@ impl<G: Graph> ShortestPathAlgorithm<G> for CHManyToManyShortestPaths<'_, '_, G>
         ContractionHierarchyBidirectionalDijkstra::new(self.hierarchy).single_source(source)
     }
 
+    /// Return the path from the `source` vertex to the `target` vertex. If no such
+    /// path exists, null is returned.
     fn path(
         &self,
         source: &G::Vertex,

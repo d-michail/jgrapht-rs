@@ -177,6 +177,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
         Ok(self.neighbors_of(g, v)?.list())
     }
 
+    /// Notifies that an edge has been added to the graph.
     pub fn edge_added(&mut self, source: &V, target: &V) {
         if let Some(n) = self.successors.get_mut(source) {
             n.add(target.clone());
@@ -192,6 +193,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
         }
     }
 
+    /// Notifies that an edge has been removed from the graph.
     pub fn edge_removed(&mut self, source: &V, target: &V) -> Result<()> {
         if let Some(n) = self.successors.get_mut(source) {
             n.remove(target)?;
@@ -208,6 +210,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
         Ok(())
     }
 
+    /// Notifies that a vertex has been removed from the graph.
     pub fn vertex_removed(&mut self, v: &V) {
         self.successors.remove(v);
         self.predecessors.remove(v);

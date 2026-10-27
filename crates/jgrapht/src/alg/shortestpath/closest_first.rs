@@ -98,6 +98,14 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
         }
     }
 
+    /// Return all paths using the traditional representation of the shortest path tree, which stores
+    /// for each vertex (a) the distance of the path from the source vertex and (b) the last edge
+    /// used to reach the vertex from the source vertex.
+    ///
+    /// Only the paths to vertices which are already returned by the iterator will be shortest paths.
+    /// Additional paths to vertices which are not yet returned (settled) by the iterator might be
+    /// included with the following properties: the distance will be an upper bound on the actual
+    /// shortest path and the distance will be inside the radius of the search.
     pub fn distance_and_predecessor_map(&self) -> HashMap<G::Vertex, (f64, Option<G::Edge>)> {
         self.distance
             .iter()

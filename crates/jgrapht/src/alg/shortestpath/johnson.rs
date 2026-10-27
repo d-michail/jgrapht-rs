@@ -88,6 +88,7 @@ impl<'g, G: Graph> JohnsonShortestPaths<'g, G> {
         })
     }
 
+    /// Returns the graph over which this set of paths is defined.
     pub fn graph(&self) -> &G {
         self.graph
     }
@@ -101,6 +102,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for JohnsonShortestPaths<'_, G> {
             .ok_or(GraphError::VertexNotFound)
     }
 
+    /// Get a shortest path from a source vertex to a sink vertex.
     fn path(
         &self,
         source: &G::Vertex,
@@ -112,6 +114,8 @@ impl<G: Graph> ShortestPathAlgorithm<G> for JohnsonShortestPaths<'_, G> {
         Ok(self.paths.path(source, target))
     }
 
+    /// Get the weight of the shortest path from a source vertex to a sink vertex. Returns
+    /// `Double#POSITIVE_INFINITY` if no path exists.
     fn path_weight(&self, source: &G::Vertex, target: &G::Vertex) -> Result<f64> {
         if !self.graph.contains_vertex(source) || !self.graph.contains_vertex(target) {
             return Err(GraphError::VertexNotFound);

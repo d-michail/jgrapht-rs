@@ -72,6 +72,7 @@ impl FRQuadTree {
         self.nodes.len() - 1
     }
 
+    /// Get the root node of the tree.
     pub fn root(&self) -> NodeId {
         0
     }
@@ -148,6 +149,7 @@ impl FRQuadTree {
         }
     }
 
+    /// Get the total number of points under this node.
     pub fn number_of_points(&self, n: NodeId) -> usize {
         match &self.nodes[n].points {
             Some(p) => p.len(),
@@ -167,6 +169,7 @@ impl FRQuadTree {
         }
     }
 
+    /// Get the centroid of all points contained in this node.
     pub fn centroid(&self, n: NodeId) -> Result<Point2D> {
         match &self.nodes[n].points {
             Some(p) => {
@@ -438,6 +441,7 @@ impl<V: Eq + std::hash::Hash + Clone, R: RandomSource> FRLayoutAlgorithm2D<V, R>
 }
 
 impl<G: Graph, R: RandomSource> LayoutAlgorithm2D<G> for FRLayoutAlgorithm2D<G::Vertex, R> {
+    /// Layout a graph.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         self.saved_comparisons = 0;
         let area = model.drawable_area();

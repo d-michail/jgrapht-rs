@@ -436,6 +436,10 @@ impl<'g, G: Graph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
         self
     }
 
+    /// Calculates a partition representation of the capacitated spanning tree. With that, it is
+    /// possible to calculate the to the partition corresponding capacitated spanning tree in
+    /// polynomial time by calculating the MSTs. The labels of the partition that are returned are
+    /// non-negative.
     pub(crate) fn solution(&mut self) -> Solution<G::Vertex> {
         let p = &self.problem;
         let mut labels: IndexMap<G::Vertex, usize> = IndexMap::new();
@@ -519,6 +523,7 @@ impl<'g, G: Graph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
         result
     }
 
+    /// Returns the list of the best options as stored in `savings`.
     fn list_of_best_options(&self, savings: &IndexMap<G::Vertex, f64>) -> Vec<G::Vertex> {
         let mut best: Vec<G::Vertex> = Vec::new();
         for (key, &value) in savings {
@@ -596,6 +601,7 @@ impl<'g, G: Graph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
 impl<'g, G: Graph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
     for EsauWilliamsCapacitatedMinimumSpanningTree<'g, G>
 {
+    /// Computes a capacitated spanning tree.
     fn capacitated_spanning_tree(&mut self) -> Result<CapacitatedSpanningTree<G::Vertex, G::Edge>> {
         if self.executed {
             return Ok(self.best.calculate_resulting_spanning_tree(&self.problem));
@@ -1011,6 +1017,7 @@ impl<'g, G: Graph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G> {
 impl<'g, G: Graph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
     for AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G>
 {
+    /// Computes a capacitated spanning tree.
     fn capacitated_spanning_tree(&mut self) -> Result<CapacitatedSpanningTree<G::Vertex, G::Edge>> {
         if !self.executed {
             self.best = self.run()?;

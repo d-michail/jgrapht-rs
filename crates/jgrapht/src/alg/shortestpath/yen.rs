@@ -524,6 +524,8 @@ impl<'g, G: Graph> BoundedPrunedYenKShortestPath<'g, G> {
         sink: &G::Vertex,
         k: usize,
     ) -> Result<Vec<GraphWalk<G::Vertex, G::Edge>>> {
+    /// Get a list of k-shortest paths from a source vertex to a sink vertex. If no such paths exist
+    /// this method returns an empty list.
         if !self.graph.contains_vertex(source) || !self.graph.contains_vertex(sink) {
             return Err(GraphError::VertexNotFound);
         }

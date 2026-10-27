@@ -103,6 +103,7 @@ impl<V> Default for CircularLayoutAlgorithm2D<V> {
 }
 
 impl<G: Graph> LayoutAlgorithm2D<G> for CircularLayoutAlgorithm2D<G::Vertex> {
+    /// Layout a graph.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         init(&self.initializer, graph, model);
         let area = model.drawable_area();
@@ -157,6 +158,7 @@ impl<R: RandomSource> RandomLayoutAlgorithm2D<R> {
 }
 
 impl<G: Graph, R: RandomSource> LayoutAlgorithm2D<G> for RandomLayoutAlgorithm2D<R> {
+    /// Layout a graph.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         let area = model.drawable_area();
         // like the Java original, both offsets use the area's minimum x
@@ -196,6 +198,7 @@ impl RescaleLayoutAlgorithm2D {
 }
 
 impl<G: Graph> LayoutAlgorithm2D<G> for RescaleLayoutAlgorithm2D {
+    /// Layout a graph.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         let old = model.drawable_area();
         let cx = old.min_x() + old.width() / 2.0;
@@ -476,6 +479,7 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
 impl<G: Graph> LayoutAlgorithm2D<G> for TwoLayeredBipartiteLayout2D<G::Vertex> {
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         let (left, mut right) = self.compute_partitions(graph)?;
+    /// Layout a graph.
         self.draw_first(&left, model)?;
         if right.is_empty() {
             return Err(GraphError::InvalidArgument(

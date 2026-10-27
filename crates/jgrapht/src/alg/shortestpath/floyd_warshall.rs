@@ -106,10 +106,12 @@ impl<'g, G: Graph> FloydWarshallShortestPaths<'g, G> {
         })
     }
 
+    /// Returns the graph over which this set of paths is defined.
     pub fn graph(&self) -> &G {
         self.graph
     }
 
+    /// Get the total number of shortest paths. Does not count the paths from a vertex to itself.
     pub fn shortest_paths_count(&self) -> usize {
         self.graph
             .vertices()
@@ -124,6 +126,11 @@ impl<'g, G: Graph> FloydWarshallShortestPaths<'g, G> {
             .sum()
     }
 
+    /// Returns the first hop, i.e., the second node on the shortest path from $a$ to $b$. Lookup
+    /// time is $O(1)$. If the shortest path from $a$ to $b$ is $a,c,d,e,b$, this method returns $c$.
+    /// If the next invocation would query the first hop on the shortest path from $c$ to $b$, vertex
+    /// $d$ would be returned, etc. This method is computationally cheaper than calling
+    /// `getPath(Object, Object)` and then reading the first vertex.
     pub fn first_hop(&self, source: &G::Vertex, target: &G::Vertex) -> Option<G::Vertex> {
         if source == target {
             return None;
@@ -131,6 +138,12 @@ impl<'g, G: Graph> FloydWarshallShortestPaths<'g, G> {
         self.paths.path(source, target)?.vertices.get(1).cloned()
     }
 
+    /// Returns the last hop, i.e., the second to last node on the shortest path from $a$ to $b$.
+    /// Lookup time is $O(1)$. If the shortest path from $a$ to $b$ is $a,c,d,e,b$, this method
+    /// returns $e$. If the next invocation would query the next hop on the shortest path from $c$ to
+    /// $e$, vertex $d$ would be returned, etc. This method is computationally cheaper than calling
+    /// `getPath(Object, Object)` and then reading the vertex. The first invocation of this
+    /// method populates a last hop matrix.
     pub fn last_hop(&self, source: &G::Vertex, target: &G::Vertex) -> Option<G::Vertex> {
         if source == target {
             return None;
@@ -150,6 +163,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for FloydWarshallShortestPaths<'_, G> {
             .ok_or(GraphError::VertexNotFound)
     }
 
+    /// Get a shortest path from a source vertex to a sink vertex.
     fn path(
         &self,
         source: &G::Vertex,
@@ -161,6 +175,8 @@ impl<G: Graph> ShortestPathAlgorithm<G> for FloydWarshallShortestPaths<'_, G> {
         Ok(self.paths.path(source, target))
     }
 
+    /// Get the weight of the shortest path from a source vertex to a sink vertex. Returns
+    /// `Double#POSITIVE_INFINITY` if no path exists.
     fn path_weight(&self, source: &G::Vertex, target: &G::Vertex) -> Result<f64> {
         if !self.graph.contains_vertex(source) || !self.graph.contains_vertex(target) {
             return Err(GraphError::VertexNotFound);

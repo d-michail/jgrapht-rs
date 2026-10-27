@@ -479,6 +479,7 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
         Ok(self.scores.as_ref().unwrap())
     }
 
+    /// Get an edge score
     pub fn edge_score(&mut self, e: &G::Edge) -> Result<f64, GraphError> {
         if !self.graph.contains_edge(e) {
             return Err(GraphError::InvalidArgument(
@@ -644,6 +645,7 @@ impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
 ///
 /// Scores of all vertices, available after construction (`VertexScoringAlgorithm`).
 pub trait VertexScoringAlgorithm<V, S: Clone = f64> {
+    /// Get a map with the scores of all edges
     fn scores(&self) -> &HashMap<V, S>;
 
     fn vertex_score(&self, v: &V) -> Result<S, GraphError>
@@ -746,6 +748,7 @@ impl<V: Eq + std::hash::Hash + Clone> ClosenessCentrality<V> {
 }
 
 impl<V> VertexScoringAlgorithm<V> for ClosenessCentrality<V> {
+    /// Get a map with the scores of all vertices
     fn scores(&self) -> &HashMap<V, f64> {
         &self.scores
     }
@@ -812,6 +815,7 @@ impl<V: Eq + std::hash::Hash + Clone> HarmonicCentrality<V> {
 }
 
 impl<V> VertexScoringAlgorithm<V> for HarmonicCentrality<V> {
+    /// Get a map with the scores of all vertices
     fn scores(&self) -> &HashMap<V, f64> {
         &self.scores
     }
@@ -857,12 +861,19 @@ impl<V: Eq + std::hash::Hash + Clone> Coreness<V> {
         Ok(Coreness { scores, degeneracy })
     }
 
+    /// Compute the degeneracy of a graph.
+    ///
+    /// The degeneracy of a graph is the smallest value of $k$ for which it is $k$-degenerate. In
+    /// graph theory, a $k$-degenerate graph is an undirected graph in which every subgraph has a
+    /// vertex of degree at most $k$: that is, some vertex in the subgraph touches $k$ or fewer of
+    /// the subgraph's edges.
     pub fn degeneracy(&self) -> usize {
         self.degeneracy
     }
 }
 
 impl<V> VertexScoringAlgorithm<V, usize> for Coreness<V> {
+    /// Get a map with the scores of all vertices
     fn scores(&self) -> &HashMap<V, usize> {
         &self.scores
     }
@@ -969,6 +980,7 @@ impl<'g, G: Graph> ClusteringCoefficient<'g, G> {
 }
 
 impl<G: Graph> VertexScoringAlgorithm<G::Vertex> for ClusteringCoefficient<'_, G> {
+    /// Get a map with the local clustering coefficients of all vertices
     fn scores(&self) -> &HashMap<G::Vertex, f64> {
         &self.scores
     }
@@ -1077,6 +1089,7 @@ impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
 }
 
 impl<V> VertexScoringAlgorithm<V> for EigenvectorCentrality<V> {
+    /// Get a map with the scores of all vertices
     fn scores(&self) -> &HashMap<V, f64> {
         &self.scores
     }
@@ -1175,6 +1188,7 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
 }
 
 impl<V> VertexScoringAlgorithm<V> for KatzCentrality<V> {
+    /// Get a map with the scores of all vertices
     fn scores(&self) -> &HashMap<V, f64> {
         &self.scores
     }
@@ -1284,6 +1298,7 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
 }
 
 impl<V> VertexScoringAlgorithm<V> for PageRank<V> {
+    /// Get a map with the scores of all vertices
     fn scores(&self) -> &HashMap<V, f64> {
         &self.scores
     }
@@ -1453,6 +1468,7 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
 }
 
 impl<V> VertexScoringAlgorithm<V> for BetweennessCentrality<V> {
+    /// Get a map with the scores of all vertices
     fn scores(&self) -> &HashMap<V, f64> {
         &self.scores
     }
@@ -1716,6 +1732,7 @@ impl<V: Eq + std::hash::Hash> ApBetweennessCentrality<V> {
 }
 
 impl<V> VertexScoringAlgorithm<V, ApFloat> for ApBetweennessCentrality<V> {
+    /// Get a map with the scores of all vertices
     fn scores(&self) -> &HashMap<V, ApFloat> {
         &self.scores
     }

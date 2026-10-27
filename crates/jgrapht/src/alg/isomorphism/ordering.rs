@@ -128,6 +128,7 @@ impl<'g, G: Graph> GraphOrdering<'g, G> {
         }
     }
 
+    /// be careful: there's no check against an invalid vertexNumber
     pub fn vertex(&self, v: usize) -> &'g G::Vertex {
         self.vertices[v]
     }

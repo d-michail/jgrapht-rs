@@ -30,9 +30,11 @@ impl<A, B> Pair<A, B> {
     pub fn of(first: A, second: B) -> Self {
         Pair { first, second }
     }
+    /// Get the first element of the pair
     pub fn first(&self) -> &A {
         &self.first
     }
+    /// Get the second element of the pair
     pub fn second(&self) -> &B {
         &self.second
     }
@@ -103,6 +105,7 @@ impl<T> UnorderedPair<T> {
 }
 
 impl<T: PartialEq> UnorderedPair<T> {
+    /// Assess if this pair contains an element.
     pub fn has_element(&self, t: &T) -> bool {
         self.first == *t || self.second == *t
     }

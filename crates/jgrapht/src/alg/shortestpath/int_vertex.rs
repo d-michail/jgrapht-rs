@@ -172,6 +172,7 @@ where
         self.run(source, None)
     }
 
+    /// Get a shortest path from a source vertex to a sink vertex.
     fn path(
         &self,
         source: &G::Vertex,

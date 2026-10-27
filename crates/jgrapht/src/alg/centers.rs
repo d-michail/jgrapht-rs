@@ -148,6 +148,7 @@ impl<V: Eq + Hash + Clone, R: RandomSource> GonHeuristic<V, R> {
     }
 }
 
+/// Checks that graph is undirected, complete, and non-empty
 fn check_graph<G: Graph>(graph: &G) -> Result<()> {
     props::require_undirected(graph)?;
     if graph.vertex_count() == 0 {
@@ -162,6 +163,7 @@ fn check_graph<G: Graph>(graph: &G) -> Result<()> {
 }
 
 impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonHeuristic<V, R> {
+    /// Computes the set of $k$ centers by using the Gon heuristic.
     fn centers<G: Graph<Vertex = V>>(&mut self, graph: &G, k: usize) -> Result<IndexSet<V>> {
         check_graph(graph)?;
         let n = graph.vertex_count();
@@ -251,12 +253,19 @@ impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonH
         Ok(centers)
     }
 
+    /// Computes the assignment of vertices to their respective centers.
+    ///
+    /// This method computes and returns the mapping function $f:V\setminus C \rightarrow C$.
+    /// Each key represents a vertex in the graph, and the
+    /// corresponding value represents the center to which the vertex is assigned. The mapping
+    /// reflects the result of any center location algorithm after the `getCenters` method has been called.
     fn assignment(&self) -> Result<&IndexMap<V, V>> {
         self.assignment.as_ref().ok_or_else(|| {
             GraphError::Unsupported("You must call centers() before calling assignment()".into())
         })
     }
 
+    /// Obtains the covering radius of the solution.
     fn covering_radius(&self) -> Result<f64> {
         if self.assignment.is_none() {
             return Err(GraphError::Unsupported(

@@ -86,14 +86,18 @@ impl<V, E> HamiltonianPathSearchResult<V, E> {
         }
     }
 
+    /// Returns the termination status of this search.
     pub fn status(&self) -> SearchStatus {
         self.status
     }
 
+    /// Returns the Hamiltonian path if the search found one.
     pub fn path(&self) -> Option<&GraphWalk<V, E>> {
         self.path.as_ref()
     }
 
+    /// Returns the number of DFS / DP states the search explored. The exact counting semantics
+    /// are implementation-defined; consult the JavaDoc of the producing algorithm for details.
     pub fn states_expanded(&self) -> u64 {
         self.states_expanded
     }
@@ -238,6 +242,25 @@ impl DagHamiltonianPath {
 impl<G: Graph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
     fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         if !graph.graph_type().directed {
+    /// Computes a Hamiltonian path in the given graph and returns a tri-state
+    /// `HamiltonianPathSearchResult`.
+    ///
+    /// The return value distinguishes:
+    ///
+    /// - `HamiltonianPathSearchResult.Status#PATH_FOUND` — the algorithm produced a
+    /// Hamiltonian path; it is accessible via
+    /// `get_path`.
+    /// - `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` — the algorithm ran to
+    /// completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
+    /// exists.
+    /// - `HamiltonianPathSearchResult.Status#ABORTED` — the algorithm performed a bounded
+    /// search that hit its limit before completing. Whether a Hamiltonian path exists in the
+    /// graph is unknown.
+    ///
+    /// Unbounded implementations only return `PATH_FOUND` or `PROVEN_ABSENT`.
+    /// Implementations that accept an execution budget (e.g. a maximum state count) may also
+    /// return `ABORTED`; such bounded variants must never report `PROVEN_ABSENT`
+    /// for a search that was stopped early.
             return Err(GraphError::InvalidArgument("Graph must be directed".into()));
         }
         require_not_empty(graph)?;
@@ -392,6 +415,7 @@ impl HeldKarpHamiltonianPath {
 
     pub fn max_vertices(&self) -> usize {
         self.max_vertices
+    /// Returns the maximum number of vertices this instance will accept.
     }
 
     /// The number of states expanded by the last search.
@@ -409,6 +433,25 @@ impl Default for HeldKarpHamiltonianPath {
 impl<G: Graph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath {
     fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         require_directed_or_undirected(graph)?;
+    /// Computes a Hamiltonian path in the given graph and returns a tri-state
+    /// `HamiltonianPathSearchResult`.
+    ///
+    /// The return value distinguishes:
+    ///
+    /// - `HamiltonianPathSearchResult.Status#PATH_FOUND` — the algorithm produced a
+    /// Hamiltonian path; it is accessible via
+    /// `get_path`.
+    /// - `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` — the algorithm ran to
+    /// completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
+    /// exists.
+    /// - `HamiltonianPathSearchResult.Status#ABORTED` — the algorithm performed a bounded
+    /// search that hit its limit before completing. Whether a Hamiltonian path exists in the
+    /// graph is unknown.
+    ///
+    /// Unbounded implementations only return `PATH_FOUND` or `PROVEN_ABSENT`.
+    /// Implementations that accept an execution budget (e.g. a maximum state count) may also
+    /// return `ABORTED`; such bounded variants must never report `PROVEN_ABSENT`
+    /// for a search that was stopped early.
         self.states_expanded = 0;
         require_not_empty(graph)?;
         let n = graph.vertex_count();

@@ -40,6 +40,7 @@ impl<V, E> NegativeCycleDetected<V, E> {
         Self { cycle }
     }
 
+    /// Get the actual negative cycle, or null if not provided.
     pub fn cycle(&self) -> &GraphWalk<V, E> {
         &self.cycle
     }
@@ -157,6 +158,8 @@ impl<G: Graph> BellmanFord<'_, G> {
         (candidate - current).abs() >= self.epsilon && candidate < current
     }
 
+    /// Computes a negative weight cycle assuming that the algorithm has already determined that it
+    /// exists.
     fn negative_cycle(
         &self,
         edge: &G::Edge,
@@ -197,6 +200,7 @@ impl<G: Graph> BellmanFord<'_, G> {
             .expect("predecessors form a cycle")
     }
 
+    /// Compute all shortest paths starting from a single source vertex.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -273,6 +277,7 @@ impl<G: Graph> BellmanFord<'_, G> {
         })
     }
 
+    /// Get a shortest path from a source vertex to a sink vertex.
     pub fn get_path(
         &self,
         source: &G::Vertex,

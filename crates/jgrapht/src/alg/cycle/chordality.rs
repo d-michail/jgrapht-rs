@@ -82,6 +82,7 @@ impl<'g, G: UndirectedGraph> ChordalityInspector<'g, G> {
 
     pub fn iteration_order(&self) -> IterationOrder {
         self.iteration_order
+    /// Returns the type of iterator used in this `ChordalityInspector`
     }
 
     /// Whether the edge `{a, b}` exists in either direction.

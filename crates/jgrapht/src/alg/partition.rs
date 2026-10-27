@@ -105,6 +105,7 @@ impl<'g, G: Graph> BipartitePartitioning<'g, G> {
 }
 
 impl<G: Graph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G> {
+    /// Computes a vertex partitioning.
     fn partitioning(&mut self) -> Option<&Partitioning<G::Vertex>> {
         if self.computed {
             return self.cached.as_ref();
@@ -144,6 +145,7 @@ impl<G: Graph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G> {
         self.cached.as_ref()
     }
 
+    /// Check if the given vertex partitioning is valid.
     fn is_valid_partitioning(&self, partitioning: &Partitioning<G::Vertex>) -> bool {
         if partitioning.number_partitions() != 2 {
             return false;

@@ -361,6 +361,7 @@ impl<'g, G: DirectedGraph> SuurballeKDisjointShortestPaths<'g, G> {
         Self { graph }
     }
 
+    /// Returns the $k$ shortest simple paths in increasing order of weight.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -397,6 +398,7 @@ impl<'g, G: DirectedGraph> BhandariKDisjointShortestPaths<'g, G> {
         Self { graph }
     }
 
+    /// Returns the $k$ shortest simple paths in increasing order of weight.
     pub fn get_paths(
         &self,
         source: &G::Vertex,

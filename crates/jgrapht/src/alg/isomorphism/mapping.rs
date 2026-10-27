@@ -92,6 +92,7 @@ impl<'g, G: Graph> IsomorphicGraphMapping<'g, G> {
         }
     }
 
+    /// Gets the mapped value where the key is `vertex`
     pub fn vertex_correspondence(&self, v: &G::Vertex, forward: bool) -> Option<&G::Vertex> {
         if forward {
             self.forward.get(v)
@@ -100,6 +101,7 @@ impl<'g, G: Graph> IsomorphicGraphMapping<'g, G> {
         }
     }
 
+    /// Gets the mapped value where the key is `edge`
     pub fn edge_correspondence(&self, e: &G::Edge, forward: bool) -> Option<&G::Edge> {
         let (from, to) = if forward {
             (self.graph1, self.graph2)
@@ -111,10 +113,12 @@ impl<'g, G: Graph> IsomorphicGraphMapping<'g, G> {
         to.get_edge(u, v)
     }
 
+    /// Get an unmodifiable version of the forward mapping function.
     pub fn forward_mapping(&self) -> &IndexMap<G::Vertex, G::Vertex> {
         &self.forward
     }
 
+    /// Get an unmodifiable version of the backward mapping function.
     pub fn backward_mapping(&self) -> &IndexMap<G::Vertex, G::Vertex> {
         &self.backward
     }

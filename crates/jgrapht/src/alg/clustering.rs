@@ -267,6 +267,7 @@ impl<'g, G: Graph> GirvanNewmanClustering<'g, G> {
 }
 
 impl<G: Graph> ClusteringAlgorithm<G::Vertex> for GirvanNewmanClustering<'_, G> {
+    /// Computes a clustering.
     fn clustering(&self) -> Result<Clustering<G::Vertex>> {
         let g = self.graph;
         let mut removed: HashSet<G::Edge> = HashSet::new();
@@ -334,6 +335,7 @@ impl<'g, G: Graph> KSpanningTreeClustering<'g, G> {
 }
 
 impl<G: Graph> ClusteringAlgorithm<G::Vertex> for KSpanningTreeClustering<'_, G> {
+    /// Computes a clustering.
     fn clustering(&self) -> Result<Clustering<G::Vertex>> {
         let g = self.graph;
         let mut edges = super::spanning::prim(g).edges;
@@ -391,6 +393,7 @@ impl<'g, G: Graph> NaiveGreedyModularityAlgorithm<'g, G> {
 }
 
 impl<G: Graph> ClusteringAlgorithm<G::Vertex> for NaiveGreedyModularityAlgorithm<'_, G> {
+    /// Computes a clustering.
     fn clustering(&self) -> Result<Clustering<G::Vertex>> {
         let mut communities: Vec<HashSet<G::Vertex>> = self
             .graph
@@ -485,6 +488,7 @@ impl<'g, G: Graph> GreedyModularityAlgorithm<'g, G> {
 }
 
 impl<G: Graph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgorithm<'_, G> {
+    /// Computes a clustering.
     fn clustering(&self) -> Result<Clustering<G::Vertex>> {
         let g = self.graph;
         let vs: Vec<&G::Vertex> = g.vertices().collect();

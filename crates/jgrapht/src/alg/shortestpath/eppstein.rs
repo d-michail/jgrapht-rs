@@ -433,6 +433,7 @@ impl<'g, G: Graph> EppsteinShortestPathIterator<'g, G> {
         }
     }
 
+    /// Builds sequence of sidetracks in the `graph` this path corresponds to.
     fn sidetracks(&self, vertices: &[usize]) -> Vec<usize> {
         let mut result = Vec::new();
         for (position, &vertex) in vertices.iter().enumerate() {

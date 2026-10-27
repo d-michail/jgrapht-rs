@@ -73,6 +73,8 @@ impl<'g, G: Graph + 'g> DefaultManyToManyShortestPaths<'g, G> {
         }
     }
 
+    /// Computes shortest paths from all vertices in `sources` to all vertices in
+    /// `targets`.
     pub fn get_many_to_many_paths(
         &self,
         sources: impl IntoIterator<Item = G::Vertex>,
@@ -122,6 +124,8 @@ impl<G: Graph> ShortestPathAlgorithm<G> for DefaultManyToManyShortestPaths<'_, G
         Ok(result)
     }
 
+    /// Return the path from the `source` vertex to the `target` vertex. If no such
+    /// path exists, null is returned.
     fn path(
         &self,
         source: &G::Vertex,
@@ -162,6 +166,8 @@ impl<'g, G: Graph> DijkstraManyToManyShortestPaths<'g, G> {
         Self { graph }
     }
 
+    /// Computes shortest paths from all vertices in `sources` to all vertices in
+    /// `targets`.
     pub fn get_many_to_many_paths(
         &self,
         sources: impl IntoIterator<Item = G::Vertex>,

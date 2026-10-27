@@ -111,6 +111,8 @@ impl<'g, G: Graph> ALTAdmissibleHeuristic<'g, G> {
     }
 
     pub fn cost_estimate(&self, source: &G::Vertex, target: &G::Vertex) -> f64 {
+    /// An admissible heuristic estimate from a source vertex to a target vertex. The estimate is
+    /// always non-negative and never overestimates the true distance.
         if source == target {
             return 0.0;
         }
@@ -143,6 +145,14 @@ impl<'g, G: Graph> ALTAdmissibleHeuristic<'g, G> {
     }
 
     pub fn is_consistent(&self) -> bool {
+    /// Returns true if the heuristic is a *consistent* or *monotone* heuristic wrt the
+    /// provided `graph`. A heuristic is monotonic if its estimate is always less than or equal
+    /// to the estimated distance from any neighboring vertex to the goal, plus the step cost of
+    /// reaching that neighbor. For details, refer to [https://en.wikipedia.org/wiki/Consistent_heuristic](https://en.wikipedia.org/wiki/Consistent_heuristic).
+    /// In short, a heuristic is consistent iff $h(u) \le d(u,v)+h(v)$, for every edge $(u,v)$, where
+    /// $d(u,v)$ is the weight of edge $(u,v)$ and $h(u)$ is the estimated cost to reach the target
+    /// node from vertex u. Most natural admissible heuristics, such as Manhattan or Euclidean
+    /// distance, are consistent heuristics.
         true
     }
 }

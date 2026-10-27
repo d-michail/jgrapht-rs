@@ -242,6 +242,7 @@ impl<'g, G: Graph> GreedyColoring<'g, G> {
 }
 
 impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for GreedyColoring<'_, G> {
+    /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let order: Vec<G::Vertex> = self.graph.vertices().cloned().collect();
         color_in_order(self.graph, &order)
@@ -272,6 +273,7 @@ impl<'g, G: Graph> LargestDegreeFirstColoring<'g, G> {
 }
 
 impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for LargestDegreeFirstColoring<'_, G> {
+    /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let (vs, degree, max_degree) = degrees(self.graph);
         let n = vs.len();
@@ -321,6 +323,7 @@ impl<'g, G: Graph> SmallestDegreeLastColoring<'g, G> {
 }
 
 impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for SmallestDegreeLastColoring<'_, G> {
+    /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let g = self.graph;
         let (vs, degree0, max_degree) = degrees(g);
@@ -526,6 +529,7 @@ impl DSaturHeap {
 }
 
 impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for SaturationDegreeColoring<'_, G> {
+    /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let g = self.graph;
         let (vs, mut degree, _) = degrees(g);
@@ -699,6 +703,7 @@ impl<V: Clone + Eq + Hash> VertexColoringAlgorithm<V> for BrownBacktrackColoring
     fn coloring(&self) -> Result<Coloring<V>> {
         Ok(self.coloring.get_or_init(|| self.compute()).clone())
     }
+    /// Computes a vertex coloring.
 }
 
 /// Optimal colouring of a chordal graph (`ChordalGraphColoring`): the vertices are coloured in the
@@ -1025,6 +1030,8 @@ impl<'g, G: Graph> ColorRefinementAlgorithm<'g, G> {
 
 impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlgorithm<'_, G> {
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
+    /// Calculates a canonical surjective k-coloring of the given graph such that the classes of the
+    /// coloring form the coarsest stable partition that refines alpha.
         let g = self.graph;
         let vs: Vec<&G::Vertex> = g.vertices().collect();
         let index: HashMap<&G::Vertex, usize> =

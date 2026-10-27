@@ -668,6 +668,7 @@ impl<'g, G: DirectedGraph> HawickJamesSimpleCycles<'g, G> {
     }
 
     pub fn with_graph(graph: &'g G) -> Self {
+    /// Set the graph
         HawickJamesSimpleCycles {
             graph: Some(graph),
             ..Self::default()
@@ -675,6 +676,7 @@ impl<'g, G: DirectedGraph> HawickJamesSimpleCycles<'g, G> {
     }
 
     pub fn graph(&self) -> Option<&'g G> {
+    /// Get the graph
         self.graph
     }
 

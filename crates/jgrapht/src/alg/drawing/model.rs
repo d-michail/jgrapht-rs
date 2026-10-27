@@ -35,6 +35,7 @@ impl Point2D {
     pub fn of(x: f64, y: f64) -> Self {
         Point2D { x, y }
     }
+    /// Get the number of dimensions of the point
     pub fn num_dimensions(&self) -> usize {
         2
     }
@@ -112,21 +113,27 @@ impl Box2D {
             height,
         }
     }
+    /// Get the minimum x coordinate
     pub fn min_x(&self) -> f64 {
         self.min_x
     }
+    /// Get the minimum y coordinate
     pub fn min_y(&self) -> f64 {
         self.min_y
     }
+    /// Get the width
     pub fn width(&self) -> f64 {
         self.width
     }
+    /// Get the height
     pub fn height(&self) -> f64 {
         self.height
     }
+    /// Get the maximum x coordinate
     pub fn max_x(&self) -> f64 {
         self.min_x + self.width
     }
+    /// Get the maximum y coordinate
     pub fn max_y(&self) -> f64 {
         self.min_y + self.height
     }
@@ -222,15 +229,21 @@ impl<V: Eq + Hash> MapLayoutModel2D<V> {
 }
 
 impl<V: Eq + Hash + Clone> LayoutModel2D<V> for MapLayoutModel2D<V> {
+    /// Get the drawable area of the model.
     fn drawable_area(&self) -> Box2D {
         self.area
     }
+    /// Set the drawable area of the model.
     fn set_drawable_area(&mut self, area: Box2D) {
         self.area = area;
     }
+    /// Get the last location of a particular vertex in the model. May return null if the vertex has
+    /// not been assigned a location or if the particular implementation does not store the
+    /// coordinates.
     fn get(&self, v: &V) -> Option<Point2D> {
         self.points.get(v).copied()
     }
+    /// Set the location of a vertex.
     fn put(&mut self, v: V, p: Point2D) -> Option<Point2D> {
         if !self.fixed.contains(&v) {
             self.points.insert(v, p)
@@ -245,6 +258,10 @@ impl<V: Eq + Hash + Clone> LayoutModel2D<V> for MapLayoutModel2D<V> {
             }
         }
     }
+    /// Set a point as being a "fixed-point" or not.
+    ///
+    /// It is the model's responsibility to make sure that changing the coordinates of a fixed point
+    /// by calling `put` has no effect.
     fn set_fixed(&mut self, v: V, fixed: bool) {
         if fixed {
             self.fixed.insert(v);
@@ -252,6 +269,10 @@ impl<V: Eq + Hash + Clone> LayoutModel2D<V> for MapLayoutModel2D<V> {
             self.fixed.remove(&v);
         }
     }
+    /// Check whether a vertex is a fixed point.
+    ///
+    /// It is the model's responsibility to make sure that changing the coordinates of a fixed point
+    /// by calling `put` has no effect.
     fn is_fixed(&self, v: &V) -> bool {
         self.fixed.contains(v)
     }
@@ -299,15 +320,21 @@ impl<V, M: LayoutModel2D<V>> ListenableLayoutModel2D<V, M> {
 }
 
 impl<V: Clone, M: LayoutModel2D<V>> LayoutModel2D<V> for ListenableLayoutModel2D<V, M> {
+    /// Get the drawable area of the model.
     fn drawable_area(&self) -> Box2D {
         self.model.drawable_area()
     }
+    /// Set the drawable area of the model.
     fn set_drawable_area(&mut self, area: Box2D) {
         self.model.set_drawable_area(area);
     }
+    /// Get the last location of a particular vertex in the model. May return null if the vertex has
+    /// not been assigned a location or if the particular implementation does not store the
+    /// coordinates.
     fn get(&self, v: &V) -> Option<Point2D> {
         self.model.get(v)
     }
+    /// Set the location of a vertex.
     fn put(&mut self, v: V, p: Point2D) -> Option<Point2D> {
         if !self.model.is_fixed(&v) {
             let old = self.model.put(v.clone(), p);
@@ -319,9 +346,17 @@ impl<V: Clone, M: LayoutModel2D<V>> LayoutModel2D<V> for ListenableLayoutModel2D
             self.model.get(&v)
         }
     }
+    /// Set a point as being a "fixed-point" or not.
+    ///
+    /// It is the model's responsibility to make sure that changing the coordinates of a fixed point
+    /// by calling `put` has no effect.
     fn set_fixed(&mut self, v: V, fixed: bool) {
         self.model.set_fixed(v, fixed);
     }
+    /// Check whether a vertex is a fixed point.
+    ///
+    /// It is the model's responsibility to make sure that changing the coordinates of a fixed point
+    /// by calling `put` has no effect.
     fn is_fixed(&self, v: &V) -> bool {
         self.model.is_fixed(v)
     }
