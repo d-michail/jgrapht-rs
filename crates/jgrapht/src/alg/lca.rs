@@ -538,13 +538,13 @@ impl<'g, G: DirectedGraph> NaiveLcaFinder<'g, G> {
     }
 
     /// All ancestors of `start` (including itself), in BFS order.
-    fn ancestors(&self, start: &G::Vertex) -> indexmap::IndexSet<G::Vertex> {
+    fn ancestors(&self, start: &G::Vertex) -> Result<indexmap::IndexSet<G::Vertex>> {
         let reversed = EdgeReversed(self.graph);
         let mut seen: indexmap::IndexSet<G::Vertex> = indexmap::IndexSet::from([start.clone()]);
         let mut queue = std::collections::VecDeque::from([start.clone()]);
         while let Some(v) = queue.pop_front() {
             let next: Vec<G::Vertex> = reversed
-                .out_edges_of(&v).unwrap()
+                .out_edges_of(&v)?
                 .filter_map(|e| reversed.edge_target(e).cloned())
                 .collect();
             for w in next {
@@ -553,41 +553,42 @@ impl<'g, G: DirectedGraph> NaiveLcaFinder<'g, G> {
                 }
             }
         }
-        seen
+        Ok(seen)
     }
 }
 
 impl<G: DirectedGraph> LowestCommonAncestorAlgorithm<G::Vertex> for NaiveLcaFinder<'_, G> {
     fn lca(&self, a: &G::Vertex, b: &G::Vertex) -> Result<Option<G::Vertex>> {
         self.check(a, b)?;
-        let set = self.lca_set_ordered(a, b);
+        let set = self.lca_set_ordered(a, b)?;
         Ok(set.into_iter().next())
     }
 
     fn lca_set(&self, a: &G::Vertex, b: &G::Vertex) -> Result<HashSet<G::Vertex>> {
         self.check(a, b)?;
-        Ok(self.lca_set_ordered(a, b).into_iter().collect())
+        Ok(self.lca_set_ordered(a, b)?.into_iter().collect())
     }
 }
 
 impl<G: DirectedGraph> NaiveLcaFinder<'_, G> {
-    fn lca_set_ordered(&self, a: &G::Vertex, b: &G::Vertex) -> Vec<G::Vertex> {
-        let (a_anc, b_anc) = (self.ancestors(a), self.ancestors(b));
+    fn lca_set_ordered(&self, a: &G::Vertex, b: &G::Vertex) -> Result<Vec<G::Vertex>> {
+        let (a_anc, b_anc) = (self.ancestors(a)?, self.ancestors(b)?);
         let common: indexmap::IndexSet<G::Vertex> = a_anc
             .iter()
             .filter(|v| b_anc.contains(*v))
             .cloned()
             .collect();
-        common
-            .iter()
-            .filter(|anc| {
-                !self.graph.out_edges_of(anc).unwrap().any(|e| {
-                    self.graph
-                        .edge_target(e)
-                        .is_some_and(|t| common.contains(t))
-                })
-            })
-            .cloned()
-            .collect()
+        let mut lowest = Vec::new();
+        for ancestor in &common {
+            let has_common_child = self.graph.out_edges_of(ancestor)?.any(|edge| {
+                self.graph
+                    .edge_target(edge)
+                    .is_some_and(|target| common.contains(target))
+            });
+            if !has_common_child {
+                lowest.push(ancestor.clone());
+            }
+        }
+        Ok(lowest)
     }
 }

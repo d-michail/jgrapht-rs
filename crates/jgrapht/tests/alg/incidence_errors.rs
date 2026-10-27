@@ -2,6 +2,8 @@ use jgrapht::alg::cycle::{
     CycleBasisAlgorithm, EulerianCycleAlgorithm, HierholzerEulerianCycle,
     QueueBFSFundamentalCycleBasis, StackBFSFundamentalCycleBasis,
 };
+use jgrapht::alg::interfaces::LowestCommonAncestorAlgorithm;
+use jgrapht::alg::lca::NaiveLcaFinder;
 use jgrapht::alg::matching::{
     GreedyWeightedMatching, MatchingAlgorithm, PathGrowingWeightedMatching,
 };
@@ -76,6 +78,9 @@ fn all_directed_paths_returns_missing_incoming_index_errors() {
     assert_unsupported(AllDirectedPaths::new(&graph).get_all_paths(&0, &3, true, None));
     assert_unsupported(DagAllPathsCounter::count_all_paths(&graph, &0, &3));
     assert_unsupported(DagHamiltonianPath::new().get_path(&graph));
+
+    let lca = NaiveLcaFinder::new(&graph).unwrap();
+    assert_unsupported(lca.lca(&0, &3));
 }
 
 #[test]
