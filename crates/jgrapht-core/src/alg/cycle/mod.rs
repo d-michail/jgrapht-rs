@@ -1,0 +1,15 @@
+//! Cycle detection, enumeration and bases.
+//!
+//! The function-style helpers (`has_cycle`, `simple_cycles`, `cycle_basis`, `cycle_to_walk`) are kept
+//! in [`legacy`] and re-exported; the JGraphT classes live in the sibling modules.
+
+mod detector;
+mod legacy;
+mod simple_cycles;
+
+pub use detector::{CycleDetector, simple_cycle_to_graph_path};
+pub use legacy::*;
+pub use simple_cycles::{
+    DirectedSimpleCycles, HawickJamesSimpleCycles, JohnsonSimpleCycles,
+    SzwarcfiterLauerSimpleCycles, TarjanSimpleCycles, TiernanSimpleCycles,
+};

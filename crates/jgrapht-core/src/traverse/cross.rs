@@ -127,6 +127,10 @@ impl<'g, G: Graph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
     pub fn strategy(&self) -> &S {
         &self.strategy
     }
+    pub fn into_strategy(self) -> S {
+        self.strategy
+    }
+
     pub fn strategy_mut(&mut self) -> &mut S {
         &mut self.strategy
     }
@@ -321,6 +325,12 @@ pub struct DfsStrategy<'g, G: Graph + 'g> {
 }
 
 impl<'g, G: Graph + 'g> DfsStrategy<'g, G> {
+    pub fn new() -> Self {
+        DfsStrategy {
+            stack: VecDeque::new(),
+        }
+    }
+
     fn record_finish(&mut self, c: &mut Core<'g, G, VisitColor>) {
         if let Some(StackEntry::Vertex(v)) = self.stack.pop_back() {
             c.seen.insert(v, VisitColor::Black);

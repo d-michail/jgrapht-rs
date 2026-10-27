@@ -16,8 +16,8 @@ mod simple_ordering;
 mod simple_weighted;
 
 pub use cross::{
-    BfsData, BreadthFirstIterator, ClosestFirstIterator, CrossComponentIterator,
-    DepthFirstIterator, Strategy,
+    BfsData, BreadthFirstIterator, ClosestFirstIterator, Core, CrossComponentIterator,
+    DepthFirstIterator, DfsStrategy, Strategy,
 };
 pub use events::{TraversalListener, TraversalListeners};
 pub use ordered::{

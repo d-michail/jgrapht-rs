@@ -1,6 +1,6 @@
 //! Cycle detection, enumeration and bases.
 
-use super::util::Indexed;
+use crate::alg::util::Indexed;
 use crate::graph::{Graph, props};
 use crate::walk::GraphWalk;
 use std::collections::{HashSet, VecDeque};
