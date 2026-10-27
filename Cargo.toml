@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/jgrapht-core"]
+members = ["crates/jgrapht", "crates/jgrapht-io"]
 
 [workspace.package]
 version = "0.1.0"

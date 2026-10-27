@@ -1,0 +1,10 @@
+[package]
+name = "jgrapht-io"
+description = "Graph importers and exporters for jgrapht"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+jgrapht = { path = "../jgrapht", version = "0.1.0" }
