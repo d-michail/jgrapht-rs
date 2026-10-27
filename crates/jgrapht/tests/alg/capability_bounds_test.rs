@@ -213,3 +213,44 @@ mod scoring_coloring_clustering {
         assert!(!lp.clusters().is_empty());
     }
 }
+
+mod cycles_isomorphism_trees {
+    use jgrapht::alg::cycle::CycleDetector;
+    use jgrapht::alg::interfaces::LowestCommonAncestorAlgorithm;
+    use jgrapht::alg::lca::TarjanLcaFinder;
+    use jgrapht::graph::sparse::{FullIncoming, NoIncoming, SparseIntDirectedGraph};
+
+    /// `0 -> 1 -> 2 -> 0` is a cycle, `3 -> 4` hangs off vertex 2.
+    const CYCLIC: [(usize, usize); 4] = [(0, 1), (1, 2), (2, 0), (2, 3)];
+    /// A tree rooted at 0.
+    const TREE: [(usize, usize); 4] = [(0, 1), (0, 2), (1, 3), (1, 4)];
+
+    #[test]
+    fn cycle_detection_runs_without_an_incoming_index() {
+        let no = SparseIntDirectedGraph::<NoIncoming>::from_edges(4, &CYCLIC).unwrap();
+        let full = SparseIntDirectedGraph::<FullIncoming>::from_edges(4, &CYCLIC).unwrap();
+        assert!(CycleDetector::new(&no).detect_cycles());
+        assert_eq!(
+            CycleDetector::new(&no).find_cycles(),
+            CycleDetector::new(&full).find_cycles()
+        );
+        let acyclic = SparseIntDirectedGraph::<NoIncoming>::from_edges(4, &TREE[..3]).unwrap();
+        assert!(!CycleDetector::new(&acyclic).detect_cycles());
+    }
+
+    #[test]
+    fn tarjan_lca_runs_without_an_incoming_index() {
+        let no = SparseIntDirectedGraph::<NoIncoming>::from_edges(5, &TREE).unwrap();
+        let full = SparseIntDirectedGraph::<FullIncoming>::from_edges(5, &TREE).unwrap();
+        let on_no = TarjanLcaFinder::new(&no, 0usize)
+            .unwrap()
+            .lca(&3, &4)
+            .unwrap();
+        let on_full = TarjanLcaFinder::new(&full, 0usize)
+            .unwrap()
+            .lca(&3, &4)
+            .unwrap();
+        assert_eq!(on_no, Some(1));
+        assert_eq!(on_no, on_full);
+    }
+}

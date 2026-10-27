@@ -15,7 +15,8 @@
 use crate::graph::IncidenceGraph;
 use super::detector::simple_cycle_to_graph_path;
 use crate::error::{GraphError, Result};
-use crate::graph::props::{has_multiple_edges, require_undirected};
+use crate::graph::UndirectedGraph;
+use crate::graph::props::has_multiple_edges;
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use indexmap::{IndexMap, IndexSet};
@@ -245,10 +246,9 @@ pub struct PatonCycleBase<'g, G: Graph> {
     graph: &'g G,
 }
 
-impl<'g, G: IncidenceGraph> PatonCycleBase<'g, G> {
-    /// Fails for directed graphs.
+impl<'g, G: UndirectedGraph + IncidenceGraph> PatonCycleBase<'g, G> {
+    /// Cycle basis of an undirected graph.
     pub fn new(graph: &'g G) -> Result<Self> {
-        require_undirected(graph)?;
         Ok(PatonCycleBase { graph })
     }
 }

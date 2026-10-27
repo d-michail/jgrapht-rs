@@ -167,7 +167,7 @@ impl<G: OutgoingGraph, R: RandomSource> HamiltonianCycleAlgorithm<G>
         let mut path: Vec<G::Vertex> = graph.vertices().cloned().collect();
         let initial_index = match self.initial_vertices.pop_front() {
             Some(first) => path.iter().position(|v| *v == first).ok_or_else(|| {
-                GraphError::InvalidArgument("Specified initial vertex is not in graph".into())
+                GraphError::VertexNotFound
             })?,
             None => self.rng.next_int_bound(n),
         };

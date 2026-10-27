@@ -103,7 +103,7 @@ impl ChinesePostman {
             let from_source = shortest_path.single_source(&odd[source])?;
             for target in source + 1..count {
                 paths[source][target] = Some(from_source.path(&odd[target]).ok_or_else(|| {
-                    GraphError::InvalidArgument("No path between vertices".into())
+                    GraphError::InvalidGraph(crate::GraphProperty::Connected)
                 })?);
             }
         }
@@ -154,7 +154,7 @@ impl ChinesePostman {
             for (target_index, (target, _)) in positive.iter().enumerate() {
                 paths[source_index][target_index] =
                     Some(from_source.path(target).ok_or_else(|| {
-                        GraphError::InvalidArgument("No path between vertices".into())
+                        GraphError::InvalidGraph(crate::GraphProperty::Connected)
                     })?);
             }
         }

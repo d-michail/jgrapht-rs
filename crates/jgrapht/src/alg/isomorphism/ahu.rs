@@ -19,7 +19,8 @@ use crate::graph::OutgoingGraph;
 use super::IsomorphismInspector;
 use super::mapping::IsomorphicGraphMapping;
 use crate::error::{GraphError, Result};
-use crate::graph::props::{is_simple, require_undirected};
+use crate::graph::UndirectedGraph;
+use crate::graph::props::is_simple;
 use crate::graph::{Graph, GraphExt};
 use crate::util::radix_sort;
 use indexmap::IndexMap;
@@ -176,17 +177,15 @@ pub struct AHURootedTreeIsomorphismInspector<'g, G: Graph> {
 fn validate_tree<G: OutgoingGraph>(tree: &G, root: &G::Vertex) -> Result<()> {
     debug_assert!(is_simple(tree));
     if tree.vertex_count() == 0 {
-        return Err(GraphError::InvalidArgument("tree cannot be empty".into()));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
     }
     if !tree.contains_vertex(root) {
-        return Err(GraphError::InvalidArgument(
-            "root not contained in forest".into(),
-        ));
+        return Err(GraphError::VertexNotFound);
     }
     Ok(())
 }
 
-impl<'g, G: OutgoingGraph + IncidenceGraph> AHURootedTreeIsomorphismInspector<'g, G> {
+impl<'g, G: IncidenceGraph> AHURootedTreeIsomorphismInspector<'g, G> {
     /// Construct a new AHU rooted tree isomorphism inspector.
     ///
     /// Note: The constructor does NOT check if the input trees are valid.
@@ -262,11 +261,10 @@ pub struct AHUUnrootedTreeIsomorphismInspector<'g, G: Graph> {
     result: OnceCell<Option<AHURootedTreeIsomorphismInspector<'g, G>>>,
 }
 
-fn validate_unrooted<G: OutgoingGraph>(tree: &G) -> Result<()> {
-    require_undirected(tree)?;
+fn validate_unrooted<G: UndirectedGraph + OutgoingGraph>(tree: &G) -> Result<()> {
     debug_assert!(is_simple(tree));
     if tree.vertex_count() == 0 {
-        return Err(GraphError::InvalidArgument("tree cannot be empty".into()));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
     }
     Ok(())
 }
@@ -308,7 +306,7 @@ fn tree_center(adj: &[Vec<usize>]) -> Vec<usize> {
     }
 }
 
-impl<'g, G: OutgoingGraph + IncidenceGraph> AHUUnrootedTreeIsomorphismInspector<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> AHUUnrootedTreeIsomorphismInspector<'g, G> {
     /// Construct a new AHU unrooted tree isomorphism inspector.
     ///
     /// Note: The constructor does NOT check if the input trees are valid.
@@ -353,7 +351,7 @@ impl<'g, G: OutgoingGraph + IncidenceGraph> AHUUnrootedTreeIsomorphismInspector<
     }
 }
 
-impl<'g, G: IncidenceGraph> IsomorphismInspector<'g, G> for AHUUnrootedTreeIsomorphismInspector<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> IsomorphismInspector<'g, G> for AHUUnrootedTreeIsomorphismInspector<'g, G> {
     /// Get an iterator over all calculated (isomorphic) mappings between two graphs.
     fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_> {
         Box::new(self.mapping().into_iter())
@@ -399,24 +397,18 @@ pub struct AHUForestIsomorphismInspector<'g, G: IncidenceGraph> {
 fn validate_forest<G: OutgoingGraph>(forest: &G, roots: &[G::Vertex]) -> Result<()> {
     debug_assert!(is_simple(forest));
     if forest.vertex_count() == 0 {
-        return Err(GraphError::InvalidArgument(
-            "input forest cannot be empty".into(),
-        ));
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
     }
     if roots.is_empty() {
-        return Err(GraphError::InvalidArgument(
-            "set of roots cannot be empty".into(),
-        ));
+        return Err(GraphError::InvalidParameter { name: "roots", requirement: crate::ParameterRequirement::NonEmpty });
     }
     if !roots.iter().all(|r| forest.contains_vertex(r)) {
-        return Err(GraphError::InvalidArgument(
-            "root not contained in forest".into(),
-        ));
+        return Err(GraphError::VertexNotFound);
     }
     Ok(())
 }
 
-impl<'g, G: OutgoingGraph + IncidenceGraph> AHUForestIsomorphismInspector<'g, G> {
+impl<'g, G: IncidenceGraph> AHUForestIsomorphismInspector<'g, G> {
     /// Construct a new AHU rooted forest isomorphism inspector.
     ///
     /// Note: The constructor does NOT check if the input forests are valid trees.

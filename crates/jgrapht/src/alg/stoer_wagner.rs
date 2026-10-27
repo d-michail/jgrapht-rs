@@ -209,9 +209,7 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
     pub fn new<G: Graph<Vertex = V>>(graph: &G) -> Result<Self> {
         props::require_undirected(graph)?;
         if graph.vertex_count() < 2 {
-            return Err(GraphError::InvalidArgument(
-                "Graph has less than 2 vertices".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::AtLeastTwoVertices));
         }
 
         let mut this = Self {

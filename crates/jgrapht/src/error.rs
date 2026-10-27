@@ -177,6 +177,9 @@ pub enum GraphProperty {
     /// Having at least one vertex.
     #[error("non-empty")]
     NonEmpty,
+    /// Having at least two vertices.
+    #[error("a graph with at least two vertices")]
+    AtLeastTwoVertices,
     /// Having no vertices and no edges, for a graph that receives a result.
     #[error("empty")]
     Empty,

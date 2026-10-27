@@ -374,9 +374,10 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
 
     fn draw_first<M: LayoutModel2D<V>>(&self, partition: &[V], model: &mut M) -> Result<()> {
         if partition.is_empty() {
-            return Err(GraphError::InvalidArgument(
-                "Partition cannot be empty".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "partition",
+                requirement: crate::ParameterRequirement::NonEmpty,
+            });
         }
         let a = model.drawable_area();
         let step = self.step(partition.len(), &a);
@@ -394,9 +395,10 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
 
     fn draw_second<M: LayoutModel2D<V>>(&self, partition: &[V], model: &mut M) -> Result<()> {
         if partition.is_empty() {
-            return Err(GraphError::InvalidArgument(
-                "Partition cannot be empty".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "partition",
+                requirement: crate::ParameterRequirement::NonEmpty,
+            });
         }
         let a = model.drawable_area();
         let step = self.step(partition.len(), &a);
@@ -481,9 +483,10 @@ impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for TwoLayeredBipartiteLayout2D<G::
         let (left, mut right) = self.compute_partitions(graph)?;
         self.draw_first(&left, model)?;
         if right.is_empty() {
-            return Err(GraphError::InvalidArgument(
-                "Partition cannot be empty".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "partition",
+                requirement: crate::ParameterRequirement::NonEmpty,
+            });
         }
         if self.order != SecondLayerOrder::Plain {
             self.greedy_sort(graph, &mut right, model);

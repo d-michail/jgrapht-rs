@@ -283,13 +283,13 @@ mod clique_minimal_separator_decomposition_test {
             .collect()
     }
 
-    fn atoms_of<T: Eq + std::hash::Hash + Clone, G: IncidenceGraph<Vertex = T>>(
+    fn atoms_of<T: Eq + std::hash::Hash + Clone, G: jgrapht::UndirectedGraph<Vertex = T> + IncidenceGraph>(
         c: &mut CliqueMinimalSeparatorDecomposition<G>,
     ) -> HashSet<HashableSet<T>> {
         c.atoms().iter().cloned().collect()
     }
 
-    fn separators_of<T: Eq + std::hash::Hash + Clone, G: IncidenceGraph<Vertex = T>>(
+    fn separators_of<T: Eq + std::hash::Hash + Clone, G: jgrapht::UndirectedGraph<Vertex = T> + IncidenceGraph>(
         c: &mut CliqueMinimalSeparatorDecomposition<G>,
     ) -> HashSet<HashableSet<T>> {
         c.separators().iter().cloned().collect()

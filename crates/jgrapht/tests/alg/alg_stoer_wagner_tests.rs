@@ -142,7 +142,7 @@ fn test_min_cut_empty() {
     let g = WG::simple();
     assert!(matches!(
         StoerWagnerMinimumCut::new(&g),
-        Err(GraphError::InvalidArgument(_))
+        Err(GraphError::InvalidGraph(jgrapht::GraphProperty::AtLeastTwoVertices))
     ));
 }
 
@@ -152,7 +152,7 @@ fn test_min_cut_singleton() {
     g.add_vertex("v1");
     assert!(matches!(
         StoerWagnerMinimumCut::new(&g),
-        Err(GraphError::InvalidArgument(_))
+        Err(GraphError::InvalidGraph(jgrapht::GraphProperty::AtLeastTwoVertices))
     ));
 }
 

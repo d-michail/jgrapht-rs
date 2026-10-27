@@ -12,7 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::{IncidenceGraph, OutgoingGraph};
+use crate::graph::IncidenceGraph;
 use crate::error::{GraphError, Result};
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
@@ -300,7 +300,7 @@ impl HierholzerEulerianCycle {
     }
 }
 
-impl<G: OutgoingGraph + IncidenceGraph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
+impl<G: IncidenceGraph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
     /// Compute an Eulerian cycle of a graph.
     fn get_eulerian_cycle(&mut self, g: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         if !self.try_is_eulerian(g)? {

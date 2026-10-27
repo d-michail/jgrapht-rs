@@ -123,7 +123,7 @@ struct Forest<V> {
 impl<V: Clone + Eq + Hash> Forest<V> {
     fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, roots: &[V]) -> Result<Self> {
         if roots.is_empty() {
-            return invalid("roots cannot be empty");
+            return Err(GraphError::InvalidParameter { name: "roots", requirement: crate::ParameterRequirement::NonEmpty });
         }
         let vertices: Vec<V> = g.vertices().cloned().collect();
         let index: HashMap<V, usize> = vertices
@@ -133,7 +133,7 @@ impl<V: Clone + Eq + Hash> Forest<V> {
             .map(|(i, v)| (v, i))
             .collect();
         if roots.iter().any(|r| !index.contains_key(r)) {
-            return invalid("at least one root is not a valid vertex");
+            return Err(GraphError::VertexNotFound);
         }
         let n = vertices.len();
         let mut f = Forest {
@@ -203,7 +203,7 @@ impl<V: Clone + Eq + Hash> Forest<V> {
         self.index
             .get(v)
             .copied()
-            .map_or_else(|| invalid("invalid vertex"), Ok)
+            .map_or_else(|| Err(GraphError::VertexNotFound), Ok)
     }
 
     fn is_ancestor(&self, ancestor: usize, descendant: usize) -> bool {
@@ -367,7 +367,7 @@ impl<V: Clone + Eq + Hash> HeavyPathLcaFinder<V> {
     ) -> Result<Self> {
         let roots: Vec<V> = roots.into_iter().collect();
         if roots.is_empty() {
-            return invalid("roots cannot be empty");
+            return Err(GraphError::InvalidParameter { name: "roots", requirement: crate::ParameterRequirement::NonEmpty });
         }
         let d = HeavyPathDecomposition::with_roots(g, roots)?;
         Ok(HeavyPathLcaFinder {
@@ -386,10 +386,10 @@ impl<V: Clone + Eq + Hash> HeavyPathLcaFinder<V> {
 impl<V: Clone + Eq + Hash> LowestCommonAncestorAlgorithm<V> for HeavyPathLcaFinder<V> {
     fn lca(&self, a: &V, b: &V) -> Result<Option<V>> {
         let Some(&(mut ia)) = self.vertex_map.get(a) else {
-            return invalid("invalid vertex");
+            return Err(GraphError::VertexNotFound);
         };
         let Some(&(mut ib)) = self.vertex_map.get(b) else {
-            return invalid("invalid vertex");
+            return Err(GraphError::VertexNotFound);
         };
         if a == b {
             return Ok(Some(a.clone()));
@@ -431,10 +431,10 @@ impl<'g, G: OutgoingGraph> TarjanLcaFinder<'g, G> {
 
     pub fn with_roots(graph: &'g G, roots: Vec<G::Vertex>) -> Result<Self> {
         if roots.is_empty() {
-            return invalid("roots cannot be empty");
+            return Err(GraphError::InvalidParameter { name: "roots", requirement: crate::ParameterRequirement::NonEmpty });
         }
         if roots.iter().any(|r| !graph.contains_vertex(r)) {
-            return invalid("at least one root is not a valid vertex");
+            return Err(GraphError::VertexNotFound);
         }
         Ok(TarjanLcaFinder { graph, roots })
     }
@@ -445,7 +445,7 @@ impl<'g, G: OutgoingGraph> TarjanLcaFinder<'g, G> {
         let mut query_occurs: HashMap<&G::Vertex, Vec<usize>> = HashMap::new();
         for (i, (a, b)) in queries.iter().enumerate() {
             if !g.contains_vertex(a) || !g.contains_vertex(b) {
-                return invalid("invalid vertex");
+                return Err(GraphError::VertexNotFound);
             }
             if a == b {
                 result.push(Some(a.clone()));
@@ -512,7 +512,7 @@ impl<'g, G: OutgoingGraph> TarjanLcaFinder<'g, G> {
     }
 }
 
-impl<G: IncidenceGraph> LowestCommonAncestorAlgorithm<G::Vertex> for TarjanLcaFinder<'_, G> {
+impl<G: OutgoingGraph> LowestCommonAncestorAlgorithm<G::Vertex> for TarjanLcaFinder<'_, G> {
     fn lca(&self, a: &G::Vertex, b: &G::Vertex) -> Result<Option<G::Vertex>> {
         Ok(self.compute(&[(a.clone(), b.clone())])?.remove(0))
     }
@@ -528,13 +528,12 @@ pub struct NaiveLcaFinder<'g, G: DirectedGraph> {
 
 impl<'g, G: DirectedGraph + IncidenceGraph> NaiveLcaFinder<'g, G> {
     pub fn new(graph: &'g G) -> Result<Self> {
-        crate::graph::props::require_directed(graph)?;
         Ok(NaiveLcaFinder { graph })
     }
 
     fn check(&self, a: &G::Vertex, b: &G::Vertex) -> Result<()> {
         if !self.graph.contains_vertex(a) || !self.graph.contains_vertex(b) {
-            return invalid("invalid vertex");
+            return Err(GraphError::VertexNotFound);
         }
         Ok(())
     }

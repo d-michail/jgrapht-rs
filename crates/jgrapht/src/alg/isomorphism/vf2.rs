@@ -540,7 +540,7 @@ pub(super) fn check_types<G: IncidenceGraph>(g1: &G, g2: &G) -> Result<()> {
 macro_rules! vf2_inspector {
     ($(#[$doc:meta])* $name:ident, $kind:expr) => {
         $(#[$doc])*
-        pub struct $name<'g, G: $crate::graph::IncidenceGraph> {
+        pub struct $name<'g, G: $crate::graph::Graph> {
             vertex_comparator: Option<VertexComparator<'g, G>>,
             edge_comparator: Option<EdgeComparator<'g, G>>,
             ordering1: GraphOrdering<'g, G>,

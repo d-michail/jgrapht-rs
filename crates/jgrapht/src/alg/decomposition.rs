@@ -296,9 +296,7 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
         let mut number_component = 0;
         for root in roots {
             let Some(&u) = self.vertex_map.get(&root) else {
-                return Err(GraphError::InvalidArgument(
-                    "root not contained in graph".into(),
-                ));
+                return Err(GraphError::VertexNotFound);
             };
             if self.component[u].is_none() {
                 self.dfs_iterative(u, number_component, &mut length_path);

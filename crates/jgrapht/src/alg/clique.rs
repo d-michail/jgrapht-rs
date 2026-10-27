@@ -615,11 +615,10 @@ pub struct CliqueMinimalSeparatorDecomposition<'g, G: Graph> {
     full_component_count: HashMap<HashableSet<G::Vertex>, usize>,
 }
 
-impl<'g, G: IncidenceGraph> CliqueMinimalSeparatorDecomposition<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> CliqueMinimalSeparatorDecomposition<'g, G> {
     /// Setup a clique minimal separator decomposition on undirected graph `g`. Loops and
     /// multiple (parallel) edges are removed, i.e. the graph is transformed to a simple graph.
     pub fn new(graph: &'g G) -> Result<Self> {
-        props::require_undirected(graph)?;
         Ok(CliqueMinimalSeparatorDecomposition {
             graph,
             chordal_graph: None,

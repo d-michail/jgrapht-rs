@@ -60,6 +60,20 @@ the capability named in their `where Self: ..` clause.
 * Tests that asserted `GraphError::Unsupported` for missing incoming indexes were replaced by
   `compile_fail` doctests and `tests/alg/capability_bounds_test.rs`.
 
+## Step 13: cycles, isomorphism, trees
+
+* `AHUUnrootedTreeIsomorphismInspector`, `CliqueMinimalSeparatorDecomposition` and `PatonCycleBase`
+  require `G: UndirectedGraph` (was a run-time `InvalidGraph(Undirected)`); `NaiveLcaFinder` no
+  longer re-checks the direction its `DirectedGraph` bound guarantees.
+* Typed errors replace `InvalidArgument` strings: a root or vertex that is not in the graph is
+  `VertexNotFound`; an empty tree or forest is `InvalidGraph(NonEmpty)`; an empty root set is
+  `InvalidParameter { name: "roots", requirement: NonEmpty }`; a Chinese-postman input that is not
+  connected is `InvalidGraph(Connected)`; `StoerWagnerMinimumCut` on fewer than two vertices is
+  `InvalidGraph(AtLeastTwoVertices)`; an empty bipartite layout side is
+  `InvalidParameter { name: "partition", .. }`.
+* Narrower bounds (callers only gain): `CycleDetector`, `TarjanLcaFinder`, VF2 and the Eulerian
+  cycle accept graphs with fewer capabilities.
+
 ## Step 12: coloring, scoring, clustering, drawing
 
 * `UndirectedModularityMeasurer::new`, `KSpanningTreeClustering::new`,
@@ -124,7 +138,7 @@ built on it still require the `Graph` integrity contract and say so in their pan
 |---|---|---|
 | `InvalidParameter { name, requirement }` | a numeric or collection parameter violates `ParameterRequirement` (`Positive`, `NonNegative`, `AtLeast(n)`, `AtMost(n)`, `NonEmpty`, `Finite`, `Probability`) | non-positive tolerance, radius, count, precision, ... |
 | `InvalidWeight(WeightProblem)` | `Negative`, `NaN`, `NegativeOrNaN`, `NotFinite` | negative or NaN edge weights |
-| `InvalidGraph(GraphProperty)` | the graph lacks a required property: `Directed`, `Undirected`, `NotMixed`, `Simple`, `SimpleDirected`, `NoParallelEdges`, `NoSelfLoops`, `AllowsSelfLoops`, `AllowsParallelEdges`, `NonEmpty`, `Empty`, `Complete`, `CompleteBipartite`, `Bipartite`, `Connected`, `Weighted`, `Acyclic`, `Eulerian`, `Planar`, `NonPlanar`, `Tree` | "Graph must be ..." checks, `props::require_*` |
+| `InvalidGraph(GraphProperty)` | the graph lacks a required property: `Directed`, `Undirected`, `NotMixed`, `Simple`, `SimpleDirected`, `NoParallelEdges`, `NoSelfLoops`, `AllowsSelfLoops`, `AllowsParallelEdges`, `NonEmpty`, `AtLeastTwoVertices`, `Empty`, `Complete`, `CompleteBipartite`, `Bipartite`, `Connected`, `Weighted`, `Acyclic`, `Eulerian`, `Planar`, `NonPlanar`, `Tree` | "Graph must be ..." checks, `props::require_*` |
 | `SourceEqualsSink` | flow or cut with identical source and sink | |
 | `Infeasible`, `Unbounded` | no feasible solution / no finite optimum where that is not a normal `Option` outcome | flow problems, perfect matching |
 

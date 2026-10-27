@@ -125,9 +125,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
         if g.contains_vertex(v) {
             Ok(())
         } else {
-            Err(GraphError::InvalidArgument(
-                "no such vertex in graph".into(),
-            ))
+            Err(GraphError::VertexNotFound)
         }
     }
 

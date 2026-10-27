@@ -74,7 +74,7 @@ fn union_successors<G: OutgoingGraph>(g1: &G, g2: &G) -> Vec<Vec<usize>> {
     succ
 }
 
-impl<'g, G: OutgoingGraph + IncidenceGraph> ColorRefinementIsomorphismInspector<'g, G> {
+impl<'g, G: IncidenceGraph> ColorRefinementIsomorphismInspector<'g, G> {
     /// Fails for multigraphs, mixed graphs and a directed/undirected pair.
     pub fn new(graph1: &'g G, graph2: &'g G) -> Result<Self> {
         check_types(graph1, graph2)?;
