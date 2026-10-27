@@ -580,4 +580,19 @@ mod color_refinement_algorithm_test {
             }
         }
     }
+
+    #[test]
+    fn long_path_scaling_guard() {
+        // A path needs linearly many global rounds with the former signature-sorting
+        // implementation. Partition refinement processes it in O((n + m) log n).
+        let n = 10_000;
+        let g = graph_with(
+            0..=n - 1,
+            &(0..n - 1).map(|v| (v, v + 1)).collect::<Vec<_>>(),
+            false,
+        );
+        let coloring = ColorRefinementAlgorithm::new(&g).coloring().unwrap();
+        assert_eq!(coloring.count, ((n + 1) / 2) as usize);
+        assert_eq!(coloring.colors[&0], coloring.colors[&(n - 1)]);
+    }
 }

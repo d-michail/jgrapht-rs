@@ -645,36 +645,170 @@ impl<'g, G: Graph> ChordalGraphColoring<'g, G> {
     }
 }
 
-/// Colour refinement on successor lists: repeatedly splits colour classes by the sorted multiset
-/// of successor colours until stable. Returns the colours and the number of classes.
+/// Colour refinement on successor lists using the partition-refinement algorithm of
+/// `ColorRefinementAlgorithm`. Returns the colours and the number of classes.
 pub(crate) fn refine_colors(succ: &[Vec<usize>], initial: Vec<usize>) -> (Vec<usize>, usize) {
-    let mut color = initial;
-    let n = color.len();
-    let mut classes = color.iter().collect::<HashSet<_>>().len();
-    loop {
-        let sigs: Vec<(usize, Vec<usize>)> = (0..n)
-            .map(|v| {
-                let mut s: Vec<usize> = succ[v].iter().map(|&u| color[u]).collect();
-                s.sort_unstable();
-                (color[v], s)
-            })
-            .collect();
-        let mut ids: HashMap<&(usize, Vec<usize>), usize> = HashMap::new();
-        let next: Vec<usize> = sigs
-            .iter()
-            .map(|s| {
-                let l = ids.len();
-                *ids.entry(s).or_insert(l)
-            })
-            .collect();
-        let new_classes = ids.len();
-        color = next;
-        if new_classes == classes {
-            break;
-        }
-        classes = new_classes;
+    let n = initial.len();
+    if n == 0 {
+        return (initial, 0);
     }
-    (color, classes)
+
+    // Incoming neighbours are what the Java implementation visits when a colour is used as a
+    // refiner. De-duplicate each successor list: parallel edges count only once.
+    let mut predecessors = vec![Vec::new(); n];
+    for (v, out) in succ.iter().enumerate() {
+        let mut seen = HashSet::new();
+        for &w in out {
+            if seen.insert(w) {
+                predecessors[w].push(v);
+            }
+        }
+    }
+
+    let initial_count = initial.iter().copied().max().unwrap() + 1;
+    let mut rep = RefinementRepresentation::new(initial, initial_count, n);
+
+    // Java pushes the colours in descending order and pops from the front. A Vec stack with the
+    // same insertion sequence has precisely the same processing order.
+    let mut refine_stack: Vec<usize> = (0..initial_count).rev().collect();
+    while let Some(refining_color) = refine_stack.pop() {
+        let mut adjacent_colors = Vec::new();
+        let mut adjacent_seen = vec![false; n];
+
+        for &v in &rep.color_classes[refining_color] {
+            for &w in &predecessors[v] {
+                let new_degree = rep.color_degree[w] + 1;
+                rep.color_degree[w] = new_degree;
+                let c = rep.coloring[w];
+                if new_degree == 1 {
+                    rep.positive_degree_color_classes[c].push(w);
+                }
+                if !adjacent_seen[c] {
+                    adjacent_seen[c] = true;
+                    adjacent_colors.push(c);
+                }
+                rep.max_color_degree[c] = rep.max_color_degree[c].max(new_degree);
+            }
+        }
+
+        for &c in &adjacent_colors {
+            if rep.color_classes[c].len() != rep.positive_degree_color_classes[c].len() {
+                rep.min_color_degree[c] = 0;
+            } else {
+                rep.min_color_degree[c] = rep.positive_degree_color_classes[c]
+                    .iter()
+                    .map(|&v| rep.color_degree[v])
+                    .min()
+                    .unwrap_or(rep.max_color_degree[c]);
+            }
+        }
+
+        // JGraphT sorts the affected colours so that the resulting numbering is canonical.
+        adjacent_colors.sort_unstable();
+        for &c in &adjacent_colors {
+            if rep.min_color_degree[c] < rep.max_color_degree[c] {
+                split_refinement_color(c, &mut refine_stack, &mut rep);
+            }
+        }
+
+        for c in adjacent_colors {
+            for &v in &rep.positive_degree_color_classes[c] {
+                rep.color_degree[v] = 0;
+            }
+            rep.max_color_degree[c] = 0;
+            rep.positive_degree_color_classes[c].clear();
+        }
+    }
+
+    let count = rep.last_used_color + 1;
+    (rep.coloring, count)
+}
+
+struct RefinementRepresentation {
+    color_classes: Vec<Vec<usize>>,
+    positive_degree_color_classes: Vec<Vec<usize>>,
+    max_color_degree: Vec<usize>,
+    min_color_degree: Vec<usize>,
+    color_degree: Vec<usize>,
+    coloring: Vec<usize>,
+    last_used_color: usize,
+}
+
+impl RefinementRepresentation {
+    fn new(coloring: Vec<usize>, number_colors: usize, n: usize) -> Self {
+        let mut color_classes = vec![Vec::new(); n];
+        for (v, &c) in coloring.iter().enumerate() {
+            color_classes[c].push(v);
+        }
+        RefinementRepresentation {
+            color_classes,
+            positive_degree_color_classes: vec![Vec::new(); n],
+            max_color_degree: vec![0; n],
+            min_color_degree: vec![0; n],
+            color_degree: vec![0; n],
+            coloring,
+            last_used_color: number_colors - 1,
+        }
+    }
+}
+
+fn split_refinement_color(
+    color: usize,
+    refine_stack: &mut Vec<usize>,
+    rep: &mut RefinementRepresentation,
+) {
+    let positive = rep.positive_degree_color_classes[color].clone();
+    let max_degree = rep.max_color_degree[color];
+    let mut num_color_degree = vec![0usize; max_degree + 1];
+    num_color_degree[0] = rep.color_classes[color].len() - positive.len();
+    for &v in &positive {
+        num_color_degree[rep.color_degree[v]] += 1;
+    }
+
+    // As in Java, ties keep the lowest degree as the largest part.
+    let mut largest_degree = 0;
+    for degree in 1..=max_degree {
+        if num_color_degree[degree] > num_color_degree[largest_degree] {
+            largest_degree = degree;
+        }
+    }
+
+    let mut new_mapping = vec![0usize; max_degree + 1];
+    let color_was_queued = refine_stack.contains(&color);
+    for degree in 0..=max_degree {
+        if num_color_degree[degree] == 0 {
+            continue;
+        }
+        if degree == rep.min_color_degree[color] {
+            new_mapping[degree] = color;
+            if !color_was_queued && degree != largest_degree {
+                refine_stack.push(color);
+            }
+        } else {
+            rep.last_used_color += 1;
+            new_mapping[degree] = rep.last_used_color;
+            if color_was_queued || degree != largest_degree {
+                refine_stack.push(rep.last_used_color);
+            }
+        }
+    }
+
+    let mut moved = Vec::new();
+    for v in positive {
+        let new_color = new_mapping[rep.color_degree[v]];
+        if new_color != color {
+            moved.push((v, new_color));
+        }
+    }
+    if moved.is_empty() {
+        return;
+    }
+    let moved_vertices: HashSet<usize> = moved.iter().map(|&(v, _)| v).collect();
+    rep.color_classes[color].retain(|v| !moved_vertices.contains(v));
+    for (v, new_color) in moved {
+        rep.color_classes[new_color].push(v);
+        rep.coloring[v] = new_color;
+    }
 }
 
 /// Colour refinement (`ColorRefinementAlgorithm`): the coarsest equitable partition refining
