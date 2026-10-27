@@ -60,3 +60,4 @@ Note: `rheaps` 0.16.2 matches JHeaps' tie-breaking for insert/pop, decrease-key 
 | `alg/clique/*` (7 files: BronKerbosch x3 via base test, all-variants, ChordalGraphMaxCliqueFinder, CliqueMinimalSeparatorDecomposition) | `alg_clique_tests` | done (`util::HashableSet` stands in for Java `Set<Set<V>>` keys; `fill_edges` are endpoint pairs) |
 | `alg/vertexcover/*` (12 files) | `alg_vertexcover_tests` (+ `vertex_cover_data`, extracted from the Java sources) | done |
 | `alg/color/*` (10 files) | `alg_color_tests` (+ `brown_data`) | done; `BrownBacktrackColoringTest.insertions2_3Test` and `jeanTest` are `#[ignore]`d (tagged `optional` upstream, very slow) |
+| `alg/clustering/*` (6 files) | `alg_clustering_tests` (+ `clustering_data`) | done; `GreedyModularityAlgorithm::with_java_hash` reproduces Java's `HashSet` iteration where it decides ties |

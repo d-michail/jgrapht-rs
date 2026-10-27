@@ -192,3 +192,53 @@ impl<T, C: Fn(&T, &T) -> i32> JavaPriorityQueue<T, C> {
         result
     }
 }
+
+/// `String.hashCode()` of a Java string, for UTF-16 code units.
+pub fn java_string_hash(s: &str) -> i32 {
+    s.encode_utf16()
+        .fold(0i32, |h, c| h.wrapping_mul(31).wrapping_add(c as i32))
+}
+
+/// The iteration order of a `java.util.HashMap` / `HashSet` that received `items` (distinct, in
+/// this insertion order) with default capacity: buckets by `(h ^ h >>> 16) & (capacity - 1)`,
+/// insertion order within a bucket. Tree bins (very long collision chains) are not modelled.
+pub fn java_hash_order<T>(items: Vec<T>, hash: impl Fn(&T) -> i32) -> Vec<T> {
+    let mut capacity = 16usize;
+    while items.len() * 4 > capacity * 3 {
+        capacity *= 2;
+    }
+    let mut keyed: Vec<(usize, T)> = items
+        .into_iter()
+        .map(|t| {
+            let h = hash(&t) as u32;
+            (((h ^ (h >> 16)) as usize) & (capacity - 1), t)
+        })
+        .collect();
+    keyed.sort_by_key(|(bucket, _)| *bucket);
+    keyed.into_iter().map(|(_, t)| t).collect()
+}
+
+/// Iteration order of a `java.util.HashSet` built as `new HashSet<>(first)` followed by adding
+/// `rest` (the pattern `new HashSet<>(a); addAll(b)`), for elements with the given `hashCode`.
+pub fn java_hash_set_order<T>(first: Vec<T>, rest: Vec<T>, hash: impl Fn(&T) -> i32) -> Vec<T> {
+    // new HashSet<>(Collection) sizes its table for max(n / 0.75 + 1, 16) elements
+    let wanted = ((first.len() as f32 / 0.75) as usize + 1).max(16);
+    let mut capacity = wanted.next_power_of_two();
+    let mut size = first.len();
+    for _ in 0..rest.len() {
+        size += 1;
+        if size > capacity * 3 / 4 {
+            capacity *= 2;
+        }
+    }
+    let mut keyed: Vec<(usize, T)> = first
+        .into_iter()
+        .chain(rest)
+        .map(|t| {
+            let h = hash(&t) as u32;
+            (((h ^ (h >> 16)) as usize) & (capacity - 1), t)
+        })
+        .collect();
+    keyed.sort_by_key(|(bucket, _)| *bucket);
+    keyed.into_iter().map(|(_, t)| t).collect()
+}

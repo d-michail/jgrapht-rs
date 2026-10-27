@@ -664,13 +664,18 @@ impl<'g, G: Graph> ColorRefinementAlgorithm<'g, G> {
         let used: HashSet<usize> = alpha.colors.values().copied().collect();
         let consistent = alpha.colors.len() == graph.vertex_count()
             && used.len() == alpha.count
-            && graph.vertices().all(|v| alpha.colors.get(v).is_some_and(|&c| c < alpha.count));
+            && graph
+                .vertices()
+                .all(|v| alpha.colors.get(v).is_some_and(|&c| c < alpha.count));
         if !consistent {
             return Err(GraphError::InvalidArgument(
                 "alpha is not a valid surjective l-coloring for the given graph.".into(),
             ));
         }
-        Ok(ColorRefinementAlgorithm { graph, alpha: Some(alpha) })
+        Ok(ColorRefinementAlgorithm {
+            graph,
+            alpha: Some(alpha),
+        })
     }
 }
 
@@ -678,7 +683,8 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlgorithm<'
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let g = self.graph;
         let vs: Vec<&G::Vertex> = g.vertices().collect();
-        let index: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+        let index: HashMap<&G::Vertex, usize> =
+            vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
         let succ: Vec<Vec<usize>> = vs
             .iter()
             .map(|v| {
@@ -719,7 +725,11 @@ impl<G: Graph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlgorithm<'
             classes = new_classes;
         }
         Ok(Coloring {
-            colors: vs.iter().enumerate().map(|(i, v)| ((*v).clone(), color[i])).collect(),
+            colors: vs
+                .iter()
+                .enumerate()
+                .map(|(i, v)| ((*v).clone(), color[i]))
+                .collect(),
             count: classes,
         })
     }

@@ -387,3 +387,223 @@ fn count_triangles_sets(nb: &[HashSet<usize>]) -> usize {
 pub fn count_triangles<G: Graph>(g: &G) -> usize {
     super::metrics::number_of_triangles(g) as usize
 }
+
+// ---------------------------------------------------------------------------------------------
+// EdgeBetweennessCentrality (JGraphT's class: Brandes' algorithm for edges)
+
+use crate::GraphError;
+use crate::graph::GraphExt;
+use indexmap::IndexMap;
+use rheaps::AddressableHeap;
+use rheaps::tree::PairingHeap;
+
+/// What to do when the number of shortest paths overflows a `long`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OverflowStrategy {
+    IgnoreOverflow,
+    ThrowExceptionOnOverflow,
+}
+
+/// Edge betweenness: for every edge the sum over source/target pairs of the fraction of shortest
+/// paths through it. Graphs with parallel edges are rejected.
+pub struct EdgeBetweennessCentrality<'g, G: Graph> {
+    graph: &'g G,
+    start_vertices: Option<Vec<G::Vertex>>,
+    overflow: OverflowStrategy,
+    scores: Option<IndexMap<G::Edge, f64>>,
+}
+
+impl<'g, G: Graph> EdgeBetweennessCentrality<'g, G> {
+    pub fn new(graph: &'g G) -> Result<Self, GraphError> {
+        Self::with_options(graph, OverflowStrategy::IgnoreOverflow, None)
+    }
+
+    /// `start_vertices` restricts the sources of the shortest-path searches; `None` uses every
+    /// vertex (and halves the scores of undirected graphs).
+    pub fn with_options(
+        graph: &'g G,
+        overflow: OverflowStrategy,
+        start_vertices: Option<Vec<G::Vertex>>,
+    ) -> Result<Self, GraphError> {
+        if crate::graph::props::has_multiple_edges(graph) {
+            return Err(GraphError::InvalidArgument(
+                "Graphs with multiple edges not supported".into(),
+            ));
+        }
+        Ok(EdgeBetweennessCentrality {
+            graph,
+            start_vertices,
+            overflow,
+            scores: None,
+        })
+    }
+
+    /// Scores of all edges, in the graph's edge order.
+    pub fn scores(&mut self) -> Result<&IndexMap<G::Edge, f64>, GraphError> {
+        if self.scores.is_none() {
+            self.scores = Some(self.compute()?);
+        }
+        Ok(self.scores.as_ref().unwrap())
+    }
+
+    pub fn edge_score(&mut self, e: &G::Edge) -> Result<f64, GraphError> {
+        if !self.graph.contains_edge(e) {
+            return Err(GraphError::InvalidArgument(
+                "Cannot return score of unknown edge".into(),
+            ));
+        }
+        Ok(self.scores()?[e])
+    }
+
+    fn compute(&self) -> Result<IndexMap<G::Edge, f64>, GraphError> {
+        let g = self.graph;
+        let mut scores: IndexMap<G::Edge, f64> = g.edges().map(|e| (e.clone(), 0.0)).collect();
+        let weighted = g.graph_type().weighted;
+        let starts: Vec<G::Vertex> = match &self.start_vertices {
+            Some(s) => s.clone(),
+            None => g.vertices().cloned().collect(),
+        };
+        let divide_by_two = self.start_vertices.is_none() && !g.graph_type().directed;
+        let mut stack: Vec<G::Vertex> = Vec::new();
+        for source in &starts {
+            let (pred, sigma) = if weighted {
+                self.weighted_search(source, &mut stack)?
+            } else {
+                self.unweighted_search(source, &mut stack)?
+            };
+            // accumulate dependencies
+            let mut delta: HashMap<G::Vertex, f64> =
+                g.vertices().map(|v| (v.clone(), 0.0)).collect();
+            while let Some(w) = stack.pop() {
+                if let Some(w_pred) = pred.get(&w) {
+                    for e in w_pred {
+                        let v = g.opposite_vertex(e, &w).unwrap().clone();
+                        let c = (sigma[&v] as f64 / sigma[&w] as f64) * (1.0 + delta[&w]);
+                        *scores.get_mut(e).unwrap() += c;
+                        *delta.get_mut(&v).unwrap() += c;
+                    }
+                }
+            }
+        }
+        if divide_by_two {
+            for s in scores.values_mut() {
+                *s /= 2.0;
+            }
+        }
+        Ok(scores)
+    }
+
+    fn add_paths(
+        &self,
+        sigma: &mut HashMap<G::Vertex, i64>,
+        v: &G::Vertex,
+        w: &G::Vertex,
+    ) -> Result<(), GraphError> {
+        let sum = sigma[w].wrapping_add(sigma[v]);
+        if self.overflow == OverflowStrategy::ThrowExceptionOnOverflow && sum < 0 {
+            return Err(GraphError::Overflow("long overflow".into()));
+        }
+        sigma.insert(w.clone(), sum);
+        Ok(())
+    }
+
+    #[allow(clippy::type_complexity)]
+    fn unweighted_search(
+        &self,
+        source: &G::Vertex,
+        stack: &mut Vec<G::Vertex>,
+    ) -> Result<(HashMap<G::Vertex, Vec<G::Edge>>, HashMap<G::Vertex, i64>), GraphError> {
+        let g = self.graph;
+        let mut pred: HashMap<G::Vertex, Vec<G::Edge>> = HashMap::new();
+        let mut dist: HashMap<G::Vertex, f64> = HashMap::new();
+        let mut sigma: HashMap<G::Vertex, i64> = g.vertices().map(|v| (v.clone(), 0)).collect();
+        sigma.insert(source.clone(), 1);
+        dist.insert(source.clone(), 0.0);
+        let mut queue = std::collections::VecDeque::from([source.clone()]);
+        while let Some(v) = queue.pop_front() {
+            stack.push(v.clone());
+            let v_distance = dist[&v];
+            for e in g.out_edges_of(&v) {
+                let w = g.opposite_vertex(e, &v).unwrap();
+                if *w == v {
+                    continue;
+                }
+                if !dist.contains_key(w) {
+                    dist.insert(w.clone(), v_distance + 1.0);
+                    queue.push_back(w.clone());
+                }
+                if dist[w] == v_distance + 1.0 {
+                    self.add_paths(&mut sigma, &v, w)?;
+                    pred.entry(w.clone()).or_default().push(e.clone());
+                }
+            }
+        }
+        Ok((pred, sigma))
+    }
+
+    #[allow(clippy::type_complexity)]
+    fn weighted_search(
+        &self,
+        source: &G::Vertex,
+        stack: &mut Vec<G::Vertex>,
+    ) -> Result<(HashMap<G::Vertex, Vec<G::Edge>>, HashMap<G::Vertex, i64>), GraphError> {
+        let g = self.graph;
+        let mut pred: HashMap<G::Vertex, Vec<G::Edge>> = HashMap::new();
+        let mut handles = HashMap::new();
+        let mut sigma: HashMap<G::Vertex, i64> = g.vertices().map(|v| (v.clone(), 0)).collect();
+        let mut heap: PairingHeap<OrderedF64, G::Vertex> = PairingHeap::new();
+        sigma.insert(source.clone(), 1);
+        handles.insert(source.clone(), heap.insert(OrderedF64(0.0), source.clone()));
+        let mut final_dist: HashMap<G::Vertex, f64> = HashMap::new();
+        while let Some((OrderedF64(v_distance), v)) = heap.pop() {
+            final_dist.insert(v.clone(), v_distance);
+            stack.push(v.clone());
+            for e in g.out_edges_of(&v) {
+                let w = g.opposite_vertex(e, &v).unwrap();
+                if *w == v {
+                    continue;
+                }
+                let e_weight = g.edge_weight(e).unwrap_or(1.0);
+                if e_weight < 0.0 {
+                    return Err(GraphError::InvalidArgument(
+                        "Negative edge weights are not allowed".into(),
+                    ));
+                }
+                let new_distance = v_distance + e_weight;
+                let current: Option<f64> = match handles.get(w) {
+                    None => None,
+                    Some(h) => Some(
+                        final_dist
+                            .get(w)
+                            .copied()
+                            .unwrap_or_else(|| heap.key(*h).map(|k| k.0).unwrap_or(f64::INFINITY)),
+                    ),
+                };
+                let w_key = match current {
+                    None => {
+                        let h = heap.insert(OrderedF64(new_distance), w.clone());
+                        handles.insert(w.clone(), h);
+                        sigma.insert(w.clone(), 0);
+                        pred.insert(w.clone(), Vec::new());
+                        new_distance
+                    }
+                    Some(key)
+                        if !final_dist.contains_key(w) && key.total_cmp(&new_distance).is_gt() =>
+                    {
+                        let h = handles[w];
+                        heap.decrease_key(h, OrderedF64(new_distance)).ok();
+                        sigma.insert(w.clone(), 0);
+                        pred.insert(w.clone(), Vec::new());
+                        new_distance
+                    }
+                    Some(key) => key,
+                };
+                if w_key.total_cmp(&new_distance).is_eq() {
+                    self.add_paths(&mut sigma, &v, w)?;
+                    pred.entry(w.clone()).or_default().push(e.clone());
+                }
+            }
+        }
+        Ok((pred, sigma))
+    }
+}

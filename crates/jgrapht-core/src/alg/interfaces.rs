@@ -129,3 +129,29 @@ pub trait VertexCoverAlgorithm<V: Clone> {
 pub trait VertexColoringAlgorithm<V: Clone + Eq + Hash> {
     fn coloring(&self) -> Result<Coloring<V>>;
 }
+
+/// A partition of the vertices into clusters (`ClusteringAlgorithm.Clustering`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Clustering<V: Eq + Hash> {
+    clusters: Vec<IndexSet<V>>,
+}
+
+impl<V: Eq + Hash> Clustering<V> {
+    pub fn new(clusters: Vec<IndexSet<V>>) -> Self {
+        Clustering { clusters }
+    }
+    pub fn number_clusters(&self) -> usize {
+        self.clusters.len()
+    }
+    pub fn clusters(&self) -> &[IndexSet<V>] {
+        &self.clusters
+    }
+    pub fn iter(&self) -> impl Iterator<Item = &IndexSet<V>> {
+        self.clusters.iter()
+    }
+}
+
+/// An algorithm that clusters the vertices of a graph (`ClusteringAlgorithm`).
+pub trait ClusteringAlgorithm<V: Eq + Hash + Clone> {
+    fn clustering(&self) -> Result<Clustering<V>>;
+}
