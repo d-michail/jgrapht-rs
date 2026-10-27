@@ -43,3 +43,14 @@ jobs:
       - run: cargo doc --workspace --no-deps
         env:
           RUSTDOCFLAGS: --cfg docsrs -D warnings
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo package -p jgrapht --locked
+      # jgrapht-io can be packaged only after its jgrapht version is on crates.io. Until then,
+      # audit the manifest and published file set without resolving registry dependencies.
+      - run: cargo package -p jgrapht-io --list
