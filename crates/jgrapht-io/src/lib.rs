@@ -9,9 +9,11 @@
 mod attribute;
 pub mod csv;
 pub mod dimacs;
+pub mod dot;
 mod error;
 mod event;
 mod exporter;
+pub mod gexf;
 pub mod gml;
 pub mod graph6;
 pub mod graphml;
@@ -19,6 +21,7 @@ pub mod json;
 pub mod lemon;
 pub mod matrix;
 mod traits;
+pub mod tsplib;
 
 pub use attribute::{Attribute, AttributeMap, AttributeType, DefaultAttribute};
 pub use error::{IoError, Result};

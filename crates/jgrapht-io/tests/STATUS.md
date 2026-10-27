@@ -14,10 +14,10 @@ the complete Java test matrix has not yet been brought across.
 | GML | partial | hand-written nested-list parser, vertices, edges and weights; attribute and parameter parity remains |
 | Lemon | partial | base output, Java string escaping and edge weights |
 | Matrix | partial | sparse adjacency, Laplacian and normalized Laplacian exporters |
-| DOT | todo | — |
+| DOT | partial | hand-written lexer/parser for graph kind, IDs, comments, ports, chained edges, attribute skipping and basic subgraphs; scoped attribute parity remains |
 | GraphML | partial | `quick-xml` streaming import, typed keys/defaults, configurable edge weights and deterministic basic export |
-| GEXF | todo | — |
-| TSPLIB | todo | — |
+| GEXF | partial | `quick-xml` node/edge/weight import and deterministic basic export; declared attributes and visualization parity remain |
+| TSPLIB | partial | coordinate instances, nine distance types, complete weighted graphs, metadata and embedded tours |
 
-Current Rust integration tests: 19. The remaining work is to port the upstream tests format by
+Current Rust integration tests: 25. The remaining work is to port the upstream tests format by
 format and close every behavior gap they expose.
