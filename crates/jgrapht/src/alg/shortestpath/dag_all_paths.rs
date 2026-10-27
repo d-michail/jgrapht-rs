@@ -13,10 +13,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use crate::graph::DirectedGraph;
-use crate::traverse::TopologicalOrder;
 use crate::{GraphError, Result};
 use dashu_int::UBig;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 
 /// Counts directed paths in a DAG using dynamic programming in topological order.
 pub struct DagAllPathsCounter;
@@ -30,9 +29,27 @@ impl DagAllPathsCounter {
         if !graph.contains_vertex(source) || !graph.contains_vertex(target) {
             return Err(GraphError::VertexNotFound);
         }
-        let mut order = TopologicalOrder::new(graph);
-        let vertices: Vec<_> = order.by_ref().collect();
-        if !order.is_complete() {
+        let mut in_degree: HashMap<_, _> = graph
+            .vertices()
+            .map(|vertex| Ok((vertex, graph.in_degree_of(vertex)?)))
+            .collect::<Result<_>>()?;
+        let mut queue: VecDeque<_> = graph
+            .vertices()
+            .filter(|vertex| in_degree[vertex] == 0)
+            .collect();
+        let mut vertices = Vec::with_capacity(graph.vertex_count());
+        while let Some(vertex) = queue.pop_front() {
+            vertices.push(vertex);
+            for edge in graph.out_edges_of(vertex)? {
+                let target = graph.edge_target(edge).expect("edge in graph");
+                let degree = in_degree.get_mut(target).expect("vertex in graph");
+                *degree -= 1;
+                if *degree == 0 {
+                    queue.push_back(target);
+                }
+            }
+        }
+        if vertices.len() != graph.vertex_count() {
             return Err(GraphError::InvalidArgument(
                 "graph must be acyclic (DAG)".into(),
             ));
@@ -54,7 +71,7 @@ impl DagAllPathsCounter {
             if count == UBig::ZERO {
                 continue;
             }
-            for edge in graph.out_edges_of(vertices[index]).unwrap() {
+            for edge in graph.out_edges_of(vertices[index])? {
                 let child = graph.edge_target(edge).expect("edge in graph");
                 ways[positions[child]] += &count;
             }

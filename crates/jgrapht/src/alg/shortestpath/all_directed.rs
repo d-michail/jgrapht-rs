@@ -127,25 +127,27 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
             return Err(GraphError::VertexNotFound);
         }
 
-        let forward = self
-            .forward_pruning
-            .then(|| self.forward_distances(&sources, max_path_length));
+        let forward = if self.forward_pruning {
+            Some(self.forward_distances(&sources, max_path_length)?)
+        } else {
+            None
+        };
         let edge_to_target =
-            self.backward_edge_distances(&targets, forward.as_ref(), max_path_length);
-        Ok(self.generate_paths(
+            self.backward_edge_distances(&targets, forward.as_ref(), max_path_length)?;
+        self.generate_paths(
             &sources,
             &targets,
             simple_paths_only,
             max_path_length,
             &edge_to_target,
-        ))
+        )
     }
 
     fn forward_distances<'a>(
         &'a self,
         sources: &[&'a G::Vertex],
         max_path_length: Option<usize>,
-    ) -> HashMap<&'a G::Vertex, usize> {
+    ) -> Result<HashMap<&'a G::Vertex, usize>> {
         let mut distance = HashMap::new();
         let mut queue = VecDeque::new();
         for &source in sources {
@@ -158,14 +160,14 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
             if max_path_length.is_some_and(|bound| d >= bound) {
                 continue;
             }
-            for (_, child) in self.graph.outgoing_of(vertex) {
+            for (_, child) in self.graph.try_outgoing_of(vertex)? {
                 if !distance.contains_key(child) {
                     distance.insert(child, d + 1);
                     queue.push_back(child);
                 }
             }
         }
-        distance
+        Ok(distance)
     }
 
     fn backward_edge_distances<'a>(
@@ -173,10 +175,10 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
         targets: &HashSet<&'a G::Vertex>,
         forward: Option<&HashMap<&'a G::Vertex, usize>>,
         max_path_length: Option<usize>,
-    ) -> HashMap<&'a G::Edge, usize> {
+    ) -> Result<HashMap<&'a G::Edge, usize>> {
         let mut edge_distance = HashMap::new();
         if max_path_length == Some(0) {
-            return edge_distance;
+            return Ok(edge_distance);
         }
         let mut vertex_distance = HashMap::new();
         let mut queue = VecDeque::new();
@@ -189,7 +191,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
         }
         while let Some(vertex) = queue.pop_front() {
             let child_distance = vertex_distance[vertex] + 1;
-            for edge in self.graph.in_edges_of(vertex).unwrap() {
+            for edge in self.graph.in_edges_of(vertex)? {
                 let source = self.graph.edge_source(edge).expect("edge in graph");
                 if let Some(forward) = forward {
                     let Some(&source_distance) = forward.get(source) else {
@@ -215,7 +217,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
                 }
             }
         }
-        edge_distance
+        Ok(edge_distance)
     }
 
     fn generate_paths(
@@ -225,7 +227,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
         simple_paths_only: bool,
         max_path_length: Option<usize>,
         edge_to_target: &HashMap<&G::Edge, usize>,
-    ) -> Vec<GraphWalk<G::Vertex, G::Edge>> {
+    ) -> Result<Vec<GraphWalk<G::Vertex, G::Edge>>> {
         let mut complete = Vec::new();
         let mut incomplete: VecDeque<GraphWalk<G::Vertex, G::Edge>> = VecDeque::new();
 
@@ -236,7 +238,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
             if max_path_length == Some(0) {
                 continue;
             }
-            for (edge, target) in self.graph.outgoing_of(source) {
+            for (edge, target) in self.graph.try_outgoing_of(source)? {
                 let partial = GraphWalk::empty();
                 if !self.path_validator.is_valid_path(&partial, edge) {
                     continue;
@@ -265,7 +267,7 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
             } else {
                 HashSet::new()
             };
-            for (edge, child) in self.graph.outgoing_of(leaf) {
+            for (edge, child) in self.graph.try_outgoing_of(leaf)? {
                 let Some(&remaining) = edge_to_target.get(edge) else {
                     continue;
                 };
@@ -291,6 +293,6 @@ impl<G: DirectedGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
                 }
             }
         }
-        complete
+        Ok(complete)
     }
 }

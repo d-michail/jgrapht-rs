@@ -5,6 +5,7 @@ use jgrapht::alg::matching::{
     GreedyWeightedMatching, MatchingAlgorithm, PathGrowingWeightedMatching,
 };
 use jgrapht::alg::scoring::{EigenvectorCentrality, KatzCentrality, PageRank};
+use jgrapht::alg::shortestpath::{AllDirectedPaths, DagAllPathsCounter};
 use jgrapht::graph::sparse::{IncomingEdgesSupport, SparseIntDirectedGraph};
 use jgrapht::graph::{DirectedExt, GraphExt};
 use jgrapht::{GraphError, Result};
@@ -58,6 +59,14 @@ fn cycle_basis_algorithms_return_incidence_errors() {
 
     let mut stack = StackBFSFundamentalCycleBasis::new(&graph).unwrap();
     assert_unsupported(stack.get_cycle_basis());
+}
+
+#[test]
+fn all_directed_paths_returns_missing_incoming_index_errors() {
+    let graph = no_incoming_graph();
+
+    assert_unsupported(AllDirectedPaths::new(&graph).get_all_paths(&0, &3, true, None));
+    assert_unsupported(DagAllPathsCounter::count_all_paths(&graph, &0, &3));
 }
 
 #[test]
