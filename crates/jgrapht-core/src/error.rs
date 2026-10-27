@@ -29,6 +29,9 @@ pub enum GraphError {
     InvalidGraphWalk(String),
     #[error("invalid argument: {0}")]
     InvalidArgument(String),
+    /// A link prediction index is not defined for the queried pair (`LinkPredictionIndexNotWellDefinedException`).
+    #[error("link prediction index not well defined: {0}")]
+    IndexNotWellDefined(String),
 }
 
 pub type Result<T, E = GraphError> = std::result::Result<T, E>;

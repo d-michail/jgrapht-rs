@@ -90,3 +90,17 @@ pub trait LowestCommonAncestorAlgorithm<V: Eq + Hash + Clone> {
         ))
     }
 }
+
+/// Scores for pairs of vertices that might become linked (`LinkPredictionAlgorithm`).
+pub trait LinkPredictionAlgorithm<V: Clone> {
+    /// The score of the pair; [`GraphError::IndexNotWellDefined`](crate::GraphError) when the index is
+    /// undefined for it.
+    fn predict(&self, u: &V, v: &V) -> Result<f64>;
+
+    fn predict_all(&self, queries: &[(V, V)]) -> Result<Vec<(V, V, f64)>> {
+        queries
+            .iter()
+            .map(|(u, v)| Ok((u.clone(), v.clone(), self.predict(u, v)?)))
+            .collect()
+    }
+}

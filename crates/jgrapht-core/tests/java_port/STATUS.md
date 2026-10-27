@@ -56,3 +56,4 @@ Note: `rheaps` 0.16.2 matches JHeaps' tie-breaking for insert/pop, decrease-key 
 | `alg/decomposition/HeavyPathDecompositionTest`, `DulmageMendelsohnDecompositionTest` | `alg_decomposition_tests` | done (null-argument tests n/a) |
 | `alg/similarity/ZhangShashaTreeEditDistanceTest` | `alg_small_tests::zhang_shasha_tree_edit_distance_test` | done |
 | `alg/lca/*` (LCATreeTestBase x4 finders, NaiveLCAFinderTest) | `alg_lca_tests` | done (Tarjan reports a shared tree when queried, like Java) |
+| `alg/linkprediction/*` (10 files) | `alg_linkprediction_tests` | done (undefined indices are `GraphError::IndexNotWellDefined`; the Leicht–Holme–Newman bug is kept) |
