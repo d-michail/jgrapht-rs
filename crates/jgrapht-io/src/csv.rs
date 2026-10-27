@@ -39,6 +39,19 @@ pub fn escape_field(field: &str, delimiter: char) -> String {
     }
 }
 
+/// Unescapes a delimiter-separated field using JGraphT's DSV rules.
+pub fn unescape_field(field: &str, delimiter: char) -> String {
+    if field.len() < 2 || !field.starts_with('"') || !field.ends_with('"') {
+        return field.to_owned();
+    }
+    let inner = &field[1..field.len() - 1];
+    if inner.contains(delimiter) || inner.contains('"') || inner.contains(['\r', '\n']) {
+        inner.replace("\"\"", "\"")
+    } else {
+        field.to_owned()
+    }
+}
+
 fn parse_records(input: &str, delimiter: char) -> Result<Vec<Vec<String>>> {
     let mut records = Vec::new();
     let mut record = Vec::new();
@@ -360,6 +373,26 @@ impl<V> CsvImporter<V> {
         self.parser.set_parameter(parameter, enabled);
     }
 
+    pub const fn format(&self) -> CsvFormat {
+        self.parser.format()
+    }
+
+    pub fn set_format(&mut self, format: CsvFormat) {
+        self.parser.set_format(format);
+    }
+
+    pub const fn delimiter(&self) -> char {
+        self.parser.delimiter()
+    }
+
+    pub fn set_delimiter(&mut self, delimiter: char) -> Result<()> {
+        self.parser.set_delimiter(delimiter)
+    }
+
+    pub fn is_parameter(&self, parameter: CsvParameter) -> bool {
+        self.parser.is_parameter(parameter)
+    }
+
     pub fn set_vertex_factory(&mut self, factory: impl FnMut(&str) -> V + 'static) {
         self.vertex_factory = Some(Box::new(factory));
     }
@@ -451,6 +484,30 @@ where
         } else {
             self.parameters.remove(&parameter);
         }
+    }
+
+    pub const fn format(&self) -> CsvFormat {
+        self.format
+    }
+
+    pub fn set_format(&mut self, format: CsvFormat) {
+        self.format = format;
+    }
+
+    pub const fn delimiter(&self) -> char {
+        self.delimiter
+    }
+
+    pub fn set_delimiter(&mut self, delimiter: char) -> Result<()> {
+        if !valid_delimiter(delimiter) {
+            return Err(IoError::Export("invalid CSV delimiter".into()));
+        }
+        self.delimiter = delimiter;
+        Ok(())
+    }
+
+    pub fn is_parameter(&self, parameter: CsvParameter) -> bool {
+        self.parameters.contains(&parameter)
     }
 }
 
@@ -568,6 +625,62 @@ where
                     }
                 }
             }
+        }
+        Ok(())
+    }
+}
+
+/// Exports the CSV dialect accepted by Microsoft Visio's graph importer.
+pub struct VisioExporter<V, E> {
+    base: BaseExporter<V, E>,
+}
+
+impl<V, E> VisioExporter<V, E>
+where
+    V: Clone + Eq + Hash + 'static,
+{
+    pub fn new() -> Self {
+        let mut ids = IntegerIdProvider::new();
+        Self::with_vertex_id_provider(move |vertex| ids.id(vertex))
+    }
+
+    pub fn with_vertex_id_provider(provider: impl FnMut(&V) -> String + 'static) -> Self {
+        Self {
+            base: BaseExporter::new(provider),
+        }
+    }
+}
+
+impl<V, E> Default for VisioExporter<V, E>
+where
+    V: Clone + Eq + Hash + 'static,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<V, E, G> GraphExporter<G> for VisioExporter<V, E>
+where
+    G: Graph<Vertex = V, Edge = E>,
+    V: Clone + Eq + Hash + 'static,
+    E: Clone + Eq + Hash,
+{
+    fn export_graph<W: Write>(&mut self, graph: &G, mut output: W) -> Result<()> {
+        for vertex in graph.vertices() {
+            let name = self.base.vertex_id(vertex)?;
+            writeln!(output, "Shape,{name},,{name}")?;
+        }
+        for edge in graph.edges() {
+            let source = graph
+                .edge_source(edge)
+                .ok_or_else(|| IoError::Export("edge has no source".into()))?;
+            let target = graph
+                .edge_target(edge)
+                .ok_or_else(|| IoError::Export("edge has no target".into()))?;
+            let source = self.base.vertex_id(source)?;
+            let target = self.base.vertex_id(target)?;
+            writeln!(output, "Link,{source}-->{target},,,{source},{target}")?;
         }
         Ok(())
     }
