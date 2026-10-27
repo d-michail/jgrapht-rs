@@ -1,8 +1,8 @@
 //! Ports of `org.jgrapht.util` tests for the pieces that exist in Rust:
 //! `VertexToIntegerMappingTest`, `SupplierUtilTest`, `RadixSortTest`.
 //!
-//! Not ported (Java collection classes replaced by the standard library): `AVLTreeTest`
-//! (`BTreeMap`), `DoublyLinkedListTest` (`VecDeque`/`LinkedList`), `PrefetchIteratorTest`,
+//! `AVLTreeTest` and `DoublyLinkedListTest` live in their own modules. Not ported (Java collection
+//! classes replaced by standard Rust facilities): `PrefetchIteratorTest`,
 //! `UnmodifiableUnionSetTest` (iterator chains), `StopWatch` (helper).
 
 use jgrapht::util::supplier::*;

@@ -1,38 +1,41 @@
 //! Dynamic connectivity in a forest (`TreeDynamicConnectivity`).
 //!
-//! Like the Java class this keeps an Euler tour of every tree, supporting `link`, `cut` and
-//! `connected` in logarithmic time. The tours live in one arena of treap nodes (the Java version
-//! uses its own `AVLTree`, which is not part of this port); only the observable behaviour is the
-//! same.
+//! This is the Java Euler-tour representation: tours are stored in join/split AVL sequence trees,
+//! and each vertex keeps its outgoing arcs in a circular doubly linked list. Both utilities use
+//! stable arena indices in place of Java object references.
 
+use crate::util::avl_tree::{AvlNodeId, AvlTree, AvlTreeId};
+use crate::util::doubly_linked_list::{DoublyLinkedList, ListId, ListNodeId};
 use crate::{GraphError, Result};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::hash::Hash;
 
-const NIL: usize = usize::MAX;
+type NodeId = usize;
+type ArcId = usize;
 
 #[derive(Debug, Clone)]
-struct TNode {
-    left: usize,
-    right: usize,
-    parent: usize,
-    size: usize,
-    prio: u64,
+struct Node<T> {
+    value: T,
+    arcs: ListId,
+    target_map: HashMap<NodeId, ArcId>,
+    singleton_tree: Option<AvlTreeId>,
 }
 
-/// A forest whose trees can be linked and cut.
-///
-/// Every element has one occurrence node in its tree's tour, and every edge adds two arc nodes.
+#[derive(Debug, Clone, Copy)]
+struct Arc {
+    target: NodeId,
+    list_node: ListNodeId,
+    tree_node: AvlNodeId,
+}
+
+/// A forest whose trees can be linked and cut in worst-case logarithmic time.
 #[derive(Debug, Clone)]
 pub struct TreeDynamicConnectivity<T: Eq + Hash + Clone> {
-    nodes: Vec<TNode>,
-    free: Vec<usize>,
-    rng: u64,
-    /// Occurrence node of each element.
-    occurrence: HashMap<T, usize>,
-    /// Arc nodes `(from, to)` of every edge, keyed by element.
-    arcs: HashMap<(T, T), usize>,
-    neighbors: HashMap<T, HashSet<T>>,
+    trees: AvlTree<T>,
+    arc_lists: DoublyLinkedList<ArcId>,
+    node_map: HashMap<T, NodeId>,
+    nodes: Vec<Node<T>>,
+    arcs: Vec<Option<Arc>>,
 }
 
 impl<T: Eq + Hash + Clone> Default for TreeDynamicConnectivity<T> {
@@ -44,17 +47,16 @@ impl<T: Eq + Hash + Clone> Default for TreeDynamicConnectivity<T> {
 impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
     pub fn new() -> Self {
         TreeDynamicConnectivity {
+            trees: AvlTree::new(),
+            arc_lists: DoublyLinkedList::new(),
+            node_map: HashMap::new(),
             nodes: Vec::new(),
-            free: Vec::new(),
-            rng: 0x9E37_79B9_7F4A_7C15,
-            occurrence: HashMap::new(),
-            arcs: HashMap::new(),
-            neighbors: HashMap::new(),
+            arcs: Vec::new(),
         }
     }
 
     pub fn contains(&self, element: &T) -> bool {
-        self.occurrence.contains_key(element)
+        self.node_map.contains_key(element)
     }
 
     /// Adds an isolated element; `false` if it was already present.
@@ -62,42 +64,50 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
         if self.contains(&element) {
             return false;
         }
-        let n = self.new_node();
-        self.occurrence.insert(element.clone(), n);
-        self.neighbors.insert(element, HashSet::new());
+        let id = self.nodes.len();
+        let tree = self.trees.create_tree();
+        let arcs = self.arc_lists.create_list();
+        self.nodes.push(Node {
+            value: element.clone(),
+            arcs,
+            target_map: HashMap::new(),
+            singleton_tree: Some(tree),
+        });
+        self.node_map.insert(element, id);
         true
     }
 
-    /// Removes an element, cutting all its edges; `false` if it was absent.
+    /// Removes an element, cutting all its incident edges first.
     pub fn remove(&mut self, element: &T) -> bool {
-        if !self.contains(element) {
-            return false;
-        }
-        let nbrs: Vec<T> = self.neighbors[element].iter().cloned().collect();
-        for t in nbrs {
-            self.cut_edge(element, &t);
-        }
-        let n = self.occurrence.remove(element).unwrap();
-        self.neighbors.remove(element);
-        self.free.push(n);
-        true
-    }
-
-    /// Whether the two elements are joined by a path. Following the Java class, an element with
-    /// no edges is connected to nothing, not even itself.
-    pub fn connected(&self, first: &T, second: &T) -> bool {
-        let (Some(&a), Some(&b)) = (self.occurrence.get(first), self.occurrence.get(second)) else {
+        let Some(&node) = self.node_map.get(element) else {
             return false;
         };
-        if self.neighbors[first].is_empty() || self.neighbors[second].is_empty() {
-            return false;
+        while !self.is_singleton(node) {
+            let last = self.arc_lists.last(self.nodes[node].arcs).unwrap();
+            let arc = *self.arc_lists.value(last);
+            let target = self.nodes[self.arc(arc).target].value.clone();
+            self.cut(element, &target).unwrap();
         }
-        self.root(a) == self.root(b)
+        self.node_map.remove(element);
+        self.nodes[node].singleton_tree = None;
+        true
     }
 
-    /// Adds the edge `first -- second`, adding missing elements; `false` if they are already
-    /// connected (the edge would close a cycle) or equal.
+    /// Following JGraphT, isolated elements are not connected even to themselves.
+    pub fn connected(&self, first: &T, second: &T) -> bool {
+        let (Some(&first), Some(&second)) = (self.node_map.get(first), self.node_map.get(second))
+        else {
+            return false;
+        };
+        if self.is_singleton(first) || self.is_singleton(second) {
+            return false;
+        }
+        self.get_tree(first) == self.get_tree(second)
+    }
+
+    /// Joins two trees. Missing elements are inserted; an edge that would create a cycle is not.
     pub fn link(&mut self, first: T, second: T) -> bool {
+        // Preserve the existing Rust public behaviour for a self-link.
         if first == second {
             return false;
         }
@@ -106,184 +116,160 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
         if self.connected(&first, &second) {
             return false;
         }
-        let (a, b) = (self.occurrence[&first], self.occurrence[&second]);
-        let ta = self.reroot(a);
-        let tb = self.reroot(b);
-        // tour(first) = [first | rest]; the result is [first, arc, tour(second), arc', rest]
-        let (head, rest) = self.split(ta, 1);
-        let arc_ab = self.new_node();
-        let arc_ba = self.new_node();
-        let mut t = self.merge(head, arc_ab);
-        t = self.merge(t, tb);
-        t = self.merge(t, arc_ba);
-        self.merge(t, rest);
-        self.arcs.insert((first.clone(), second.clone()), arc_ab);
-        self.arcs.insert((second.clone(), first.clone()), arc_ba);
-        self.neighbors
-            .get_mut(&first)
-            .unwrap()
-            .insert(second.clone());
-        self.neighbors.get_mut(&second).unwrap().insert(first);
+
+        let first_node = self.node_map[&first];
+        let second_node = self.node_map[&second];
+        let first_tree = self.get_tree(first_node);
+        let second_tree = self.get_tree(second_node);
+        self.make_root(first_tree, first_node);
+        self.make_root(second_tree, second_node);
+
+        let first_occurrence = self.trees.add_min(second_tree, first.clone());
+        let first_arc = self.create_arc(second_node, first_occurrence);
+        if self.is_singleton(first_node) {
+            self.nodes[first_node].singleton_tree = None;
+            self.add_arc_last(first_node, first_arc);
+        } else {
+            let last_child_value = self
+                .trees
+                .value(self.trees.max(first_tree).unwrap())
+                .clone();
+            let last_child = self.node_map[&last_child_value];
+            let previous_arc = self.nodes[first_node].target_map[&last_child];
+            self.add_arc_after(first_node, previous_arc, first_arc);
+        }
+
+        let second_occurrence = self.trees.add_max(second_tree, second.clone());
+        let second_arc = self.create_arc(first_node, second_occurrence);
+        if self.is_singleton(second_node) {
+            self.nodes[second_node].singleton_tree = None;
+            self.add_arc_last(second_node, second_arc);
+        } else {
+            let maximum = self.trees.max(second_tree).unwrap();
+            let previous = self.trees.predecessor(maximum).unwrap();
+            let last_child_value = self.trees.value(previous).clone();
+            let last_child = self.node_map[&last_child_value];
+            let previous_arc = self.nodes[second_node].target_map[&last_child];
+            self.add_arc_after(second_node, previous_arc, second_arc);
+        }
+
+        self.trees.merge_after(first_tree, second_tree);
         true
     }
 
-    /// Removes the edge `first -- second`. Returns `false` if the elements are not connected and
-    /// an error if they are connected but not adjacent.
+    /// Removes an edge. A connected but non-adjacent pair is an invalid argument, as before.
     pub fn cut(&mut self, first: &T, second: &T) -> Result<bool> {
         if !self.connected(first, second) {
             return Ok(false);
         }
-        if !self.arcs.contains_key(&(first.clone(), second.clone())) {
+        let first_node = self.node_map[first];
+        let second_node = self.node_map[second];
+        let Some(&arc_to_second) = self.nodes[first_node].target_map.get(&second_node) else {
             return Err(GraphError::InvalidArgument(
                 "elements are not adjacent in the forest".into(),
             ));
+        };
+
+        let tree = self.get_tree(first_node);
+        self.make_last_arc(tree, first_node, arc_to_second);
+        let right = self
+            .trees
+            .split_after(tree, self.arc(arc_to_second).tree_node);
+
+        self.trees.remove_max(tree);
+        self.remove_arc(first_node, arc_to_second);
+        if self.is_singleton(first_node) {
+            self.nodes[first_node].singleton_tree = Some(tree);
         }
-        self.cut_edge(first, second);
+
+        let second_to_first = self.nodes[second_node].target_map[&first_node];
+        self.trees.remove_max(right);
+        self.remove_arc(second_node, second_to_first);
+        if self.is_singleton(second_node) {
+            self.nodes[second_node].singleton_tree = Some(right);
+        }
         Ok(true)
     }
 
-    fn cut_edge(&mut self, first: &T, second: &T) {
-        let a = self.arcs.remove(&(first.clone(), second.clone())).unwrap();
-        let b = self.arcs.remove(&(second.clone(), first.clone())).unwrap();
-        self.neighbors.get_mut(first).unwrap().remove(second);
-        self.neighbors.get_mut(second).unwrap().remove(first);
-        let (mut i, mut j) = (self.rank(a), self.rank(b));
-        let (mut x, mut y) = (a, b);
-        if i > j {
-            std::mem::swap(&mut i, &mut j);
-            std::mem::swap(&mut x, &mut y);
-        }
-        // P x M y S  ->  P S and M
-        let root = self.root(x);
-        let (p, rest) = self.split(root, i);
-        let (_x, rest) = self.split(rest, 1);
-        let (m, rest) = self.split(rest, j - i - 1);
-        let (_y, s) = self.split(rest, 1);
-        self.merge(p, s);
-        let _ = m;
-        self.free.push(x);
-        self.free.push(y);
+    fn arc(&self, arc: ArcId) -> Arc {
+        self.arcs[arc].unwrap()
     }
 
-    // ----- treap -------------------------------------------------------------------------------
+    fn is_singleton(&self, node: NodeId) -> bool {
+        self.arc_lists.is_empty(self.nodes[node].arcs)
+    }
 
-    fn new_node(&mut self) -> usize {
-        self.rng ^= self.rng << 13;
-        self.rng ^= self.rng >> 7;
-        self.rng ^= self.rng << 17;
-        let n = TNode {
-            left: NIL,
-            right: NIL,
-            parent: NIL,
-            size: 1,
-            prio: self.rng,
-        };
-        if let Some(i) = self.free.pop() {
-            self.nodes[i] = n;
-            i
+    fn get_tree(&self, node: NodeId) -> AvlTreeId {
+        if self.is_singleton(node) {
+            self.nodes[node].singleton_tree.unwrap()
         } else {
-            self.nodes.push(n);
-            self.nodes.len() - 1
+            let first = self.arc_lists.first(self.nodes[node].arcs).unwrap();
+            let arc = *self.arc_lists.value(first);
+            self.trees.tree_of(self.arc(arc).tree_node).unwrap()
         }
     }
 
-    fn size(&self, t: usize) -> usize {
-        if t == NIL { 0 } else { self.nodes[t].size }
+    fn create_arc(&mut self, target: NodeId, tree_node: AvlNodeId) -> ArcId {
+        let id = self.arcs.len();
+        self.arcs.push(None);
+        let detached = self.arc_lists.allocate_node(id);
+        self.arcs[id] = Some(Arc {
+            target,
+            list_node: detached,
+            tree_node,
+        });
+        id
     }
 
-    fn update(&mut self, t: usize) {
-        let (l, r) = (self.nodes[t].left, self.nodes[t].right);
-        self.nodes[t].size = 1 + self.size(l) + self.size(r);
-        if l != NIL {
-            self.nodes[l].parent = t;
-        }
-        if r != NIL {
-            self.nodes[r].parent = t;
+    fn add_arc_last(&mut self, source: NodeId, arc: ArcId) {
+        let list = self.nodes[source].arcs;
+        let target = self.arc(arc).target;
+        self.arc_lists
+            .add_node_last(list, self.arc(arc).list_node)
+            .unwrap();
+        self.nodes[source].target_map.insert(target, arc);
+    }
+
+    fn add_arc_after(&mut self, source: NodeId, previous_arc: ArcId, arc: ArcId) {
+        let list = self.nodes[source].arcs;
+        let target = self.arc(arc).target;
+        let successor = self
+            .arc_lists
+            .next(self.arc(previous_arc).list_node)
+            .unwrap();
+        self.arc_lists
+            .add_node_before(list, self.arc(arc).list_node, successor)
+            .unwrap();
+        self.nodes[source].target_map.insert(target, arc);
+    }
+
+    fn remove_arc(&mut self, source: NodeId, arc: ArcId) {
+        let value = self.arc(arc);
+        self.arc_lists
+            .remove_node(self.nodes[source].arcs, value.list_node);
+        self.nodes[source].target_map.remove(&value.target);
+        self.arcs[arc] = None;
+    }
+
+    fn make_root(&mut self, tree: AvlTreeId, node: NodeId) {
+        if let Some(first) = self.arc_lists.first(self.nodes[node].arcs) {
+            let arc = *self.arc_lists.value(first);
+            self.make_first_arc(tree, arc);
         }
     }
 
-    fn root(&self, mut t: usize) -> usize {
-        while self.nodes[t].parent != NIL {
-            t = self.nodes[t].parent;
-        }
-        t
+    fn make_first_arc(&mut self, tree: AvlTreeId, arc: ArcId) {
+        let right = self.trees.split_before(tree, self.arc(arc).tree_node);
+        self.trees.merge_before(tree, right);
     }
 
-    /// Zero-based position of `t` in its sequence.
-    fn rank(&self, mut t: usize) -> usize {
-        let mut r = self.size(self.nodes[t].left);
-        while self.nodes[t].parent != NIL {
-            let p = self.nodes[t].parent;
-            if self.nodes[p].right == t {
-                r += self.size(self.nodes[p].left) + 1;
-            }
-            t = p;
-        }
-        r
-    }
-
-    fn merge(&mut self, a: usize, b: usize) -> usize {
-        if a == NIL || b == NIL {
-            let t = if a == NIL { b } else { a };
-            if t != NIL {
-                self.nodes[t].parent = NIL;
-            }
-            return t;
-        }
-        if self.nodes[a].prio > self.nodes[b].prio {
-            let r = self.nodes[a].right;
-            let m = self.merge(r, b);
-            self.nodes[a].right = m;
-            self.update(a);
-            self.nodes[a].parent = NIL;
-            a
+    fn make_last_arc(&mut self, tree: AvlTreeId, node: NodeId, arc: ArcId) {
+        if self.arc_lists.len(self.nodes[node].arcs) == 1 {
+            self.make_root(tree, node);
         } else {
-            let l = self.nodes[b].left;
-            let m = self.merge(a, l);
-            self.nodes[b].left = m;
-            self.update(b);
-            self.nodes[b].parent = NIL;
-            b
+            let next_node = self.arc_lists.next(self.arc(arc).list_node).unwrap();
+            let next_arc = *self.arc_lists.value(next_node);
+            self.make_first_arc(tree, next_arc);
         }
-    }
-
-    /// Splits off the first `k` elements.
-    fn split(&mut self, t: usize, k: usize) -> (usize, usize) {
-        if t == NIL {
-            return (NIL, NIL);
-        }
-        let ls = self.size(self.nodes[t].left);
-        if k <= ls {
-            let l = self.nodes[t].left;
-            let (a, b) = self.split(l, k);
-            self.nodes[t].left = b;
-            self.update(t);
-            self.nodes[t].parent = NIL;
-            if a != NIL {
-                self.nodes[a].parent = NIL;
-            }
-            (a, t)
-        } else {
-            let r = self.nodes[t].right;
-            let (a, b) = self.split(r, k - ls - 1);
-            self.nodes[t].right = a;
-            self.update(t);
-            self.nodes[t].parent = NIL;
-            if b != NIL {
-                self.nodes[b].parent = NIL;
-            }
-            (t, b)
-        }
-    }
-
-    /// Rotates the tour of `n` so that `n` comes first; returns the new root.
-    fn reroot(&mut self, n: usize) -> usize {
-        let root = self.root(n);
-        let k = self.rank(n);
-        if k == 0 {
-            return root;
-        }
-        let (a, b) = self.split(root, k);
-        self.merge(b, a)
     }
 }

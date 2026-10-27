@@ -1,5 +1,7 @@
 //! Small shared helpers.
 
+pub mod avl_tree;
+pub mod doubly_linked_list;
 pub mod heap;
 pub mod java;
 pub mod sampler;

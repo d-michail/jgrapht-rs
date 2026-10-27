@@ -15,7 +15,7 @@ Items marked **[needs 1g]** or **[needs 1i]** wait for the matching or shortest-
 | # | Item | Java | Rust today | Work |
 |---|---|---|---|---|
 | A1 (done) | `ColorRefinementAlgorithm` (`alg/color.rs`) | partition refinement, `O((n+m) log n)` | ported partition refinement, shared with the colour-refinement isomorphism inspector | Java tests were already ported; added a 10,000-vertex path scaling guard |
-| A2 (done) | `TreeDynamicConnectivity` (`alg/tree_connectivity.rs`) | Euler-tour tree on `AVLTree` (worst-case `O(log n)`) | ported Euler tours over arena-index `AvlTree` and `DoublyLinkedList` | utility tests ported with a 100,000-node AVL height guard; connectivity public behaviour preserved |
+| A2 (done) | `TreeDynamicConnectivity` (`alg/tree_connectivity.rs`) | Euler-tour tree on `AVLTree` (worst-case `O(log n)`) | ported Euler tours over arena-index `AvlTree` and `DoublyLinkedList` | 24 adapted utility tests include a 100,000-node AVL height guard; connectivity public behaviour preserved |
 | A3 | `WeakChordalityInspector` buckets | `HashSet<Integer>`, `O(1)` ops, ascending order for small ints | `BTreeSet`, extra `log` factor | add a `JavaIntHashSet` that reproduces Java's iteration order with `O(1)` operations |
 | A4 | `ApBetweennessCentrality` | Apfloat arbitrary precision | exact `BigRational` | decide: keep as documented deviation (exact is a superset of the Apfloat behaviour but costs differ) or emulate Apfloat precision |
 | A5 | `FarthestInsertionHeuristicTSP` | keeps its default initial sub-tour across calls | recomputed | persist state as Java does |
