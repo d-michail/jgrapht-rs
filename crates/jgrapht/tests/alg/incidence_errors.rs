@@ -1,5 +1,6 @@
 use jgrapht::alg::cycle::{
-    CycleBasisAlgorithm, QueueBFSFundamentalCycleBasis, StackBFSFundamentalCycleBasis,
+    CycleBasisAlgorithm, EulerianCycleAlgorithm, HierholzerEulerianCycle,
+    QueueBFSFundamentalCycleBasis, StackBFSFundamentalCycleBasis,
 };
 use jgrapht::alg::matching::{
     GreedyWeightedMatching, MatchingAlgorithm, PathGrowingWeightedMatching,
@@ -61,6 +62,10 @@ fn cycle_basis_algorithms_return_incidence_errors() {
 
     let mut stack = StackBFSFundamentalCycleBasis::new(&graph).unwrap();
     assert_unsupported(stack.get_cycle_basis());
+
+    let mut eulerian = HierholzerEulerianCycle::new();
+    assert_unsupported(eulerian.try_is_eulerian(&graph));
+    assert_unsupported(eulerian.get_eulerian_cycle(&graph));
 }
 
 #[test]

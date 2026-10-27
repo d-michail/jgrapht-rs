@@ -12,11 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::alg::connectivity::ConnectivityInspector;
 use crate::error::{GraphError, Result};
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
 /// Computes an Eulerian cycle of an Eulerian graph. An
 /// [Eulerian graph](http://mathworld.wolfram.com/EulerianGraph.html) is a graph
 /// containing an [Eulerian cycle](http://mathworld.wolfram.com/EulerianCycle.html).
@@ -243,43 +243,65 @@ impl HierholzerEulerianCycle {
     /// Whether the graph has an Eulerian cycle: balanced degrees and a single component with edges.
     /// The empty graph (no vertices) is not Eulerian.
     pub fn is_eulerian<G: Graph>(&self, graph: &G) -> bool {
+        self.try_is_eulerian(graph).unwrap()
+    }
+
+    /// Fallible form of [`HierholzerEulerianCycle::is_eulerian`].
+    pub fn try_is_eulerian<G: Graph>(&self, graph: &G) -> Result<bool> {
         if graph.graph_type().mixed {
-            return false;
+            return Ok(false);
         }
         if graph.vertex_count() == 0 {
-            return false;
+            return Ok(false);
         } else if graph.edge_count() == 0 {
-            return true;
+            return Ok(true);
         }
         let directed = graph.graph_type().directed;
         if !directed {
-            if graph.vertices().any(|v| graph.degree_of(v).unwrap() % 2 == 1) {
-                return false;
+            for vertex in graph.vertices() {
+                if graph.degree_of(vertex)? % 2 == 1 {
+                    return Ok(false);
+                }
             }
-        } else if graph
-            .vertices()
-            .any(|v| graph.in_degree_of(v).unwrap() != graph.out_degree_of(v).unwrap())
-        {
-            return false;
+        } else {
+            for vertex in graph.vertices() {
+                if graph.in_degree_of(vertex)? != graph.out_degree_of(vertex)? {
+                    return Ok(false);
+                }
+            }
         }
         // In a balanced digraph the weakly and strongly connected components coincide, so the
         // undirected component structure decides both cases.
         let mut found_component_with_edges = false;
-        for component in ConnectivityInspector::new().connected_sets(graph) {
-            if component.iter().any(|v| graph.degree_of(v).unwrap() > 0) {
+        let mut seen = HashSet::new();
+        for root in graph.vertices() {
+            if !seen.insert(root.clone()) {
+                continue;
+            }
+            let mut component_has_edges = false;
+            let mut stack = vec![root.clone()];
+            while let Some(vertex) = stack.pop() {
+                component_has_edges |= graph.degree_of(&vertex)? > 0;
+                for neighbor in graph.try_neighbors_of(&vertex)? {
+                    if seen.insert(neighbor.clone()) {
+                        stack.push(neighbor.clone());
+                    }
+                }
+            }
+            if component_has_edges {
                 if found_component_with_edges {
-                    return false;
+                    return Ok(false);
                 }
                 found_component_with_edges = true;
             }
         }
-        true
+        Ok(true)
     }
 }
 
 impl<G: Graph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
     fn get_eulerian_cycle(&mut self, g: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
-        if !self.is_eulerian(g) {
+        if !self.try_is_eulerian(g)? {
             return Err(GraphError::InvalidArgument("Graph is not Eulerian".into()));
         } else if g.vertex_count() == 0 {
             return Err(GraphError::InvalidArgument(
@@ -303,7 +325,7 @@ impl<G: Graph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
         let mut vertex_index: HashMap<&G::Vertex, usize> = HashMap::new();
         for (i, v) in vs.iter().enumerate() {
             vertex_index.insert(*v, i);
-            if g.out_degree_of(v).unwrap() > 0 {
+            if g.out_degree_of(v)? > 0 {
                 let n = run.vnodes.len();
                 run.vnodes.push(VertexNode {
                     prev: NIL,
