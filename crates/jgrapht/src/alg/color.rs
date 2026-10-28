@@ -12,7 +12,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Vertex colouring heuristics.
+//! Vertex colouring.
+//!
+//! Every function and class returns a [`Coloring`]: the colour of each vertex (numbered from `0`) and
+//! the number of colours used. Heuristics: [`greedy_coloring`] (insertion order),
+//! [`largest_degree_first_coloring`], [`smallest_degree_last_coloring`], [`saturation_degree_coloring`]
+//! (DSATUR), [`RandomGreedyColoring`] (takes any random generator), [`ChordalGraphColoring`] (optimal on
+//! chordal graphs) and [`BrownBacktrackColoring`] (exact, exponential). [`is_proper_coloring`] checks a
+//! colouring, and [`color_refinement`] computes the stable colouring used for isomorphism tests.
 
 use super::cycle::{ChordalityInspector, IterationOrder};
 use super::util::Indexed;

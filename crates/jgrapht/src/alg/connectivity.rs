@@ -12,7 +12,16 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Connected components, strong connectivity, biconnectivity and condensation.
+//! Connectivity and components.
+//!
+//! * Undirected: [`connected_components`], [`connected_component_of`] and the incremental
+//!   [`ConnectivityInspector`].
+//! * Directed: [`strongly_connected_components`] (Tarjan), [`strongly_connected_components_kosaraju`],
+//!   the class versions [`GabowStrongConnectivityInspector`] and [`KosarajuStrongConnectivityInspector`],
+//!   [`is_strongly_connected`] and the [`condensation`] graph.
+//! * Biconnectivity: [`biconnectivity`] / [`BiconnectivityInspector`] (articulation points, bridges,
+//!   blocks), [`block_cut_tree`] / [`BlockCutpointGraph`], [`is_biconnected`].
+//! * [`KConnectivityFlowAlgorithm`] decides k-connectivity with maximum flows.
 
 use super::flow::MaximumFlowValueAlgorithm;
 use super::interfaces::StrongConnectivityAlgorithm;

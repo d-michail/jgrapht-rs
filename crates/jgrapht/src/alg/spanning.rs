@@ -12,7 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Minimum spanning trees/forests and minimum arborescences.
+//! Minimum spanning trees and arborescences.
+//!
+//! [`kruskal`], [`prim`] and [`boruvka`] return a [`SpanningTree`] (its edges and total weight) of an
+//! undirected graph, or a spanning forest if the graph is disconnected. [`minimum_arborescence`] and
+//! [`maximum_arborescence`] compute the Chu-Liu/Edmonds optimum branching of a directed graph.
+//! [`SpanningTreeAlgorithm`] is the trait shared by the class versions.
 
 use super::util::Indexed;
 use crate::graph::{DirectedGraph, Graph};

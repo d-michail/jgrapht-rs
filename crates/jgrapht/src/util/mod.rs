@@ -12,7 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Small shared helpers.
+//! Small shared helpers: a tolerant floating-point comparator, the Java-compatible pairing heap and
+//! priority queue used where the port needs JGraphT's exact tie-breaking, and a sampler for discrete
+//! distributions.
 
 pub mod heap;
 pub mod java;

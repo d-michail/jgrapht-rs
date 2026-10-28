@@ -13,6 +13,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Cliques and independent sets.
+//!
+//! [`maximal_cliques`] lists every maximal clique and [`maximum_clique`] finds a largest one, using the
+//! Bron-Kerbosch family ([`BronKerboschCliqueFinder`], [`PivotBronKerboschCliqueFinder`],
+//! [`DegeneracyBronKerboschCliqueFinder`]). [`ChordalGraphMaxCliqueFinder`] is exact on chordal graphs
+//! and [`CliqueMinimalSeparatorDecomposition`] decomposes a graph along its clique minimal separators.
+//! [`greedy_independent_set`], [`maximum_independent_set`] and [`is_independent_set`] cover
+//! independent sets.
 
 use super::color::ChordalGraphColoring;
 use super::cycle::IterationOrder;

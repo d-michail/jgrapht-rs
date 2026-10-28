@@ -14,7 +14,12 @@
 
 //! Travelling salesman heuristics, exact solvers and Hamiltonian path search.
 //!
-//! The Java-style classes live in sibling modules and share private implementation helpers.
+//! The heuristics ([`NearestInsertionHeuristicTSP`], [`FarthestInsertionHeuristicTSP`],
+//! [`ChristofidesThreeHalvesApproxMetricTSP`], [`TwoOptHeuristicTSP`], and the greedy, nearest-neighbour
+//! and random tours in `simple`) return a tour as a [`GraphWalk`](crate::GraphWalk). The exact Held-Karp
+//! solver is limited to small graphs and says so with
+//! [`GraphError::TooManyVertices`](crate::GraphError::TooManyVertices). Hamiltonian cycle and path
+//! searches (Palmer, backtracking, DAG, Held-Karp) are in `path`.
 
 mod base;
 mod christofides;

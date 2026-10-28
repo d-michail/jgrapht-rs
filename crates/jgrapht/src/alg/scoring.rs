@@ -12,7 +12,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Vertex and edge scoring: centralities, PageRank, coreness, clustering coefficients.
+//! Centrality scores and clustering coefficients.
+//!
+//! Functions return a map from vertex to score: [`degree_centrality`], [`closeness_centrality`],
+//! [`harmonic_centrality`], [`pagerank`], [`eigenvector_centrality`], [`katz_centrality`],
+//! [`coreness`] and [`local_clustering_coefficients`] (with [`average_clustering_coefficient`] and
+//! [`global_clustering_coefficient`]). [`betweenness_centrality`] returns a [`Betweenness`] result for
+//! vertices and edges. The classes ([`PageRank`], [`BetweennessCentrality`],
+//! [`ApBetweennessCentrality`] with exact arithmetic, ...) implement [`VertexScoringAlgorithm`].
 
 use super::util::Indexed;
 use crate::graph::Graph;
