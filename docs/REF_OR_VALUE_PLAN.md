@@ -97,7 +97,7 @@ concrete `BaseGraph<String, _>` it can be ambiguous (`Borrow<String>` vs `Borrow
 3. **Sparse graphs:** return `usize` / by-value items, delete `identity_ids`, `ids` and the
    `max(n, m)` allocation; measure bytes per edge before and after.
 4. **Tests and `jgrapht-io`:** compile-driven fixes (~590 sites).
-5. **Docs:** `MIGRATION.md`, user guide section, `ISSUES.md` I-9 closed, `STATUS.md`.
+5. **Docs:** `MIGRATION.md`, user guide section, `STATUS.md`.
 
 Phases 2 and 3 are the risky ones; do them on their own PR with the benchmarks attached.
 

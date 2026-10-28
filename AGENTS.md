@@ -2,8 +2,8 @@
 
 jgrapht-rs is a Rust port of [JGraphT](https://jgrapht.org). This is a *port*, not a release
 project: the goal is a faithful, idiomatic Rust library. Do not publish crates or create release
-tags unless asked. See `README.md` for the overview and `docs/ROADMAP.md`, `docs/ISSUES.md` and
-`docs/FIDELITY_ROADMAP.md` for the plans and open items.
+tags unless asked. See `README.md` for the overview and `docs/ROADMAP.md` and
+`docs/FIDELITY_ROADMAP.md` for the plans.
 
 ## Layout
 
@@ -16,7 +16,7 @@ tags unless asked. See `README.md` for the overview and `docs/ROADMAP.md`, `docs
 | `crates/jgrapht-io` | importers and exporters, one module per format |
 | `crates/*/tests` | ports of the Java tests; `tests/STATUS.md` in each crate maps Java test classes to Rust |
 | `crates/jgrapht/benches` | criterion benchmarks (on demand only, see below) |
-| `docs/` | plans, issue register, user guide, panic audit |
+| `docs/` | plans, user guide, benchmarks |
 | `MIGRATION.md`, `CHANGELOG.md` | differences from the Java API; user-visible changes |
 
 ## Commands
@@ -42,7 +42,8 @@ whole workspace once before a pull request. CI also runs clippy with `-D warning
   graphs and `Option` for values that can be absent (unreachable is `None`, never infinity). Use
   the typed variants (`InvalidParameter`, `InvalidGraph`, `InvalidWeight`, `MissingParameter`,
   `MissingVertexData`, ...); never `InvalidArgument(String)`, and never match on message text.
-  Panics are for broken internal invariants only (`docs/PANIC_AUDIT.md`, `docs/panic_sites.tsv`).
+  Panics are for broken internal invariants only; prefer `ok_or(..)?` on a missing value when the
+  function already returns a `Result`.
 - **Capability bounds.** Ask for the narrowest trait you use: `Graph`, `OutgoingGraph`,
   `IncomingGraph`, `IncidenceGraph`. Do not add run-time "unsupported" errors for what a trait
   bound can express.
@@ -72,7 +73,7 @@ machines; compare ratios on the same machine, not absolute numbers.
 ## Working on the repository
 
 - Keep changes focused; update `CHANGELOG.md` for user-visible changes, `MIGRATION.md` for API
-  differences from Java, and the status registers or `docs/ISSUES.md` when an item is closed.
+  differences from Java, and the status registers when an item is closed.
 - Do not leave generated or scratch files in the repository.
 - Commit messages describe the change and its reason. Do not force-push shared branches; merge
   the base branch instead.

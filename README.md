@@ -22,8 +22,8 @@ generators and import/export for common file formats. It is a port of the core o
 > requires Rust 1.88 or newer. The graph, traversal, generator, sparse and map backends and graph
 > I/O are complete, and most algorithm packages are too. Coverage against the upstream test suite
 > is tracked in the [core status register](crates/jgrapht/tests/STATUS.md) and the
-> [I/O status register](crates/jgrapht-io/tests/STATUS.md); open work is in
-> [`docs/ISSUES.md`](docs/ISSUES.md). Coming from JGraphT? See [`MIGRATION.md`](MIGRATION.md).
+> [I/O status register](crates/jgrapht-io/tests/STATUS.md); plans are in
+> [`docs/ROADMAP.md`](docs/ROADMAP.md). Coming from JGraphT? See [`MIGRATION.md`](MIGRATION.md).
 
 ## Crates
 

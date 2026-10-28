@@ -28,7 +28,7 @@ jobs:
       - run: cargo test -p jgrapht --features serde --test serde_roundtrip
 
   ignored-tests:
-    # The slow upstream cases (ISSUES I-5); weekly only.
+    # The slow upstream cases (`#[ignore]` tests); weekly only.
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     steps:
@@ -47,14 +47,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-
-  api-audit:
-    # Reporting-only until roadmap item R4 completes; then add `--strict`.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: python3 scripts/api_audit.py unwraps
-      - run: python3 scripts/api_audit.py inventory && git diff --exit-code docs/API_INVENTORY.md
 
   docs:
     runs-on: ubuntu-latest

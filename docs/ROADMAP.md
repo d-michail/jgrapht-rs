@@ -7,7 +7,7 @@ Status on 2026-10-27 (reviewed against a clean build: `cargo test --workspace` g
 | Area | Java | Rust |
 |---|---|---|
 | core `graph/`, views, events, `traverse/`, `util/`, `generate/` (incl. netgen) | ported, tests ported (about 400 tests passing, `tests/{alg,graph,generate,traverse,util}`) | done |
-| core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1h done (matching incl. Blossom V, planar, flow, tour, cycle, isomorphism); 1i (shortest paths) is done as well, including contraction hierarchies and transit node routing checked against the real Java output. The workspace runs 2383 tests, 0 failures, 4 ignored. See `FIDELITY_ROADMAP.md` for deviations from Java and `ISSUES.md` for open problems |
+| core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1h done (matching incl. Blossom V, planar, flow, tour, cycle, isomorphism); 1i (shortest paths) is done as well, including contraction hierarchies and transit node routing checked against the real Java output. The workspace runs 2383 tests, 0 failures, 4 ignored.  See `FIDELITY_ROADMAP.md` for deviations from Java.|
 | `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | done: all planned formats and the 13-class shared layer audited; 314 Rust integration tests pass |
 | `jgrapht::graph::{sparse,map}` | 22 files (about 2.5k loc), 4 test files | done: sparse CSR graphs plus `FastutilMapGraph` / `FastutilMapIntVertexGraph` as `BaseGraph` specifics with optional endpoint indexes (Phase 3b) |
 
@@ -15,12 +15,11 @@ The existing `alg/` is a *functional* port: one function per family (`maximal_cl
 
 ## Next up (priority order)
 
-1. ~~Release hygiene~~ done (ISSUES I-1, I-2).
+1. ~~Release hygiene~~ done.
 2. ~~Finish 1i~~ done (see `FIDELITY_ROADMAP.md` section G).
 3. ~~Rust API hardening~~ done (all 22 steps, see `RUST_API_ROADMAP.md`); was: complete the capability, `Result`/`Option`, iterator, stateful-result,
-   error-type and panic work in [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md). This expands the old
-   Phase 4 API pass and ISSUES I-6/I-8 into release-gated milestones.
-4. ~~Typed errors, real doc comments, `serde` feature~~ done (ISSUES I-7, I-8, I-13).
+   error-type and panic work in [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md).
+4. ~~Typed errors, real doc comments, `serde` feature~~ done.
 
 ## Principles (carried over)
 

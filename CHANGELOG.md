@@ -36,7 +36,6 @@ All notable changes to this project are documented here. The format follows
 - `jgrapht-io`: importers and exporters for DIMACS, CSV, graph6/sparse6/digraph6, JSON, GML, DOT,
   GraphML, GEXF, Lemon, Matrix and TSPLIB.
 - Rust-native API: `Option` for absent values (unreachable is `None`), typed `GraphError`,
-  result objects instead of stateful getters, no panics on valid public input
-  (see `docs/PANIC_AUDIT.md`).
+  result objects instead of stateful getters, no panics on valid public input.
 - See `MIGRATION.md` for differences from the Java API and `docs/FIDELITY_ROADMAP.md` for
   deviations from Java behavior.
