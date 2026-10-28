@@ -21,20 +21,25 @@
 //! 1. [Concepts](#concepts)
 //! 2. [Hello jgrapht](#hello-jgrapht)
 //! 3. [Graph types](#graph-types)
-//! 4. [Creating graphs](#creating-graphs)
-//! 5. [Querying graphs](#querying-graphs)
-//! 6. [Writing generic code](#writing-generic-code)
-//! 7. [Views](#views)
-//! 8. [Listening to changes](#listening-to-changes)
-//! 9. [Traversals](#traversals)
-//! 10. [Algorithms](#algorithms)
-//! 11. [Generators](#generators)
-//! 12. [Import and export](#import-and-export)
-//! 13. [Serialization](#serialization)
-//! 14. [Randomness](#randomness)
-//! 15. [Errors](#errors)
-//! 16. [Performance](#performance)
-//! 17. [Coming from JGraphT](#coming-from-jgrapht)
+//! 4. [Choosing vertex and edge types](#choosing-vertex-and-edge-types)
+//! 5. [Creating graphs](#creating-graphs)
+//! 6. [Modifying graphs](#modifying-graphs)
+//! 7. [Querying graphs](#querying-graphs)
+//! 8. [Writing generic code](#writing-generic-code)
+//! 9. [Views](#views)
+//! 10. [Listening to changes](#listening-to-changes)
+//! 11. [Traversals](#traversals)
+//! 12. [Algorithms](#algorithms)
+//! 13. [Running algorithms](#running-algorithms)
+//! 14. [Generators](#generators)
+//! 15. [Copying, comparing and printing](#copying-comparing-and-printing)
+//! 16. [Concurrency](#concurrency)
+//! 17. [Import and export](#import-and-export)
+//! 18. [Serialization](#serialization)
+//! 19. [Randomness](#randomness)
+//! 20. [Errors](#errors)
+//! 21. [Performance](#performance)
+//! 22. [Coming from JGraphT](#coming-from-jgrapht)
 //!
 //! # Concepts
 //!
@@ -132,6 +137,40 @@
 //! ([`graph::sparse`](crate::graph::sparse)) and map-backed variants
 //! ([`graph::map`](crate::graph::map)); see [Performance](#performance).
 //!
+//! # Choosing vertex and edge types
+//!
+//! The library supplies no vertex class: use whatever fits your data. A vertex type must be
+//! `Clone + Eq + Hash`, and two values that compare equal are the same vertex. Two rules follow:
+//!
+//! * `Eq` and `Hash` must agree (equal values hash equally), and the hash must not change while
+//!   the value is in a graph. Rust's ownership makes the usual mistake (mutating a vertex that a
+//!   graph holds) impossible for plain values; it can only happen through interior mutability
+//!   (`RefCell`, `Cell`), so avoid it in vertex types.
+//! * The graph clones vertices when it must hand out owned values, so cheap-to-clone vertices
+//!   (integers, `&str`, `Rc<str>`, `Arc<..>`) work best. Wrap a large value in an `Rc` or use an id.
+//!
+//! ```
+//! use jgrapht::*;
+//! use std::rc::Rc;
+//!
+//! #[derive(Clone, PartialEq, Eq, Hash)]
+//! struct Page {
+//!     url: Rc<str>,
+//! }
+//!
+//! let (google, wiki) = (Page { url: "https://google.com".into() }, Page { url: "https://wikipedia.org".into() });
+//! let mut web = DiGraph::<Page>::simple();
+//! web.add_vertices([google.clone(), wiki.clone()]);
+//! web.add_edge(&google, &wiki)?;
+//! assert_eq!(web.out_degree_of(&google), 1);
+//! # Ok::<(), GraphError>(())
+//! ```
+//!
+//! Edges follow the same rules. If you do not need to attach application data to edges, use the
+//! built-in [`DefaultEdge`](crate::DefaultEdge). The weight is not part of the edge value, so a
+//! weighted graph needs no special edge class. Attach your own data in a map keyed by the edge, or
+//! use your own edge type as in [Creating graphs](#creating-graphs).
+//!
 //! # Creating graphs
 //!
 //! Add vertices first, then edges. `add_vertex` returns whether the vertex was new; `add_edge`
@@ -173,6 +212,74 @@
 //! g.add_edge_with(&1, &2, "A1".to_string())?;
 //! g.add_edge_with(&2, &3, "N7".to_string())?;
 //! assert_eq!(g.edge_source(&"N7".to_string()), Some(&2));
+//! # Ok::<(), GraphError>(())
+//! ```
+//!
+//! # Modifying graphs
+//!
+//! Modification follows the collection conventions of Rust, with errors where an operation cannot
+//! be carried out:
+//!
+//! | Operation | Result |
+//! |---|---|
+//! | add a vertex that is already there | `false`; the graph is unchanged |
+//! | add an edge that a simple graph already has | `Ok(None)`; unchanged |
+//! | add an edge between unknown vertices | `Err(VertexNotFound)` |
+//! | add a forbidden edge (loop, cycle in a DAG, foreign edge value) | `Err(..)` with the reason |
+//! | remove something that is not there | `false` or `None`; not an error |
+//! | ask about an unknown vertex or edge | `None`, `false` or an empty iterator |
+//!
+//! Removing a vertex removes its edges. `add_edge_with_vertices` and
+//! [`GraphBuilder`](crate::graph::builder::GraphBuilder) add the missing end vertices for you,
+//! which is convenient when you build a graph from an edge list:
+//!
+//! ```
+//! use jgrapht::graph::builder::GraphBuilder;
+//! use jgrapht::*;
+//!
+//! let mut g = UGraph::<u32>::simple();
+//! g.add_edge_with_vertices(1, 2)?;
+//! g.add_edge_with_vertices(2, 3)?;
+//! assert_eq!(g.vertex_count(), 3);
+//! assert!(!g.add_vertex(2)); // already there
+//!
+//! assert!(g.remove_vertex(&2)); // takes both edges with it
+//! assert_eq!(g.edge_count(), 0);
+//! assert!(!g.remove_vertex(&2)); // not an error, nothing happens
+//!
+//! // The kite graph: a 4-cycle 1-2-3-4, the chord 2-4 and a tail 3-5.
+//! let kite = GraphBuilder::new(UGraph::<u32>::simple())
+//!     .add_edge_chain([1, 2, 3, 4, 1])
+//!     .add_edge(2, 4)
+//!     .add_edge(3, 5)
+//!     .build_as_unmodifiable()?;
+//! assert_eq!((kite.vertex_count(), kite.edge_count()), (5, 6));
+//! # Ok::<(), GraphError>(())
+//! ```
+//!
+//! Collections returned by queries (neighbour lists, edge lists) are snapshots: changing them never
+//! changes the graph, and a later change of the graph does not change them. Iterators borrow the
+//! graph, so the compiler stops you from modifying a graph while you iterate over it. The default
+//! graphs keep insertion order for vertices and edges, so iteration order is predictable.
+//!
+//! ## Vertex and edge factories
+//!
+//! A graph can create vertices and edges on demand. `add_edge(u, v)` creates the edge with the
+//! graph's edge factory; `add_new_vertex()` creates a vertex with the vertex factory, which is also
+//! what the [generators](#generators) use.
+//!
+//! ```
+//! use jgrapht::*;
+//!
+//! let mut g = UGraph::<String>::simple().with_vertex_factory(|i| format!("v{i}"));
+//! let a = g.add_new_vertex()?;
+//! let b = g.add_new_vertex()?;
+//! assert_eq!((a.as_str(), b.as_str()), ("v0", "v1"));
+//! g.add_edge(&a, &b)?;
+//!
+//! // Without a factory the call is refused, not guessed.
+//! let mut plain = UGraph::<u32>::simple();
+//! assert_eq!(plain.add_new_vertex().unwrap_err(), GraphError::NoVertexFactory);
 //! # Ok::<(), GraphError>(())
 //! ```
 //!
@@ -450,8 +557,173 @@
 //! # Ok::<(), GraphError>(())
 //! ```
 //!
+//! Components and shortest paths on a directed graph, the classic example of the JGraphT guide:
+//!
+//! ```
+//! use jgrapht::alg::connectivity::strongly_connected_components;
+//! use jgrapht::alg::shortestpath::{Dijkstra, ShortestPathAlgorithm};
+//! use jgrapht::*;
+//!
+//! let mut g = DiGraph::<char>::simple();
+//! g.add_vertices("abcdefghi".chars());
+//! for (u, v) in [('a', 'b'), ('b', 'd'), ('d', 'c'), ('c', 'a'), ('e', 'd'), ('e', 'f'),
+//!                ('f', 'g'), ('g', 'e'), ('h', 'e'), ('i', 'h')] {
+//!     g.add_edge(&u, &v)?;
+//! }
+//!
+//! let mut components = strongly_connected_components(&g);
+//! for c in &mut components {
+//!     c.sort();
+//! }
+//! components.sort();
+//! assert_eq!(components, [vec!['a', 'b', 'c', 'd'], vec!['e', 'f', 'g'], vec!['h'], vec!['i']]);
+//!
+//! // i reaches c through h, e and d; c cannot reach i, which is `None`, not an empty path.
+//! let dijkstra = Dijkstra::new(&g);
+//! assert_eq!(dijkstra.path(&'i', &'c')?.unwrap().vertex_list(), ['i', 'h', 'e', 'd', 'c']);
+//! assert!(dijkstra.path(&'c', &'i')?.is_none());
+//! # Ok::<(), GraphError>(())
+//! ```
+//!
 //! The module documentation of each area lists its algorithms and says which graph capabilities
 //! they need.
+//!
+//! # Running algorithms
+//!
+//! Three families you will use often, with the pattern they share: build the algorithm on a
+//! borrowed graph, call it, and read the returned value. Nothing is stored for later, so there is
+//! no call order to get wrong.
+//!
+//! ## Breadth-first and depth-first search
+//!
+//! The iterators visit vertices lazily. [`Bfs`](crate::traverse::Bfs) also tells you the depth
+//! (number of edges from the start) of every vertex it has reached; a
+//! [`TraversalListener`](crate::traverse::TraversalListener) observes the events of a full
+//! [`DepthFirstIterator`](crate::traverse::DepthFirstIterator).
+//!
+//! ```
+//! use jgrapht::traverse::{Bfs, DepthFirstIterator, TraversalListener};
+//! use jgrapht::*;
+//! use std::{cell::RefCell, rc::Rc};
+//!
+//! let mut g = UGraph::<u32>::simple();
+//! for (u, v) in [(1, 2), (1, 3), (2, 4), (3, 4), (4, 5)] {
+//!     g.add_edge_with_vertices(u, v)?;
+//! }
+//!
+//! // Breadth first from 1: vertices come in order of distance.
+//! let mut bfs = Bfs::new(&g, &1)?;
+//! let order: Vec<u32> = bfs.by_ref().collect();
+//! assert_eq!(order[0], 1);
+//! assert_eq!(bfs.depth(&4), Some(2));
+//! assert_eq!(bfs.depth(&5), Some(3));
+//!
+//! // Depth first, noting when each vertex is finished (all its neighbours explored).
+//! struct Finished(Rc<RefCell<Vec<u32>>>);
+//! impl TraversalListener<u32, DefaultEdge> for Finished {
+//!     fn vertex_finished(&mut self, v: &u32) {
+//!         self.0.borrow_mut().push(*v);
+//!     }
+//! }
+//! let finished = Rc::new(RefCell::new(Vec::new()));
+//! let mut dfs = DepthFirstIterator::from_start(&g, &1)?;
+//! dfs.add_traversal_listener(Finished(finished.clone()));
+//! assert_eq!(dfs.by_ref().count(), 5);
+//! assert_eq!(finished.borrow().len(), 5);
+//! assert_eq!(finished.borrow().last(), Some(&1)); // the start vertex finishes last
+//! # Ok::<(), GraphError>(())
+//! ```
+//!
+//! ## Shortest paths
+//!
+//! Dijkstra, Bellman-Ford, BFS, Floyd-Warshall, Johnson and delta-stepping implement
+//! [`ShortestPathAlgorithm`](crate::alg::shortestpath::ShortestPathAlgorithm) (A* and Yen have their
+//! own `path` and `get_paths` methods): `path(s, t)` gives the walk, `path_weight(s, t)` only its weight, `single_source(s)` all
+//! distances from `s` at once. Choose the algorithm by the graph: Dijkstra for non-negative
+//! weights, Bellman-Ford when weights can be negative (a negative cycle is
+//! [`GraphError::NegativeCycle`](crate::GraphError::NegativeCycle)), A* when you have a heuristic,
+//! Floyd-Warshall or Johnson for all pairs, Yen for the k best paths.
+//!
+//! ```
+//! use jgrapht::alg::shortestpath::{
+//!     AStar, Dijkstra, FloydWarshallShortestPaths, ShortestPathAlgorithm, YenKShortestPath,
+//! };
+//! use jgrapht::*;
+//!
+//! // A 4 x 4 grid of road segments of length 1, with a slow diagonal shortcut.
+//! let mut g = UGraph::<(i32, i32)>::simple().weighted();
+//! for x in 0..4 {
+//!     for y in 0..4 {
+//!         g.add_vertex((x, y));
+//!     }
+//! }
+//! for x in 0..4 {
+//!     for y in 0..4 {
+//!         if x < 3 { g.add_weighted_edge(&(x, y), &(x + 1, y), 1.0)?; }
+//!         if y < 3 { g.add_weighted_edge(&(x, y), &(x, y + 1), 1.0)?; }
+//!     }
+//! }
+//! g.add_weighted_edge(&(0, 0), &(3, 3), 7.0)?;
+//! let (start, goal) = ((0, 0), (3, 3));
+//!
+//! // One query, one source with all targets, or all pairs.
+//! assert_eq!(Dijkstra::new(&g).path_weight(&start, &goal)?, Some(6.0));
+//! let from_start = Dijkstra::new(&g).single_source(&start)?;
+//! assert_eq!(from_start.weight(&(2, 1)), Some(3.0));
+//! assert_eq!(from_start.path(&(1, 1)).unwrap().length(), 2);
+//! let all = FloydWarshallShortestPaths::new(&g)?;
+//! assert_eq!(all.all_pairs().weight(&(0, 3), &(3, 0)), Some(6.0));
+//!
+//! // A* with the Manhattan distance, an admissible heuristic here.
+//! let manhattan = |a: &(i32, i32), b: &(i32, i32)| ((a.0 - b.0).abs() + (a.1 - b.1).abs()) as f64;
+//! let astar = AStar::new(&g, manhattan).path(&start, &goal)?.unwrap();
+//! assert_eq!(astar.weight(), 6.0);
+//!
+//! // The three best paths from start to goal, cheapest first.
+//! let best = YenKShortestPath::new(&g).get_paths(&start, &goal, 3)?;
+//! assert_eq!(best.len(), 3);
+//! assert!(best[0].weight() <= best[1].weight() && best[1].weight() <= best[2].weight());
+//! # Ok::<(), GraphError>(())
+//! ```
+//!
+//! ## Maximum flow and minimum cut
+//!
+//! A flow network is a directed graph whose edge weights are capacities. Every maximum-flow class
+//! ([`EdmondsKarpMFImpl`](crate::alg::flow::EdmondsKarpMFImpl),
+//! [`DinicMFImpl`](crate::alg::flow::DinicMFImpl),
+//! [`PushRelabelMFImpl`](crate::alg::flow::PushRelabelMFImpl),
+//! [`BoykovKolmogorovMFImpl`](crate::alg::flow::BoykovKolmogorovMFImpl)) answers
+//! `maximum_flow(source, sink)` with a [`MaximumFlow`](crate::alg::flow::MaximumFlow): the value,
+//! the flow on every edge and the minimum cut that proves it is maximal. Constructors reject
+//! negative capacities, and a source equal to the sink is an error.
+//!
+//! ```
+//! use jgrapht::alg::flow::{DinicMFImpl, MaximumFlowAlgorithm};
+//! use jgrapht::*;
+//!
+//! let mut net = DiGraph::<&str>::simple().weighted();
+//! net.add_vertices(["s", "a", "b", "t"]);
+//! let mut edge = |u, v, capacity| -> Result<DefaultEdge> {
+//!     Ok(net.add_weighted_edge(&u, &v, capacity)?.unwrap())
+//! };
+//! let sa = edge("s", "a", 10.0)?;
+//! let sb = edge("s", "b", 5.0)?;
+//! let ab = edge("a", "b", 15.0)?;
+//! let at = edge("a", "t", 5.0)?;
+//! let bt = edge("b", "t", 10.0)?;
+//!
+//! let flow = DinicMFImpl::new(&net)?.maximum_flow(&"s", &"t")?;
+//! assert_eq!(flow.value(), 15.0);
+//! assert_eq!(flow.flow(&sa), Some(10.0));
+//! assert_eq!(flow.flow(&at).unwrap() + flow.flow(&bt).unwrap(), 15.0);
+//!
+//! // The cut: its capacity equals the flow value.
+//! let cut: f64 = flow.cut_edges().iter().map(|e| net.weight_of(e)).sum();
+//! assert_eq!(cut, flow.value());
+//! assert!(flow.source_partition().contains("s") && !flow.source_partition().contains("t"));
+//! # let _ = (sb, ab);
+//! # Ok::<(), GraphError>(())
+//! ```
 //!
 //! # Generators
 //!
@@ -477,6 +749,74 @@
 //!
 //! The generators take the vertices from the vertex factory of the target graph. Random generators
 //! take any [`rand::RngCore`](https://docs.rs/rand), so a seeded generator is reproducible.
+//!
+//! # Copying, comparing and printing
+//!
+//! Graphs implement `Clone`: the clone owns its own vertex and edge sets and shares nothing with the
+//! original. [`add_graph`](crate::GraphMutExt::add_graph) copies a graph (or a view of one, which
+//! turns a live view into a snapshot) into another graph; [`add_graph_reversed`](crate::GraphMutExt::add_graph_reversed)
+//! copies it with every edge reversed.
+//!
+//! `==` compares the structure the way JGraphT's `equals` does: the same vertex set, the same edge
+//! set, and for each edge the same endpoints (direction ignored in an undirected graph) and weight.
+//! Equal edge *values* are required, so two graphs built independently with `add_edge` hold
+//! different edges and are not equal; a clone and a copy made with `add_graph` are. To ask whether
+//! two graphs have the same *shape* regardless of vertex and edge identity, use the isomorphism
+//! inspectors in [`alg::isomorphism`](crate::alg::isomorphism).
+//!
+//! `Display` prints the vertex set and then the edge set, directed edges as `(a,b)` and undirected
+//! ones as `{a,b}`; it is meant for small graphs and tests. Use an exporter from `jgrapht-io`
+//! (DOT, GraphML, ...) for anything else.
+//!
+//! ```
+//! use jgrapht::*;
+//!
+//! let mut g = UGraph::<&str>::simple();
+//! g.add_edge_with_vertices("v1", "v2")?;
+//! g.add_edge_with_vertices("v2", "v3")?;
+//!
+//! let copy = g.clone();
+//! assert!(graph_equals(&g, &copy));
+//! assert_eq!(copy.to_string(), "([v1, v2, v3], [{v1,v2}, {v2,v3}])");
+//!
+//! let mut snapshot = UGraph::<&str>::simple();
+//! snapshot.add_graph(&AsUndirected(&DiGraph::<&str>::simple()))?; // any view, here an empty one
+//! assert_eq!(snapshot.vertex_count(), 0);
+//! # Ok::<(), GraphError>(())
+//! ```
+//!
+//! # Concurrency
+//!
+//! Rust's rules replace JGraphT's warning about threads. Reading needs `&graph`, writing needs
+//! `&mut graph`, so the compiler guarantees that a graph is never modified while another thread
+//! reads it. Any number of threads can read the same graph at once (`BaseGraph` is `Sync` when its
+//! vertex and edge types are), for example with scoped threads:
+//!
+//! ```
+//! use jgrapht::alg::shortestpath::{Dijkstra, ShortestPathAlgorithm};
+//! use jgrapht::*;
+//!
+//! let mut g = DiGraph::<u32>::simple().weighted();
+//! g.add_vertices(0..100);
+//! for i in 0..99 {
+//!     g.add_weighted_edge(&i, &(i + 1), 1.0)?;
+//! }
+//!
+//! let g = &g;
+//! let lengths: Vec<Option<f64>> = std::thread::scope(|s| {
+//!     let workers: Vec<_> = (1..4u32)
+//!         .map(|k| s.spawn(move || Dijkstra::new(g).path_weight(&0, &(k * 30)).unwrap()))
+//!         .collect();
+//!     workers.into_iter().map(|w| w.join().unwrap()).collect()
+//! });
+//! assert_eq!(lengths, [Some(30.0), Some(60.0), Some(90.0)]);
+//! # Ok::<(), GraphError>(())
+//! ```
+//!
+//! For concurrent reads *and* writes wrap the graph yourself in `Arc<RwLock<_>>` (many readers or
+//! one writer) or `Arc<Mutex<_>>`; there is no synchronized graph wrapper because the lock you
+//! choose belongs to your application. Delta-stepping has a parallel shortest-path implementation
+//! ([`ParallelDeltaSteppingShortestPath`](crate::alg::shortestpath::ParallelDeltaSteppingShortestPath)).
 //!
 //! # Import and export
 //!
