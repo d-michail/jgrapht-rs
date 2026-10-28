@@ -791,4 +791,35 @@ mod as_graph_union_test {
         assert_eq!(g2.edge_weight(&edge), Some(10.0));
         assert_eq!(g2_masked.edge_weight(&edge), Some(20.0));
     }
+
+    #[test]
+    fn try_new_rejects_unrelated_edges_with_equal_ids() {
+        // `add_edge` numbers edges per graph, so both graphs contain an edge with the same id
+        let mut a = UGraph::<i32>::simple();
+        a.add_vertices(0..4);
+        let ea = a.add_edge(&0, &1).unwrap().unwrap();
+        let mut b = UGraph::<i32>::simple();
+        b.add_vertices(0..4);
+        let eb = b.add_edge(&2, &3).unwrap().unwrap();
+        assert_eq!(ea, eb);
+        assert_eq!(
+            GraphUnion::try_new(&a, &b).err(),
+            Some(GraphError::IntrusiveEdge)
+        );
+        // the unchecked constructor silently loses the second edge
+        assert_eq!(GraphUnion::new(&a, &b).edge_count(), 1);
+    }
+
+    #[test]
+    fn try_new_accepts_a_shared_edge_in_either_orientation() {
+        let e = DefaultEdge::new();
+        let mut a = UGraph::<i32>::simple();
+        a.add_vertices(0..2);
+        a.add_edge_with(&0, &1, e).unwrap();
+        let mut b = UGraph::<i32>::simple();
+        b.add_vertices(0..2);
+        b.add_edge_with(&1, &0, e).unwrap();
+        let u = GraphUnion::try_new(&a, &b).unwrap();
+        assert_eq!(u.edge_count(), 1);
+    }
 }

@@ -60,9 +60,18 @@ fn weights_and_union() {
     assert_eq!(w.total_weight(), 15.0);
     let mut h = DiGraph::<u32>::simple();
     h.add_edge_with_vertices(4, 5).unwrap();
-    let u = GraphUnion::new(&g, &h);
+    // `add_edge` numbers edges per graph, so `g` and `h` both contain an unrelated edge 0
+    assert_eq!(
+        GraphUnion::try_new(&g, &h).err(),
+        Some(GraphError::IntrusiveEdge)
+    );
+    // edges that are unique across graphs unite without conflict
+    let mut h = DiGraph::<u32>::simple();
+    h.add_vertices([4, 5]);
+    h.add_edge_with(&4, &5, DefaultEdge::new()).unwrap();
+    let u = GraphUnion::try_new(&g, &h).unwrap();
     assert_eq!(u.vertex_count(), 5);
-    assert_eq!(u.edge_count(), 4); // default edges are unique across graphs
+    assert_eq!(u.edge_count(), 4);
 }
 
 #[derive(Default)]

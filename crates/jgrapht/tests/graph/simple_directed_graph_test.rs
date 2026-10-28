@@ -107,7 +107,8 @@ fn test_add_edge_edge() {
         f.g1.add_edge_with(&V1, &V1, f.e_loop),
         Err(GraphError::LoopsNotAllowed)
     );
-    let e = f.g1.new_edge().unwrap();
+    // `new_edge` numbers per graph; an edge used in several graphs must be globally unique
+    let e = DefaultEdge::new();
     assert_eq!(
         f.g1.add_edge_with(&"ya", &"ya", e),
         Err(GraphError::VertexNotFound)

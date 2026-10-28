@@ -57,7 +57,8 @@ impl DefaultEdge {
     #[cfg(feature = "serde")]
     pub(crate) fn reserve_detached(id: u64) {
         if id >= DETACHED_EDGE_BASE {
-            NEXT_DETACHED_EDGE.fetch_max(id.saturating_add(1), std::sync::atomic::Ordering::Relaxed);
+            NEXT_DETACHED_EDGE
+                .fetch_max(id.saturating_add(1), std::sync::atomic::Ordering::Relaxed);
         }
     }
 }
