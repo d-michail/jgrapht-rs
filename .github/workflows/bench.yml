@@ -14,6 +14,10 @@ on:
         description: "Git ref to compare against (for example master); empty only runs the benchmarks"
         required: false
         default: ""
+      runs:
+        description: "Independent runs per revision (at least 10)"
+        required: false
+        default: "10"
       threshold:
         description: "Fail if the selected revision is slower than the base by this factor"
         required: false
@@ -36,7 +40,8 @@ jobs:
           BENCH: ${{ inputs.bench }}
           BASE: ${{ inputs.base }}
           THRESHOLD: ${{ inputs.threshold }}
+          RUNS: ${{ inputs.runs }}
         run: |
-          args=(-t "$THRESHOLD")
+          args=(-t "$THRESHOLD" -n "$RUNS")
           if [ -n "$BASE" ]; then args+=(-b "origin/$BASE"); fi
           scripts/bench.sh "${args[@]}" $BENCH

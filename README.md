@@ -133,13 +133,21 @@ cargo test -p jgrapht-io
 Benchmarks never run automatically. Start them on demand:
 
 ```sh
-cargo bench-graph                        # one benchmark file; also bench-shortestpath, -algorithms, -structures, -pathsearch, bench-all
-scripts/bench.sh -b master graph_perf    # also run master and fail on a >30% slowdown
+cargo bench-graph                        # one criterion run of one file; also bench-shortestpath, -algorithms, -structures, -pathsearch, bench-all
+scripts/bench.sh graph_perf              # 10 independent runs, mean and standard deviation per benchmark
+scripts/bench.sh -b master graph_perf    # also run master, interleaved; Welch t-test, fails on a significant >30% slowdown
 ```
 
-or use the manual **Benchmarks** workflow on GitHub (Actions tab, Run workflow). Results are
-printed to the terminal and written to `target/criterion/report/index.html`; the workflow logs show
-them for the GitHub runs.
+`scripts/bench.sh` (and the manual **Benchmarks** workflow on GitHub: Actions tab, Run workflow) run
+at least 10 independent `cargo bench` processes, because one criterion run is a single observation
+and says nothing about run-to-run variance. Each run's mean is the observation; the table shows
+mean, standard deviation and coefficient of variation over the runs. With `-b <ref>` the two
+revisions alternate (base, head, base, ...) so machine drift affects both, and a slowdown only fails
+when it exceeds the threshold and is statistically significant (Welch t-test, p < 0.05). All runs execute strictly one after the other on a single machine (the workflow is one job on one
+runner, no matrix). Use an
+idle machine: shared runners are noisy, and numbers are only comparable on the same machine.
+Criterion's HTML reports are in `target/criterion/report/index.html`.
+
 The benchmark files are in `crates/jgrapht/benches/` (`graph_perf`, `shortestpath_perf`,
 `algorithms_perf`, `structures_perf`, `pathsearch_perf`).
 

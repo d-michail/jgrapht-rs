@@ -27,7 +27,8 @@ cargo test -p jgrapht --features serde --test serde_roundtrip
 cargo test -p jgrapht-io
 cargo test --workspace                               # everything, several minutes; the alg suite alone takes about 7
 cargo bench-graph                                    # benchmark aliases (.cargo/config.toml), only when asked for
-scripts/bench.sh -b <base-ref> [bench...]            # compare with another revision
+scripts/bench.sh [-n 10] [bench...]                  # 10+ independent runs, mean/sd
+scripts/bench.sh -b <base-ref> [bench...]            # interleaved comparison with another revision (Welch t-test)
 ```
 
 The workspace requires Rust 1.88 (edition 2024). Prefer the targeted suites while working and run the
