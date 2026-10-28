@@ -21,29 +21,29 @@ use crate::{GraphError, Result};
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-/// The `OperationType` enum.
+/// Kind of a tree edit operation.
 pub enum OperationType {
-    /// The insert variant.
+    /// Inserts a vertex.
     Insert,
-    /// The remove variant.
+    /// Removes a vertex.
     Remove,
-    /// The change variant.
+    /// Changes (relabels) a vertex into another one.
     Change,
 }
 
 /// One step of an edit script. `Insert` and `Remove` have no second operand.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EditOperation<V> {
-    /// The ty.
+    /// What the step does.
     pub ty: OperationType,
-    /// The first.
+    /// The vertex the step is about.
     pub first: V,
-    /// The second.
+    /// The vertex that replaces `first` in a change; `None` for an insertion or removal.
     pub second: Option<V>,
 }
 
 impl<V> EditOperation<V> {
-    /// Creates a new instance.
+    /// A step of the given type.
     pub fn new(ty: OperationType, first: V, second: Option<V>) -> Self {
         EditOperation { ty, first, second }
     }
@@ -275,7 +275,7 @@ where
         self.tree_distances[self.tree1.vertex_count() - 1][self.tree2.vertex_count() - 1]
     }
 
-    /// Returns the edit operations.
+    /// The edit operations that turn the first tree into the second, computing them on first use.
     pub fn edit_operations(&mut self) -> &[EditOperation<G::Vertex>] {
         self.run();
         self.edit_operation_lists[self.tree1.vertex_count() - 1][self.tree2.vertex_count() - 1]

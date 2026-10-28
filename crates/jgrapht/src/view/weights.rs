@@ -106,7 +106,7 @@ impl<'f, G: Graph> AsWeighted<'f, G> {
         Ok(())
     }
 
-    /// Returns the base.
+    /// The wrapped graph.
     pub fn base(&self) -> &G {
         &self.graph
     }

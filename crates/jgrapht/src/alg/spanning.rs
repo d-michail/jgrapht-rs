@@ -30,11 +30,11 @@ use rheaps::tree::PairingHeap;
     ))
 )]
 #[derive(Debug, Clone, PartialEq)]
-/// The `SpanningTree` struct.
+/// A spanning tree (or forest): its edges and their total weight.
 pub struct SpanningTree<E> {
-    /// The edges.
+    /// Edges of the tree (or forest).
     pub edges: Vec<E>,
-    /// The weight.
+    /// Total weight of the tree.
     pub weight: f64,
 }
 
@@ -256,7 +256,7 @@ fn arborescence<G: DirectedGraph>(
 ///
 /// An algorithm computing a spanning tree or forest (`SpanningTreeAlgorithm`).
 pub trait SpanningTreeAlgorithm<G: Graph> {
-    /// Returns the spanning tree.
+    /// The spanning tree computed by the algorithm.
     fn spanning_tree(&self) -> SpanningTree<G::Edge>;
 }
 
@@ -267,7 +267,7 @@ macro_rules! mst_algorithm {
             graph: &'g G,
         }
         impl<'g, G: Graph> $name<'g, G> {
-            /// Creates a new instance.
+            /// The algorithm on `graph`.
             pub fn new(graph: &'g G) -> Self {
                 $name { graph }
             }

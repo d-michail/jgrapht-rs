@@ -30,12 +30,8 @@ impl<K> Default for Distributor<'_, K> {
     }
 }
 
-fn invalid<T>(msg: impl Into<String>) -> Result<T> {
-    Err(GraphError::InvalidArgument(msg.into()))
-}
-
 impl<'a, K> Distributor<'a, K> {
-    /// Creates a new instance.
+    /// A distributor with no keys.
     pub fn new() -> Self {
         Distributor {
             lower_bounds: Vec::new(),
@@ -97,14 +93,8 @@ impl<K: std::fmt::Debug> Distributor<'_, K> {
         let key_ub = self.compute_upper_bounds(keys);
         let (lb_suffix, lb_sum) = Self::suffix_sum(&key_lb);
         let (ub_suffix, ub_sum) = Self::suffix_sum(&key_ub);
-        if lb_sum > value_num as i64 {
-            return invalid(
-                "Can't distribute values among keys: the sum of lower bounds is greater than the number of values",
-            );
-        } else if ub_sum < value_num as i64 {
-            return invalid(
-                "Can't distribute values among keys: the sum of upper bounds is smaller than the number of values",
-            );
+        if lb_sum > value_num as i64 || ub_sum < value_num as i64 {
+            return Err(GraphError::Infeasible);
         }
         let mut remaining = value_num;
         let mut result = Vec::with_capacity(keys.len());
@@ -115,10 +105,7 @@ impl<K: std::fmt::Debug> Distributor<'_, K> {
             let lower = key_lb[i].max(value_lb);
             let upper = key_ub[i].min(value_ub);
             if lower > upper {
-                return invalid(format!(
-                    "Infeasible bound specified for the key: {:?}",
-                    keys[i]
-                ));
+                return Err(GraphError::Infeasible);
             }
             let bound = upper.wrapping_sub(lower).wrapping_add(1);
             if bound <= 0 {

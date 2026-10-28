@@ -28,7 +28,7 @@ use std::marker::PhantomData;
 ///
 /// # Rust notes
 ///
-/// Dijkstra's algorithm. Fails with `InvalidArgument` on negative edge weights.
+/// Dijkstra's algorithm. Fails with [`crate::GraphError::InvalidWeight`] on negative edge weights.
 /// `H` selects the priority queue (pairing heap by default).
 pub struct Dijkstra<'g, G, H = PairingHeap<OrderedF64, usize>> {
     g: &'g G,

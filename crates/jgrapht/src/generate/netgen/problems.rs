@@ -41,40 +41,40 @@ impl<V, E> NetworkInfo<V, E> {
     fn range(&self, from: i32, to: i32) -> &[V] {
         &self.vertices[from as usize..to as usize]
     }
-    /// Returns the pure sources.
+    /// The sources that are not transshipment sources.
     pub fn pure_sources(&self) -> &[V] {
         self.range(0, self.config.pure_source_num())
     }
-    /// Returns the transshipment sources.
+    /// The sources that also pass flow on from other nodes.
     pub fn transshipment_sources(&self) -> &[V] {
         self.range(self.config.pure_source_num(), self.config.source_num())
     }
-    /// Returns the sources.
+    /// All sources: the pure sources followed by the transshipment sources.
     pub fn sources(&self) -> &[V] {
         self.range(0, self.config.source_num())
     }
-    /// Returns the transshipment nodes.
+    /// The nodes that are neither sources nor sinks.
     pub fn transshipment_nodes(&self) -> &[V] {
         self.range(
             self.config.source_num(),
             self.config.source_num() + self.config.transship_node_num(),
         )
     }
-    /// Returns the pure sinks.
+    /// The sinks that are not transshipment sinks.
     pub fn pure_sinks(&self) -> &[V] {
         self.range(
             self.config.node_num() - self.config.pure_sink_num(),
             self.config.node_num(),
         )
     }
-    /// Returns the transshipment sinks.
+    /// The sinks that also send flow on to other nodes.
     pub fn transshipment_sinks(&self) -> &[V] {
         self.range(
             self.config.node_num() - self.config.sink_num(),
             self.config.node_num() - self.config.pure_sink_num(),
         )
     }
-    /// Returns the sinks.
+    /// All sinks: the transshipment sinks followed by the pure sinks.
     pub fn sinks(&self) -> &[V] {
         self.range(
             self.config.node_num() - self.config.sink_num(),
@@ -90,22 +90,22 @@ impl<V, E> NetworkInfo<V, E> {
 /// Bipartite matching / assignment problem: partitions are the sources and the sinks.
 #[derive(Debug, Clone)]
 pub struct BipartiteMatchingProblem<V, E> {
-    /// The partition1.
+    /// The vertices of the first side.
     pub partition1: HashSet<V>,
-    /// The partition2.
+    /// The vertices of the second side.
     pub partition2: HashSet<V>,
-    /// The costs.
+    /// Cost of every arc.
     pub costs: HashMap<E, f64>,
-    /// The weighted.
+    /// Whether the arc costs matter; `false` for the unweighted matching problem.
     pub weighted: bool,
 }
 
 impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> BipartiteMatchingProblem<V, E> {
-    /// Returns the cost.
+    /// Cost of the arc `e`.
     pub fn cost(&self, e: &E) -> f64 {
         self.costs[e]
     }
-    /// Returns whether weighted.
+    /// Whether the costs are meaningful; `false` for the unweighted matching problem.
     pub fn is_weighted(&self) -> bool {
         self.weighted
     }
@@ -126,16 +126,16 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> BipartiteMatchingProblem<V, E> 
 /// Maximum flow problem with (possibly several) sources and sinks.
 #[derive(Debug, Clone)]
 pub struct MaximumFlowProblem<V, E> {
-    /// The sources.
+    /// The vertices that supply flow.
     pub sources: HashSet<V>,
-    /// The sinks.
+    /// The vertices that absorb flow.
     pub sinks: HashSet<V>,
-    /// The capacities.
+    /// Capacity of every arc.
     pub capacities: HashMap<E, f64>,
 }
 
 impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> MaximumFlowProblem<V, E> {
-    /// Returns the capacity.
+    /// Capacity of the arc `e`.
     pub fn capacity(&self, e: &E) -> f64 {
         self.capacities[e]
     }
@@ -155,7 +155,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> MaximumFlowProblem<V, E> {
     pub fn sink(&self) -> &V {
         self.sinks.iter().next().expect("no sink")
     }
-    /// Returns whether single source single sink problem.
+    /// Whether there is exactly one source and one sink.
     pub fn is_single_source_single_sink_problem(&self) -> bool {
         self.sources.len() == 1 && self.sinks.len() == 1
     }
@@ -209,7 +209,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> MaximumFlowProblem<V, E> {
             } else {
                 graph.add_edge(v, &super_vertex)?
             };
-            let edge = edge.ok_or_else(|| GraphError::InvalidArgument("arc not added".into()))?;
+            let edge = edge.ok_or(GraphError::Internal("arc not added"))?;
             capacities.insert(edge, CAPACITY_INF);
         }
         Ok(HashSet::from([super_vertex]))

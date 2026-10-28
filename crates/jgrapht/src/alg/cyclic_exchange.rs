@@ -100,10 +100,7 @@ where
             let v = v.borrow();
             !label_map.contains_key(v)
         }) {
-            return Err(GraphError::InvalidArgument(
-                "Every vertex has to be labeled, that is, every vertex needs an entry in labelMap."
-                    .into(),
-            ));
+            return Err(GraphError::MissingVertexData("label"));
         }
         Ok(AhujaOrlinSharmaCyclicExchangeLocalAugmentation {
             graph,

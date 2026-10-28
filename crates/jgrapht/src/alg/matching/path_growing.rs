@@ -165,9 +165,7 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
                             m2_weight += weight;
                         }
                         _ => {
-                            return Err(GraphError::InvalidArgument(
-                                "Failed to figure out matching, seems to be a bug".into(),
-                            ));
+                            return Err(GraphError::Internal("matching construction failed"));
                         }
                     }
                     i = 3 - i;
@@ -218,9 +216,7 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
             for e in path_matching {
                 let (s, t) = graph.edge_endpoints(&e).expect("edge of the graph");
                 if !matched_vertices.insert(s.clone()) || !matched_vertices.insert(t.clone()) {
-                    return Err(GraphError::InvalidArgument(
-                        "Set is not a valid matching, please submit a bug report".into(),
-                    ));
+                    return Err(GraphError::Internal("edges of a matching share a vertex"));
                 }
                 matching.insert(e);
             }

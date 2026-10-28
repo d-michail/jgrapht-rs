@@ -57,14 +57,14 @@ impl fmt::Display for DefaultEdge {
 
 /// Compile-time direction tag for [`BaseGraph`].
 pub trait Direction: Clone + Copy + fmt::Debug {
-    /// The directed constant.
+    /// Whether graphs tagged with this direction are directed.
     const DIRECTED: bool;
 }
 #[derive(Debug, Clone, Copy)]
-/// The `Directed` struct.
+/// Tag for directed graphs.
 pub struct Directed;
 #[derive(Debug, Clone, Copy)]
-/// The `Undirected` struct.
+/// Tag for undirected graphs.
 pub struct Undirected;
 impl Direction for Directed {
     const DIRECTED: bool = true;

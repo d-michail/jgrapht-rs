@@ -32,7 +32,7 @@ pub fn find_weak_chordality_certificate<G: IncidenceGraph>(g: &G) -> Option<Vec<
     Some(vertices)
 }
 
-/// Returns whether weakly chordal.
+/// Whether the graph has no induced cycle of length five or more, and neither has its complement.
 pub fn is_weakly_chordal<G: IncidenceGraph>(g: &G) -> bool {
     WeakChordalityInspector::new(g).is_weakly_chordal()
 }

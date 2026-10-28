@@ -201,7 +201,7 @@ pub struct ToleranceDoubleComparator {
 }
 
 impl ToleranceDoubleComparator {
-    /// The default epsilon constant.
+    /// Default tolerance for comparing floating-point numbers.
     pub const DEFAULT_EPSILON: f64 = 1e-9;
     /// A comparator that treats values closer than `epsilon` as equal; `epsilon` must be positive.
     ///

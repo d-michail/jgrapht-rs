@@ -117,7 +117,7 @@ impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
         })
     }
 
-    /// Returns the graph.
+    /// The graph the landmarks were computed for.
     pub fn graph(&self) -> &G {
         self.graph
     }

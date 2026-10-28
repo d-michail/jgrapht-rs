@@ -26,9 +26,9 @@ use std::hash::{Hash, Hasher};
 /// Java's `Double.doubleToLongBits`: `NaN == NaN` and `0.0 != -0.0`.
 #[derive(Debug, Clone, Copy)]
 pub struct Point2D {
-    /// The x.
+    /// Horizontal coordinate.
     pub x: f64,
-    /// The y.
+    /// Vertical coordinate.
     pub y: f64,
 }
 
@@ -66,23 +66,23 @@ pub mod points {
     use super::Point2D;
     use crate::util::ToleranceDoubleComparator;
 
-    /// Computes the length.
+    /// Euclidean length of the vector `v`.
     pub fn length(v: Point2D) -> f64 {
         (v.x * v.x + v.y * v.y).sqrt()
     }
-    /// Computes the add.
+    /// Component-wise sum `a + b`.
     pub fn add(a: Point2D, b: Point2D) -> Point2D {
         Point2D::of(a.x + b.x, a.y + b.y)
     }
-    /// Computes the subtract.
+    /// Component-wise difference `a - b`.
     pub fn subtract(a: Point2D, b: Point2D) -> Point2D {
         Point2D::of(a.x - b.x, a.y - b.y)
     }
-    /// Computes the negate.
+    /// The vector `-a`.
     pub fn negate(a: Point2D) -> Point2D {
         scalar_multiply(a, -1.0)
     }
-    /// Computes the scalar multiply.
+    /// The vector `a` scaled by `scalar`.
     pub fn scalar_multiply(a: Point2D, scalar: f64) -> Point2D {
         Point2D::of(a.x * scalar, a.y * scalar)
     }
@@ -156,7 +156,8 @@ pub mod boxes {
     use super::{Box2D, Point2D};
     use std::cmp::Ordering;
 
-    /// Computes the contains point.
+    /// Whether `p` lies inside the box `b` or on its border, comparing coordinates with the total order
+    /// of `f64`.
     pub fn contains_point(b: &Box2D, p: Point2D) -> bool {
         contains_point_with(b, p, |a, b| a.total_cmp(&b))
     }
@@ -199,23 +200,24 @@ pub mod boxes {
 ///
 /// Positions of vertices inside a drawable area (`LayoutModel2D`).
 pub trait LayoutModel2D<V> {
-    /// Returns the drawable area.
+    /// The area inside which vertices are placed.
     fn drawable_area(&self) -> Box2D;
-    /// Sets the drawable area.
+    /// Replaces the drawable area.
     fn set_drawable_area(&mut self, area: Box2D);
-    /// Returns the get.
+    /// Position of `v`, or `None` if it has none.
     fn get(&self, v: &V) -> Option<Point2D>;
     /// Sets the position unless the vertex is fixed; returns the previous (or, for a fixed
     /// vertex, the current) position.
     fn put(&mut self, v: V, p: Point2D) -> Option<Point2D>;
-    /// Sets the fixed.
+    /// Pins `v` at its current position when `fixed` is `true`, so [`put`](Self::put) no longer moves
+    /// it; `false` releases it.
     fn set_fixed(&mut self, v: V, fixed: bool);
-    /// Returns whether fixed.
+    /// Whether `v` is pinned.
     fn is_fixed(&self, v: &V) -> bool;
     /// All positions in insertion order.
     fn entries(&self) -> Vec<(V, Point2D)>;
 
-    /// Returns the collect.
+    /// All positions as a map, in insertion order.
     fn collect(&self) -> IndexMap<V, Point2D>
     where
         V: Eq + Hash,
@@ -333,7 +335,7 @@ impl<V, M: LayoutModel2D<V>> ListenableLayoutModel2D<V, M> {
         self.listeners.retain(|(i, _)| *i != id);
         before != self.listeners.len()
     }
-    /// Consumes the value and returns inner.
+    /// Returns the wrapped model.
     pub fn into_inner(self) -> M {
         self.model
     }

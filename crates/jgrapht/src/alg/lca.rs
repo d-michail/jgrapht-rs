@@ -106,10 +106,6 @@ use crate::view::EdgeReversed;
 use crate::{GraphError, Result};
 use std::collections::HashSet;
 
-fn invalid<T>(msg: impl Into<String>) -> Result<T> {
-    Err(GraphError::InvalidArgument(msg.into()))
-}
-
 /// Rooted forest explored from `roots` along outgoing edges (`ancestors[0]` parents, DFS times,
 /// Euler tour).
 struct Forest<V> {
@@ -157,7 +153,9 @@ impl<V: Clone + Eq + Hash> Forest<V> {
         for root in roots {
             let r = f.index[root];
             if f.component[r] != 0 {
-                return invalid("multiple roots in the same tree");
+                return Err(GraphError::InvalidGraph(
+                    crate::GraphProperty::OneRootPerTree,
+                ));
             }
             number_component += 1;
             f.dfs(g, r, number_component, &mut clock);
@@ -519,7 +517,9 @@ impl<'g, G: OutgoingGraph> TarjanLcaFinder<'g, G> {
         let mut visited: HashSet<G::Vertex> = HashSet::new();
         for root in &self.roots {
             if visited.contains(root) {
-                return invalid("multiple roots in the same tree");
+                return Err(GraphError::InvalidGraph(
+                    crate::GraphProperty::OneRootPerTree,
+                ));
             }
             let mut black: HashSet<G::Vertex> = HashSet::new();
             // iterative DFS: (vertex, parent, neighbours, next)

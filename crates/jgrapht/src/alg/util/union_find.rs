@@ -143,12 +143,12 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
         self.count
     }
 
-    /// Returns the len.
+    /// Number of elements in all sets together.
     pub fn len(&self) -> usize {
         self.parent.len()
     }
 
-    /// Returns whether empty.
+    /// Whether there are no elements.
     pub fn is_empty(&self) -> bool {
         self.parent.is_empty()
     }

@@ -401,13 +401,7 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for HeldKarpTSP {
             return Ok(Some(singleton_tour(graph)));
         }
         if n > 31 {
-            return Err(GraphError::InvalidArgument(
-                "The internal representation of the dynamic programming state space cannot \
-                 represent graphs containing more than 31 vertices. The runtime complexity of this \
-                 implementation, O(2^|V| x |V|^2),  makes it unsuitable for graphs with more than 31 \
-                 vertices."
-                    .into(),
-            ));
+            return Err(GraphError::TooManyVertices { max: 31, got: n });
         }
         let index_list: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let vertex_map: HashMap<&G::Vertex, usize> =
@@ -515,9 +509,7 @@ impl PalmerHamiltonianCycle {
                     }
                     u = u_n;
                 }
-                return Err(GraphError::InvalidArgument(
-                    "Found a gap but no mean to close it".into(),
-                ));
+                return Err(GraphError::Internal("a gap in the tour cannot be closed"));
             }
             v = v_n;
         }
@@ -547,9 +539,7 @@ impl<G: IncidenceGraph> HamiltonianCycleAlgorithm<G> for PalmerHamiltonianCycle 
     /// Computes a Hamiltonian tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         if !has_ore_property(graph) {
-            return Err(GraphError::InvalidArgument(
-                "Graph doesn't have Ore's property".into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::OreProperty));
         }
         let mut tour: Vec<G::Vertex> = graph.vertices_cloned().collect();
         while Self::search_and_close_gap(&mut tour, graph)? {}

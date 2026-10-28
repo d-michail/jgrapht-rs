@@ -66,7 +66,7 @@ impl FixedSizeIntegerQueue {
     pub fn is_empty(&self) -> bool {
         self.i == self.n
     }
-    /// Returns the len.
+    /// Number of elements in the queue.
     pub fn len(&self) -> usize {
         self.n - self.i
     }

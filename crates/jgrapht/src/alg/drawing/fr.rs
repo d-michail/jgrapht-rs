@@ -136,7 +136,7 @@ impl FRQuadTree {
                 .find(|&k| boxes::contains_point(&self.nodes[kids[k]].boxx, p));
             match next {
                 Some(k) => cur = kids[k],
-                None => return Err(GraphError::InvalidArgument("point outside the tree".into())),
+                None => return Err(GraphError::Internal("point outside the quadtree")),
             }
         }
     }
@@ -146,7 +146,7 @@ impl FRQuadTree {
         self.nodes[n].points.is_some()
     }
 
-    /// Returns the box of.
+    /// The box of the quadtree node `n`.
     pub fn box_of(&self, n: NodeId) -> Box2D {
         self.nodes[n].boxx
     }
@@ -250,15 +250,15 @@ pub struct FRLayoutAlgorithm2D<V, R> {
     theta: Option<f64>,
     saved_comparisons: u64,
     optimal_distance: f64,
-    /// The initializer.
+    /// Chooses the initial positions of the vertices; `None` places them randomly.
     pub initializer: Option<Initializer<V>>,
 }
 
-/// The default iterations constant.
+/// Default number of iterations.
 pub const DEFAULT_ITERATIONS: usize = 100;
-/// The default normalization factor constant.
+/// Default normalization factor, which scales the optimal distance between vertices.
 pub const DEFAULT_NORMALIZATION_FACTOR: f64 = 0.5;
-/// The default theta factor constant.
+/// Default accuracy parameter of the Barnes-Hut approximation of the repulsive forces.
 pub const DEFAULT_THETA_FACTOR: f64 = 0.5;
 
 impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
@@ -316,7 +316,10 @@ impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
         rng: R,
     ) -> Result<Self> {
         if !(0.0..=1.0).contains(&theta) {
-            return Err(GraphError::InvalidArgument("Illegal theta value".into()));
+            return Err(GraphError::InvalidParameter {
+                name: "theta",
+                requirement: crate::ParameterRequirement::Probability,
+            });
         }
         let mut alg = Self::new(iterations, normalization_factor, rng);
         alg.theta = Some(theta);

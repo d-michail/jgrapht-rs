@@ -30,7 +30,7 @@ pub struct LexBfs<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> LexBfs<'g, G> {
-    /// Creates a new instance.
+    /// Lexicographic breadth-first order of `g`.
     pub fn new(g: &'g G) -> Self {
         LexBfs {
             g,
@@ -67,7 +67,7 @@ pub struct MaximumCardinality<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> MaximumCardinality<'g, G> {
-    /// Creates a new instance.
+    /// Maximum cardinality order of `g`.
     pub fn new(g: &'g G) -> Self {
         MaximumCardinality {
             g,
@@ -105,7 +105,7 @@ pub struct DegeneracyOrdering<'g, G: Graph> {
 }
 
 impl<'g, G: IncidenceGraph> DegeneracyOrdering<'g, G> {
-    /// Creates a new instance.
+    /// Degeneracy order of `g`.
     pub fn new(g: &'g G) -> Self {
         DegeneracyOrdering {
             g,

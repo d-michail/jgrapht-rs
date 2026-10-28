@@ -93,9 +93,14 @@ pub fn label_propagation<G: Graph>(
 pub fn k_spanning_tree_clustering<G: Graph>(g: &G, k: usize) -> Result<Vec<Vec<G::Vertex>>> {
     let ix = Indexed::new(g);
     if k == 0 || k > ix.n() {
-        return Err(GraphError::InvalidArgument(
-            "k must be between 1 and the number of vertices".into(),
-        ));
+        return Err(GraphError::InvalidParameter {
+            name: "k",
+            requirement: if k == 0 {
+                crate::ParameterRequirement::Positive
+            } else {
+                crate::ParameterRequirement::AtMostVertexCount
+            },
+        });
     }
     let tree = kruskal(g);
     let mut edges: Vec<usize> = tree
@@ -118,9 +123,10 @@ pub fn k_spanning_tree_clustering<G: Graph>(g: &G, k: usize) -> Result<Vec<Vec<G
         }
     }
     if uf.set_count() > k {
-        return Err(GraphError::InvalidArgument(
-            "graph has more components than k".into(),
-        ));
+        return Err(GraphError::InvalidParameter {
+            name: "k",
+            requirement: crate::ParameterRequirement::Consistent,
+        });
     }
     let label: Vec<usize> = (0..ix.n()).map(|v| uf.find(v)).collect();
     Ok(groups(&ix, &label))
@@ -213,7 +219,6 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
     ///
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn modularity(&self, partitions: &[HashSet<G::Vertex>]) -> Result<f64> {
-        const INVALID: &str = "Invalid partition of vertices";
         let total = partitions.len();
         let mut vertex_partition: HashMap<&G::Vertex, usize> = HashMap::new();
         let mut weighted_degree = vec![0.0; total];
@@ -223,7 +228,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
                 let d = self
                     .degrees
                     .get(v)
-                    .ok_or_else(|| GraphError::InvalidArgument(INVALID.into()))?;
+                    .ok_or(GraphError::MissingVertexData("partition"))?;
                 weighted_degree[p] += d;
             }
         }
@@ -236,10 +241,10 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
             );
             let pv = vertex_partition
                 .get(v)
-                .ok_or_else(|| GraphError::InvalidArgument(INVALID.into()))?;
+                .ok_or(GraphError::MissingVertexData("partition"))?;
             let pu = vertex_partition
                 .get(u)
-                .ok_or_else(|| GraphError::InvalidArgument(INVALID.into()))?;
+                .ok_or(GraphError::MissingVertexData("partition"))?;
             if pv == pu {
                 edge_weight[*pv] += self.graph.weight_of(e);
             }
@@ -294,9 +299,14 @@ impl<'g, G: Graph> GirvanNewmanClustering<'g, G> {
         start_vertices: Option<Vec<G::Vertex>>,
     ) -> Result<Self> {
         if k < 1 || k > graph.vertex_count() {
-            return Err(GraphError::InvalidArgument(
-                "Illegal number of clusters".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "k",
+                requirement: if k == 0 {
+                    crate::ParameterRequirement::Positive
+                } else {
+                    crate::ParameterRequirement::AtMostVertexCount
+                },
+            });
         }
         Ok(GirvanNewmanClustering {
             graph,
@@ -370,9 +380,14 @@ impl<'g, G: UndirectedGraph> KSpanningTreeClustering<'g, G> {
     /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         if k < 1 || k > graph.vertex_count() {
-            return Err(GraphError::InvalidArgument(
-                "Illegal number of clusters".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "k",
+                requirement: if k == 0 {
+                    crate::ParameterRequirement::Positive
+                } else {
+                    crate::ParameterRequirement::AtMostVertexCount
+                },
+            });
         }
         Ok(KSpanningTreeClustering { graph, k })
     }

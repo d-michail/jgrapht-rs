@@ -166,7 +166,7 @@ pub struct BidirectionalAStarShortestPath<'g, G, F> {
 impl<'g, G: IncidenceGraph, F: Fn(&G::Vertex, &G::Vertex) -> f64>
     BidirectionalAStarShortestPath<'g, G, F>
 {
-    /// Creates a new instance.
+    /// Bidirectional A* search with the given admissible `heuristic(vertex, target)` on `graph`.
     pub fn new(graph: &'g G, heuristic: F) -> Self {
         Self { graph, heuristic }
     }

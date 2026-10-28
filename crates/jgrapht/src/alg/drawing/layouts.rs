@@ -80,7 +80,7 @@ fn tolerance() -> ToleranceDoubleComparator {
 pub struct CircularLayoutAlgorithm2D<V> {
     radius: f64,
     vertex_comparator: Option<Box<dyn Fn(&V, &V) -> Ordering>>,
-    /// The initializer.
+    /// Chooses the initial positions of the vertices; `None` places them randomly.
     pub initializer: Option<Initializer<V>>,
 }
 
@@ -122,14 +122,16 @@ impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for CircularLayoutAlgorithm2D<G::Ve
         let (width, height) = (area.width(), area.height());
         let cmp = tolerance();
         if cmp.compare(2.0 * self.radius, width) > 0 {
-            return Err(GraphError::InvalidArgument(
-                "Circle does not fit into drawable area width".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "radius",
+                requirement: crate::ParameterRequirement::FitsArea,
+            });
         }
         if cmp.compare(2.0 * self.radius, height) > 0 {
-            return Err(GraphError::InvalidArgument(
-                "Circle does not fit into drawable area height".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "radius",
+                requirement: crate::ParameterRequirement::FitsArea,
+            });
         }
         let n = graph.vertex_count();
         let angle_step = 2.0 * std::f64::consts::PI / n as f64;
@@ -267,7 +269,7 @@ impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for RescaleLayoutAlgorithm2D {
 }
 
 fn missing() -> GraphError {
-    GraphError::InvalidArgument("vertex has no position in the layout model".into())
+    GraphError::MissingVertexData("layout position")
 }
 
 /// How the second layer of a [`TwoLayeredBipartiteLayout2D`] is ordered.
@@ -316,14 +318,14 @@ impl<V> TwoLayeredBipartiteLayout2D<V> {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Computes the median greedy.
+    /// Orders the second layer of the bipartite layout by the median position of the neighbours.
     pub fn median_greedy() -> Self {
         TwoLayeredBipartiteLayout2D {
             order: SecondLayerOrder::MedianGreedy,
             ..Self::default()
         }
     }
-    /// Computes the barycenter greedy.
+    /// Orders the second layer of the bipartite layout by the barycenter (mean position) of the neighbours.
     pub fn barycenter_greedy() -> Self {
         TwoLayeredBipartiteLayout2D {
             order: SecondLayerOrder::BarycenterGreedy,
@@ -369,9 +371,10 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
                 let e = e.borrow();
                 let (v, u) = (graph.edge_source(e).unwrap(), graph.edge_target(e).unwrap());
                 if partition.contains(v) == partition.contains(u) {
-                    return Err(GraphError::InvalidArgument(
-                        "Invalid provided bipartite partition.".into(),
-                    ));
+                    return Err(GraphError::InvalidParameter {
+                        name: "partition",
+                        requirement: crate::ParameterRequirement::ValidPartition,
+                    });
                 }
             }
         } else {

@@ -20,10 +20,6 @@ use indexmap::IndexSet;
 use std::cmp::Ordering;
 use std::collections::HashSet;
 
-fn invalid<T>(message: &str) -> Result<T> {
-    Err(GraphError::InvalidArgument(message.into()))
-}
-
 /// `Double.compare(x, 0.) == 0`: positive zero only.
 fn is_positive_zero(x: f64) -> bool {
     x.total_cmp(&0.0) == Ordering::Equal
@@ -77,7 +73,10 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
         let p1: HashSet<G::Vertex> = self.partition1.iter().cloned().collect();
         let p2: HashSet<G::Vertex> = self.partition2.iter().cloned().collect();
         if !props::is_bipartite_partition(graph, &p1, &p2) {
-            return invalid("Invalid bipartite partition provided");
+            return Err(GraphError::InvalidParameter {
+                name: "partition",
+                requirement: crate::ParameterRequirement::ValidPartition,
+            });
         }
         let partition = self.partition1.len();
         if graph.edge_count() != partition * partition {

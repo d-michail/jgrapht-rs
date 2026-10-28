@@ -123,8 +123,9 @@ let back: UGraph<String> = serde_json::from_str(&json)?;
   id, so new edges never collide with the loaded ones.
 * Maps keyed by vertices (`Coloring`, flows, shortest paths) are written as lists of pairs, because
   formats such as JSON only allow string keys.
-* Views that hold closures (`MaskSubgraph`, `AsWeighted`) and `AsSubgraph` are not serializable;
-  materialize them into a `BaseGraph` first.
+* `AsSubgraph` is written with its base graph and read back through `AsSubgraph::new`, so a vertex or
+  edge that is not in the base is an error. Views that hold closures (`MaskSubgraph`, `AsWeighted`)
+  are not serializable; materialize them into a `BaseGraph` first.
 * Sparse graphs are written as the vertex count and the edge list; the incoming-edge mode is the
   type you read into.
 

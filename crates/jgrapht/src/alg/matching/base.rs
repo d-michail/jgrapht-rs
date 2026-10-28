@@ -71,17 +71,17 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> Matching<V, E> {
         self.weight
     }
 
-    /// Returns the len.
+    /// Number of edges of the matching.
     pub fn len(&self) -> usize {
         self.edges.len()
     }
 
-    /// Returns whether empty.
+    /// Whether the matching has no edges.
     pub fn is_empty(&self) -> bool {
         self.edges.is_empty()
     }
 
-    /// Returns the iter.
+    /// Iterates over the edges of the matching.
     pub fn iter(&self) -> indexmap::set::Iter<'_, E> {
         self.edges.iter()
     }

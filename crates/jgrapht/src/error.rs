@@ -65,8 +65,38 @@ pub enum GraphError {
     #[error("invalid graph walk: {0}")]
     InvalidGraphWalk(String),
     /// An argument violates an operation's preconditions and no more specific variant applies.
+    /// The library itself no longer returns it; it stays for code that wraps foreign errors.
     #[error("invalid argument: {0}")]
     InvalidArgument(String),
+    /// A required parameter was not supplied (a builder or generator that was not configured).
+    #[error("missing parameter `{0}`")]
+    MissingParameter(&'static str),
+    /// Some vertex has no value in a map or function that must cover every vertex (a weight, a
+    /// label, a demand, a layout position).
+    #[error("no {0} for some vertex")]
+    MissingVertexData(&'static str),
+    /// The operation cannot run on this many vertices.
+    #[error("graph has {got} vertices, at most {max} are supported")]
+    TooManyVertices {
+        /// The limit.
+        max: usize,
+        /// The number of vertices of the graph.
+        got: usize,
+    },
+    /// An exact division by zero.
+    #[error("division by zero")]
+    DivisionByZero,
+    /// An exact decimal division whose result has no finite decimal expansion.
+    #[error("the decimal expansion does not terminate")]
+    NonTerminatingExpansion,
+    /// The operation was called in a state that does not allow it (a generator that can run
+    /// only once, for example).
+    #[error("invalid state: {0}")]
+    InvalidState(&'static str),
+    /// An internal invariant of the library was broken. This is a bug in `jgrapht`; please report
+    /// it.
+    #[error("internal error, please report a bug: {0}")]
+    Internal(&'static str),
     /// A numeric or collection parameter violates its documented requirement, for example a
     /// non-positive tolerance, radius or count.
     #[error("parameter `{name}` must be {requirement}")]
@@ -173,6 +203,28 @@ pub enum ParameterRequirement {
     /// An index inside the bounds of the structure it addresses.
     #[error("within bounds")]
     InBounds,
+    /// Between the two values, both included.
+    #[error("between {0} and {1}")]
+    InRange(u64, u64),
+    /// Between minus the value and the value, both included.
+    #[error("between -{0} and {0}")]
+    AbsAtMost(u64),
+    /// At most the number of vertices of the graph.
+    #[error("at most the number of vertices")]
+    AtMostVertexCount,
+    /// Consistent with the other parameters (an ordering such as minimum <= maximum, or a count
+    /// that the other sizes allow).
+    #[error("consistent with the other parameters")]
+    Consistent,
+    /// Small enough for the area it must fit into.
+    #[error("small enough to fit the area")]
+    FitsArea,
+    /// A partition of the vertices that matches the graph.
+    #[error("a valid partition of the graph")]
+    ValidPartition,
+    /// A solution that is valid for the problem.
+    #[error("a valid solution")]
+    ValidSolution,
 }
 
 /// Why an edge weight is unusable; see [`GraphError::InvalidWeight`].
@@ -270,6 +322,15 @@ pub enum GraphProperty {
     /// A tree.
     #[error("a tree")]
     Tree,
+    /// Satisfying Ore's condition on degree sums.
+    #[error("satisfying Ore's property")]
+    OreProperty,
+    /// A forest with a single root in each tree.
+    #[error("a forest with one root per tree")]
+    OneRootPerTree,
+    /// The same direction as the other graph.
+    #[error("of the same direction as the other graph")]
+    SameDirection,
 }
 
 impl GraphError {

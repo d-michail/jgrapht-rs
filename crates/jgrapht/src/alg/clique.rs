@@ -144,7 +144,7 @@ pub fn maximum_independent_set<G: Graph>(g: &G) -> Vec<G::Vertex> {
     ix.vertices_of(&best)
 }
 
-/// Returns whether independent set.
+/// Whether no two vertices of `vs` are adjacent.
 pub fn is_independent_set<G: Graph>(g: &G, vs: &[G::Vertex]) -> bool {
     vs.iter().enumerate().all(|(i, a)| {
         vs[i + 1..]

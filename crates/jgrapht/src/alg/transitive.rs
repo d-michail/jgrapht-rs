@@ -32,7 +32,7 @@ use std::collections::VecDeque;
 pub struct TransitiveClosure;
 
 impl TransitiveClosure {
-    /// The singleton instance.
+    /// The only instance; the algorithm has no state.
     pub const INSTANCE: TransitiveClosure = TransitiveClosure;
 
     /// Computes the transitive closure of a simple directed graph, in place.
@@ -154,7 +154,7 @@ impl BitSet {
             .is_some_and(|w| w & (1 << (i % 64)) != 0)
     }
 
-    /// Updates the state for `set`.
+    /// Sets or clears bit `i`.
     pub fn set(&mut self, i: usize, value: bool) {
         if value {
             self.words[i / 64] |= 1 << (i % 64);
@@ -212,7 +212,7 @@ impl BitSet {
 pub struct TransitiveReduction;
 
 impl TransitiveReduction {
-    /// The singleton instance.
+    /// The only instance; the algorithm has no state.
     pub const INSTANCE: TransitiveReduction = TransitiveReduction;
 
     /// Transforms `matrix` into a path matrix.

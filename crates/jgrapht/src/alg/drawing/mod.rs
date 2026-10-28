@@ -26,7 +26,7 @@ use rand::Rng;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 
-/// The point type.
+/// A point as an `(x, y)` pair.
 pub type Point = (f64, f64);
 
 /// Vertices evenly spaced on a circle of the given radius centred at the origin.

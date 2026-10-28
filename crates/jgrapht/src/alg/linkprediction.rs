@@ -36,29 +36,29 @@ fn nbrs<G: Graph>(ix: &Indexed<'_, G>) -> Vec<HashSet<usize>> {
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-/// The `Measure` enum.
+/// A similarity measure for the neighbourhoods of two vertices; `N(x)` below is the neighbour set of `x`.
 pub enum Measure {
-    /// The common neighbors variant.
+    /// `|N(u) ∩ N(v)|`.
     CommonNeighbors,
-    /// The total neighbors variant.
+    /// `|N(u) ∪ N(v)|`.
     TotalNeighbors,
-    /// The jaccard variant.
+    /// `|N(u) ∩ N(v)| / |N(u) ∪ N(v)|`.
     Jaccard,
     /// Sørensen–Dice
     Sorensen,
     /// Salton (cosine)
     Salton,
-    /// The hub promoted variant.
+    /// `|N(u) ∩ N(v)| / min(|N(u)|, |N(v)|)`.
     HubPromoted,
-    /// The hub depressed variant.
+    /// `|N(u) ∩ N(v)| / max(|N(u)|, |N(v)|)`.
     HubDepressed,
-    /// The leicht holme newman variant.
+    /// `|N(u) ∩ N(v)| / (|N(u)| · |N(v)|)`.
     LeichtHolmeNewman,
-    /// The preferential attachment variant.
+    /// `|N(u)| · |N(v)|`.
     PreferentialAttachment,
-    /// The adamic adar variant.
+    /// Sum of `1 / ln |N(w)|` over the common neighbours `w` with more than one neighbour.
     AdamicAdar,
-    /// The resource allocation variant.
+    /// Sum of `1 / |N(w)|` over the common neighbours `w`.
     ResourceAllocation,
 }
 
@@ -178,7 +178,7 @@ macro_rules! link_prediction {
         }
 
         impl<'g, G: Graph> $name<'g, G> {
-            /// Creates a new instance.
+            /// Creates the predictor for `graph`.
             pub fn new(graph: &'g G) -> Self {
                 $name { graph }
             }

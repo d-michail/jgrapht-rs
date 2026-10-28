@@ -62,7 +62,7 @@ pub fn bipartite_partition<G: Graph>(g: &G) -> Option<(Vec<G::Vertex>, Vec<G::Ve
     Some((pick(false), pick(true)))
 }
 
-/// Returns whether bipartite.
+/// Whether the vertices can be split into two sets so that every edge joins the two sets.
 pub fn is_bipartite<G: Graph>(g: &G) -> bool {
     two_color(&Indexed::new(g)).is_some()
 }

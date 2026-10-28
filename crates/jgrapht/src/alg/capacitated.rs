@@ -42,9 +42,9 @@ pub struct CapacitatedSpanningTree<V: Eq + Hash, E: Eq + Hash> {
     pub labels: IndexMap<V, usize>,
     /// For each label the vertices of the subset and their total demand.
     pub partition: IndexMap<usize, Pair<IndexSet<V>, f64>>,
-    /// The edges.
+    /// Edges of the tree.
     pub edges: IndexSet<E>,
-    /// The weight.
+    /// Total weight of the tree.
     pub weight: f64,
 }
 
@@ -175,9 +175,7 @@ impl<'g, G: IncidenceGraph> Problem<'g, G> {
             let v = v.borrow();
             if *v != root {
                 let Some(&d) = demands.get(v) else {
-                    return Err(GraphError::InvalidArgument(
-                        "Demands does not provide a demand for every vertex.".into(),
-                    ));
+                    return Err(GraphError::MissingVertexData("demand"));
                 };
                 if d > capacity {
                     return Err(GraphError::Infeasible);
@@ -662,15 +660,15 @@ pub struct AhujaOrlinSharmaOptions {
     pub best_improvement: bool,
     /// Number of best moves of the initial Esau–Williams solution (ignored with a given start).
     pub number_of_operations: usize,
-    /// The use vertex operation.
+    /// Allow moving a single vertex from one subtree to another.
     pub use_vertex_operation: bool,
-    /// The use subtree operation.
+    /// Allow moving a whole subtree from one subtree to another.
     pub use_subtree_operation: bool,
-    /// The use tabu search.
+    /// Use tabu search to escape local optima.
     pub use_tabu_search: bool,
-    /// The tabu time.
+    /// Number of iterations a changed vertex stays tabu.
     pub tabu_time: usize,
-    /// The upper limit tabu exchanges.
+    /// Upper limit on the number of exchanges tried per tabu search.
     pub upper_limit_tabu_exchanges: usize,
 }
 
@@ -765,10 +763,10 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
     ) -> Result<Self> {
         let problem = Problem::new(graph, root, capacity, demands)?;
         if !options.use_subtree_operation && !options.use_vertex_operation {
-            return Err(GraphError::InvalidArgument(
-                "At least one of the options has to be enabled, otherwise it is not possible to excute the local search: useVertexOperation and useSubtreeOperation."
-                    .into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "options",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         Ok(AhujaOrlinSharmaCapacitatedMinimumSpanningTree {
             problem,
@@ -798,9 +796,10 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
         let p = &alg.problem;
         if !initial_solution.is_capacitated_spanning_tree(p.graph, &p.root, p.capacity, &p.demands)
         {
-            return Err(GraphError::InvalidArgument(
-                "The initial solution is not a valid capacitated spanning tree.".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "initial_solution",
+                requirement: crate::ParameterRequirement::ValidSolution,
+            });
         }
         alg.initial_solution = Some(initial_solution);
         Ok(alg)
@@ -907,11 +906,7 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
         let p = &self.problem;
         let mut affected_vertices = IndexSet::new();
         let mut affected_labels: IndexSet<usize> = IndexSet::new();
-        let bug = || {
-            GraphError::InvalidArgument(
-                "This is a bug. There are invalid types of vertices in the cycle.".into(),
-            )
-        };
+        let bug = || GraphError::Internal("invalid vertex types in an improvement cycle");
         if let Some(first) = cycle.first() {
             let vertex_label = |cur: &Iv, current: &Solution<G::Vertex>| {
                 current.label(&ig.vertex_mapping[&cur.first])
@@ -1132,9 +1127,9 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
     fn set_edge(graph: &mut DiGraph<Iv>, a: Iv, b: Iv, w: f64) -> Result<()> {
         let e = match graph.get_edge(&a, &b) {
             Some(e) => *e,
-            None => graph.add_edge(&a, &b)?.ok_or_else(|| {
-                GraphError::InvalidArgument("could not add an improvement graph edge".into())
-            })?,
+            None => graph.add_edge(&a, &b)?.ok_or(GraphError::Internal(
+                "improvement graph edge could not be added",
+            ))?,
         };
         graph.set_edge_weight(&e, w)
     }
@@ -1365,9 +1360,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
         let part_weight = solution.partition_weight(label);
         for v2 in p.sorted(solution.partition_set(label)) {
             if *v2 == p.root {
-                return Err(GraphError::InvalidArgument(
-                    "The root is in the partition. This is a bug.".into(),
-                ));
+                return Err(GraphError::Internal("the root is in a partition"));
             }
             if tabu_list.contains(v2) {
                 continue;
@@ -1414,9 +1407,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
         let part_weight = solution.partition_weight(label);
         for v2 in p.sorted(solution.partition_set(label)) {
             if *v2 == p.root {
-                return Err(GraphError::InvalidArgument(
-                    "The root is in the partition. This is a bug.".into(),
-                ));
+                return Err(GraphError::Internal("the root is in a partition"));
             }
             if tabu_list.contains(v2) {
                 continue;

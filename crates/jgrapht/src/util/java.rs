@@ -24,7 +24,7 @@ pub trait RandomSource {
     fn next_int_bound(&mut self, bound: usize) -> usize;
     /// Uniform in `[0, 1)`.
     fn next_double(&mut self) -> f64;
-    /// Returns the next boolean.
+    /// A random boolean.
     fn next_boolean(&mut self) -> bool;
     /// Uniform in `[0, 1)` with float precision.
     fn next_float(&mut self) -> f32;
@@ -64,26 +64,27 @@ pub struct JavaPriorityQueue<T, C: Fn(&T, &T) -> i32> {
 }
 
 impl<T, C: Fn(&T, &T) -> i32> JavaPriorityQueue<T, C> {
-    /// Creates a new instance.
+    /// An empty queue ordered by `cmp`, which returns a negative, zero or positive number like Java's
+    /// `Comparator`.
     pub fn new(cmp: C) -> Self {
         JavaPriorityQueue {
             queue: Vec::new(),
             cmp,
         }
     }
-    /// Returns the len.
+    /// Number of elements.
     pub fn len(&self) -> usize {
         self.queue.len()
     }
-    /// Returns whether empty.
+    /// Whether the queue is empty.
     pub fn is_empty(&self) -> bool {
         self.queue.is_empty()
     }
-    /// Returns the peek.
+    /// The smallest element without removing it.
     pub fn peek(&self) -> Option<&T> {
         self.queue.first()
     }
-    /// Updates the state for `offer`.
+    /// Inserts `x`.
     pub fn offer(&mut self, x: T) {
         let mut k = self.queue.len();
         self.queue.push(x);
@@ -97,7 +98,7 @@ impl<T, C: Fn(&T, &T) -> i32> JavaPriorityQueue<T, C> {
             k = parent;
         }
     }
-    /// Returns the poll.
+    /// Removes and returns the smallest element.
     pub fn poll(&mut self) -> Option<T> {
         let n = self.queue.len();
         if n == 0 {

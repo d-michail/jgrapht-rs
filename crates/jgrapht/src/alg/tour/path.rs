@@ -25,11 +25,11 @@ use std::collections::{HashMap, HashSet, VecDeque};
 /// `HamiltonianPathSearchResult.Status`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SearchStatus {
-    /// The path found variant.
+    /// A Hamiltonian path was found.
     PathFound,
-    /// The proven absent variant.
+    /// The search finished without a path: none exists.
     ProvenAbsent,
-    /// The aborted variant.
+    /// The search stopped at its limit before it could decide.
     Aborted,
 }
 
@@ -292,11 +292,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
             }
         }
         if topo.len() != n {
-            return Err(GraphError::InvalidArgument(
-                "DagHamiltonianPath requires an acyclic graph; cycle detected. Use \
-                 BacktrackingHamiltonianPath or HeldKarpHamiltonianPath instead."
-                    .into(),
-            ));
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Acyclic));
         }
         let mut position = vec![0usize; n];
         for (i, &v) in topo.iter().enumerate() {
@@ -381,9 +377,9 @@ pub struct HeldKarpHamiltonianPath {
 }
 
 impl HeldKarpHamiltonianPath {
-    /// The default max vertices constant.
+    /// Default limit on the number of vertices of the graph.
     pub const DEFAULT_MAX_VERTICES: usize = 20;
-    /// The hard max vertices constant.
+    /// Largest limit on the number of vertices that can be configured.
     pub const HARD_MAX_VERTICES: usize = 30;
     const UNVISITED: i8 = -1;
     const START_SENTINEL: i8 = -2;
@@ -467,12 +463,10 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath 
             return Ok(HamiltonianPathSearchResult::found(singleton_path(graph), 0));
         }
         if n > self.max_vertices {
-            return Err(GraphError::InvalidArgument(format!(
-                "HeldKarpHamiltonianPath supports at most {} vertices; got {n}. Use \
-                 BacktrackingHamiltonianPath for larger graphs or construct this class with a \
-                 higher maxVertices ceiling.",
-                self.max_vertices
-            )));
+            return Err(GraphError::TooManyVertices {
+                max: self.max_vertices,
+                got: n,
+            });
         }
         let index_list: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let vertex_map: HashMap<G::Vertex, usize> = index_list

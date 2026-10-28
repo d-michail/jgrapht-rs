@@ -38,14 +38,16 @@ impl CsrBooleanMatrix {
         let mut column_indices = Vec::with_capacity(sorted.len());
         for &(row, column) in &sorted {
             if column >= columns {
-                return Err(GraphError::InvalidArgument(format!(
-                    "Entry at invalid column: {column}"
-                )));
+                return Err(GraphError::InvalidParameter {
+                    name: "column",
+                    requirement: crate::ParameterRequirement::InBounds,
+                });
             }
             if row >= rows {
-                return Err(GraphError::InvalidArgument(format!(
-                    "Entry at invalid row: {row}"
-                )));
+                return Err(GraphError::InvalidParameter {
+                    name: "row",
+                    requirement: crate::ParameterRequirement::InBounds,
+                });
             }
             column_indices.push(column);
             row_offsets[row + 1] += 1;
@@ -60,12 +62,12 @@ impl CsrBooleanMatrix {
         })
     }
 
-    /// Returns the columns.
+    /// Number of columns.
     pub fn columns(&self) -> usize {
         self.columns
     }
 
-    /// Returns the rows.
+    /// Number of rows.
     pub fn rows(&self) -> usize {
         self.row_offsets.len() - 1
     }

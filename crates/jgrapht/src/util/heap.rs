@@ -39,7 +39,8 @@ pub struct JavaPairingHandle {
     generation: u32,
 }
 
-/// The `JavaPairingHeap` struct.
+/// A pairing heap that breaks ties like the one in JGraphT, so that algorithms visit equal keys in
+/// the same order.
 pub struct JavaPairingHeap<K, V> {
     nodes: Vec<Node<K, V>>,
     free: Vec<usize>,
@@ -59,7 +60,7 @@ impl<K, V> Default for JavaPairingHeap<K, V> {
 }
 
 impl<K: Ord, V> JavaPairingHeap<K, V> {
-    /// Creates a new instance.
+    /// An empty heap.
     pub fn new() -> Self {
         Self::default()
     }

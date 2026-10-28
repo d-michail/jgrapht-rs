@@ -31,12 +31,12 @@ use std::hash::Hash;
     ))
 )]
 #[derive(Debug, Clone)]
-/// The `Coloring` struct.
+/// A vertex coloring: the color (`0..count`) of every vertex and the number of colors used.
 pub struct Coloring<V> {
-    /// The colors.
+    /// Color of every vertex, numbered from `0`.
     #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::hash_pairs"))]
     pub colors: HashMap<V, usize>,
-    /// The count.
+    /// Number of colors used.
     pub count: usize,
 }
 
@@ -1056,9 +1056,10 @@ impl<'g, G: Graph> ColorRefinementAlgorithm<'g, G> {
                 alpha.colors.get(v).is_some_and(|&c| c < alpha.count)
             });
         if !consistent {
-            return Err(GraphError::InvalidArgument(
-                "alpha is not a valid surjective l-coloring for the given graph.".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "alpha",
+                requirement: crate::ParameterRequirement::ValidSolution,
+            });
         }
         Ok(ColorRefinementAlgorithm {
             graph,

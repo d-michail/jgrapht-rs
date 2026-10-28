@@ -110,13 +110,15 @@ pub fn harmonic_centrality<G: Graph>(g: &G, weighted: bool) -> HashMap<G::Vertex
 
 /// Betweenness of vertices and edges via Brandes' algorithm.
 pub struct Betweenness<V, E> {
-    /// The vertices.
+    /// Score of every vertex.
     pub vertices: HashMap<V, f64>,
-    /// The edges.
+    /// Score of every edge.
     pub edges: HashMap<E, f64>,
 }
 
-/// Performs `betweenness centrality`.
+/// Betweenness centrality of every vertex and edge, by Brandes' algorithm. Paths are weighted by
+/// the edge weights if `weighted` is set; `normalize` divides the vertex scores by the number of
+/// ordered (directed) or unordered (undirected) pairs of other vertices, `(n-1)(n-2)` or half of it.
 pub fn betweenness_centrality<G: Graph>(
     g: &G,
     weighted: bool,
@@ -424,9 +426,9 @@ use rheaps::tree::PairingHeap;
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OverflowStrategy {
-    /// The ignore overflow variant.
+    /// Keep counting: the (wrapped) overflowing path count is used as it is.
     IgnoreOverflow,
-    /// The throw exception on overflow variant.
+    /// Fail with an overflow error as soon as a path count overflows.
     ThrowExceptionOnOverflow,
 }
 
@@ -1059,10 +1061,6 @@ impl<G: Graph> VertexScoringAlgorithm<G::Vertex> for ClusteringCoefficient<'_, G
 const MAX_ITERATIONS_DEFAULT: usize = 100;
 const TOLERANCE_DEFAULT: f64 = 0.0001;
 
-fn invalid(msg: &str) -> GraphError {
-    GraphError::InvalidArgument(msg.into())
-}
-
 /// Weighted incoming neighbours of every vertex as indices, in the graph's iteration order.
 fn incoming_lists<G: IncomingGraph>(g: &G, vs: &[G::Vertex]) -> Vec<Vec<(usize, f64)>> {
     let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
@@ -1240,7 +1238,7 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
             return Err(GraphError::must_be_positive("maximum_iterations"));
         }
         if damping_factor < 0.0 {
-            return Err(invalid("Damping factor not valid"));
+            return Err(GraphError::must_be_non_negative("damping_factor"));
         }
         if tolerance <= 0.0 {
             return Err(GraphError::must_be_positive("tolerance"));
@@ -1333,7 +1331,7 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
             return Err(GraphError::must_be_positive("maximum_iterations"));
         }
         if !(0.0..=1.0).contains(&damping_factor) {
-            return Err(invalid("Damping factor not valid"));
+            return Err(GraphError::must_be_non_negative("damping_factor"));
         }
         if tolerance <= 0.0 {
             return Err(GraphError::must_be_positive("tolerance"));
@@ -1649,7 +1647,7 @@ fn ap_divide(lhs: &ApFloat, rhs: &ApFloat, precision: usize) -> Result<ApFloat, 
         return Ok(lhs.clone() / rhs.clone());
     }
     if rhs.repr().significand() == &dashu_int::IBig::ZERO {
-        return Err(invalid("Division by zero"));
+        return Err(GraphError::DivisionByZero);
     }
     if lhs.repr().significand() == &dashu_int::IBig::ZERO {
         return Ok(ap_integer(0, 0));
@@ -1676,9 +1674,7 @@ fn ap_divide(lhs: &ApFloat, rhs: &ApFloat, precision: usize) -> Result<ApFloat, 
         fives += 1;
     }
     if denominator != dashu_int::UBig::ONE {
-        return Err(invalid(
-            "Non-terminating decimal expansion at infinite precision",
-        ));
+        return Err(GraphError::NonTerminatingExpansion);
     }
 
     let scale = twos.max(fives);

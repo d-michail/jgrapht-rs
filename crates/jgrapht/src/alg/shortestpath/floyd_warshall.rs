@@ -112,7 +112,7 @@ impl<'g, G: OutgoingGraph> FloydWarshallShortestPaths<'g, G> {
         })
     }
 
-    /// Returns the graph over which this set of paths is defined.
+    /// The graph the shortest paths were computed in.
     pub fn graph(&self) -> &G {
         self.graph
     }

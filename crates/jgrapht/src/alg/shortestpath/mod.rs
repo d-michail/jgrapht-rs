@@ -61,7 +61,7 @@ pub use contraction_hierarchy::{
 pub use dag_all_paths::DagAllPathsCounter;
 pub use delta_stepping::DeltaStepping;
 pub use delta_stepping_parallel::ParallelDeltaSteppingShortestPath;
-/// The delta stepping shortest path type.
+/// Alias of [`DeltaStepping`] under the name JGraphT uses.
 pub type DeltaSteppingShortestPath<'g, G> = DeltaStepping<'g, G>;
 pub use crate::alg::metrics::GraphMeasurer;
 pub use dijkstra::{Dijkstra, DijkstraShortestPath};

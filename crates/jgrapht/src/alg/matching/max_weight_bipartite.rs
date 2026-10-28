@@ -113,7 +113,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
         &self.matching_weight
     }
 
-    /// Returns the weight of the matching.
+    /// Weight of `e` as an exact decimal.
     fn weight(&self, e: &G::Edge) -> Result<DBig> {
         big_decimal(self.graph.weight_of(e))
     }
@@ -141,7 +141,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
                     if let Some(handle) = self.node_in_heap.get(b1) {
                         self.heap
                             .decrease_key(*handle, db1)
-                            .map_err(|e| GraphError::InvalidArgument(e.to_string()))?;
+                            .map_err(|_| GraphError::Internal("heap operation failed"))?;
                     }
                 }
             }
@@ -221,7 +221,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
             if let Some(handle) = self.node_in_heap.remove(&v) {
                 self.heap
                     .delete(handle)
-                    .map_err(|e| GraphError::InvalidArgument(e.to_string()))?;
+                    .map_err(|_| GraphError::Internal("heap operation failed"))?;
             }
             let pot_change = &delta - &self.dist[&v];
             if pot_change <= zero() {
