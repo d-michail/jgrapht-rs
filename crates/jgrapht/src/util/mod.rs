@@ -110,9 +110,7 @@ impl<V: Clone + Eq + std::hash::Hash> VertexToIntegerMapping<V> {
         let mut index_list = Vec::new();
         for v in vertices {
             if vertex_map.insert(v.clone(), index_list.len()).is_some() {
-                return Err(crate::GraphError::InvalidArgument(
-                    "elements are not unique".into(),
-                ));
+                return Err(crate::GraphError::DuplicateElement);
             }
             index_list.push(v);
         }

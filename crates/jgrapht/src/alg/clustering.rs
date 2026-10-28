@@ -335,7 +335,7 @@ impl<G: OutgoingGraph> ClusteringAlgorithm<G::Vertex> for GirvanNewmanClustering
                 }
             }
             let Some(edge) = max_edge else {
-                return Err(GraphError::InvalidArgument("no edge left to remove".into()));
+                return Err(GraphError::InvalidGraph(crate::GraphProperty::HasEdges));
             };
             drop(bc);
             removed.insert(edge);

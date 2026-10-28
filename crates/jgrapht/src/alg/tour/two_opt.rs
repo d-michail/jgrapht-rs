@@ -161,7 +161,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
         let tour = self
             .initializer
             .get_tour(graph)?
-            .ok_or_else(|| GraphError::InvalidArgument("Not a valid tour".into()))?;
+            .ok_or(GraphError::InvalidTour)?;
         Self::path_to_tour(&tour, state)
     }
 
@@ -212,7 +212,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
         let n = state.n;
         let vertex_list = path.vertex_list();
         if vertex_list.len() != n + 1 {
-            return Err(GraphError::InvalidArgument("Not a valid tour".into()));
+            return Err(GraphError::InvalidTour);
         }
         let mut visited = vec![false; n];
         let mut tour = vec![0usize; n + 1];
@@ -220,9 +220,9 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
             let vi = *state
                 .index
                 .get(&vertex_list[i])
-                .ok_or_else(|| GraphError::InvalidArgument("Not a valid tour".into()))?;
+                .ok_or(GraphError::InvalidTour)?;
             if visited[vi] {
-                return Err(GraphError::InvalidArgument("Not a valid tour".into()));
+                return Err(GraphError::InvalidTour);
             }
             visited[vi] = true;
             tour[i] = vi;

@@ -100,7 +100,9 @@ pub mod util;
 pub mod view;
 pub mod walk;
 
-pub use error::{GraphError, GraphProperty, ParameterRequirement, Result, WeightProblem};
+pub use error::{
+    FlowProblem, GraphError, GraphProperty, ParameterRequirement, Result, WeightProblem,
+};
 pub use graph::{
     BaseGraph, DefaultEdge, DiGraph, DirectedGraph, FastutilMapGraph, FastutilMapIntVertexGraph,
     Graph, GraphExt, GraphMut, GraphMutExt, IncidenceGraph, IncomingGraph, OutgoingGraph, UGraph,

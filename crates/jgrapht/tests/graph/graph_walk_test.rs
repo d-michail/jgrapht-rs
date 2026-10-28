@@ -36,7 +36,7 @@ fn test_invalid_path_1() {
         Some(vec![]),
         0.0,
     );
-    assert!(matches!(r, Err(GraphError::InvalidArgument(_))));
+    assert!(matches!(r, Err(GraphError::InvalidGraphWalk(_))));
 }
 
 #[test]
@@ -44,7 +44,7 @@ fn test_invalid_path_2() {
     let mut graph = UGraph::<i32>::pseudo();
     graph.add_vertex(0);
     let r = W::try_new(&graph, Some(0), Some(0), Some(vec![]), Some(vec![]), 0.0);
-    assert!(matches!(r, Err(GraphError::InvalidArgument(_))));
+    assert!(matches!(r, Err(GraphError::InvalidGraphWalk(_))));
 }
 
 #[test]
@@ -207,7 +207,7 @@ fn test_illegal_concat_path_1() {
     let w1 = W::singleton(0, 10.0);
     assert!(matches!(
         w0.concat(&w1, &|_| 0.0),
-        Err(GraphError::InvalidArgument(_))
+        Err(GraphError::InvalidGraphWalk(_))
     ));
 }
 
@@ -217,7 +217,7 @@ fn test_illegal_concat_path_2() {
     let gw2 = W::singleton(1, 12.0);
     assert!(matches!(
         gw1.concat(&gw2, &|_| gw1.weight() + gw2.weight()),
-        Err(GraphError::InvalidArgument(_))
+        Err(GraphError::InvalidGraphWalk(_))
     ));
 }
 

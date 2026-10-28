@@ -197,19 +197,19 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
         G: Graph<Vertex = V, Edge = E>,
     {
         if vertex_list.is_none() && edge_list.is_none() {
-            return Err(GraphError::InvalidArgument(
+            return Err(GraphError::InvalidGraphWalk(
                 "Vertex list and edge list cannot both be null!".into(),
             ));
         }
         if let (Some(_), Some(vl), Some(el)) = (&start, &vertex_list, &edge_list) {
             if el.len() + 1 != vl.len() {
-                return Err(GraphError::InvalidArgument(
+                return Err(GraphError::InvalidGraphWalk(
                     "VertexList and edgeList do not correspond to the same path (cardinality of vertexList +1 must equal the cardinality of the edgeList)".into(),
                 ));
             }
         }
         if start.is_some() != end.is_some() {
-            return Err(GraphError::InvalidArgument(
+            return Err(GraphError::InvalidGraphWalk(
                 "Either the start and end vertices must both be null, or they must both be not null (one of them is null)".into(),
             ));
         }
@@ -426,12 +426,12 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn concat(&self, extension: &Self, weight: &dyn Fn(&Self) -> f64) -> Result<Self> {
         if self.is_empty() {
-            return Err(GraphError::InvalidArgument(
+            return Err(GraphError::InvalidGraphWalk(
                 "An empty path cannot be extended".into(),
             ));
         }
         if extension.is_empty() || self.end_vertex() != extension.start_vertex() {
-            return Err(GraphError::InvalidArgument(
+            return Err(GraphError::InvalidGraphWalk(
                 "This path can only be extended by another path if the end vertex of the orginal path and the start vertex of the extension are equal.".into(),
             ));
         }

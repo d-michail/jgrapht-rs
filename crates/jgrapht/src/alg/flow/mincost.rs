@@ -588,8 +588,8 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
             self.net.add_arc_to(n, i, CAP_INF, COST_INF);
         }
         if supply_sum.abs() > 0 {
-            return Err(GraphError::InvalidArgument(
-                "Total node supply isn't equal to 0".into(),
+            return Err(GraphError::InvalidFlowProblem(
+                crate::FlowProblem::SupplyNotBalanced,
             ));
         }
         let mut graph_edges = Vec::with_capacity(graph.edge_count());
@@ -602,23 +602,22 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
             let lower_cap = problem.arc_capacity_lower_bound(edge);
             let mut cost = problem.arc_cost(edge);
             if upper_cap < 0 {
-                return Err(GraphError::InvalidArgument(
-                    "Negative edge capacities are not allowed".into(),
+                return Err(GraphError::InvalidFlowProblem(
+                    crate::FlowProblem::NegativeCapacity,
                 ));
             } else if lower_cap > upper_cap {
-                return Err(GraphError::InvalidArgument(
-                    "Lower edge capacity must not exceed upper edge capacity".into(),
+                return Err(GraphError::InvalidFlowProblem(
+                    crate::FlowProblem::LowerAboveUpper,
                 ));
             } else if lower_cap >= CAP_INF {
                 return Err(GraphError::Unbounded);
             } else if upper_cap >= CAP_INF && cost < 0.0 {
-                return Err(GraphError::InvalidArgument(
-                    "The algorithm doesn't support infinite capacity arcs with negative cost"
-                        .into(),
+                return Err(GraphError::InvalidFlowProblem(
+                    crate::FlowProblem::InfiniteCapacityNegativeCost,
                 ));
             } else if cost.abs() >= COST_INF {
-                return Err(GraphError::InvalidArgument(
-                    "Specified flow network contains an edge of infinite cost".into(),
+                return Err(GraphError::InvalidFlowProblem(
+                    crate::FlowProblem::InfiniteCost,
                 ));
             } else if node == opposite {
                 return Err(GraphError::InvalidGraph(crate::GraphProperty::NoSelfLoops));

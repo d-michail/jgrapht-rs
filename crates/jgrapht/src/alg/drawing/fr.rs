@@ -192,7 +192,10 @@ impl FRQuadTree {
         match &self.nodes[n].points {
             Some(p) => {
                 if p.is_empty() {
-                    return Err(GraphError::InvalidArgument("No points".into()));
+                    return Err(GraphError::InvalidParameter {
+                        name: "points",
+                        requirement: crate::ParameterRequirement::NonEmpty,
+                    });
                 }
                 let (x, y) = p.iter().fold((0.0, 0.0), |(x, y), q| (x + q.x, y + q.y));
                 Ok(Point2D::of(x / p.len() as f64, y / p.len() as f64))

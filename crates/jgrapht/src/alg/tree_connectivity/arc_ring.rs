@@ -161,7 +161,10 @@ impl<T> ArcRingArena<T> {
 
     pub fn add_node(&mut self, list: RingId, index: usize, node: RingNode) -> Result<()> {
         if index > self.len(list) {
-            return Err(GraphError::InvalidArgument("index out of bounds".into()));
+            return Err(GraphError::InvalidParameter {
+                name: "index",
+                requirement: crate::ParameterRequirement::InBounds,
+            });
         }
         self.ensure_detached(node)?;
         if self.is_empty(list) {
@@ -191,9 +194,7 @@ impl<T> ArcRingArena<T> {
         successor: RingNode,
     ) -> Result<()> {
         if !self.contains_node(list, successor) {
-            return Err(GraphError::InvalidArgument(
-                "successor is not in this list".into(),
-            ));
+            return Err(GraphError::ElementNotFound);
         }
         self.ensure_detached(node)?;
         self.link_before(list, node, successor);
@@ -286,12 +287,13 @@ impl<T> ArcRingArena<T> {
     /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn move_from(&mut self, list: RingId, index: usize, moved: RingId) -> Result<()> {
         if list == moved {
-            return Err(GraphError::InvalidArgument(
-                "cannot move a list into itself".into(),
-            ));
+            return Err(GraphError::DuplicateElement);
         }
         if index > self.len(list) {
-            return Err(GraphError::InvalidArgument("index out of bounds".into()));
+            return Err(GraphError::InvalidParameter {
+                name: "index",
+                requirement: crate::ParameterRequirement::InBounds,
+            });
         }
         if self.is_empty(moved) {
             return Ok(());
@@ -382,9 +384,7 @@ impl<T> ArcRingArena<T> {
 
     fn ensure_detached(&self, node: RingNode) -> Result<()> {
         if self.list_of(node).is_some() {
-            Err(GraphError::InvalidArgument(
-                "node is already contained in a list".into(),
-            ))
+            Err(GraphError::DuplicateElement)
         } else {
             Ok(())
         }

@@ -329,9 +329,7 @@ impl<G: IncidenceGraph> GraphMut for AsSubgraph<G> {
     }
     fn add_edge_with(&mut self, u: &G::Vertex, v: &G::Vertex, e: G::Edge) -> Result<bool> {
         if !self.base.contains_edge(&e) {
-            return Err(GraphError::InvalidArgument(
-                "no such edge in base graph".into(),
-            ));
+            return Err(GraphError::EdgeNotFound);
         }
         if !self.vertices.contains(u) || !self.vertices.contains(v) {
             return Err(GraphError::VertexNotFound);
@@ -344,9 +342,7 @@ impl<G: IncidenceGraph> GraphMut for AsSubgraph<G> {
         }
         let candidates: Vec<G::Edge> = self.base.edges_between(u, v).cloned().collect();
         if candidates.is_empty() {
-            return Err(GraphError::InvalidArgument(
-                "no such edge in base graph".into(),
-            ));
+            return Err(GraphError::EdgeNotFound);
         }
         Ok(candidates
             .into_iter()

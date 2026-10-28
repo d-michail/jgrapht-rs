@@ -91,14 +91,10 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
                 .iter()
                 .all(|v| graph.contains_vertex(v))
             {
-                return Err(GraphError::InvalidArgument(
-                    "Graph does not contain specified sub-tour vertices".into(),
-                ));
+                return Err(GraphError::InvalidTour);
             }
             if !subtour.edge_list().iter().all(|e| graph.contains_edge(e)) {
-                return Err(GraphError::InvalidArgument(
-                    "Graph does not contain specified sub-tour edges".into(),
-                ));
+                return Err(GraphError::InvalidTour);
             }
             if subtour.start_vertex() == subtour.end_vertex() {
                 subtour_vertices.extend(subtour.vertex_list().iter().skip(1).cloned());
@@ -118,7 +114,8 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
                     shortest = Some((e.clone(), w));
                 }
             }
-            let (e, _) = shortest.ok_or_else(|| GraphError::InvalidArgument("no edges".into()))?;
+            let (e, _) =
+                shortest.ok_or(GraphError::InvalidGraph(crate::GraphProperty::HasEdges))?;
             let (s, t) = graph.edge_endpoints(&e).expect("edge of the graph");
             subtour_vertices.push(s.clone());
             subtour_vertices.push(t.clone());
@@ -344,9 +341,8 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
             .as_ref()
             .is_none_or(|subtour| subtour.vertex_list().is_empty())
         {
-            let longest = longest_edge.ok_or_else(|| {
-                GraphError::InvalidArgument("graph contains no usable edge".into())
-            })?;
+            let longest =
+                longest_edge.ok_or(GraphError::InvalidGraph(crate::GraphProperty::HasEdges))?;
             let (v, u) = graph.edge_endpoints(&longest).expect("edge of the graph");
             self.initial_subtour = Some(GraphWalk::from_vertex_list(
                 graph,

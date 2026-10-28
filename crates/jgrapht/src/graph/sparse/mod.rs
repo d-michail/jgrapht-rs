@@ -16,8 +16,9 @@
 //! (`org.jgrapht.opt.graph.sparse`).
 //!
 //! Vertices are `0..n` and edges `0..m` in the order the edges were given. The graphs implement
-//! [`Graph`](crate::graph::Graph) only; there is no `GraphMut` implementation. Because the trait
-//! hands out `&usize`, each graph keeps one identity array of `max(n, m)` ids to borrow from.
+//! [`Graph`](crate::graph::Graph) only; there is no `GraphMut` implementation. `vertices()` and
+//! `edges()` yield the integers themselves (`VertexRef = EdgeRef = usize`), so nothing is stored
+//! for them; incidence and endpoint queries borrow from the stored endpoint arrays and CSR rows.
 
 mod csr;
 mod directed;
@@ -32,10 +33,6 @@ pub use undirected::{SparseIntUndirectedGraph, SparseIntUndirectedWeightedGraph}
 
 use crate::{GraphError, Result};
 
-fn identity_ids(n: usize, m: usize) -> Vec<usize> {
-    (0..n.max(m)).collect()
-}
-
 /// Splits `(source, target)` pairs into the two endpoint arrays, checking the endpoint range and
 /// the announced edge count.
 fn collect_endpoints(
@@ -47,19 +44,16 @@ fn collect_endpoints(
     let mut target = Vec::with_capacity(num_edges);
     for (s, t) in edges {
         if s >= num_vertices || t >= num_vertices {
-            return Err(GraphError::InvalidArgument(format!(
-                "no such vertex in graph: {}",
-                if s >= num_vertices { s } else { t }
-            )));
+            return Err(GraphError::VertexNotFound);
         }
         source.push(s);
         target.push(t);
     }
     if source.len() != num_edges {
-        return Err(GraphError::InvalidArgument(format!(
-            "expected {num_edges} edges, got {}",
-            source.len()
-        )));
+        return Err(GraphError::InvalidParameter {
+            name: "edges",
+            requirement: crate::ParameterRequirement::Exactly(num_edges as u64),
+        });
     }
     Ok((source, target))
 }
