@@ -2,7 +2,7 @@ use jgrapht::GraphExt;
 use jgrapht::util::java::RandomSource;
 use rand::{SeedableRng, rngs::StdRng};
 use std::borrow::Borrow;
-// (C) Copyright 2003-2026, by John V Sichi and JGraphT Contributors.
+// (C) Copyright 2003-2026, by Barak Naveh and JGraphT Contributors.
 // Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
 //
 // See the CONTRIBUTORS.md file distributed with this work for additional
