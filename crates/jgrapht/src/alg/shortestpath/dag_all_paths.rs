@@ -24,8 +24,8 @@ use std::collections::{HashMap, VecDeque};
 /// For large graphs the number of paths can be extremely large; values are returned as
 /// `java.math.BigInteger`.
 ///
-/// Usage constraints: the provided graph must be directed and acyclic. An
-/// `IllegalArgumentException` is thrown otherwise.
+/// Usage constraints: the provided graph must be directed and acyclic. Otherwise
+/// the call fails with an error.
 ///
 /// # Rust notes
 ///
@@ -38,8 +38,8 @@ impl DagAllPathsCounter {
     ///
     /// Edge case semantics:
     ///
-    /// - If `source` or `target` is not contained in the graph, throws
-    /// `IllegalArgumentException`.
+    /// - If `source` or `target` is not contained in the graph, fails
+    /// with an error.
     /// - If `source.equals(target)`, the empty path (length 0) is counted as one path and
     /// paths that leave `source` and return to it cannot exist in a DAG, thus the result is
     /// 1.

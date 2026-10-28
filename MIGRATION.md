@@ -3,6 +3,13 @@
 Breaking changes made by the Rust API hardening roadmap (`docs/RUST_API_ROADMAP.md`). This file is
 folded into `CHANGELOG.md` before the first release.
 
+## Step 21: Bellman-Ford errors
+
+`NegativeCycleDetected` is now a `thiserror` type: read the cycle with `cycle()` or `into_cycle()`
+(the old `get_cycle`-style accessors are gone). `BellmanFordError` converts from `GraphError` and
+has `cycle()`. Through the `ShortestPathAlgorithm` trait a negative cycle is still the
+payload-free `GraphError::NegativeCycle`. Match on `GraphError` variants, never on message text.
+
 ## Step 6: incidence queries moved to capability traits
 
 `Graph` no longer has `edges_of`, `in_edges_of`, `out_edges_of`, `degree_of`, `in_degree_of` or

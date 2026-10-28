@@ -18,7 +18,7 @@ use std::hash::{Hash, Hasher};
 ///
 /// # Rust notes
 ///
-/// Ordered pair (`Pair`). Java's `null` elements are `Option`s.
+/// Ordered pair (`Pair`). Absent elements are `Option`s.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
 pub struct Pair<A, B> {
     pub first: A,

@@ -24,7 +24,7 @@ use indexmap::IndexMap;
 use std::collections::{HashMap, HashSet};
 use thiserror::Error;
 
-/// `IsomorphismUndecidableException`: colour refinement cannot tell whether the graphs are
+/// Colour refinement cannot tell whether the graphs are
 /// isomorphic.
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 #[error("Color refinement cannot decide whether the two graphs are isomorphic or not.")]

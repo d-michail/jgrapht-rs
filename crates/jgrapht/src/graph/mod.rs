@@ -124,7 +124,7 @@ pub trait GraphMut: Graph {
         Ok(v)
     }
 
-    /// Creates an edge with the graph's factory. `Ok(None)` mirrors JGraphT returning `null`.
+    /// Creates an edge with the graph's factory. `Ok(None)` means the factory could not produce an edge.
     fn add_edge(&mut self, u: &Self::Vertex, v: &Self::Vertex) -> Result<Option<Self::Edge>> {
         let e = self.new_edge()?;
         Ok(self.add_edge_with(u, v, e.clone())?.then_some(e))

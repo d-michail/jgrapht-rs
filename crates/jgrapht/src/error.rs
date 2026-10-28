@@ -18,7 +18,9 @@
 
 use thiserror::Error;
 
-/// Errors raised by fallible graph operations (JGraphT throws unchecked exceptions instead).
+/// Errors raised by fallible graph operations.
+///
+/// Match on the variant, never on the message text; the messages are not part of the API.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum GraphError {
@@ -35,6 +37,10 @@ pub enum GraphError {
     #[error("adding the edge would create a cycle")]
     CycleProhibited,
     /// A negative-weight cycle was found while computing shortest paths.
+    ///
+    /// This variant carries no payload so that every shortest-path algorithm can share one error
+    /// type. [`BellmanFord::get_paths`](crate::alg::shortestpath::BellmanFord::get_paths) returns a
+    /// richer `BellmanFordError` that includes the cycle.
     #[error("graph contains a negative-weight cycle")]
     NegativeCycle,
     /// A weighted operation was requested from an unweighted graph.
@@ -89,7 +95,7 @@ pub enum GraphError {
     /// An exact intermediate value exceeded the supported numeric range.
     #[error("arithmetic overflow: {0}")]
     Overflow(String),
-    /// A link prediction index is not defined for the queried pair (`LinkPredictionIndexNotWellDefinedException`).
+    /// A link prediction index is not defined for the queried pair.
     #[error("link prediction index not well defined: {0}")]
     IndexNotWellDefined(String),
 }

@@ -612,7 +612,7 @@ where
 
 /// Closest-first (Dijkstra order) traversal. Its items are `Result`s: a negative or NaN edge weight
 /// is yielded once as `Err(GraphError::InvalidWeight(..))` in place of the vertex whose outgoing
-/// edge carries it, and the iterator then ends (JGraphT throws `IllegalArgumentException`). Collect
+/// edge carries it, and the iterator then ends. Collect
 /// with `collect::<Result<Vec<_>>>()` or call [`CrossComponentIterator::try_next`].
 pub type ClosestFirstIterator<'g, G, H = PairingHeap<OrderedF64, &'g <G as Graph>::Vertex>> =
     CrossComponentIterator<'g, G, ClosestFirstStrategy<'g, G, H>>;

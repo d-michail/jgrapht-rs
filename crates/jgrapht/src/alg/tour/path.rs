@@ -213,11 +213,7 @@ fn build_adjacency<G: IncidenceGraph>(
 /// Total complexity is `O(|V| + |E|)` time and `O(|V|)` space.
 ///
 /// This class only accepts directed acyclic graphs. Passing a directed graph that contains a
-/// cycle causes an `IllegalArgumentException` wrapping the
-/// `org.jgrapht.traverse.NotDirectedAcyclicGraphException` thrown by
-/// `TopologicalOrderIterator` when the topological pass discovers the cycle; passing an
-/// undirected graph or `null` also fails with an `IllegalArgumentException`
-/// (or `NullPointerException` respectively). To solve the Hamiltonian path problem on
+/// cycle, or an undirected graph, fails with an error. To solve the Hamiltonian path problem on
 /// cyclic directed graphs, use `BacktrackingHamiltonianPath` or
 /// `HeldKarpHamiltonianPath`.
 ///
@@ -357,8 +353,8 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
 ///
 /// Complexity is `O(n^2 * 2^n)` time and `O(n * 2^n)` space, where `n` is the
 /// number of vertices. Because the running time and memory grow exponentially in `n`,
-/// this class refuses graphs with more than `getMaxVertices()` vertices by throwing
-/// `IllegalArgumentException`. The default ceiling is `DEFAULT_MAX_VERTICES`; the
+/// this class refuses graphs with more than the configured maximum number of vertices with an
+/// error. The default ceiling is `DEFAULT_MAX_VERTICES`; the
 /// single-argument constructor lets callers opt in to a higher ceiling up to
 /// `HARD_MAX_VERTICES` when they have the memory headroom. Callers handling larger
 /// graphs should use `BacktrackingHamiltonianPath` instead and accept the lack of
@@ -585,9 +581,8 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath 
 /// onward degree. This is a minimum-remaining-values style heuristic: vertices with few onward
 /// options tend to fail or commit early, which generally reduces search.
 ///
-/// Empty graphs are rejected with an `IllegalArgumentException`, matching the convention
-/// used by other Hamiltonian / TSP solvers in JGraphT (for example
-/// `org.jgrapht.alg.tour.HeldKarpTSP`). Graphs with self-loops are accepted but self-loops
+/// Empty graphs are rejected with an error, matching the convention used by the other
+/// Hamiltonian / TSP solvers (for example `HeldKarpTSP`). Graphs with self-loops are accepted but self-loops
 /// are ignored, since they cannot be part of a simple path. In multigraphs, parallel edges
 /// between the same pair of vertices collapse into a single DFS branch and the returned path
 /// picks an arbitrary representative edge via `Graph#getEdge`; the result is not

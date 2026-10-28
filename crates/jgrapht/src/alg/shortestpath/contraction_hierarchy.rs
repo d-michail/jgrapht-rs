@@ -1329,7 +1329,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for CHManyToManyShortestPaths<'_, '_, G>
     }
 
     /// Return the path from the `source` vertex to the `target` vertex. If no such
-    /// path exists, null is returned.
+    /// path exists, `None` is returned.
     fn path(
         &self,
         source: &G::Vertex,

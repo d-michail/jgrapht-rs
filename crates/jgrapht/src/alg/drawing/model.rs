@@ -237,7 +237,7 @@ impl<V: Eq + Hash + Clone> LayoutModel2D<V> for MapLayoutModel2D<V> {
     fn set_drawable_area(&mut self, area: Box2D) {
         self.area = area;
     }
-    /// Get the last location of a particular vertex in the model. May return null if the vertex has
+    /// Get the last location of a particular vertex in the model. Returns `None` if the vertex has
     /// not been assigned a location or if the particular implementation does not store the
     /// coordinates.
     fn get(&self, v: &V) -> Option<Point2D> {
@@ -328,7 +328,7 @@ impl<V: Clone, M: LayoutModel2D<V>> LayoutModel2D<V> for ListenableLayoutModel2D
     fn set_drawable_area(&mut self, area: Box2D) {
         self.model.set_drawable_area(area);
     }
-    /// Get the last location of a particular vertex in the model. May return null if the vertex has
+    /// Get the last location of a particular vertex in the model. Returns `None` if the vertex has
     /// not been assigned a location or if the particular implementation does not store the
     /// coordinates.
     fn get(&self, v: &V) -> Option<Point2D> {

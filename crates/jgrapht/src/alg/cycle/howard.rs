@@ -285,7 +285,7 @@ impl<'g, G: DirectedGraph + IncomingGraph, S: StrongConnectivityAlgorithm<G = G>
             .map(|cycle| cycle.weight() / cycle.length() as f64)
     }
 
-    /// Computes cycle with minimum mean. Returns $null$ if no cycle has been found.
+    /// Computes cycle with minimum mean. Returns `None` if no cycle has been found.
     fn get_cycle(&mut self) -> Option<GraphWalk<G::Vertex, G::Edge>> {
         let mut is_best_cycle_found = false;
         let mut best_cycle_weight = 0.0;

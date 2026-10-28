@@ -272,7 +272,7 @@ impl<G: UndirectedGraph> UndirectedGraph for AsSubgraph<G> {}
 
 impl<G: IncidenceGraph> GraphMut for AsSubgraph<G> {
     fn add_vertex(&mut self, v: G::Vertex) -> bool {
-        // JGraphT throws for vertices outside the base; here they are silently refused
+        // vertices outside the base graph are silently refused
         self.base.contains_vertex(&v) && self.vertices.insert(v)
     }
     fn remove_vertex(&mut self, v: &G::Vertex) -> bool {

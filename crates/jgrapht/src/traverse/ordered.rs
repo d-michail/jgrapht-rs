@@ -137,7 +137,7 @@ pub struct TopologicalAdvance<'g, G: Graph + 'g> {
 }
 
 impl<'g, G: IncidenceGraph + 'g> TopologicalAdvance<'g, G> {
-    /// Set once the iterator got stuck on a cycle (JGraphT throws `NotDirectedAcyclicGraphException`).
+    /// Set once the iterator got stuck on a cycle.
     pub fn is_cyclic(&self) -> bool {
         self.cyclic
     }
@@ -185,8 +185,7 @@ impl<'g, G: IncidenceGraph + 'g + OutgoingGraph> Advance<'g, G::Vertex> for Topo
 /// Topological order of a directed acyclic graph (sources first, FIFO among ready vertices, or
 /// by a comparator using `java.util.PriorityQueue` semantics). Items are `Result`s: when the
 /// remaining vertices lie on or behind a cycle the iterator yields one
-/// `Err(GraphError::InvalidGraph(GraphProperty::Acyclic))` and then ends (JGraphT throws
-/// `NotDirectedAcyclicGraphException`). Collect with `collect::<Result<Vec<_>>>()`.
+/// `Err(GraphError::InvalidGraph(GraphProperty::Acyclic))` and then ends. Collect with `collect::<Result<Vec<_>>>()`.
 pub type TopologicalOrderIterator<'g, G> = Ordered<'g, G, TopologicalAdvance<'g, G>>;
 
 impl<'g, G: DirectedGraph + 'g + IncomingGraph + OutgoingGraph + IncidenceGraph> TopologicalOrderIterator<'g, G> {

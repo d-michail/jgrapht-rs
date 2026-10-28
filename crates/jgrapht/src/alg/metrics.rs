@@ -99,16 +99,14 @@ impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
     /// graph. The diameter of a graph is defined as $\max_{v\in V}\epsilon(v)$, where $\epsilon(v)$
     /// is the eccentricity of vertex $v$. In other words, this method computes the 'longest shortest
     /// path'. Two special cases exist. If the graph has no vertices, the diameter is 0. If the graph
-    /// is disconnected, the diameter is unbounded and this returns `None` (JGraphT returns
-    /// `Double#POSITIVE_INFINITY`).
+    /// is disconnected, the diameter is unbounded and this returns `None`.
     pub fn diameter(&self) -> Option<f64> {
         self.diameter.is_finite().then_some(self.diameter)
     }
     /// Compute the [radius](http://mathworld.wolfram.com/GraphRadius.html) of the graph.
     /// The radius of a graph is defined as $\min_{v\in V}\epsilon(v)$, where $\epsilon(v)$ is the
     /// eccentricity of vertex $v$. Two special cases exist. If the graph has no vertices, the radius
-    /// is 0. If the graph is disconnected, the radius is unbounded and this returns `None` (JGraphT
-    /// returns `Double#POSITIVE_INFINITY`).
+    /// is 0. If the graph is disconnected, the radius is unbounded and this returns `None`.
     pub fn radius(&self) -> Option<f64> {
         self.radius.is_finite().then_some(self.radius)
     }

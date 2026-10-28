@@ -19,76 +19,56 @@ use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use indexmap::IndexSet;
 use std::collections::{HashMap, HashSet};
-use std::fmt;
 
 pub const DEFAULT_EPSILON: f64 = 1e-9;
 
-/// An exception used to notify about the detection of a negative cycle. The exception may carry the
-/// negative cycle to the user.
-///
-/// # Rust notes
-///
-/// A detected negative-weight cycle, including the cycle itself.
-#[derive(Debug, Clone)]
+/// Reported when a negative-weight cycle is reachable from the source of a shortest-path
+/// computation, together with the cycle that was found.
+#[derive(Debug, Clone, thiserror::Error)]
+#[error("graph contains a negative-weight cycle")]
 pub struct NegativeCycleDetected<V, E> {
     cycle: GraphWalk<V, E>,
 }
 
 impl<V, E> NegativeCycleDetected<V, E> {
-    /// Constructs a new exception with `null` as its detail message. The cause is not
-    /// initialized, and may subsequently be initialized by a call to `initCause`.
+    /// Wraps the negative cycle that was found.
     pub fn new(cycle: GraphWalk<V, E>) -> Self {
         Self { cycle }
     }
 
-    /// Get the actual negative cycle, or null if not provided.
+    /// The negative cycle, as a closed walk.
     pub fn cycle(&self) -> &GraphWalk<V, E> {
         &self.cycle
     }
 
+    /// Consumes the error and returns the negative cycle.
     pub fn into_cycle(self) -> GraphWalk<V, E> {
         self.cycle
     }
 }
 
-impl<V, E> fmt::Display for NegativeCycleDetected<V, E> {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str("graph contains a negative-weight cycle")
-    }
-}
-
-impl<V: fmt::Debug, E: fmt::Debug> std::error::Error for NegativeCycleDetected<V, E> {}
-
-/// Errors produced by the Java-style Bellman–Ford entry points.
-#[derive(Debug, Clone)]
+/// Errors of [`BellmanFord::get_paths`] and [`BellmanFord::get_path`]: either a graph error or a
+/// negative cycle, which carries the cycle itself.
+///
+/// The common [`ShortestPathAlgorithm`] interface reports a negative cycle as the payload-free
+/// [`GraphError::NegativeCycle`]; call these methods directly to get the cycle.
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum BellmanFordError<V, E> {
-    Graph(GraphError),
+    /// The computation failed for a reason unrelated to negative cycles.
+    #[error(transparent)]
+    Graph(#[from] GraphError),
+    /// A negative-weight cycle is reachable from the source.
+    #[error(transparent)]
     NegativeCycle(NegativeCycleDetected<V, E>),
 }
 
 impl<V, E> BellmanFordError<V, E> {
+    /// The negative cycle, if that is what went wrong.
     pub fn cycle(&self) -> Option<&GraphWalk<V, E>> {
         match self {
             Self::NegativeCycle(error) => Some(error.cycle()),
             Self::Graph(_) => None,
         }
-    }
-}
-
-impl<V, E> fmt::Display for BellmanFordError<V, E> {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Graph(error) => error.fmt(formatter),
-            Self::NegativeCycle(error) => error.fmt(formatter),
-        }
-    }
-}
-
-impl<V: fmt::Debug, E: fmt::Debug> std::error::Error for BellmanFordError<V, E> {}
-
-impl<V, E> From<GraphError> for BellmanFordError<V, E> {
-    fn from(error: GraphError) -> Self {
-        Self::Graph(error)
     }
 }
 
@@ -98,10 +78,10 @@ impl<V, E> From<GraphError> for BellmanFordError<V, E> {
 /// The Bellman-Ford algorithm supports negative edge weights.
 ///
 /// Negative weight cycles are not allowed and will be reported by the algorithm. This implies that
-/// negative edge weights are not allowed in undirected graphs. In such cases the code will throw an
-/// exception of type `NegativeCycleDetectedException` which will contain the detected negative
-/// weight cycle. Note that the algorithm will not report or find negative weight cycles which are
-/// not reachable from the source vertex.
+/// negative edge weights are not allowed in undirected graphs. In such cases the call fails with a
+/// [`NegativeCycleDetected`] error which contains the detected negative weight cycle. Note that the
+/// algorithm will not report or find negative weight cycles which are not reachable from the source
+/// vertex.
 ///
 /// The running time is $O(|E||V|)$.
 ///
@@ -109,8 +89,8 @@ impl<V, E> From<GraphError> for BellmanFordError<V, E> {
 ///
 /// Bellman–Ford single-source shortest paths in `O(|V||E|)` time.
 ///
-/// [`BellmanFord::get_paths`] and [`BellmanFord::get_path`] preserve Java's negative-cycle
-/// payload. The [`ShortestPathAlgorithm`] implementation maps that richer error to
+/// [`BellmanFord::get_paths`] and [`BellmanFord::get_path`] return the negative cycle in their
+/// [`BellmanFordError`]. The [`ShortestPathAlgorithm`] implementation maps that richer error to
 /// [`GraphError::NegativeCycle`] for the common algorithm interface.
 pub struct BellmanFord<'g, G> {
     graph: &'g G,

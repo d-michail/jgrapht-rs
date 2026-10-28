@@ -70,8 +70,8 @@ pub(crate) fn johnson<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex
 /// Since Johnson's algorithm creates additional vertices, this implementation requires the user to
 /// provide a graph which is initialized with a vertex supplier.
 ///
-/// In case the algorithm detects a negative weight cycle it will throw an exception of type
-/// `NegativeCycleDetectedException` which will contain the detected negative weight cycle.
+/// In case the algorithm detects a negative weight cycle it fails with
+/// [`GraphError::NegativeCycle`].
 ///
 /// # Rust notes
 ///
