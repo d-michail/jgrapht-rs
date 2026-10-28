@@ -1,0 +1,822 @@
+// (C) Copyright 2003-2026, by Barak Naveh and JGraphT Contributors.
+// Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
+//
+// See the CONTRIBUTORS.md file distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0, or the GNU Lesser General Public
+// License v2.1 or later which is available at
+// http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
+
+//! Ports of `org.jgrapht.generate.netgen` tests: DistributorTest, NetworkGeneratorConfigBuilderTest
+//! and NetworkGeneratorTest.
+//!
+//! Differences: the builder remembers a failing setter and reports it from `build()`, so the tests
+//! whose Java setter throws on its own check `build().is_err()`; `Distributor` takes the random
+//! source per call; problems do not hold the graph.
+
+use jgrapht::alg::flow::{MinimumCostFlowProblem, PushRelabel};
+use jgrapht::alg::matching::{HopcroftKarp, MatchingAlgorithm};
+use jgrapht::generate::netgen::*;
+use jgrapht::util::java::RandomSource;
+use jgrapht::*;
+use rand::RngCore;
+use rand::{SeedableRng, rngs::StdRng};
+use std::collections::HashSet;
+
+mod distributor_test {
+    use super::*;
+    use std::collections::HashMap;
+
+    fn rng() -> StdRng {
+        StdRng::seed_from_u64(1)
+    }
+
+    fn lower_bounds<K: std::hash::Hash + Eq + 'static>(m: &[(K, i32)]) -> impl Fn(&K) -> i32 + '_ {
+        move |k| m.iter().find(|(x, _)| x == k).map_or(0, |(_, v)| *v)
+    }
+
+    #[test]
+    fn no_upper_bounds_one_valid_distribution() {
+        let m = [("a", 3), ("b", 4), ("c", 2)];
+        let mut d = Distributor::new();
+        d.add_lower_bound(lower_bounds(&m));
+        assert_eq!(
+            d.distribution(&mut rng(), &["a", "b", "c"], 9).unwrap(),
+            [3, 4, 2]
+        );
+    }
+
+    #[test]
+    fn no_upper_bounds_no_valid_distribution() {
+        let m = [(1, 5), (2, 6), (3, 2)];
+        let mut d = Distributor::new();
+        d.add_lower_bound(lower_bounds(&m));
+        assert!(d.distribution(&mut rng(), &[1, 2, 3], 12).is_err());
+    }
+
+    #[test]
+    fn no_lower_bounds_one_valid_distribution() {
+        let m = [(1, 3), (2, 5), (3, 2)];
+        let mut d = Distributor::new();
+        d.add_lower_bound(lower_bounds(&m));
+        assert_eq!(
+            d.distribution(&mut rng(), &[1, 2, 3], 10).unwrap(),
+            [3, 5, 2]
+        );
+    }
+
+    #[test]
+    fn no_lower_bounds_no_valid_distribution() {
+        let m = [(1, 3), (2, 4), (3, 2)];
+        let mut d = Distributor::new();
+        d.add_lower_bound(lower_bounds(&m));
+        assert!(d.distribution(&mut rng(), &[1, 2, 3], 8).is_err());
+    }
+
+    fn all_bounds(lb: i32, ub: i32, elements: usize, values: i32, exact: Option<i32>) {
+        let mut d = Distributor::new();
+        d.add_lower_bound(|_: &usize| lb);
+        d.add_upper_bound(|_: &usize| ub);
+        let keys: Vec<usize> = (0..elements).collect();
+        let dist = d.distribution(&mut rng(), &keys, values).unwrap();
+        assert_eq!(dist.iter().map(|&x| x as i64).sum::<i64>(), values as i64);
+        for v in dist {
+            match exact {
+                Some(e) => assert_eq!(v, e),
+                None => assert!((lb..=ub).contains(&v)),
+            }
+        }
+    }
+
+    #[test]
+    fn all_bounds_1() {
+        all_bounds(5, 10, 10, 50, Some(5));
+    }
+    #[test]
+    fn all_bounds_2() {
+        all_bounds(5, 10, 10, 100, Some(10));
+    }
+    #[test]
+    fn all_bounds_3() {
+        all_bounds(5, 10, 10, 80, None);
+    }
+    #[test]
+    fn all_bounds_large_bounds() {
+        let (lb, ub) = (1000 * 1000, 2 * 1000 * 1000);
+        all_bounds(lb, ub, 1000, ((lb + ub) / 2) * 1000, None);
+    }
+
+    #[test]
+    fn unused_import_guard() {
+        let _: HashMap<i32, i32> = HashMap::new();
+    }
+}
+
+mod config_builder_test {
+    use super::*;
+
+    #[allow(clippy::too_many_arguments)]
+    fn builder(
+        n: i32,
+        a: i32,
+        s: i32,
+        t: i32,
+        ts: i32,
+        tt: i32,
+        supply: i32,
+        min_cap: i32,
+        max_cap: i32,
+        min_cost: i32,
+        max_cost: i32,
+        pc: i32,
+        pi: i32,
+    ) -> NetworkGeneratorConfigBuilder {
+        NetworkGeneratorConfigBuilder::new()
+            .with_node_count(n)
+            .with_arc_count(a)
+            .with_source_count(s)
+            .with_sink_count(t)
+            .with_tsource_count(ts)
+            .with_tsink_count(tt)
+            .with_total_supply(supply)
+            .with_min_cap(min_cap)
+            .with_max_cap(max_cap)
+            .with_min_cost(min_cost)
+            .with_max_cost(max_cost)
+            .with_percent_capacitated(pc)
+            .with_percent_with_inf_cost(pi)
+    }
+    fn assignment() -> NetworkGeneratorConfigBuilder {
+        builder(4, 4, 2, 2, 0, 0, 2, 1, 1, 0, 0, 100, 0)
+    }
+    fn min_cost_flow() -> NetworkGeneratorConfigBuilder {
+        builder(10, 20, 2, 3, 1, 1, 50, 1, 10, 0, 10, 100, 0)
+    }
+    fn err(b: NetworkGeneratorConfigBuilder) {
+        assert!(b.build().is_err());
+    }
+    fn ok(b: NetworkGeneratorConfigBuilder) {
+        b.build().unwrap();
+    }
+    /// All parameters except the one a test leaves out.
+    fn partial() -> NetworkGeneratorConfigBuilder {
+        NetworkGeneratorConfigBuilder::new()
+    }
+
+    #[test]
+    fn node_count() {
+        err(partial()
+            .with_arc_count(20)
+            .with_source_count(2)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_min_cap(1)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_node_count(-1));
+        err(min_cost_flow().with_node_count(MAX_NODE_NUM + 1));
+    }
+
+    #[test]
+    fn arc_count() {
+        err(partial()
+            .with_node_count(10)
+            .with_source_count(2)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_min_cap(1)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_arc_count(-1));
+        err(min_cost_flow().with_arc_count(MAX_ARC_NUM + 1));
+    }
+
+    #[test]
+    fn arc_count_in_assignment_problem() {
+        err(assignment().with_arc_count(1));
+        ok(assignment().with_arc_count(2));
+        err(assignment().with_arc_count(5));
+        ok(assignment().with_arc_count(4));
+    }
+
+    #[test]
+    fn arc_count_in_min_cost_flow_problem() {
+        err(min_cost_flow().with_arc_count(7));
+        ok(min_cost_flow().with_arc_count(8));
+        err(min_cost_flow().with_arc_count(9 + 8 + 40 + 8 + 1));
+        ok(min_cost_flow().with_arc_count(9 + 8 + 40 + 8));
+    }
+
+    #[test]
+    fn source_and_sink_count() {
+        err(partial()
+            .with_node_count(10)
+            .with_arc_count(20)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_min_cap(1)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_source_count(-1));
+        err(min_cost_flow().with_source_count(11));
+        err(partial()
+            .with_node_count(10)
+            .with_arc_count(20)
+            .with_source_count(2)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_min_cap(1)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_sink_count(-1));
+        err(min_cost_flow().with_sink_count(11));
+        err(min_cost_flow().with_source_count(5).with_sink_count(6));
+    }
+
+    #[test]
+    fn transshipment_sources_and_sinks() {
+        err(min_cost_flow().with_tsource_count(-1));
+        err(min_cost_flow().with_tsource_count(3));
+        err(min_cost_flow().with_tsink_count(-1));
+        err(min_cost_flow().with_tsink_count(4));
+    }
+
+    #[test]
+    fn supply() {
+        err(partial()
+            .with_node_count(10)
+            .with_arc_count(20)
+            .with_source_count(2)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_min_cap(1)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_total_supply(-1));
+        err(min_cost_flow().with_total_supply(MAX_SUPPLY + 1));
+        ok(min_cost_flow().with_total_supply(MAX_SUPPLY));
+        err(min_cost_flow().with_total_supply(1));
+    }
+
+    #[test]
+    fn capacities() {
+        err(min_cost_flow().with_min_cap(-1));
+        err(min_cost_flow().with_max_cap(-1));
+        err(partial()
+            .with_node_count(10)
+            .with_arc_count(20)
+            .with_source_count(2)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(partial()
+            .with_node_count(10)
+            .with_arc_count(20)
+            .with_source_count(2)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_min_cap(1)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_min_cap(CAPACITY_COST_BOUND + 1));
+        ok(min_cost_flow()
+            .with_min_cap(CAPACITY_COST_BOUND)
+            .with_max_cap(CAPACITY_COST_BOUND));
+        err(min_cost_flow().with_max_cap(CAPACITY_COST_BOUND + 1));
+        ok(min_cost_flow().with_max_cap(CAPACITY_COST_BOUND));
+        err(min_cost_flow().with_min_cap(10).with_max_cap(9));
+    }
+
+    #[test]
+    fn costs() {
+        err(min_cost_flow().with_min_cost(-CAPACITY_COST_BOUND - 1));
+        err(min_cost_flow().with_max_cost(-CAPACITY_COST_BOUND - 1));
+        err(min_cost_flow().with_min_cost(CAPACITY_COST_BOUND + 1));
+        err(min_cost_flow().with_max_cost(CAPACITY_COST_BOUND + 1));
+        err(min_cost_flow().with_min_cost(10).with_max_cost(9));
+    }
+
+    #[test]
+    fn percentages() {
+        err(min_cost_flow().with_percent_capacitated(-1));
+        err(min_cost_flow().with_percent_capacitated(101));
+        err(min_cost_flow().with_percent_with_inf_cost(-1));
+        err(min_cost_flow().with_percent_with_inf_cost(101));
+    }
+
+    #[test]
+    fn valid_configs() {
+        ok(assignment());
+        ok(min_cost_flow());
+        assert!(assignment().build().unwrap().maximum_arc_count() > 0);
+    }
+}
+
+mod network_generator_test {
+    use super::*;
+    use rand::{SeedableRng, rngs::StdRng};
+
+    const EPS: f64 = 1e-9;
+    type G = DiGraph<i32>;
+    type Gen = NetworkGenerator<i32, DefaultEdge>;
+
+    fn new_graph() -> G {
+        G::with_graph_type(GraphType {
+            self_loops: true,
+            ..GraphType::simple()
+        })
+        .weighted()
+        .with_vertex_factory(|i| i as i32)
+    }
+
+    fn validate_network(
+        g: &G,
+        info: &NetworkInfo<i32, DefaultEdge>,
+        config: &NetworkGeneratorConfig,
+    ) {
+        assert_eq!(info.pure_sources().len() as i32, config.pure_source_count());
+        assert_eq!(
+            info.transshipment_sources().len() as i32,
+            config.transship_source_count()
+        );
+        assert_eq!(
+            info.transshipment_nodes().len() as i32,
+            config.transship_node_count()
+        );
+        assert_eq!(info.pure_sinks().len() as i32, config.pure_sink_count());
+        assert_eq!(
+            info.transshipment_sinks().len() as i32,
+            config.transship_sink_count()
+        );
+        let classes = [
+            info.pure_sources(),
+            info.transshipment_sources(),
+            info.transshipment_nodes(),
+            info.pure_sinks(),
+            info.transshipment_sinks(),
+        ];
+        for i in 1..classes.len() {
+            for j in 0..i {
+                let a: HashSet<_> = classes[i].iter().collect();
+                assert!(classes[j].iter().all(|v| !a.contains(v)));
+            }
+        }
+        for class in classes {
+            assert!(class.iter().all(|v| g.contains_vertex(v)));
+        }
+        assert_eq!(g.edge_count(), config.arc_count() as usize);
+        assert!(
+            info.pure_sources()
+                .iter()
+                .all(|v| g.in_edges_of(v).next().is_none())
+        );
+        assert!(
+            info.pure_sinks()
+                .iter()
+                .all(|v| g.out_edges_of(v).next().is_none())
+        );
+    }
+
+    fn validate_capacities(
+        g: &G,
+        cap: impl Fn(&DefaultEdge) -> f64,
+        info: &NetworkInfo<i32, DefaultEdge>,
+        config: &NetworkGeneratorConfig,
+    ) {
+        let skeleton: HashSet<_> = info.skeleton_arcs().iter().collect();
+        for e in g.edges() {
+            if !skeleton.contains(e) {
+                assert!(cap(e) + EPS >= config.min_cap() as f64);
+                assert!(cap(e) - EPS <= config.max_cap() as f64);
+            }
+        }
+    }
+
+    fn validate_costs(g: &G, cost: impl Fn(&DefaultEdge) -> f64, config: &NetworkGeneratorConfig) {
+        for e in g.edges() {
+            assert!(cost(e) >= config.min_cost() as f64 - EPS);
+            assert!(cost(e) <= config.max_cost() as f64 + EPS);
+        }
+    }
+
+    fn compare<T: PartialEq + std::fmt::Debug>(
+        g1: &G,
+        g2: &G,
+        f1: impl Fn(&DefaultEdge) -> T,
+        f2: impl Fn(&DefaultEdge) -> T,
+    ) {
+        for e1 in g1.edges() {
+            let (u, v) = (g1.edge_source(e1).unwrap(), g1.edge_target(e1).unwrap());
+            let e2 = g2.edge_between(u, v).expect("arc missing in second graph");
+            assert_eq!(f1(e1), f2(e2));
+        }
+    }
+
+    fn assert_graphs_equal(g1: &G, g2: &G) {
+        assert_eq!(
+            g1.vertices().collect::<HashSet<_>>(),
+            g2.vertices().collect::<HashSet<_>>()
+        );
+        assert_eq!(g1.edge_count(), g2.edge_count());
+        for e1 in g1.edges() {
+            let e2 = g2
+                .edge_between(g1.edge_source(e1).unwrap(), g1.edge_target(e1).unwrap())
+                .unwrap();
+            assert!((g1.edge_weight(e1).unwrap() - g2.edge_weight(e2).unwrap()).abs() < EPS);
+        }
+    }
+
+    fn test_min_cost(config: &NetworkGeneratorConfig, seed: u64) {
+        let mut g1 = new_graph();
+        let mut generator1 = Gen::new(config.clone(), seed);
+        let p1 = generator1
+            .generate_minimum_cost_flow_problem(&mut g1)
+            .unwrap();
+        let info1 = generator1.network_info().unwrap();
+        validate_network(p1.graph(), info1, config);
+        for source in info1.sources() {
+            assert!(p1.node_supply(source) > 0);
+        }
+        for sink in info1.sinks() {
+            assert!(p1.node_supply(sink) < 0);
+        }
+        validate_capacities(
+            p1.graph(),
+            |edge| p1.arc_capacity_upper_bound(edge) as f64,
+            info1,
+            config,
+        );
+        validate_costs(p1.graph(), |edge| p1.arc_cost(edge), config);
+
+        let mut g2 = new_graph();
+        let mut generator2 = Gen::new(config.clone(), seed);
+        let p2 = generator2
+            .generate_minimum_cost_flow_problem(&mut g2)
+            .unwrap();
+        assert_graphs_equal(p1.graph(), p2.graph());
+        for v in p1.graph().vertices() {
+            assert_eq!(p1.node_supply(v), p2.node_supply(v));
+        }
+        compare(
+            p1.graph(),
+            p2.graph(),
+            |e| p1.arc_capacity_lower_bound(e),
+            |e| p2.arc_capacity_lower_bound(e),
+        );
+        compare(
+            p1.graph(),
+            p2.graph(),
+            |e| p1.arc_capacity_upper_bound(e),
+            |e| p2.arc_capacity_upper_bound(e),
+        );
+        compare(
+            p1.graph(),
+            p2.graph(),
+            |e| p1.arc_cost(e),
+            |e| p2.arc_cost(e),
+        );
+    }
+
+    fn gen_max_flow(
+        config: &NetworkGeneratorConfig,
+        seed: u64,
+    ) -> (G, MaximumFlowProblem<i32, DefaultEdge>) {
+        let mut g = new_graph();
+        let mut generator = Gen::new(config.clone(), seed);
+        let problem = generator.generate_max_flow_problem(&mut g).unwrap();
+        validate_network(&g, generator.network_info().unwrap(), config);
+        validate_capacities(
+            &g,
+            |e| problem.capacity(e),
+            generator.network_info().unwrap(),
+            config,
+        );
+        (g, problem)
+    }
+
+    fn test_max_flow(config: &NetworkGeneratorConfig, seed: u64) {
+        let (g1, mut p1) = gen_max_flow(config, seed);
+        let (g2, p2) = gen_max_flow(config, seed);
+        assert_graphs_equal(&g1, &g2);
+        assert_eq!(p1.sources, p2.sources);
+        assert_eq!(p1.sinks, p2.sinks);
+        compare(
+            &g1,
+            &g2,
+            |e| p1.capacity(e).to_bits(),
+            |e| p2.capacity(e).to_bits(),
+        );
+        // max flow value
+        let mut g = g1;
+        let converted = p1.to_single_source_single_sink_problem(&mut g).unwrap();
+        converted.dump_capacities(&mut g).unwrap();
+        let flow = PushRelabel::new(&g)
+            .unwrap()
+            .maximum_flow_value(converted.source(), converted.sink())
+            .unwrap();
+        assert!(flow + EPS > config.total_supply() as f64);
+        p1.sources.clear();
+    }
+
+    fn gen_bipartite(
+        config: &NetworkGeneratorConfig,
+        seed: u64,
+    ) -> (G, BipartiteMatchingProblem<i32, DefaultEdge>) {
+        let mut g = new_graph();
+        let mut generator = Gen::new(config.clone(), seed);
+        let problem = generator
+            .generate_bipartite_matching_problem(&mut g)
+            .unwrap();
+        validate_network(&g, generator.network_info().unwrap(), config);
+        validate_costs(&g, |e| problem.cost(e), config);
+        (g, problem)
+    }
+
+    fn test_bipartite(config: &NetworkGeneratorConfig, seed: u64) {
+        let (g1, p1) = gen_bipartite(config, seed);
+        let (g2, p2) = gen_bipartite(config, seed);
+        // feasibility: a perfect matching exists
+        let undirected = AsUndirected(&g1);
+        let matching = HopcroftKarp::new(
+            &undirected,
+            p1.partition1.iter().copied(),
+            p1.partition2.iter().copied(),
+        )
+        .unwrap()
+        .matching()
+        .unwrap();
+        assert!(matching.is_perfect());
+        assert_graphs_equal(&g1, &g2);
+        assert_eq!(p1.partition1, p2.partition1);
+        assert_eq!(p1.partition2, p2.partition2);
+        compare(&g1, &g2, |e| p1.cost(e).to_bits(), |e| p2.cost(e).to_bits());
+    }
+
+    fn rng() -> StdRng {
+        StdRng::seed_from_u64(1)
+    }
+
+    fn mcf_config(
+        s: i64,
+        ts: i64,
+        tn: i64,
+        tt: i64,
+        t: i64,
+        arcs: i64,
+        supply: i32,
+    ) -> NetworkGeneratorConfig {
+        NetworkGeneratorConfigBuilder::new()
+            .with_params(
+                (s + tn + t) as i32,
+                arcs as i32,
+                s as i32,
+                t as i32,
+                ts as i32,
+                tt as i32,
+                supply,
+                1,
+                100,
+                1,
+                100,
+                100,
+                0,
+            )
+            .build()
+            .unwrap()
+    }
+
+    #[test]
+    fn min_cost_flow_minimum_arc_count() {
+        let mut rng = rng();
+        for s in 1..4i64 {
+            for ts in 0..=s {
+                for t in 1..4i64 {
+                    for tt in 0..=t {
+                        for tn in [0i64, 1, 2, 5, 10, 20, 30] {
+                            let arcs = NetworkGeneratorConfig::minimum_arc_count_for(s, tn, t);
+                            let config = mcf_config(s, ts, tn, tt, t, arcs, s.max(t) as i32);
+                            test_min_cost(&config, rng.next_u64() as i64 as u64);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn min_cost_flow_maximum_arc_count() {
+        let mut rng = rng();
+        for s in 1..4i64 {
+            for ts in 0..=s {
+                for t in 1..4i64 {
+                    for tt in 0..=t {
+                        for tn in [0i64, 1, 2, 5, 10, 20, 30] {
+                            let arcs =
+                                NetworkGeneratorConfig::maximum_arc_count_full(s, ts, tn, tt, t);
+                            let config = mcf_config(s, ts, tn, tt, t, arcs, 10 * s as i32);
+                            test_min_cost(&config, rng.next_u64() as i64 as u64);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn min_cost_flow_minimum_arc_count_a() {
+        let (s, tn, t) = (2i64, 1i64, 3i64);
+        let arcs = NetworkGeneratorConfig::minimum_arc_count_for(s, tn, t);
+        test_min_cost(
+            &mcf_config(s, 0, tn, 0, t, arcs, 10 * s as i32),
+            rng().next_u64() as i64 as u64,
+        );
+    }
+
+    fn max_flow_config(s: i64, tn: i64, t: i64, arcs: i64) -> NetworkGeneratorConfig {
+        NetworkGeneratorConfigBuilder::new()
+            .with_maximum_flow_problem_params_sources(
+                (s + tn + t) as i32,
+                arcs as i32,
+                10 * s as i32,
+                1,
+                100,
+                s as i32,
+                t as i32,
+            )
+            .build()
+            .unwrap()
+    }
+
+    #[test]
+    fn max_flow_minimum_number_of_arcs() {
+        let mut rng = rng();
+        for s in 1..5i64 {
+            for t in 1..5i64 {
+                for tn in 0..30i64 {
+                    let arcs = NetworkGeneratorConfig::minimum_arc_count_for(s, tn, t);
+                    test_max_flow(
+                        &max_flow_config(s, tn, t, arcs),
+                        rng.next_u64() as i64 as u64,
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn max_flow_maximum_number_of_arcs() {
+        let mut rng = rng();
+        for s in 1..5i64 {
+            for t in 1..5i64 {
+                for tn in 0..30i64 {
+                    let arcs = NetworkGeneratorConfig::maximum_arc_count_for(s, tn, t);
+                    test_max_flow(
+                        &max_flow_config(s, tn, t, arcs),
+                        rng.next_u64() as i64 as u64,
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn max_flow_random_number_of_arcs() {
+        let mut rng = rng();
+        for s in 1..5i64 {
+            for t in 1..5i64 {
+                for tn in 0..30i64 {
+                    let lb = NetworkGeneratorConfig::minimum_arc_count_for(s, tn, t);
+                    let ub = NetworkGeneratorConfig::maximum_arc_count_for(s, tn, t);
+                    let arcs = rng.next_int_bound((ub - lb + 1) as usize) as i64 + lb;
+                    test_max_flow(
+                        &max_flow_config(s, tn, t, arcs),
+                        rng.next_u64() as i64 as u64,
+                    );
+                }
+            }
+        }
+    }
+
+    fn bipartite_config(i: i32, arcs: i32) -> NetworkGeneratorConfig {
+        NetworkGeneratorConfigBuilder::new()
+            .with_bipartite_matching_problem_params_cost(2 * i, arcs, 1, 100)
+            .build()
+            .unwrap()
+    }
+
+    #[test]
+    fn bipartite_matching_minimum_number_of_arcs() {
+        let mut rng = rng();
+        for i in 1..50 {
+            test_bipartite(&bipartite_config(i, i), rng.next_u64() as i64 as u64);
+        }
+    }
+
+    #[test]
+    fn bipartite_matching_maximum_number_of_arcs() {
+        let mut rng = rng();
+        for i in 1..50 {
+            test_bipartite(&bipartite_config(i, i * i), rng.next_u64() as i64 as u64);
+        }
+    }
+
+    #[test]
+    fn bipartite_matching_random_number_of_arcs() {
+        let mut rng = rng();
+        for i in 1..50 {
+            let arcs = rng.next_int_bound((i * i - i + 1) as usize) as i32 + i;
+            test_bipartite(&bipartite_config(i, arcs), rng.next_u64());
+        }
+    }
+
+    #[test]
+    fn bipartite_matching_large_problem() {
+        let config = NetworkGeneratorConfigBuilder::new()
+            .with_bipartite_matching_problem_params_cost(1000, 250000, 1, 100)
+            .build()
+            .unwrap();
+        test_bipartite(&config, rng().next_u64() as i64 as u64);
+    }
+}
+
+/// A seeded run with the configuration of the JGraphT example. The exact arcs depend on the random
+/// stream, so the structure is checked: node and arc counts, a simple graph, balanced supplies
+/// that add up to the requested total, and costs and capacities inside the configured ranges.
+#[test]
+fn seeded_network_has_the_requested_structure() {
+    let c = NetworkGeneratorConfigBuilder::new()
+        .with_params(30, 120, 3, 4, 1, 2, 500, 1, 100, -5, 50, 80, 10)
+        .build()
+        .unwrap();
+    for seed in 0..20u64 {
+        let mut g = DiGraph::<i32>::with_graph_type(GraphType {
+            self_loops: true,
+            ..GraphType::simple()
+        })
+        .weighted()
+        .with_vertex_factory(|i| i as i32);
+        let mut generator = NetworkGenerator::<i32, DefaultEdge, _>::with_rng(
+            c.clone(),
+            StdRng::seed_from_u64(seed),
+        );
+        let p = generator
+            .generate_minimum_cost_flow_problem(&mut g)
+            .unwrap();
+        let graph = p.graph();
+        assert_eq!(graph.vertex_count(), 30);
+        assert_eq!(graph.edge_count(), 120);
+        let supplies: Vec<i32> = graph.vertices().map(|v| p.node_supply(v)).collect();
+        assert_eq!(supplies.iter().sum::<i32>(), 0, "seed {seed}");
+        assert_eq!(
+            supplies.iter().filter(|s| **s > 0).sum::<i32>(),
+            500,
+            "seed {seed}"
+        );
+        for e in graph.edges() {
+            let cost = p.arc_cost(e);
+            assert!(
+                (-5.0..=50.0).contains(&cost) || cost == i32::MAX as f64,
+                "cost {cost}"
+            );
+            assert!(p.arc_capacity_upper_bound(e) >= 1, "seed {seed}");
+        }
+    }
+}

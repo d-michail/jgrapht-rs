@@ -1,0 +1,384 @@
+// (C) Copyright 2003-2026, by Barak Naveh and JGraphT Contributors.
+// Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
+//
+// See the CONTRIBUTORS.md file distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0, or the GNU Lesser General Public
+// License v2.1 or later which is available at
+// http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
+
+//! Layout model: points, boxes and the maps from vertices to positions
+//! (`org.jgrapht.alg.drawing.model`).
+
+use indexmap::IndexMap;
+use std::hash::{Hash, Hasher};
+
+/// A 2-dimensional point in Euclidean space.
+///
+/// # Rust notes
+///
+/// A point in the plane. Equality and hashing compare the bit patterns of the coordinates, like
+/// Java's `Double.doubleToLongBits`: `NaN == NaN` and `0.0 != -0.0`.
+#[derive(Debug, Clone, Copy)]
+pub struct Point2D {
+    /// Horizontal coordinate.
+    pub x: f64,
+    /// Vertical coordinate.
+    pub y: f64,
+}
+
+impl Point2D {
+    /// Create a new point
+    pub fn of(x: f64, y: f64) -> Self {
+        Point2D { x, y }
+    }
+    /// Get the number of dimensions of the point
+    pub fn num_dimensions(&self) -> usize {
+        2
+    }
+}
+
+impl PartialEq for Point2D {
+    fn eq(&self, o: &Self) -> bool {
+        self.x.to_bits() == o.x.to_bits() && self.y.to_bits() == o.y.to_bits()
+    }
+}
+impl Eq for Point2D {}
+impl Hash for Point2D {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.x.to_bits().hash(state);
+        self.y.to_bits().hash(state);
+    }
+}
+impl std::fmt::Display for Point2D {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+/// Operations on [`Point2D`] (`Points`).
+pub mod points {
+    use super::Point2D;
+    use crate::util::ToleranceDoubleComparator;
+
+    /// Euclidean length of the vector `v`.
+    pub fn length(v: Point2D) -> f64 {
+        (v.x * v.x + v.y * v.y).sqrt()
+    }
+    /// Component-wise sum `a + b`.
+    pub fn add(a: Point2D, b: Point2D) -> Point2D {
+        Point2D::of(a.x + b.x, a.y + b.y)
+    }
+    /// Component-wise difference `a - b`.
+    pub fn subtract(a: Point2D, b: Point2D) -> Point2D {
+        Point2D::of(a.x - b.x, a.y - b.y)
+    }
+    /// The vector `-a`.
+    pub fn negate(a: Point2D) -> Point2D {
+        scalar_multiply(a, -1.0)
+    }
+    /// The vector `a` scaled by `scalar`.
+    pub fn scalar_multiply(a: Point2D, scalar: f64) -> Point2D {
+        Point2D::of(a.x * scalar, a.y * scalar)
+    }
+    /// Equal up to a tolerance of `1e-9` in each coordinate.
+    pub fn equals(p1: Point2D, p2: Point2D) -> bool {
+        let c = ToleranceDoubleComparator::new(1e-9).expect("positive tolerance");
+        c.compare(p1.x, p2.x) == 0 && c.compare(p1.y, p2.y) == 0
+    }
+}
+
+/// A 2-dimensional box (rectangle).
+///
+/// # Rust notes
+///
+/// An axis-parallel box given by its lower-left corner and its sides (`Box2D`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Box2D {
+    min_x: f64,
+    min_y: f64,
+    width: f64,
+    height: f64,
+}
+
+impl Box2D {
+    /// A box with its corner at the origin.
+    pub fn of(width: f64, height: f64) -> Self {
+        Self::at(0.0, 0.0, width, height)
+    }
+    /// A box with its corner at `(x, y)`.
+    pub fn at(x: f64, y: f64, width: f64, height: f64) -> Self {
+        debug_assert!(width >= 0.0 && height >= 0.0);
+        Box2D {
+            min_x: x,
+            min_y: y,
+            width,
+            height,
+        }
+    }
+    /// Get the minimum x coordinate
+    pub fn min_x(&self) -> f64 {
+        self.min_x
+    }
+    /// Get the minimum y coordinate
+    pub fn min_y(&self) -> f64 {
+        self.min_y
+    }
+    /// Get the width
+    pub fn width(&self) -> f64 {
+        self.width
+    }
+    /// Get the height
+    pub fn height(&self) -> f64 {
+        self.height
+    }
+    /// Get the maximum x coordinate
+    pub fn max_x(&self) -> f64 {
+        self.min_x + self.width
+    }
+    /// Get the maximum y coordinate
+    pub fn max_y(&self) -> f64 {
+        self.min_y + self.height
+    }
+}
+
+/// Operations on [`Box2D`] (`Boxes`).
+pub mod boxes {
+    use super::{Box2D, Point2D};
+    use std::cmp::Ordering;
+
+    /// Whether `p` lies inside the box `b` or on its border, comparing coordinates with the total order
+    /// of `f64`.
+    pub fn contains_point(b: &Box2D, p: Point2D) -> bool {
+        contains_point_with(b, p, |a, b| a.total_cmp(&b))
+    }
+
+    /// Containment where coordinates are compared with `cmp`.
+    pub fn contains_point_with(b: &Box2D, p: Point2D, cmp: impl Fn(f64, f64) -> Ordering) -> bool {
+        cmp(p.x, b.min_x() + b.width()).is_le()
+            && cmp(p.x, b.min_x()).is_ge()
+            && cmp(p.y, b.min_y() + b.height()).is_le()
+            && cmp(p.y, b.min_y()).is_ge()
+    }
+
+    /// The west and east halves.
+    pub fn split_along_x_axis(b: &Box2D) -> (Box2D, Box2D) {
+        let w = b.width() / 2.0;
+        (
+            Box2D::at(b.min_x(), b.min_y(), w, b.height()),
+            Box2D::at(b.min_x() + w, b.min_y(), w, b.height()),
+        )
+    }
+
+    /// The south and north halves.
+    pub fn split_along_y_axis(b: &Box2D) -> (Box2D, Box2D) {
+        let h = b.height() / 2.0;
+        (
+            Box2D::at(b.min_x(), b.min_y(), b.width(), h),
+            Box2D::at(b.min_x(), b.min_y() + h, b.width(), h),
+        )
+    }
+}
+
+/// A general interface for the 2D layout model.
+///
+/// The layout model provides the necessary components to a `LayoutAlgorithm2D` in order to
+/// draw a graph. Its responsibility is to provide the available drawable area, to be able to store
+/// and answer queries about vertex coordinates, and to allow someone to fix (make permanent) a
+/// vertex location.
+///
+/// # Rust notes
+///
+/// Positions of vertices inside a drawable area (`LayoutModel2D`).
+pub trait LayoutModel2D<V> {
+    /// The area inside which vertices are placed.
+    fn drawable_area(&self) -> Box2D;
+    /// Replaces the drawable area.
+    fn set_drawable_area(&mut self, area: Box2D);
+    /// Position of `v`, or `None` if it has none.
+    fn get(&self, v: &V) -> Option<Point2D>;
+    /// Sets the position unless the vertex is fixed; returns the previous (or, for a fixed
+    /// vertex, the current) position.
+    fn put(&mut self, v: V, p: Point2D) -> Option<Point2D>;
+    /// Pins `v` at its current position when `fixed` is `true`, so [`put`](Self::put) no longer moves
+    /// it; `false` releases it.
+    fn set_fixed(&mut self, v: V, fixed: bool);
+    /// Whether `v` is pinned.
+    fn is_fixed(&self, v: &V) -> bool;
+    /// All positions in insertion order.
+    fn entries(&self) -> Vec<(V, Point2D)>;
+
+    /// All positions as a map, in insertion order.
+    fn collect(&self) -> IndexMap<V, Point2D>
+    where
+        V: Eq + Hash,
+    {
+        self.entries().into_iter().collect()
+    }
+}
+
+/// A layout model which uses a hashtable to store the vertices' locations.
+///
+/// # Rust notes
+///
+/// A layout model backed by an insertion-ordered map (`MapLayoutModel2D`).
+#[derive(Debug, Clone)]
+pub struct MapLayoutModel2D<V: Eq + Hash> {
+    area: Box2D,
+    points: IndexMap<V, Point2D>,
+    fixed: std::collections::HashSet<V>,
+}
+
+impl<V: Eq + Hash> MapLayoutModel2D<V> {
+    /// Create a new model.
+    pub fn new(area: Box2D) -> Self {
+        MapLayoutModel2D {
+            area,
+            points: IndexMap::new(),
+            fixed: Default::default(),
+        }
+    }
+}
+
+impl<V: Eq + Hash + Clone> LayoutModel2D<V> for MapLayoutModel2D<V> {
+    /// Get the drawable area of the model.
+    fn drawable_area(&self) -> Box2D {
+        self.area
+    }
+    /// Set the drawable area of the model.
+    fn set_drawable_area(&mut self, area: Box2D) {
+        self.area = area;
+    }
+    /// Get the last location of a particular vertex in the model. Returns `None` if the vertex has
+    /// not been assigned a location or if the particular implementation does not store the
+    /// coordinates.
+    fn get(&self, v: &V) -> Option<Point2D> {
+        self.points.get(v).copied()
+    }
+    /// Set the location of a vertex.
+    fn put(&mut self, v: V, p: Point2D) -> Option<Point2D> {
+        if !self.fixed.contains(&v) {
+            self.points.insert(v, p)
+        } else {
+            // putIfAbsent
+            match self.points.get(&v) {
+                Some(old) => Some(*old),
+                None => {
+                    self.points.insert(v, p);
+                    None
+                }
+            }
+        }
+    }
+    /// Set a point as being a "fixed-point" or not.
+    ///
+    /// It is the model's responsibility to make sure that changing the coordinates of a fixed point
+    /// by calling `put` has no effect.
+    fn set_fixed(&mut self, v: V, fixed: bool) {
+        if fixed {
+            self.fixed.insert(v);
+        } else {
+            self.fixed.remove(&v);
+        }
+    }
+    /// Check whether a vertex is a fixed point.
+    ///
+    /// It is the model's responsibility to make sure that changing the coordinates of a fixed point
+    /// by calling `put` has no effect.
+    fn is_fixed(&self, v: &V) -> bool {
+        self.fixed.contains(v)
+    }
+    fn entries(&self) -> Vec<(V, Point2D)> {
+        self.points.iter().map(|(v, p)| (v.clone(), *p)).collect()
+    }
+}
+
+/// A layout model wrapper which adds support for listeners.
+///
+/// # Rust notes
+///
+/// A layout model that notifies listeners about every accepted position change
+/// (`ListenableLayoutModel2D`).
+pub struct ListenableLayoutModel2D<V, M: LayoutModel2D<V>> {
+    model: M,
+    listeners: Vec<(usize, Box<dyn FnMut(&V, Point2D)>)>,
+    next_id: usize,
+}
+
+impl<V, M: LayoutModel2D<V>> ListenableLayoutModel2D<V, M> {
+    /// Create a new model
+    pub fn new(model: M) -> Self {
+        ListenableLayoutModel2D {
+            model,
+            listeners: Vec::new(),
+            next_id: 0,
+        }
+    }
+    /// Registers a listener; returns an id for [`remove_listener`](Self::remove_listener).
+    pub fn add_listener(&mut self, listener: impl FnMut(&V, Point2D) + 'static) -> usize {
+        self.next_id += 1;
+        self.listeners.push((self.next_id, Box::new(listener)));
+        self.next_id
+    }
+    /// Remove a listener.
+    pub fn remove_listener(&mut self, id: usize) -> bool {
+        let before = self.listeners.len();
+        self.listeners.retain(|(i, _)| *i != id);
+        before != self.listeners.len()
+    }
+    /// Returns the wrapped model.
+    pub fn into_inner(self) -> M {
+        self.model
+    }
+}
+
+impl<V: Clone, M: LayoutModel2D<V>> LayoutModel2D<V> for ListenableLayoutModel2D<V, M> {
+    /// Get the drawable area of the model.
+    fn drawable_area(&self) -> Box2D {
+        self.model.drawable_area()
+    }
+    /// Set the drawable area of the model.
+    fn set_drawable_area(&mut self, area: Box2D) {
+        self.model.set_drawable_area(area);
+    }
+    /// Get the last location of a particular vertex in the model. Returns `None` if the vertex has
+    /// not been assigned a location or if the particular implementation does not store the
+    /// coordinates.
+    fn get(&self, v: &V) -> Option<Point2D> {
+        self.model.get(v)
+    }
+    /// Set the location of a vertex.
+    fn put(&mut self, v: V, p: Point2D) -> Option<Point2D> {
+        if !self.model.is_fixed(&v) {
+            let old = self.model.put(v.clone(), p);
+            for (_, l) in &mut self.listeners {
+                l(&v, p);
+            }
+            old
+        } else {
+            self.model.get(&v)
+        }
+    }
+    /// Set a point as being a "fixed-point" or not.
+    ///
+    /// It is the model's responsibility to make sure that changing the coordinates of a fixed point
+    /// by calling `put` has no effect.
+    fn set_fixed(&mut self, v: V, fixed: bool) {
+        self.model.set_fixed(v, fixed);
+    }
+    /// Check whether a vertex is a fixed point.
+    ///
+    /// It is the model's responsibility to make sure that changing the coordinates of a fixed point
+    /// by calling `put` has no effect.
+    fn is_fixed(&self, v: &V) -> bool {
+        self.model.is_fixed(v)
+    }
+    fn entries(&self) -> Vec<(V, Point2D)> {
+        self.model.entries()
+    }
+}

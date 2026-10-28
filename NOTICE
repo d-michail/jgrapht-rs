@@ -1,0 +1,14 @@
+jgrapht-rs
+Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
+
+This project is a Rust port of JGraphT (https://jgrapht.org,
+https://github.com/jgrapht/jgrapht).
+JGraphT is (C) Copyright 2003-2026, by Barak Naveh and JGraphT Contributors.
+
+JGraphT is made available under the terms of either the Eclipse Public License 2.0 or the
+GNU Lesser General Public License v2.1 or later. This port is distributed under the same
+choice of licenses:
+
+    SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
+
+See license-EPL.txt and license-LGPL.txt, and CONTRIBUTORS.md for copyright ownership.

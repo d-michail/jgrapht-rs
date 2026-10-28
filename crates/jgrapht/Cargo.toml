@@ -1,0 +1,53 @@
+[package]
+name = "jgrapht"
+description = "A Rust port of the JGraphT core library, built around graph traits"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+documentation = "https://docs.rs/jgrapht"
+
+[features]
+# Serialize and deserialize graphs and result types with serde (any serde format).
+serde = ["dep:serde", "indexmap/serde"]
+
+[dependencies]
+rheaps = "0.16.2"
+indexmap = "2"
+serde = { version = "1", optional = true, features = ["derive"] }
+thiserror = "2"
+rand = "0.9"
+dashu-float = "0.6.2"
+dashu-int = "0.6.2"
+
+[dev-dependencies]
+criterion = { version = "0.5", default-features = false }
+serde_json = "1"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[[bench]]
+name = "graph_perf"
+harness = false
+
+[[bench]]
+name = "shortestpath_perf"
+harness = false
+
+[[bench]]
+name = "algorithms_perf"
+harness = false
+
+[[bench]]
+name = "structures_perf"
+harness = false
+
+[[bench]]
+name = "pathsearch_perf"
+harness = false

@@ -1,0 +1,122 @@
+// (C) Copyright 2003-2026, by Barak Naveh and JGraphT Contributors.
+// Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
+//
+// See the CONTRIBUTORS.md file distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0, or the GNU Lesser General Public
+// License v2.1 or later which is available at
+// http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
+
+use crate::graph::DirectedGraph;
+use crate::graph::GraphExt;
+use crate::graph::IncidenceGraph;
+use crate::{GraphError, Result};
+use dashu_int::UBig;
+use std::collections::{HashMap, VecDeque};
+
+/// Counts the number of simple directed paths in a Directed Acyclic Graph (DAG) between a given
+/// source and target using dynamic programming in topological order.
+///
+/// For large graphs the number of paths can be extremely large; values are returned as
+/// `java.math.BigInteger`.
+///
+/// Usage constraints: the provided graph must be directed and acyclic. Otherwise
+/// the call fails with an error.
+///
+/// # Rust notes
+///
+/// Counts directed paths in a DAG using dynamic programming in topological order.
+pub struct DagAllPathsCounter;
+
+impl DagAllPathsCounter {
+    /// Count the number of simple directed paths from `source` to `target` in the given
+    /// directed acyclic graph.
+    ///
+    /// Edge case semantics:
+    ///
+    /// - If `source` or `target` is not contained in the graph, fails
+    ///   with an error.
+    /// - If `source.equals(target)`, the empty path (length 0) is counted as one path and
+    ///   paths that leave `source` and return to it cannot exist in a DAG, thus the result is
+    /// 1.
+    /// - If there is no path from `source` to `target`, returns
+    ///   `BigInteger#ZERO`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph;
+    /// [`GraphError::EdgeNotFound`] if an edge argument is not in the graph;
+    /// [`GraphError::InvalidGraph`] if the graph is not acyclic. Errors of the graph operations it
+    /// performs are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`](crate::Graph) (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
+    pub fn count_all_paths<G: DirectedGraph + IncidenceGraph>(
+        graph: &G,
+        source: &G::Vertex,
+        target: &G::Vertex,
+    ) -> Result<UBig> {
+        if !graph.contains_vertex(source) || !graph.contains_vertex(target) {
+            return Err(GraphError::VertexNotFound);
+        }
+        let mut in_degree: HashMap<G::Vertex, usize> = graph
+            .vertices_cloned()
+            .map(|vertex| {
+                let degree = graph.in_degree_of(&vertex);
+                (vertex, degree)
+            })
+            .collect();
+        let mut queue: VecDeque<G::Vertex> = graph
+            .vertices_cloned()
+            .filter(|vertex| in_degree[vertex] == 0)
+            .collect();
+        let mut vertices: Vec<G::Vertex> = Vec::with_capacity(graph.vertex_count());
+        while let Some(vertex) = queue.pop_front() {
+            for edge in graph.out_edges_of(&vertex) {
+                let target = graph
+                    .edge_target(edge)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
+                let degree = in_degree.get_mut(target).expect("vertex in graph");
+                *degree -= 1;
+                if *degree == 0 {
+                    queue.push_back(target.clone());
+                }
+            }
+            vertices.push(vertex);
+        }
+        if vertices.len() != graph.vertex_count() {
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Acyclic));
+        }
+        let positions: HashMap<&G::Vertex, usize> = vertices
+            .iter()
+            .enumerate()
+            .map(|(index, vertex)| (vertex, index))
+            .collect();
+        let source_index = positions[source];
+        let target_index = positions[target];
+        if source_index > target_index {
+            return Ok(UBig::ZERO);
+        }
+        let mut ways = vec![UBig::ZERO; vertices.len()];
+        ways[source_index] = UBig::ONE;
+        for index in source_index..=target_index {
+            let count = ways[index].clone();
+            if count == UBig::ZERO {
+                continue;
+            }
+            for edge in graph.out_edges_of(&vertices[index]) {
+                let child = graph
+                    .edge_target(edge)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
+                ways[positions[child]] += &count;
+            }
+        }
+        Ok(ways[target_index].clone())
+    }
+}

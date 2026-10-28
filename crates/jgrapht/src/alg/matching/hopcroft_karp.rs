@@ -1,0 +1,235 @@
+// (C) Copyright 2003-2026, by Barak Naveh and JGraphT Contributors.
+// Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
+//
+// See the CONTRIBUTORS.md file distributed with this work for additional
+// information regarding copyright ownership.
+//
+// This program and the accompanying materials are made available under the
+// terms of the Eclipse Public License 2.0 which is available at
+// http://www.eclipse.org/legal/epl-2.0, or the GNU Lesser General Public
+// License v2.1 or later which is available at
+// http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html.
+//
+// SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
+
+use super::base::{Matching, MatchingAlgorithm};
+use crate::alg::util::FixedSizeIntegerQueue;
+use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
+use crate::graph::UndirectedGraph;
+use crate::graph::{Graph, GraphExt};
+use indexmap::IndexSet;
+use std::collections::HashMap;
+
+/// Dummy vertex. All vertices are initially matched against this dummy vertex.
+const DUMMY: usize = 0;
+const INF: usize = usize::MAX;
+
+/// Implementation of the well-known Hopcroft Karp algorithm to compute a matching of maximum
+/// cardinality in a bipartite graph. The algorithm runs in $O(|E| \cdot \sqrt{|V|})$ time. This
+/// implementation accepts undirected graphs which may contain self-loops and multiple edges. To
+/// compute a maximum cardinality matching in general (non-bipartite) graphs, use
+/// `SparseEdmonds` instead.
+///
+/// The Hopcroft Karp matching algorithm computes augmenting paths of increasing length, until no
+/// augmenting path exists in the graph. At each iteration, the algorithm runs a Breadth First Search
+/// from the exposed (free) vertices, until an augmenting path is found. Next, a Depth First Search
+/// is performed to find all (vertex disjoint) augmenting paths of the same length. The matching is
+/// augmented along all discovered augmenting paths simultaneously.
+///
+/// The original algorithm is described in: Hopcroft, John E.; Karp, Richard M. (1973), "An n5/2
+/// algorithm for maximum matchings in bipartite graphs", SIAM Journal on Computing 2 (4): 225–231,
+/// doi:10.1137/0202019 A coarse overview of the algorithm is given in: [http://en.wikipedia.org/wiki/Hopcroft-Karp_algorithm](http://en.wikipedia.org/wiki/Hopcroft-Karp_algorithm)
+///
+/// # Rust notes
+///
+/// `HopcroftKarp`: a maximum cardinality matching of a
+/// bipartite graph in `O(E sqrt(V))`.
+pub struct HopcroftKarp<'g, G: Graph> {
+    graph: &'g G,
+    partition1: Vec<G::Vertex>,
+    partition2: Vec<G::Vertex>,
+}
+
+struct State<'a, G: Graph> {
+    graph: &'a G,
+    /// Ordered list of vertices; position 0 is the dummy vertex.
+    vertices: Vec<Option<&'a G::Vertex>>,
+    /// Neighbours (as positions) of every real vertex, in the order of the graph.
+    neighbors: Vec<Vec<usize>>,
+    partition1_size: usize,
+    matched_vertices: usize,
+    matching: Vec<usize>,
+    dist: Vec<usize>,
+    queue: FixedSizeIntegerQueue,
+}
+
+impl<'g, G: UndirectedGraph + IncidenceGraph> HopcroftKarp<'g, G> {
+    /// `partition1` and `partition2` are the two sides of the bipartition. Fails if the graph is
+    /// not undirected.
+    ///
+    /// # Errors
+    ///
+    /// Errors of the graph operations it performs are propagated.
+    pub fn new(
+        graph: &'g G,
+        partition1: impl IntoIterator<Item = G::Vertex>,
+        partition2: impl IntoIterator<Item = G::Vertex>,
+    ) -> Result<Self> {
+        let p1: Vec<G::Vertex> = partition1.into_iter().collect();
+        let p2: Vec<G::Vertex> = partition2.into_iter().collect();
+        // Ensure that partition1 is smaller or equal in size compared to partition 2
+        let (partition1, partition2) = if p1.len() <= p2.len() {
+            (p1, p2)
+        } else {
+            (p2, p1)
+        };
+        Ok(Self {
+            graph,
+            partition1,
+            partition2,
+        })
+    }
+}
+
+impl<'a, G: Graph> State<'a, G> {
+    fn bfs(&mut self) -> bool {
+        self.queue.clear();
+        for u in 1..=self.partition1_size {
+            if self.matching[u] == DUMMY {
+                // add all unmatched vertices to the queue and set their distance to 0
+                self.dist[u] = 0;
+                self.queue.enqueue(u);
+            } else {
+                // set distance of all matched vertices to INF
+                self.dist[u] = INF;
+            }
+        }
+        self.dist[DUMMY] = INF;
+        while let Some(u) = self.queue.poll() {
+            if self.dist[u] < self.dist[DUMMY] {
+                for i in 0..self.neighbors[u].len() {
+                    let v = self.neighbors[u][i];
+                    let m = self.matching[v];
+                    if self.dist[m] == INF {
+                        self.dist[m] = self.dist[u] + 1;
+                        self.queue.enqueue(m);
+                    }
+                }
+            }
+        }
+        self.dist[DUMMY] != INF // true if an augmenting path is found
+    }
+
+    fn dfs(&mut self, u: usize) -> bool {
+        if u != DUMMY {
+            for i in 0..self.neighbors[u].len() {
+                let v = self.neighbors[u][i];
+                let m = self.matching[v];
+                if self.dist[m] == self.dist[u].wrapping_add(1) && self.dfs(m) {
+                    self.matching[v] = u;
+                    self.matching[u] = v;
+                    return true;
+                }
+            }
+            // No augmenting path has been found. Set distance of u to INF to ensure that u isn't
+            // visited again.
+            self.dist[u] = INF;
+            return false;
+        }
+        true
+    }
+}
+
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for HopcroftKarp<'_, G> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+        let graph = self.graph;
+        // init
+        let mut vertices: Vec<Option<&G::Vertex>> = vec![None];
+        vertices.extend(self.partition1.iter().map(Some));
+        vertices.extend(self.partition2.iter().map(Some));
+        let index: HashMap<&G::Vertex, usize> = vertices
+            .iter()
+            .enumerate()
+            .filter_map(|(i, v)| v.map(|v| (v, i)))
+            .collect();
+        if index.len() != vertices.len() - 1 {
+            return Err(GraphError::InvalidParameter {
+                name: "partitions",
+                requirement: crate::ParameterRequirement::Disjoint,
+            });
+        }
+        let p1_size = self.partition1.len();
+        let mut neighbors: Vec<Vec<usize>> = Vec::with_capacity(vertices.len());
+        for (i, v) in vertices.iter().enumerate() {
+            let Some(v) = v else {
+                neighbors.push(Vec::new());
+                continue;
+            };
+            let mut list = Vec::new();
+            for w in graph.neighbor_list_of(v) {
+                // only edges between the two partitions can be matched; self-loops, edges inside
+                // a partition and edges to other vertices are ignored
+                if let Some(&j) = index.get(&w) {
+                    if (i <= p1_size) != (j <= p1_size) {
+                        list.push(j);
+                    }
+                }
+            }
+            neighbors.push(list);
+        }
+        let n = vertices.len();
+        let mut state = State {
+            graph,
+            vertices,
+            neighbors,
+            partition1_size: self.partition1.len(),
+            matched_vertices: 0,
+            matching: vec![DUMMY; n + 1],
+            dist: vec![0; self.partition1.len() + 1],
+            queue: FixedSizeIntegerQueue::new(n.max(1)),
+        };
+
+        // warm start
+        for u in 1..=state.partition1_size {
+            for i in 0..state.neighbors[u].len() {
+                let v = state.neighbors[u][i];
+                if state.matching[v] == DUMMY {
+                    state.matching[v] = u;
+                    state.matching[u] = v;
+                    state.matched_vertices += 1;
+                    break;
+                }
+            }
+        }
+
+        while state.matched_vertices < state.partition1_size && state.bfs() {
+            // Greedily search for vertex disjoint augmenting paths
+            let mut v = 1;
+            while v <= state.partition1_size && state.matched_vertices < state.partition1_size {
+                if state.matching[v] == DUMMY && state.dfs(v) {
+                    state.matched_vertices += 1;
+                }
+                v += 1;
+            }
+        }
+
+        let mut edges: IndexSet<G::Edge> = IndexSet::new();
+        for i in 0..state.vertices.len() {
+            if state.matching[i] != DUMMY {
+                let (a, b) = (state.vertices[i], state.vertices[state.matching[i]]);
+                if let (Some(a), Some(b)) = (a, b) {
+                    edges.insert(
+                        graph
+                            .edge_between(a, b)
+                            .expect("matched vertices are adjacent")
+                            .clone(),
+                    );
+                }
+            }
+        }
+        let weight = edges.len() as f64;
+        let _ = state.graph;
+        Ok(Matching::new(graph, edges, weight))
+    }
+}
