@@ -168,6 +168,26 @@ Criterion's HTML reports are in `target/criterion/report/index.html`.
 The benchmark files are in `crates/jgrapht/benches/` (`graph_perf`, `shortestpath_perf`,
 `algorithms_perf`, `structures_perf`, `pathsearch_perf`).
 
+## Citation
+
+jgrapht-rs is a port of JGraphT and builds on its design and algorithms. If you use it in academic
+work, please cite the JGraphT paper:
+
+```bibtex
+@article{michail2019jgrapht,
+  author  = {Michail, Dimitrios and Kinable, Joris and Naveh, Barak and Sichi, John V.},
+  title   = {{JGraphT}---A {Java} Library for Graph Data Structures and Algorithms},
+  journal = {ACM Journal of Experimental Algorithmics},
+  volume  = {24},
+  number  = {1},
+  year    = {2019},
+  doi     = {10.1145/3350513}
+}
+```
+
+and, if you want to refer to this implementation specifically, the repository
+(<https://github.com/d-michail/jgrapht-rs>) with the version or commit you used.
+
 ## License
 
 This project is a port of [JGraphT](https://github.com/jgrapht/jgrapht) and, like upstream, is
