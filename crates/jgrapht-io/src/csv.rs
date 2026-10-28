@@ -29,6 +29,7 @@ use crate::{
 };
 use jgrapht::GraphExt;
 use jgrapht::{Graph, GraphMut, OutgoingGraph};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::io::{Read, Write};
@@ -663,6 +664,7 @@ where
         match self.format {
             CsvFormat::EdgeList => {
                 for edge in graph.edges() {
+                    let edge = edge.borrow();
                     let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
                     let source = self.base.vertex_id(source)?;
                     let target = self.base.vertex_id(target)?;
@@ -807,10 +809,12 @@ where
 {
     fn export_graph<W: Write>(&mut self, graph: &G, mut output: W) -> Result<()> {
         for vertex in graph.vertices() {
+            let vertex = vertex.borrow();
             let name = self.base.vertex_id(vertex)?;
             writeln!(output, "Shape,{name},,{name}")?;
         }
         for edge in graph.edges() {
+            let edge = edge.borrow();
             let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             let source = self.base.vertex_id(source)?;
             let target = self.base.vertex_id(target)?;

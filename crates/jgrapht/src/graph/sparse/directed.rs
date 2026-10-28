@@ -144,6 +144,14 @@ macro_rules! directed_graph_impl {
         impl<I: IncomingMode> Graph for $graph<I> {
             type Vertex = usize;
             type Edge = usize;
+            type VertexRef<'a>
+                = &'a usize
+            where
+                Self: 'a;
+            type EdgeRef<'a>
+                = &'a usize
+            where
+                Self: 'a;
 
             fn graph_type(&self) -> GraphType {
                 self.core.graph_type($weighted)

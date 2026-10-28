@@ -23,6 +23,7 @@ use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::java::RandomSource;
 use crate::walk::GraphWalk;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 
 type Tour<G> = Result<Option<GraphWalk<<G as Graph>::Vertex, <G as Graph>::Edge>>>;
@@ -140,6 +141,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
             .collect();
         let mut dist = vec![vec![0.0; n]; n];
         for e in graph.edges() {
+            let e = e.borrow();
             let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
             let weight = graph.weight_of(e);
             let (si, ti) = (index[s], index[t]);

@@ -17,20 +17,21 @@ use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
+use std::borrow::Borrow;
 use std::collections::HashMap;
 
 /// All-pairs shortest paths in `O(V^3)`. Negative weights are fine; a negative cycle gives
 /// `Err(NegativeCycle)`.
 pub(crate) fn floyd_warshall<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
-    let vs: Vec<&G::Vertex> = g.vertices().collect();
+    let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
     let n = vs.len();
-    let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+    let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
     let mut d = vec![vec![f64::INFINITY; n]; n];
     let mut pred: Vec<Vec<Option<usize>>> = vec![vec![None; n]; n]; // predecessor of j on i ~> j
     let mut edge: Vec<Vec<Option<&G::Edge>>> = vec![vec![None; n]; n]; // lightest direct edge
     for i in 0..n {
         d[i][i] = 0.0;
-        for (e, t) in g.outgoing_of(vs[i]) {
+        for (e, t) in g.outgoing_of(&vs[i]) {
             let j = idx[t];
             let w = g.weight_of(e);
             if w < d[i][j] || (i == j && w < 0.0) {
@@ -126,12 +127,16 @@ impl<'g, G: OutgoingGraph> FloydWarshallShortestPaths<'g, G> {
         self.graph
             .vertices()
             .map(|source| {
-                self.graph
-                    .vertices()
-                    .filter(|target| {
-                        *target != source && self.paths.weight(source, target).is_some()
-                    })
-                    .count()
+                let source = source.borrow();
+                {
+                    self.graph
+                        .vertices()
+                        .filter(|target| {
+                            let target = &(*target).borrow();
+                            *target != source && self.paths.weight(source, target).is_some()
+                        })
+                        .count()
+                }
             })
             .sum()
     }

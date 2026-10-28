@@ -26,6 +26,7 @@ use crate::{
     IntegerIdProvider, IoError, Result,
 };
 use jgrapht::{Graph, GraphMut};
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 
@@ -417,6 +418,7 @@ where
             graph.edge_count()
         )?;
         for edge in graph.edges() {
+            let edge = edge.borrow();
             let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             let source = self.base.vertex_id(source)?;
             let target = self.base.vertex_id(target)?;

@@ -28,6 +28,7 @@ use jgrapht::graph::GraphExt;
 use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::hash::Hash;
 
@@ -357,7 +358,10 @@ fn assert_hamiltonian_path<G: Graph>(
     assert_eq!(n.saturating_sub(1), edges.len());
     let seen: HashSet<&G::Vertex> = vertices.iter().collect();
     assert_eq!(n, seen.len(), "duplicate vertex");
-    assert!(graph.vertices().all(|v| seen.contains(v)));
+    assert!(graph.vertices().all(|v| {
+        let v = v.borrow();
+        seen.contains(v)
+    }));
     assert_eq!(Some(&vertices[0]), path.start_vertex());
     assert_eq!(Some(&vertices[n - 1]), path.end_vertex());
     let mut weight = 0.0;

@@ -18,6 +18,7 @@ use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::ToleranceDoubleComparator;
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::HashSet;
 
 /// `PathGrowingWeightedMatching.DEFAULT_USE_HEURISTICS`.
@@ -105,6 +106,7 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
     fn init_visible_vertices(&self) -> IndexSet<G::Vertex> {
         let mut visible_vertex = IndexSet::new();
         for e in self.graph.edges() {
+            let e = e.borrow();
             let (s, t) = self.graph.edge_endpoints(e).expect("edge of the graph");
             if s != t {
                 visible_vertex.insert(s.clone());
@@ -226,6 +228,7 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
 
         // extend matching to maximal cardinality (out of edges with positive weight)
         for e in graph.edges() {
+            let e = e.borrow();
             let edge_weight = graph.weight_of(e);
             if self.comparator.compare(edge_weight, 0.0) <= 0 {
                 // ignore zero or negative weight

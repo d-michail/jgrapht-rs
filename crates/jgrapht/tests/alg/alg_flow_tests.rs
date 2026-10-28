@@ -27,6 +27,7 @@ use jgrapht::graph::GraphExt;
 use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 
 const EPS: f64 = DEFAULT_EPSILON;
@@ -97,6 +98,7 @@ fn verify_directed<
         "{expected} vs {flow_value}"
     );
     for e in network.edges() {
+        let e = e.borrow();
         assert!(flow.contains_key(e));
     }
     for (e, f) in flow {
@@ -105,6 +107,7 @@ fn verify_directed<
         assert!(*f <= network.edge_weight(e).unwrap() + EPS);
     }
     for v in network.vertices() {
+        let v = v.borrow();
         let mut balance = 0.0;
         for e in network.out_edges_of(v) {
             balance -= flow[e];
@@ -141,6 +144,7 @@ fn verify_undirected<
     let flow = max_flow.flow_map();
     assert_eq!(expected, flow_value);
     for e in graph.edges() {
+        let e = e.borrow();
         assert!(flow.contains_key(e));
     }
     for (e, f) in flow {
@@ -149,6 +153,7 @@ fn verify_undirected<
         assert!(*f <= graph.edge_weight(e).unwrap() + EPS);
     }
     for u in graph.vertices() {
+        let u = u.borrow();
         let mut balance = 0.0;
         for e in graph.edges_of(u) {
             let v = *max_flow.flow_direction(e).unwrap();
@@ -487,14 +492,20 @@ fn verify_cut<G: Graph<Vertex = i32, Edge = DefaultEdge>>(
     let expected_edges: HashSet<DefaultEdge> = network
         .edges()
         .filter(|e| {
-            let (u, v) = network.edge_endpoints(e).unwrap();
-            if directed {
-                source_partition.contains(u) && sink_partition.contains(v)
-            } else {
-                source_partition.contains(u) ^ source_partition.contains(v)
+            let e = &(*e).borrow();
+            {
+                let (u, v) = network.edge_endpoints(e).unwrap();
+                if directed {
+                    source_partition.contains(u) && sink_partition.contains(v)
+                } else {
+                    source_partition.contains(u) ^ source_partition.contains(v)
+                }
             }
         })
-        .cloned()
+        .map(|x| {
+            let x = x.borrow();
+            *x
+        })
         .collect();
     assert_eq!(
         expected_edges,

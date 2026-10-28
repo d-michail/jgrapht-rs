@@ -31,6 +31,7 @@ use crate::{GraphError, Result};
 use indexmap::{IndexMap, IndexSet};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::Hash;
 
@@ -96,7 +97,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> CapacitatedSpanningTree<V, E> {
         let mut root_edges_explored = 0;
         let mut current: IndexSet<V> = IndexSet::new();
         for next in dfs {
-            if tree.contains_edge_between(root, next) {
+            if tree.contains_edge_between(root, &next) {
                 if !current.is_empty() {
                     let first = current.iter().next().unwrap();
                     match self.labels.get(first).and_then(|l| self.partition.get(l)) {
@@ -171,6 +172,7 @@ impl<'g, G: IncidenceGraph> Problem<'g, G> {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Connected));
         }
         for v in graph.vertices() {
+            let v = v.borrow();
             if *v != root {
                 let Some(&d) = demands.get(v) else {
                     return Err(GraphError::InvalidArgument(
@@ -185,7 +187,7 @@ impl<'g, G: IncidenceGraph> Problem<'g, G> {
         let index = graph
             .vertices()
             .enumerate()
-            .map(|(i, v)| (v.clone(), i))
+            .map(|(i, v)| (v.borrow().clone(), i))
             .collect();
         Ok(Problem {
             graph,
@@ -335,7 +337,7 @@ impl<V: Eq + Hash + Clone> Solution<V> {
         let mut root_edges_explored = 0;
         let mut current: IndexSet<V> = IndexSet::new();
         for next in dfs {
-            if tree.contains_edge_between(&problem.root, next) {
+            if tree.contains_edge_between(&problem.root, &next) {
                 if !current.is_empty() {
                     subtrees.push(std::mem::take(&mut current));
                 }
@@ -460,6 +462,7 @@ impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
         let mut partition: IndexMap<usize, Pair<IndexSet<G::Vertex>, f64>> = IndexMap::new();
         let mut counter = 0;
         for v in p.graph.vertices() {
+            let v = v.borrow();
             if *v != p.root {
                 labels.insert(v.clone(), counter);
                 partition.insert(counter, Pair::of(IndexSet::from([v.clone()]), p.demand(v)));
@@ -1023,20 +1026,20 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
         let mut current_weight = 0.0;
         let mut store_current_path = true;
         for next in DepthFirstIterator::from_start(&tree, v).expect("v is in the tree") {
-            if tree.contains_edge_between(next, v) {
+            if tree.contains_edge_between(&next, v) {
                 store_current_path = true;
                 subtree.extend(std::mem::take(&mut current_path));
                 subtree_weight += current_weight;
                 current_weight = 0.0;
             }
-            if *next == p.root {
+            if next == p.root {
                 store_current_path = false;
                 current_path = IndexSet::new();
                 current_weight = 0.0;
             }
             if store_current_path {
                 current_path.insert(next.clone());
-                current_weight += p.demand(next);
+                current_weight += p.demand(&next);
             }
         }
         (subtree, subtree_weight)
@@ -1088,6 +1091,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
         let mut initial_vertex_mapping = HashMap::new();
         let mut counter = 0;
         for v in p.graph.vertices() {
+            let v = v.borrow();
             if *v == p.root {
                 continue;
             }
@@ -1482,7 +1486,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
         let mut explored = 0.0;
         let mut current = 0.0;
         for next in dfs {
-            if st.contains_edge_between(&p.root, next) {
+            if st.contains_edge_between(&p.root, &next) {
                 explored += current;
                 if maximum < current {
                     maximum = current;
@@ -1496,7 +1500,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
                 root_edges_explored += 1;
                 current = 0.0;
             }
-            current += p.demand(next);
+            current += p.demand(&next);
         }
         maximum
     }

@@ -89,6 +89,14 @@ impl FixtureGraph {
 impl Graph for FixtureGraph {
     type Vertex = u32;
     type Edge = u32;
+    type VertexRef<'a>
+        = &'a u32
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = &'a u32
+    where
+        Self: 'a;
 
     fn graph_type(&self) -> GraphType {
         GraphType::pseudograph().directed(true).weighted(true)
@@ -157,6 +165,14 @@ macro_rules! delegate_graph {
         impl Graph for $ty {
             type Vertex = u32;
             type Edge = u32;
+            type VertexRef<'a>
+                = &'a u32
+            where
+                Self: 'a;
+            type EdgeRef<'a>
+                = &'a u32
+            where
+                Self: 'a;
             fn graph_type(&self) -> GraphType {
                 self.0.graph_type()
             }

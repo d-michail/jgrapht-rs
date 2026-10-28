@@ -133,6 +133,14 @@ pub struct WithVertexFactory<'a, G, F> {
 impl<G: Graph, F> Graph for WithVertexFactory<'_, G, F> {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = G::VertexRef<'a>
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = G::EdgeRef<'a>
+    where
+        Self: 'a;
     forward_graph!(self => self.g; graph_type, vertices, edges, vertex_count, edge_count, contains_vertex, contains_edge,
         edge_source, edge_target, edge_weight, is_edge_directed, edges_between);
 }

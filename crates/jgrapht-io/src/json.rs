@@ -27,6 +27,7 @@ use crate::{
 };
 use indexmap::IndexMap;
 use jgrapht::{Graph, GraphMut};
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::io::{Read, Write};
@@ -776,6 +777,7 @@ where
             quote(&self.vertices_collection)
         )?;
         for (index, vertex) in graph.vertices().enumerate() {
+            let vertex = vertex.borrow();
             if index > 0 {
                 output.write_all(b",")?;
             }
@@ -794,6 +796,7 @@ where
         }
         write!(output, "],{}:[", quote(&self.edges_collection))?;
         for (index, edge) in graph.edges().enumerate() {
+            let edge = edge.borrow();
             if index > 0 {
                 output.write_all(b",")?;
             }

@@ -49,6 +49,14 @@ struct BrokenGraph(Defect);
 impl Graph for BrokenGraph {
     type Vertex = usize;
     type Edge = usize;
+    type VertexRef<'a>
+        = &'a usize
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = &'a usize
+    where
+        Self: 'a;
     fn graph_type(&self) -> GraphType {
         GraphType::pseudograph().directed(true).weighted(true)
     }

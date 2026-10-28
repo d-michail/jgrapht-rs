@@ -1,6 +1,7 @@
 use jgrapht::GraphExt;
 use jgrapht::util::java::RandomSource;
 use rand::{SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 // (C) Copyright 2003-2026, by John V Sichi and JGraphT Contributors.
 // Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
 //
@@ -314,6 +315,7 @@ fn assert_single_source<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingG
         .unwrap();
     assert_eq!(actual.source(), &source);
     for target in graph.vertices() {
+        let target = target.borrow();
         assert_eq!(actual.weight(target), expected.weight(target));
         assert_eq!(actual.path(target), expected.path(target));
     }

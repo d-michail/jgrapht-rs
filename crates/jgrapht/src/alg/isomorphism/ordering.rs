@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::Graph;
 use crate::graph::IncidenceGraph;
+use crate::graph::{Graph, GraphExt};
 use std::borrow::Cow;
-use std::cell::{Cell, OnceCell};
+use std::cell::OnceCell;
 use std::collections::HashMap;
 
 /// This class represents the order on the graph vertices. There are also some helper-functions for
@@ -27,13 +27,11 @@ use std::collections::HashMap;
 /// answers adjacency queries on those numbers, caching lazily as the Java class does.
 pub struct GraphOrdering<'g, G: Graph> {
     graph: &'g G,
-    order: HashMap<&'g G::Vertex, usize>,
-    vertices: Vec<&'g G::Vertex>,
+    order: HashMap<G::Vertex, usize>,
+    vertices: Vec<G::Vertex>,
     outgoing: Vec<OnceCell<Vec<usize>>>,
     incoming: Vec<OnceCell<Vec<usize>>>,
-    edge_cache: Vec<Cell<Option<&'g G::Edge>>>,
-    /// 0 = unknown, 1 = edge, -1 = no edge
-    adj: Vec<Cell<i8>>,
+    edge_cache: Vec<OnceCell<Option<G::Edge>>>,
     cache_edges: bool,
 }
 
@@ -45,22 +43,25 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
 
     /// Creates an instance with the given options.
     pub fn with_options(graph: &'g G, order_by_degree: bool, cache_edges: bool) -> Self {
-        let mut vertices: Vec<&'g G::Vertex> = graph.vertices().collect();
+        let mut vertices: Vec<G::Vertex> = graph.vertices_cloned().collect();
         if order_by_degree {
             // stable, like List.sort
             vertices.sort_by_key(|v| graph.degree_of(v));
         }
         let n = vertices.len();
-        let order = vertices.iter().enumerate().map(|(i, v)| (*v, i)).collect();
-        let (outgoing, incoming, edge_cache, adj) = if cache_edges {
+        let order = vertices
+            .iter()
+            .enumerate()
+            .map(|(i, v)| (v.clone(), i))
+            .collect();
+        let (outgoing, incoming, edge_cache) = if cache_edges {
             (
                 (0..n).map(|_| OnceCell::new()).collect(),
                 (0..n).map(|_| OnceCell::new()).collect(),
-                (0..n * n).map(|_| Cell::new(None)).collect(),
-                (0..n * n).map(|_| Cell::new(0)).collect(),
+                (0..n * n).map(|_| OnceCell::new()).collect(),
             )
         } else {
-            (vec![], vec![], vec![], vec![])
+            (vec![], vec![], vec![])
         };
         GraphOrdering {
             graph,
@@ -69,7 +70,6 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
             outgoing,
             incoming,
             edge_cache,
-            adj,
             cache_edges,
         }
     }
@@ -80,7 +80,7 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
     }
 
     fn neighbors(&self, v: usize, out: bool) -> Vec<usize> {
-        let vertex = self.vertices[v];
+        let vertex = &self.vertices[v];
         let g = self.graph;
         let mut res = Vec::new();
         let mut push = |e: &G::Edge| {
@@ -115,36 +115,27 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
 
     /// Returns whether there is edge.
     pub fn has_edge(&self, v1: usize, v2: usize) -> bool {
-        if self.cache_edges {
-            let i = v1 * self.vertices.len() + v2;
-            match self.adj[i].get() {
-                0 => {
-                    let e = self.graph.get_edge(self.vertices[v1], self.vertices[v2]);
-                    self.adj[i].set(if e.is_some() { 1 } else { -1 });
-                    self.edge_cache[i].set(e);
-                    e.is_some()
-                }
-                c => c > 0,
-            }
-        } else {
-            self.graph
-                .get_edge(self.vertices[v1], self.vertices[v2])
-                .is_some()
-        }
+        self.edge(v1, v2).is_some()
     }
 
     /// be careful: there's no check against an invalid vertexNumber
-    pub fn vertex(&self, v: usize) -> &'g G::Vertex {
-        self.vertices[v]
+    pub fn vertex(&self, v: usize) -> &G::Vertex {
+        &self.vertices[v]
     }
 
     /// Returns the edge.
-    pub fn edge(&self, v1: usize, v2: usize) -> Option<&'g G::Edge> {
+    pub fn edge(&self, v1: usize, v2: usize) -> Option<G::Edge> {
+        let lookup = || {
+            self.graph
+                .get_edge(&self.vertices[v1], &self.vertices[v2])
+                .cloned()
+        };
         if self.cache_edges {
-            self.has_edge(v1, v2);
-            self.edge_cache[v1 * self.vertices.len() + v2].get()
+            self.edge_cache[v1 * self.vertices.len() + v2]
+                .get_or_init(lookup)
+                .clone()
         } else {
-            self.graph.get_edge(self.vertices[v1], self.vertices[v2])
+            lookup()
         }
     }
 

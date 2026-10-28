@@ -23,6 +23,7 @@ use crate::graph::GraphExt;
 use crate::graph::IncidenceGraph;
 use crate::view::AsSubgraph;
 use indexmap::IndexMap;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 /// The outcome of a planarity test together with its certificate.
@@ -549,6 +550,7 @@ impl<'g, G: IncidenceGraph> BoyerMyrvoldPlanarityInspector<'g, G> {
         let mut index = 0;
         let graph = self.graph;
         for v in graph.vertices() {
+            let v = v.borrow();
             if !visited.contains_key(v) {
                 index = self.orient_dfs(&mut visited, v.clone(), index);
             }

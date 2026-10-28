@@ -25,6 +25,7 @@ use crate::util::heap::JavaPairingHeap;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use rheaps::{AddressableHeap, DecreaseKeyHeap};
+use std::borrow::Borrow;
 use std::cell::OnceCell;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
@@ -779,6 +780,7 @@ where
             pred: HashMap::new(),
         };
         for target in graph.vertices() {
+            let target = target.borrow();
             if let Some(path) = TransitNodeRoutingShortestPath::path(self, source, target)? {
                 result.dist.insert(target.clone(), path.weight);
                 for (vertices, edge) in path.vertices.windows(2).zip(path.edges) {

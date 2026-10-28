@@ -17,6 +17,7 @@
 
 use jgrapht::graph::{Direction, GraphExt};
 use jgrapht::*;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::Hash;
 
@@ -30,7 +31,11 @@ where
     if a.graph_type().directed != b.graph_type().directed || a.vertex_count() != b.vertex_count() {
         return false;
     }
-    if !a.vertices().all(|v| b.contains_vertex(v)) || a.edge_count() != b.edge_count() {
+    if !a.vertices().all(|v| {
+        let v = v.borrow();
+        b.contains_vertex(v)
+    }) || a.edge_count() != b.edge_count()
+    {
         return false;
     }
     fn key<G: Graph>(g: &G, e: &G::Edge) -> (G::Vertex, G::Vertex, u64) {
@@ -52,9 +57,11 @@ where
         .collect();
     let mut counts: HashMap<(A::Vertex, A::Vertex, u64), i64> = HashMap::new();
     for e in a.edges() {
+        let e = e.borrow();
         *counts.entry(norm(key(a, e), &idx)).or_default() += 1;
     }
     for e in b.edges() {
+        let e = e.borrow();
         *counts.entry(norm(key(b, e), &idx)).or_default() -= 1;
     }
     counts.values().all(|&c| c == 0)

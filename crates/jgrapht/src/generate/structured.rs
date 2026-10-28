@@ -18,6 +18,7 @@ use super::{
 use crate::graph::Graph;
 use crate::graph::GraphExt;
 use crate::{GraphError, GraphMut, GraphMutExt, Result};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::hash::Hash;
 
@@ -139,8 +140,14 @@ impl GraphGenerator for Wheel {
         Ring::run(self.n - 1, target)?;
         let rim: Vec<G::Vertex> = target
             .vertices()
-            .filter(|v| !before.contains(*v))
-            .cloned()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                !before.contains(*v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         let hub = target.add_new_vertex()?;
         put(&mut result, HUB_VERTEX, hub.clone());
@@ -422,6 +429,7 @@ impl<V: Clone + Eq + Hash> Complement<V> {
         let directed = graph.graph_type().directed;
         let mut present = HashSet::new();
         for e in graph.edges() {
+            let e = e.borrow();
             let (s, t) = (
                 index[graph.edge_source(e).unwrap()],
                 index[graph.edge_target(e).unwrap()],

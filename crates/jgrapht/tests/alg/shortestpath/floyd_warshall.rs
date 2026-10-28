@@ -20,6 +20,7 @@ use jgrapht::generate::{GnmRandomGraphGenerator, GnpRandomGraphGenerator, GraphG
 use jgrapht::graph::{IncidenceGraph, OutgoingGraph};
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use rand::{Rng, SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 
 fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph>(
     graph: &G,
@@ -28,7 +29,9 @@ fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph
     let floyd_warshall = FloydWarshallShortestPaths::new(graph).unwrap();
     let dijkstra = DijkstraShortestPath::new(graph);
     for source in graph.vertices() {
+        let source = source.borrow();
         for target in graph.vertices() {
+            let target = target.borrow();
             let expected = dijkstra.path(source, target).unwrap();
             let actual = floyd_warshall.path(source, target).unwrap();
             match (expected, actual) {
@@ -250,11 +253,13 @@ where
 
     let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
     for source in graph.vertices() {
+        let source = source.borrow();
         let dijkstra = DijkstraShortestPath::new(&graph)
             .single_source(source)
             .unwrap();
         let floyd_paths = floyd_warshall.single_source(source).unwrap();
         for target in graph.vertices() {
+            let target = target.borrow();
             assert!(
                 (dijkstra.weight(target).unwrap() - floyd_paths.weight(target).unwrap()).abs()
                     < 1e-9

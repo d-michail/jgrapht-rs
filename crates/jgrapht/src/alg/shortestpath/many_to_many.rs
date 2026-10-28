@@ -22,6 +22,7 @@ use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::{GraphError, Result};
+use std::borrow::Borrow;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
@@ -115,6 +116,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for DefaultManyToManyShortestPaths<'_, G
             pred: HashMap::new(),
         };
         for target in self.graph.vertices() {
+            let target = target.borrow();
             let Some(path) = algorithm.path(source, target)? else {
                 continue;
             };
@@ -268,30 +270,30 @@ fn reverse_tree<G: IncomingGraph>(
     target: &G::Vertex,
     sources: &HashSet<G::Vertex>,
 ) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
-    let target = graph
-        .vertices()
-        .find(|vertex| *vertex == target)
-        .ok_or(GraphError::VertexNotFound)?;
-    let vertices: Vec<_> = graph.vertices().collect();
-    let index: HashMap<_, _> = vertices.iter().enumerate().map(|(i, &v)| (v, i)).collect();
+    if !graph.contains_vertex(target) {
+        return Err(GraphError::VertexNotFound);
+    }
+    let vertices: Vec<G::Vertex> = graph.vertices_cloned().collect();
+    let index: HashMap<&G::Vertex, usize> =
+        vertices.iter().enumerate().map(|(i, v)| (v, i)).collect();
     let mut dist = vec![f64::INFINITY; vertices.len()];
-    let mut predecessor: Vec<Option<(&G::Edge, usize)>> = vec![None; vertices.len()];
+    let mut predecessor: Vec<Option<(G::Edge, usize)>> = vec![None; vertices.len()];
     let mut settled = vec![false; vertices.len()];
     let mut heap = BinaryHeap::new();
     let root = index[target];
     dist[root] = 0.0;
     heap.push(Reverse((OrderedF64(0.0), root)));
-    let mut remaining: HashSet<_> = sources.iter().collect();
+    let mut remaining: HashSet<&G::Vertex> = sources.iter().collect();
     while let Some(Reverse((OrderedF64(distance), vertex))) = heap.pop() {
         if settled[vertex] || distance > dist[vertex] {
             continue;
         }
         settled[vertex] = true;
-        remaining.remove(vertices[vertex]);
+        remaining.remove(&vertices[vertex]);
         if remaining.is_empty() {
             break;
         }
-        for (edge, previous) in graph.incoming_of(vertices[vertex]) {
+        for (edge, previous) in graph.incoming_of(&vertices[vertex]) {
             let weight = graph.weight_of(edge);
             if weight.is_nan() || weight < 0.0 {
                 return Err(GraphError::InvalidWeight(
@@ -302,7 +304,7 @@ fn reverse_tree<G: IncomingGraph>(
             let candidate = distance + weight;
             if candidate < dist[previous_index] {
                 dist[previous_index] = candidate;
-                predecessor[previous_index] = Some((edge, vertex));
+                predecessor[previous_index] = Some((edge.clone(), vertex));
                 heap.push(Reverse((OrderedF64(candidate), previous_index)));
             }
         }
@@ -314,11 +316,11 @@ fn reverse_tree<G: IncomingGraph>(
     };
     for (i, vertex) in vertices.iter().enumerate() {
         if dist[i].is_finite() {
-            result.dist.insert((*vertex).clone(), dist[i]);
-            if let Some((edge, parent)) = predecessor[i] {
+            result.dist.insert(vertex.clone(), dist[i]);
+            if let Some((edge, parent)) = &predecessor[i] {
                 result
                     .pred
-                    .insert((*vertex).clone(), (edge.clone(), vertices[parent].clone()));
+                    .insert(vertex.clone(), (edge.clone(), vertices[*parent].clone()));
             }
         }
     }

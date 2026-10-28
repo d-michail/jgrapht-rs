@@ -270,7 +270,7 @@ impl<'a, 'g, G: IncidenceGraph> Vf2<'a, 'g, G> {
     fn compatible_edges(&self, v1: usize, v2: usize, u1: usize, u2: usize) -> bool {
         self.edge_comparator
             .is_none_or(|c| match (self.g1.edge(v1, v2), self.g2.edge(u1, u2)) {
-                (Some(e1), Some(e2)) => c(e1, e2) == Ordering::Equal,
+                (Some(e1), Some(e2)) => c(&e1, &e2) == Ordering::Equal,
                 _ => false,
             })
     }

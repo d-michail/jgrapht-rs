@@ -30,9 +30,9 @@ use std::collections::{HashMap, HashSet, VecDeque};
 const NONE: usize = usize::MAX;
 
 /// Vertices in graph order and, per vertex, the vertices at the far end of its outgoing edges.
-fn adjacency<G: OutgoingGraph>(g: &G) -> (Vec<&G::Vertex>, Vec<Vec<usize>>) {
-    let vs: Vec<&G::Vertex> = g.vertices().collect();
-    let index: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+fn adjacency<G: OutgoingGraph>(g: &G) -> (Vec<G::Vertex>, Vec<Vec<usize>>) {
+    let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
+    let index: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
     let adj = vs
         .iter()
         .map(|v| g.outgoing_of(v).map(|(_, w)| index[w]).collect())
@@ -122,8 +122,8 @@ fn ahu(adj1: &[Vec<usize>], root1: usize, adj2: &[Vec<usize>], root2: usize) -> 
 }
 
 fn mapping_from_indices<'g, G: IncidenceGraph>(
-    vs1: &[&G::Vertex],
-    vs2: &[&G::Vertex],
+    vs1: &[G::Vertex],
+    vs2: &[G::Vertex],
     forward: &[usize],
     g1: &'g G,
     g2: &'g G,
@@ -167,8 +167,8 @@ pub struct AHURootedTreeIsomorphismInspector<'g, G: Graph> {
     tree2: &'g G,
     root1: usize,
     root2: usize,
-    vs1: Vec<&'g G::Vertex>,
-    vs2: Vec<&'g G::Vertex>,
+    vs1: Vec<G::Vertex>,
+    vs2: Vec<G::Vertex>,
     adj1: Vec<Vec<usize>>,
     adj2: Vec<Vec<usize>>,
     result: OnceCell<Option<Vec<usize>>>,
@@ -204,7 +204,7 @@ impl<'g, G: IncidenceGraph> AHURootedTreeIsomorphismInspector<'g, G> {
         validate_tree(tree2, root2)?;
         let (vs1, adj1) = adjacency(tree1);
         let (vs2, adj2) = adjacency(tree2);
-        let index_of = |vs: &[&G::Vertex], r: &G::Vertex| vs.iter().position(|v| *v == r).unwrap();
+        let index_of = |vs: &[G::Vertex], r: &G::Vertex| vs.iter().position(|v| v == r).unwrap();
         Ok(AHURootedTreeIsomorphismInspector {
             tree1,
             tree2,
@@ -344,7 +344,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> AHUUnrootedTreeIsomorphismInspecto
             let (vs2, adj2) = adjacency(self.tree2);
             let (c1, c2) = (tree_center(&adj1), tree_center(&adj2));
             let make = |a: usize, b: usize| {
-                AHURootedTreeIsomorphismInspector::new(self.tree1, vs1[a], self.tree2, vs2[b])
+                AHURootedTreeIsomorphismInspector::new(self.tree1, &vs1[a], self.tree2, &vs2[b])
                     .expect("trees were validated")
             };
             let insp = match (c1.len(), c2.len()) {
@@ -468,15 +468,15 @@ impl<'g, G: IncidenceGraph> AHUForestIsomorphismInspector<'g, G> {
     }
 
     /// Adds a vertex (index `n`) adjacent to every root, and an edge back from each root.
-    fn with_fresh_root<'a>(
-        forest: &'a G,
+    fn with_fresh_root(
+        forest: &G,
         roots: &[G::Vertex],
-    ) -> (Vec<&'a G::Vertex>, Vec<Vec<usize>>, usize) {
+    ) -> (Vec<G::Vertex>, Vec<Vec<usize>>, usize) {
         let (vs, mut adj) = adjacency(forest);
         let fresh = vs.len();
         let root_ix: Vec<usize> = roots
             .iter()
-            .map(|r| vs.iter().position(|v| *v == r).unwrap())
+            .map(|r| vs.iter().position(|v| v == r).unwrap())
             .collect();
         for &r in &root_ix {
             adj[r].push(fresh);

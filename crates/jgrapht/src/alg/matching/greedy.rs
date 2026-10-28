@@ -19,6 +19,7 @@ use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::ToleranceDoubleComparator;
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 
@@ -64,32 +65,36 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum cardinality matching.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
-        let mut matched: HashSet<&G::Vertex> = HashSet::new();
+        let mut matched: HashSet<G::Vertex> = HashSet::new();
         let mut edges: IndexSet<G::Edge> = IndexSet::new();
         let mut cost = 0.0;
         if self.sort {
             // sort edges in increasing order of the total degree of their endpoints
-            let degrees: HashMap<&G::Vertex, usize> = graph
-                .vertices()
-                .map(|v| Ok((v, graph.degree_of(v))))
-                .collect::<Result<_>>()?;
+            let degrees: HashMap<G::Vertex, usize> = graph
+                .vertices_cloned()
+                .map(|v| {
+                    let degree = graph.degree_of(&v);
+                    (v, degree)
+                })
+                .collect();
             let degree = |e: &G::Edge| {
                 let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
                 degrees[s] + degrees[t]
             };
-            let mut all_edges: Vec<&G::Edge> = graph.edges().collect();
+            let mut all_edges: Vec<G::Edge> = graph.edges_cloned().collect();
             all_edges.sort_by_key(|e| degree(e));
-            for e in all_edges {
+            for e in &all_edges {
                 let (v, w) = graph.edge_endpoints(e).expect("edge of the graph");
                 if v != w && !matched.contains(v) && !matched.contains(w) {
                     edges.insert(e.clone());
-                    matched.insert(v);
-                    matched.insert(w);
+                    matched.insert(v.clone());
+                    matched.insert(w.clone());
                     cost += graph.weight_of(e);
                 }
             }
         } else {
             for v in graph.vertices() {
+                let v = v.borrow();
                 if matched.contains(v) {
                     continue;
                 }
@@ -97,8 +102,8 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
                     let w = graph.opposite_vertex(e, v).expect("incident edge");
                     if v != w && !matched.contains(w) {
                         edges.insert(e.clone());
-                        matched.insert(v);
-                        matched.insert(w);
+                        matched.insert(v.clone());
+                        matched.insert(w.clone());
                         cost += graph.weight_of(e);
                         break;
                     }
@@ -178,12 +183,15 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeighted
         let graph = self.graph;
         let weight = |e: &G::Edge| graph.weight_of(e);
         // sort edges in non-increasing order of weight
-        let mut all_edges: Vec<&G::Edge> = graph.edges().collect();
+        let mut all_edges: Vec<G::Edge> = graph.edges_cloned().collect();
         if self.normalize_edge_costs {
-            let degrees: HashMap<&G::Vertex, usize> = graph
-                .vertices()
-                .map(|v| Ok((v, graph.degree_of(v))))
-                .collect::<Result<_>>()?;
+            let degrees: HashMap<G::Vertex, usize> = graph
+                .vertices_cloned()
+                .map(|v| {
+                    let degree = graph.degree_of(&v);
+                    (v, degree)
+                })
+                .collect();
             let degree = |e: &G::Edge| {
                 let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
                 (degrees[s] + degrees[t]) as f64
@@ -200,9 +208,9 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeighted
 
         let mut matching_weight = 0.0;
         let mut matching: IndexSet<G::Edge> = IndexSet::new();
-        let mut matched_vertices: HashSet<&G::Vertex> = HashSet::new();
+        let mut matched_vertices: HashSet<G::Vertex> = HashSet::new();
         // find maximal matching
-        for e in all_edges {
+        for e in &all_edges {
             let edge_weight = weight(e);
             let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
             if s != t
@@ -211,8 +219,8 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeighted
                 && !matched_vertices.contains(t)
             {
                 matching.insert(e.clone());
-                matched_vertices.insert(s);
-                matched_vertices.insert(t);
+                matched_vertices.insert(s.clone());
+                matched_vertices.insert(t.clone());
                 matching_weight += edge_weight;
             }
         }

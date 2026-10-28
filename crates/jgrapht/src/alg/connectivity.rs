@@ -26,6 +26,7 @@ use crate::view::EdgeReversed;
 use crate::{DiGraph, GraphMut, GraphMutExt};
 use crate::{GraphError, Result};
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::Hash;
@@ -133,26 +134,26 @@ pub fn strongly_connected_components_kosaraju<G: DirectedGraph + IncidenceGraph>
 ) -> Vec<Vec<G::Vertex>> {
     let order: Vec<_> = DfsPostOrder::all(g).collect();
     let rev = EdgeReversed(g);
-    let mut seen: HashSet<&G::Vertex> = HashSet::new();
+    let mut seen: HashSet<G::Vertex> = HashSet::new();
     let mut comps = Vec::new();
-    for &root in order.iter().rev() {
+    for root in order.iter().rev() {
         if seen.contains(root) {
             continue;
         }
         let mut comp = Vec::new();
-        let mut stack = vec![root];
-        seen.insert(root);
+        let mut stack = vec![root.clone()];
+        seen.insert(root.clone());
         while let Some(v) = stack.pop() {
             comp.push(v.clone());
-            for e in rev.edges_of(v) {
-                let n = if rev.edge_source(e) == Some(v) {
+            for e in rev.edges_of(&v) {
+                let n = if rev.edge_source(e) == Some(&v) {
                     rev.edge_target(e)
                 } else {
                     None
                 };
                 if let Some(n) = n {
-                    if seen.insert(n) {
-                        stack.push(n);
+                    if seen.insert(n.clone()) {
+                        stack.push(n.clone());
                     }
                 }
             }
@@ -183,6 +184,7 @@ pub fn condensation<G: DirectedGraph>(g: &G) -> (DiGraph<usize>, Vec<Vec<G::Vert
     let mut dag = DiGraph::<usize>::simple();
     dag.add_vertices(0..comps.len());
     for e in g.edges() {
+        let e = e.borrow();
         let (a, b) = (
             comp_of[g.edge_source(e).unwrap()],
             comp_of[g.edge_target(e).unwrap()],
@@ -322,6 +324,7 @@ pub fn block_cut_tree<G: IncidenceGraph>(g: &G) -> BlockCutTree<G::Vertex> {
     }
     // isolated vertices form singleton blocks
     for v in g.vertices() {
+        let v = v.borrow();
         if g.edges_of(v).next().is_none() {
             blocks.push(vec![v.clone()]);
         }
@@ -411,6 +414,7 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
             let mut sets: Vec<Option<HashSet<V>>> = Vec::new();
             self.vertex_to_set.clear();
             for s in g.vertices() {
+                let s = s.borrow();
                 if self.vertex_to_set.contains_key(s) {
                     continue;
                 }
@@ -1205,6 +1209,7 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
         let mut vertex_mapping = HashMap::new();
         let mut counter = 0usize;
         for v in graph.vertices() {
+            let v = v.borrow();
             vertex_mapping.insert(v.clone(), counter);
             network.add_vertex(counter);
             network.add_vertex(counter + 1);
@@ -1212,6 +1217,7 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
             counter += 2;
         }
         for s in graph.vertices() {
+            let s = s.borrow();
             for t in successor_list(graph, s) {
                 let _ = network.add_edge(&(vertex_mapping[s] + 1), &vertex_mapping[&t]);
             }
@@ -1219,6 +1225,7 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
         let mut min_degree = usize::MAX;
         let mut min_degree_vertex = None;
         for v in graph.vertices() {
+            let v = v.borrow();
             let d = graph.degree_of(v);
             if d < min_degree {
                 min_degree = d;
@@ -1306,6 +1313,7 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
     fn connectivity_from_non_neighbors(&self, m: &G::Vertex) -> usize {
         let mut min = usize::MAX;
         for v in self.graph.vertices() {
+            let v = v.borrow();
             if v == m {
                 continue;
             }
@@ -1341,11 +1349,12 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
 
     /// Compute the edge connectivity for an undirected graph
     fn undirected_edge_connectivity(&self) -> usize {
-        let mut dominating: Vec<&G::Vertex> = Vec::new();
+        let mut dominating: Vec<G::Vertex> = Vec::new();
         let mut covered: HashSet<G::Vertex> = HashSet::new();
         for v in self.graph.vertices() {
+            let v = v.borrow();
             if !covered.contains(v) {
-                dominating.push(v);
+                dominating.push(v.clone());
                 covered.insert(v.clone());
                 covered.extend(self.graph.neighbor_list_of(v));
             }
@@ -1362,11 +1371,11 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
 
     /// Compute the edge connectivity for an directed graph
     fn directed_edge_connectivity(&self) -> usize {
-        let vs: Vec<&G::Vertex> = self.graph.vertices().collect();
+        let vs: Vec<G::Vertex> = self.graph.vertices_cloned().collect();
         let mut min = usize::MAX;
         for i in 0..vs.len() {
             for j in i + 1..vs.len() {
-                min = min.min(self.local_edge(vs[i], vs[j]));
+                min = min.min(self.local_edge(&vs[i], &vs[j]));
             }
         }
         min

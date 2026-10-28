@@ -20,6 +20,7 @@ use crate::graph::GraphExt;
 use crate::util::OrderedF64;
 use crate::util::heap::{JavaPairingHandle, JavaPairingHeap};
 use rheaps::{AddressableHeap, DecreaseKeyHeap};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 /// This class represents a [minimum cost flow problem](https://en.wikipedia.org/wiki/Minimum-cost_flow_problem). It serves as input for the minimum cost flow algorithms.
@@ -570,13 +571,14 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         self.arcs = Vec::with_capacity(graph.edge_count());
         self.graph_vertices = Vec::with_capacity(n);
         self.edge_target.clear();
+        let vertex_snapshot: Vec<V> = graph.vertices_cloned().collect();
         let mut node_map: HashMap<&V, usize> = HashMap::with_capacity(n);
         let mut supply_sum: i32 = 0;
         // nodes 0..n are the vertices, node n is the dummy node
         for _ in 0..=n {
             self.net.nodes.push(Node::new(0));
         }
-        for (i, vertex) in graph.vertices().enumerate() {
+        for (i, vertex) in vertex_snapshot.iter().enumerate() {
             self.graph_vertices.push(vertex.clone());
             let supply = problem.node_supply(vertex);
             supply_sum += supply;
@@ -592,6 +594,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         }
         let mut graph_edges = Vec::with_capacity(graph.edge_count());
         for edge in graph.edges() {
+            let edge = edge.borrow();
             graph_edges.push(edge.clone());
             let mut node = node_map[graph.edge_source(edge).unwrap()];
             let mut opposite = node_map[graph.edge_target(edge).unwrap()];

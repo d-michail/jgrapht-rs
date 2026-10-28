@@ -19,6 +19,7 @@ use super::cycle::IterationOrder;
 use super::util::Indexed;
 use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, UndirectedGraph};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 
 fn adjacency<G: Graph>(ix: &Indexed<'_, G>) -> Vec<HashSet<usize>> {
@@ -503,9 +504,8 @@ impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
             inner.base.check_simple()?;
             inner.base.cliques = Some(Vec::new());
             let deadline = inner.base.deadline();
-            let ordering: Vec<G::Vertex> = DegeneracyOrderingIterator::new(inner.base.graph)
-                .cloned()
-                .collect();
+            let ordering: Vec<G::Vertex> =
+                DegeneracyOrderingIterator::new(inner.base.graph).collect();
             for i in 0..ordering.len() {
                 let vi_neighbors = inner.base.neighbors(&ordering[i]);
                 let mut p: IndexSet<G::Vertex> = ordering[i + 1..]
@@ -658,6 +658,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> CliqueMinimalSeparatorDecompositio
         let mut copy = crate::UGraph::<G::Vertex>::simple();
         copy.add_vertices(g.vertices_cloned());
         for e in g.edges() {
+            let e = e.borrow();
             let (a, b) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
             if a != b {
                 let _ = copy.add_edge(a, b);
@@ -677,8 +678,13 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> CliqueMinimalSeparatorDecompositio
         chordal.add_vertices(self.graph.vertices_cloned());
         let mut gprime = Self::simple_copy(self.graph);
         let mut s: i64 = -1;
-        let mut labels: indexmap::IndexMap<G::Vertex, i64> =
-            gprime.vertices().map(|v| (v.clone(), 0)).collect();
+        let mut labels: indexmap::IndexMap<G::Vertex, i64> = gprime
+            .vertices()
+            .map(|v| {
+                let v = v.borrow();
+                (v.clone(), 0)
+            })
+            .collect();
         let n = self.graph.vertex_count();
         for _ in 1..=n {
             // vertex of maximum label (first one wins ties)

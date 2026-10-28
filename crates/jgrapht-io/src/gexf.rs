@@ -29,6 +29,7 @@ use indexmap::IndexMap;
 use jgrapht::{DefaultEdge, Graph, GraphMut};
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::io::{BufReader, Read, Write};
@@ -857,6 +858,7 @@ where
         writeln!(output, "    <nodes>")?;
         let mut ids = IndexMap::new();
         for vertex in graph.vertices() {
+            let vertex = vertex.borrow();
             let id = self.base.vertex_id(vertex)?;
             ids.insert(vertex.clone(), id.clone());
             let attributes = self.base.vertex_attributes(vertex).unwrap_or_default();
@@ -870,6 +872,7 @@ where
         }
         writeln!(output, "    </nodes>\n    <edges>")?;
         for edge in graph.edges() {
+            let edge = edge.borrow();
             let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             write!(
                 output,

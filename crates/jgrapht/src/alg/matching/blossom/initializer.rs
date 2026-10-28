@@ -19,6 +19,7 @@ use crate::error::{GraphError, Result};
 use crate::graph::Graph;
 use crate::graph::GraphExt;
 use crate::util::OrderedF64;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 
 const INFINITY: f64 = 1e100;
@@ -135,11 +136,15 @@ impl<'g, G: Graph> BlossomVInitializer<'g, G> {
         let min_edge_weight = self
             .graph
             .edges()
-            .map(|edge| self.weight_scale * self.graph.weight_of(edge))
+            .map(|edge| {
+                let edge = edge.borrow();
+                self.weight_scale * self.graph.weight_of(edge)
+            })
             .min_by(f64::total_cmp)
             .unwrap_or(0.0);
         let mut graph_edges = Vec::with_capacity(self.graph.edge_count());
         for edge in self.graph.edges() {
+            let edge = edge.borrow();
             let source_vertex = self.graph.edge_source(edge).expect("graph edge source");
             let target_vertex = self.graph.edge_target(edge).expect("graph edge target");
             let source = vertex_map[source_vertex];

@@ -32,20 +32,22 @@ pub struct Lca<V> {
 impl<V: Clone + Eq + Hash> Lca<V> {
     /// Creates a new instance.
     pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, root: &V) -> Option<Self> {
-        let root = g.vertices().find(|v| *v == root)?;
+        if !g.contains_vertex(root) {
+            return None;
+        }
         let mut index = HashMap::from([(root.clone(), 0)]);
         let mut vertices = vec![root.clone()];
         let (mut depth, mut parent) = (vec![0], vec![0]);
-        let mut q = VecDeque::from([root]);
+        let mut q = VecDeque::from([root.clone()]);
         while let Some(v) = q.pop_front() {
-            let i = index[v];
-            for n in g.out_neighbors_of(v) {
+            let i = index[&v];
+            for n in g.out_neighbors_of(&v) {
                 if !index.contains_key(n) {
                     index.insert(n.clone(), vertices.len());
                     vertices.push(n.clone());
                     depth.push(depth[i] + 1);
                     parent.push(i);
-                    q.push_back(n);
+                    q.push_back(n.clone());
                 }
             }
         }

@@ -44,17 +44,17 @@ impl<'g, G: OutgoingGraph> TreeMeasurer<'g, G> {
         if self.graph.graph_type().directed {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
         }
-        let Some(root) = self.graph.vertices().next() else {
+        let Some(root) = self.graph.vertices_cloned().next() else {
             return Ok(Vec::new());
         };
-        let (end, _) = farthest(self.graph, root);
-        let (other_end, parent) = farthest(self.graph, end);
+        let (end, _) = farthest(self.graph, &root);
+        let (other_end, parent) = farthest(self.graph, &end);
 
-        let mut diameter = vec![(*other_end).clone()];
+        let mut diameter = vec![other_end.clone()];
         let mut current = other_end;
-        while let Some(previous) = parent.get(current) {
-            diameter.push((**previous).clone());
-            current = *previous;
+        while let Some(previous) = parent.get(&current) {
+            diameter.push(previous.clone());
+            current = previous.clone();
         }
         let middle = diameter.len() / 2;
         if diameter.len() % 2 == 1 {
@@ -65,22 +65,22 @@ impl<'g, G: OutgoingGraph> TreeMeasurer<'g, G> {
     }
 }
 
-fn farthest<'g, G: OutgoingGraph>(
-    graph: &'g G,
-    root: &'g G::Vertex,
-) -> (&'g G::Vertex, HashMap<&'g G::Vertex, &'g G::Vertex>) {
-    let mut queue = VecDeque::from([(root, 0usize)]);
-    let mut seen = HashSet::from([root]);
+fn farthest<G: OutgoingGraph>(
+    graph: &G,
+    root: &G::Vertex,
+) -> (G::Vertex, HashMap<G::Vertex, G::Vertex>) {
+    let mut queue = VecDeque::from([(root.clone(), 0usize)]);
+    let mut seen = HashSet::from([root.clone()]);
     let mut parent = HashMap::new();
-    let mut result = (root, 0usize);
+    let mut result = (root.clone(), 0usize);
     while let Some((vertex, depth)) = queue.pop_front() {
         if depth > result.1 {
-            result = (vertex, depth);
+            result = (vertex.clone(), depth);
         }
-        for (_, target) in graph.outgoing_of(vertex) {
-            if seen.insert(target) {
-                parent.insert(target, vertex);
-                queue.push_back((target, depth + 1));
+        for (_, target) in graph.outgoing_of(&vertex) {
+            if seen.insert(target.clone()) {
+                parent.insert(target.clone(), vertex.clone());
+                queue.push_back((target.clone(), depth + 1));
             }
         }
     }

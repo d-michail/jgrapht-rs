@@ -22,6 +22,7 @@ use crate::graph::OutgoingGraph;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use indexmap::IndexMap;
+use std::borrow::Borrow;
 use std::collections::{BTreeSet, HashMap};
 use std::hash::Hash;
 
@@ -95,7 +96,10 @@ where
         label_map: &'g HashMap<G::Vertex, i64>,
         best_improvement: bool,
     ) -> Result<Self> {
-        if graph.vertices().any(|v| !label_map.contains_key(v)) {
+        if graph.vertices().any(|v| {
+            let v = v.borrow();
+            !label_map.contains_key(v)
+        }) {
             return Err(GraphError::InvalidArgument(
                 "Every vertex has to be labeled, that is, every vertex needs an entry in labelMap."
                     .into(),
@@ -137,6 +141,7 @@ where
         let mut paths_k1: PathIndex<G::Vertex> = IndexMap::new();
 
         for e in g.edges() {
+            let e = e.borrow();
             if weight(e) < 0.0 {
                 let source = g.edge_source(e).unwrap();
                 let target = g.edge_target(e).unwrap();

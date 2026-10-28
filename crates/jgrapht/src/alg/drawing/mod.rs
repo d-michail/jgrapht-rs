@@ -23,6 +23,7 @@ pub mod model;
 use crate::alg::util::Indexed;
 use crate::graph::Graph;
 use rand::Rng;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 
 /// The point type.
@@ -35,7 +36,7 @@ pub fn circular_layout<G: Graph>(g: &G, radius: f64) -> HashMap<G::Vertex, Point
         .enumerate()
         .map(|(i, v)| {
             let a = 2.0 * std::f64::consts::PI * i as f64 / n;
-            (v.clone(), (radius * a.cos(), radius * a.sin()))
+            (v.borrow().clone(), (radius * a.cos(), radius * a.sin()))
         })
         .collect()
 }
@@ -49,10 +50,13 @@ pub fn random_layout<G: Graph>(
 ) -> HashMap<G::Vertex, Point> {
     g.vertices()
         .map(|v| {
-            (
-                v.clone(),
-                (rng.random::<f64>() * width, rng.random::<f64>() * height),
-            )
+            let v = v.borrow();
+            {
+                (
+                    v.clone(),
+                    (rng.random::<f64>() * width, rng.random::<f64>() * height),
+                )
+            }
         })
         .collect()
 }

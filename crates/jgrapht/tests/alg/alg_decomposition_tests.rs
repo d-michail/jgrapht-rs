@@ -29,6 +29,7 @@ use jgrapht::view::AsSubgraph;
 use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 mod dulmage_mendelsohn_decomposition_test {
@@ -157,6 +158,7 @@ mod heavy_path_decomposition_test {
             .collect();
         let mut maxim = 0;
         for v in graph.vertices() {
+            let v = v.borrow();
             if in_path.contains(v) {
                 let (mut cnt, mut cur) = (0, v.clone());
                 while let Some(u) = d.parent_of(&cur) {
@@ -180,7 +182,8 @@ mod heavy_path_decomposition_test {
         let heavy = d.heavy_edges();
         let light = d.light_edges();
         let all: HashSet<&Gr::Edge> = heavy.iter().chain(light.iter()).collect();
-        if all != graph.edges().collect::<HashSet<_>>() {
+        let graph_edges: Vec<Gr::Edge> = graph.edges_cloned().collect();
+        if all != graph_edges.iter().collect::<HashSet<_>>() {
             return false;
         }
         let paths = d.path_decomposition().unwrap();
@@ -203,33 +206,32 @@ mod heavy_path_decomposition_test {
             }
         }
         for root in roots {
-            let root_ref = graph.vertices().find(|v| *v == root).unwrap();
-            let mut bfs = BreadthFirstIterator::from_start(graph, root_ref).unwrap();
+            let mut bfs = BreadthFirstIterator::from_start(graph, root).unwrap();
             let mut order = Vec::new();
             for v in bfs.by_ref() {
                 order.push(v);
             }
             order.reverse();
-            let mut size_subtree: HashMap<&Gr::Vertex, usize> = HashMap::new();
+            let mut size_subtree: HashMap<Gr::Vertex, usize> = HashMap::new();
             for v in order {
-                size_subtree.insert(v, 1);
-                for edge in graph.edges_of(v) {
-                    let u = graph.opposite_vertex(edge, v).unwrap();
-                    if Some(u) != bfs.parent(v) {
+                size_subtree.insert(v.clone(), 1);
+                for edge in graph.edges_of(&v) {
+                    let u = graph.opposite_vertex(edge, &v).unwrap();
+                    if Some(u) != bfs.parent(&v).as_ref() {
                         let size_u = size_subtree[u];
-                        *size_subtree.get_mut(v).unwrap() += size_u;
+                        *size_subtree.get_mut(&v).unwrap() += size_u;
                     }
                 }
-                for edge in graph.edges_of(v) {
-                    let u = graph.opposite_vertex(edge, v).unwrap();
-                    if Some(u) == bfs.parent(v) {
+                for edge in graph.edges_of(&v) {
+                    let u = graph.opposite_vertex(edge, &v).unwrap();
+                    if Some(u) == bfs.parent(&v).as_ref() {
                         continue;
                     }
                     if light.contains(edge) {
-                        if 2 * size_subtree[u] > size_subtree[v] {
+                        if 2 * size_subtree[u] > size_subtree[&v] {
                             return false;
                         }
-                    } else if 2 * size_subtree[u] <= size_subtree[v] {
+                    } else if 2 * size_subtree[u] <= size_subtree[&v] {
                         return false;
                     }
                 }

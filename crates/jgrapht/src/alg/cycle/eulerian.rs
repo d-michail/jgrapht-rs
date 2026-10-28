@@ -16,6 +16,7 @@ use crate::error::{GraphError, Result};
 use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 /// Computes an Eulerian cycle of an Eulerian graph. An
@@ -260,12 +261,14 @@ impl HierholzerEulerianCycle {
         let directed = graph.graph_type().directed;
         if !directed {
             for vertex in graph.vertices() {
+                let vertex = vertex.borrow();
                 if graph.degree_of(vertex) % 2 == 1 {
                     return false;
                 }
             }
         } else {
             for vertex in graph.vertices() {
+                let vertex = vertex.borrow();
                 if graph.in_degree_of(vertex) != graph.out_degree_of(vertex) {
                     return false;
                 }
@@ -276,6 +279,7 @@ impl HierholzerEulerianCycle {
         let mut found_component_with_edges = false;
         let mut seen = HashSet::new();
         for root in graph.vertices() {
+            let root = root.borrow();
             if !seen.insert(root.clone()) {
                 continue;
             }
@@ -310,8 +314,8 @@ impl<G: IncidenceGraph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
         } else if g.edge_count() == 0 {
             return Ok(GraphWalk::empty());
         }
-        let vs: Vec<&G::Vertex> = g.vertices().collect();
-        let es: Vec<&G::Edge> = g.edges().collect();
+        let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
+        let es: Vec<G::Edge> = g.edges_cloned().collect();
         let mut run = Run {
             is_directed: g.graph_type().directed,
             vnodes: Vec::new(),
@@ -324,7 +328,7 @@ impl<G: IncidenceGraph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
         let mut vertices: HashMap<&G::Vertex, usize> = HashMap::new();
         let mut vertex_index: HashMap<&G::Vertex, usize> = HashMap::new();
         for (i, v) in vs.iter().enumerate() {
-            vertex_index.insert(*v, i);
+            vertex_index.insert(v, i);
             if g.out_degree_of(v) > 0 {
                 let n = run.vnodes.len();
                 run.vnodes.push(VertexNode {
@@ -338,7 +342,7 @@ impl<G: IncidenceGraph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
                     run.vnodes[run.vertices_head].prev = n;
                 }
                 run.vertices_head = n;
-                vertices.insert(*v, n);
+                vertices.insert(v, n);
             }
         }
         for (i, e) in es.iter().enumerate() {
@@ -366,7 +370,7 @@ impl<G: IncidenceGraph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
         let mut current = start;
         let mut it = run.eulerian_head;
         while it != NIL {
-            let e = es[run.enodes[it].e];
+            let e = &es[run.enodes[it].e];
             total_weight += g.weight_of(e);
             current = g
                 .opposite_vertex(e, &current)

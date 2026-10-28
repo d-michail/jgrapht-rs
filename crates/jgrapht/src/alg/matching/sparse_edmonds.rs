@@ -20,6 +20,7 @@ use crate::graph::IncidenceGraph;
 use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 const NULL: i64 = -1;
@@ -165,6 +166,7 @@ impl<'a, G: IncidenceGraph> Algorithm<'a, G> {
             return Ok(());
         };
         for e in initializer.get_matching()?.edges() {
+            let e = e.borrow();
             let (u, v) = self.graph.edge_endpoints(e).expect("edge of the graph");
             let (u_index, v_index) = (self.vertex_index_map[u], self.vertex_index_map[v]);
             self.mate[u_index] = v_index as i64;
@@ -293,6 +295,7 @@ impl<'a, G: IncidenceGraph> Algorithm<'a, G> {
         let graph = self.graph;
         let mut matching: IndexSet<G::Edge> = IndexSet::new();
         for e in graph.edges() {
+            let e = e.borrow();
             let (u, v) = graph.edge_endpoints(e).expect("edge of the graph");
             if u == v {
                 continue;
@@ -473,6 +476,7 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinali
         let mut kappa = 1i64;
         let mut count = vec![0usize; n];
         for v in graph.vertices() {
+            let v = v.borrow();
             let osc = odd_set_cover[v];
             if osc < 0 || osc >= n as i64 {
                 return false;
@@ -490,6 +494,7 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinali
             return false;
         }
         for e in graph.edges() {
+            let e = e.borrow();
             let (v, w) = graph.edge_endpoints(e).expect("edge of the graph");
             let (oscv, oscw) = (odd_set_cover[v], odd_set_cover[w]);
             if v == w || oscv == 1 || oscw == 1 || (oscv == oscw && oscv >= 2) {

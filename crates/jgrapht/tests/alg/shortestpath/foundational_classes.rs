@@ -19,6 +19,7 @@ use jgrapht::alg::shortestpath::{
 use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 
 fn bfs_graph() -> (DiGraph<&'static str>, [DefaultEdge; 5]) {
@@ -154,7 +155,9 @@ fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(
         heuristic.cost_estimate(source, target)
     });
     for source in graph.vertices() {
+        let source = source.borrow();
         for target in graph.vertices() {
+            let target = target.borrow();
             let expected = dijkstra
                 .path_weight(source, target)
                 .unwrap()
@@ -185,12 +188,15 @@ fn alt_admissible_heuristic_test_random() {
 
 fn check_alt_admissibility<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(graph: &G) {
     for landmark in graph.vertices() {
+        let landmark = landmark.borrow();
         let heuristic = ALTAdmissibleHeuristic::new(graph, [*landmark]).unwrap();
         for source in graph.vertices() {
+            let source = source.borrow();
             let paths = DijkstraShortestPath::new(graph)
                 .single_source(source)
                 .unwrap();
             for target in graph.vertices() {
+                let target = target.borrow();
                 let estimate = heuristic.cost_estimate(source, target);
                 let distance = paths.weight(target).unwrap_or(f64::INFINITY);
                 assert!(

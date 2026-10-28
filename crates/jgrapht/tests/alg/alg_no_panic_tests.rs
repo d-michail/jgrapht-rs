@@ -27,6 +27,7 @@ use jgrapht::alg::shortestpath::*;
 use jgrapht::alg::spanning::*;
 use jgrapht::*;
 use rand::{Rng, SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 fn random_graph<G: GraphMut<Vertex = usize>>(mut g: G, rng: &mut StdRng, weights: &[f64]) -> G {
@@ -57,7 +58,10 @@ pub(crate) fn sweep<G: GraphMut<Vertex = usize>>(
             "{name}: n={} edges={:?}",
             g.vertex_count(),
             g.edges()
-                .map(|e| g.edge_endpoints(e).map(|(a, b)| (*a, *b)))
+                .map(|e| {
+                    let e = e.borrow();
+                    g.edge_endpoints(e).map(|(a, b)| (*a, *b))
+                })
                 .collect::<Vec<_>>()
         );
         if catch_unwind(AssertUnwindSafe(|| run(&g))).is_err() {

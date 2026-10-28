@@ -21,6 +21,7 @@ use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
 use crate::view::AsSubgraph;
 use crate::walk::GraphWalk;
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::{BTreeSet, HashMap};
 
 /// The graph under test as a graph on `0..n` (vertex order and edge order are kept, so that
@@ -1135,6 +1136,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
         let mut h = H::pseudo().weighted();
         h.add_vertices(0..vs.len());
         for e in g.edges() {
+            let e = e.borrow();
             let (s, t) = g.edge_endpoints(e).expect("edge of the graph");
             let id = h
                 .add_edge(&index[s], &index[t])?

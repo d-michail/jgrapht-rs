@@ -17,6 +17,7 @@ use jgrapht::graph::IncidenceGraph;
 use jgrapht::{DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use jgrapht_io::graph6::{Graph6Exporter, Graph6Format, Graph6Importer};
 use jgrapht_io::{GraphExporter, GraphImporter};
+use std::borrow::Borrow;
 
 fn import_undirected(encoded: &str) -> UGraph<usize> {
     let mut graph = UGraph::<usize>::pseudo().with_vertex_factory(|id| id as usize);
@@ -27,7 +28,13 @@ fn import_undirected(encoded: &str) -> UGraph<usize> {
 }
 
 fn signature<G: IncidenceGraph>(graph: &G) -> (usize, usize, Vec<usize>) {
-    let mut degrees: Vec<_> = graph.vertices().map(|v| graph.degree_of(v)).collect();
+    let mut degrees: Vec<_> = graph
+        .vertices()
+        .map(|v| {
+            let v = v.borrow();
+            graph.degree_of(v)
+        })
+        .collect();
     degrees.sort_unstable();
     (graph.vertex_count(), graph.edge_count(), degrees)
 }

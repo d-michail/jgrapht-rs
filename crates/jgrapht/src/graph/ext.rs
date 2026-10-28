@@ -16,18 +16,25 @@
 
 use super::{DirectedGraph, Graph, GraphMut, IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::Result;
+use std::borrow::Borrow;
 
 /// The `GraphExt` trait.
 pub trait GraphExt: Graph {
     /// The vertices as owned values. Prefer this over `vertices().cloned()`: graphs that compute
     /// their vertices have nothing to borrow.
     fn vertices_cloned(&self) -> impl Iterator<Item = Self::Vertex> {
-        self.vertices().cloned()
+        self.vertices().map(|v| {
+            let v = v.borrow();
+            v.borrow().clone()
+        })
     }
 
     /// The edges as owned values; see [`GraphExt::vertices_cloned`].
     fn edges_cloned(&self) -> impl Iterator<Item = Self::Edge> {
-        self.edges().cloned()
+        self.edges().map(|e| {
+            let e = e.borrow();
+            e.borrow().clone()
+        })
     }
 
     /// `(source, target)` of an edge.
@@ -138,7 +145,12 @@ pub trait GraphExt: Graph {
 
     /// Sum of all edge weights.
     fn total_weight(&self) -> f64 {
-        self.edges().filter_map(|e| self.edge_weight(e)).sum()
+        self.edges()
+            .filter_map(|e| {
+                let e = e.borrow();
+                self.edge_weight(e)
+            })
+            .sum()
     }
 
     /// Returns whether empty.
@@ -222,7 +234,7 @@ pub trait DirectedExt: DirectedGraph {
     where
         Self: Sized + IncidenceGraph,
     {
-        crate::traverse::topological_sort(self).map(|v| v.into_iter().cloned().collect())
+        crate::traverse::topological_sort(self)
     }
 
     /// Whether `v` has an outgoing edge.
@@ -292,8 +304,9 @@ pub trait GraphMutExt: GraphMut {
     where
         G: Graph<Vertex = Self::Vertex, Edge = Self::Edge>,
     {
-        let mut changed = self.add_vertices(src.vertices().cloned());
+        let mut changed = self.add_vertices(src.vertices_cloned());
         for e in src.edges() {
+            let e = e.borrow();
             let (s, t) = src.edge_endpoints(e).expect("edge of source graph");
             if self.add_edge_with(s, t, e.clone())? {
                 changed = true;
@@ -352,8 +365,9 @@ pub trait GraphMutExt: GraphMut {
     where
         G: Graph<Vertex = Self::Vertex, Edge = Self::Edge>,
     {
-        let mut changed = self.add_vertices(src.vertices().cloned());
+        let mut changed = self.add_vertices(src.vertices_cloned());
         for e in src.edges() {
+            let e = e.borrow();
             let (s, t) = src.edge_endpoints(e).expect("edge of source graph");
             if self.add_edge_with(t, s, e.clone())? {
                 changed = true;

@@ -17,6 +17,7 @@ use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::{GraphError, Result};
+use std::borrow::Borrow;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
@@ -27,12 +28,12 @@ use std::collections::{BinaryHeap, HashMap, HashSet};
 /// like JGraphT's internal `DijkstraClosestFirstIterator`.
 pub struct DijkstraClosestFirstIterator<'g, G: Graph> {
     graph: &'g G,
-    source: &'g G::Vertex,
+    source: G::Vertex,
     radius: f64,
-    distance: HashMap<&'g G::Vertex, f64>,
-    predecessor: HashMap<&'g G::Vertex, (&'g G::Edge, &'g G::Vertex)>,
-    settled: HashSet<&'g G::Vertex>,
-    nodes: Vec<&'g G::Vertex>,
+    distance: HashMap<G::Vertex, f64>,
+    predecessor: HashMap<G::Vertex, (G::Edge, G::Vertex)>,
+    settled: HashSet<G::Vertex>,
+    nodes: Vec<G::Vertex>,
     heap: BinaryHeap<Reverse<(OrderedF64, usize)>>,
 }
 
@@ -57,15 +58,15 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
         if radius.is_nan() || radius < 0.0 {
             return Err(GraphError::must_be_non_negative("radius"));
         }
-        let source = graph
-            .vertices()
-            .find(|vertex| *vertex == source)
-            .ok_or(GraphError::VertexNotFound)?;
+        if !graph.contains_vertex(source) {
+            return Err(GraphError::VertexNotFound);
+        }
+        let source = source.clone();
         // The Java iterator detects this while relaxing. Eager validation lets
         // Rust's `Iterator::next` stay infallible without changing semantics
         // for any successful iteration.
         if graph.edges().any(|edge| {
-            let weight = graph.weight_of(edge);
+            let weight = graph.weight_of(edge.borrow());
             weight.is_nan() || weight < 0.0
         }) {
             return Err(GraphError::InvalidWeight(
@@ -74,12 +75,12 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
         }
         Ok(Self {
             graph,
-            source,
             radius,
-            distance: HashMap::from([(source, 0.0)]),
+            distance: HashMap::from([(source.clone(), 0.0)]),
             predecessor: HashMap::new(),
             settled: HashSet::new(),
-            nodes: vec![source],
+            nodes: vec![source.clone()],
+            source,
             heap: BinaryHeap::from([Reverse((OrderedF64(0.0), 0))]),
         })
     }
@@ -93,15 +94,13 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
                 .distance
                 .iter()
                 .filter(|(_, distance)| **distance <= self.radius)
-                .map(|(vertex, distance)| ((*vertex).clone(), *distance))
+                .map(|(vertex, distance)| (vertex.clone(), *distance))
                 .collect(),
             pred: self
                 .predecessor
                 .iter()
                 .filter(|(vertex, _)| self.distance[*vertex] <= self.radius)
-                .map(|(vertex, (edge, parent))| {
-                    ((*vertex).clone(), ((*edge).clone(), (*parent).clone()))
-                })
+                .map(|(vertex, (edge, parent))| (vertex.clone(), (edge.clone(), parent.clone())))
                 .collect(),
         }
     }
@@ -120,12 +119,10 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
             .filter(|(_, distance)| **distance <= self.radius)
             .map(|(vertex, distance)| {
                 (
-                    (*vertex).clone(),
+                    vertex.clone(),
                     (
                         *distance,
-                        self.predecessor
-                            .get(vertex)
-                            .map(|(edge, _)| (*edge).clone()),
+                        self.predecessor.get(vertex).map(|(edge, _)| edge.clone()),
                     ),
                 )
             })
@@ -134,7 +131,7 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
 
     fn discard_stale(&mut self) {
         while let Some(Reverse((OrderedF64(distance), index))) = self.heap.peek().copied() {
-            let vertex = self.nodes[index];
+            let vertex = &self.nodes[index];
             if self.settled.contains(vertex) || distance > self.distance[vertex] {
                 self.heap.pop();
             } else {
@@ -157,23 +154,24 @@ impl<G: OutgoingGraph> Iterator for DijkstraClosestFirstIterator<'_, G> {
     fn next(&mut self) -> Option<Self::Item> {
         self.discard_stale();
         let Reverse((OrderedF64(distance), index)) = self.heap.pop()?;
-        let vertex = self.nodes[index];
-        self.settled.insert(vertex);
+        let vertex = self.nodes[index].clone();
+        self.settled.insert(vertex.clone());
 
-        for (edge, target) in self.graph.outgoing_of(vertex) {
+        for (edge, target) in self.graph.outgoing_of(&vertex) {
             if self.settled.contains(target) {
                 continue;
             }
             let candidate = distance + self.graph.weight_of(edge);
             if candidate < self.distance.get(target).copied().unwrap_or(f64::INFINITY) {
-                self.distance.insert(target, candidate);
-                self.predecessor.insert(target, (edge, vertex));
-                self.nodes.push(target);
+                self.distance.insert(target.clone(), candidate);
+                self.predecessor
+                    .insert(target.clone(), (edge.clone(), vertex.clone()));
+                self.nodes.push(target.clone());
                 self.heap
                     .push(Reverse((OrderedF64(candidate), self.nodes.len() - 1)));
             }
         }
 
-        Some(vertex.clone())
+        Some(vertex)
     }
 }

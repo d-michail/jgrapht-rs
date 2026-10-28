@@ -27,6 +27,7 @@ use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
 use rand::{Rng, SeedableRng};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 // IsomorphismTestUtil
@@ -77,6 +78,7 @@ fn generate_mapped_graph<V: Clone + Eq + std::hash::Hash>(
 ) -> UGraph<V> {
     let mut iso = UGraph::<V>::simple();
     for v in graph.vertices() {
+        let v = v.borrow();
         iso.add_vertex(mapping[v].clone());
     }
     for e in graph.edges() {
@@ -1009,8 +1011,10 @@ mod subgraph_utils {
         g2: &H,
     ) -> bool {
         for u1 in g2.vertices() {
+            let u1 = u1.borrow();
             let v1 = rel.vertex_correspondence(u1, false);
             for u2 in g2.vertices() {
+                let u2 = u2.borrow();
                 if u1 == u2 {
                     continue;
                 }
@@ -1109,6 +1113,7 @@ mod subgraph_utils {
         'perm: for perm in permutations(&mut vec![false; n1], n2) {
             let core2 = perm;
             for e in g2.edges() {
+                let e = e.borrow();
                 let (u1, u2) = g2.edge_endpoints(e).unwrap();
                 let (v1, v2) = (core2[*u1 as usize] as i32, core2[*u2 as usize] as i32);
                 if !g1.contains_edge_between(&v1, &v2) {
@@ -1120,6 +1125,7 @@ mod subgraph_utils {
                 core1[c] = i;
             }
             for e in g1.edges() {
+                let e = e.borrow();
                 let (v1, v2) = g1.edge_endpoints(e).unwrap();
                 let (u1, u2) = (core1[*v1 as usize], core1[*v2 as usize]);
                 if u1 == NULL_NODE || u2 == NULL_NODE {

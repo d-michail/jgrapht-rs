@@ -98,7 +98,7 @@ pub fn kmb_steiner_tree<G: OutgoingGraph>(
     // MST of the chosen subgraph, then drop non-terminal leaves
     let ix = Indexed::new(g);
     let mut idx: Vec<usize> = (0..ix.es.len())
-        .filter(|&e| chosen.contains(ix.es[e]))
+        .filter(|&e| chosen.contains(&ix.es[e]))
         .collect();
     idx.sort_by(|&a, &b| ix.w[a].total_cmp(&ix.w[b]));
     let mut uf = UnionFind::new(ix.n());

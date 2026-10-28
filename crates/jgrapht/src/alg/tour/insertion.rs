@@ -22,6 +22,7 @@ use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use indexmap::{IndexMap, IndexSet};
+use std::borrow::Borrow;
 
 type Tour<G> = Result<Option<GraphWalk<<G as Graph>::Vertex, <G as Graph>::Edge>>>;
 
@@ -106,15 +107,19 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
             }
         }
         if subtour_vertices.is_empty() {
-            let mut shortest: Option<(&G::Edge, f64)> = None;
+            let mut shortest: Option<(G::Edge, f64)> = None;
             for e in graph.edges() {
+                let e = e.borrow();
                 let w = graph.weight_of(e);
-                if shortest.is_none_or(|(_, best)| w.total_cmp(&best).is_lt()) {
-                    shortest = Some((e, w));
+                if shortest
+                    .as_ref()
+                    .is_none_or(|(_, best)| w.total_cmp(best).is_lt())
+                {
+                    shortest = Some((e.clone(), w));
                 }
             }
             let (e, _) = shortest.ok_or_else(|| GraphError::InvalidArgument("no edges".into()))?;
-            let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
+            let (s, t) = graph.edge_endpoints(&e).expect("edge of the graph");
             subtour_vertices.push(s.clone());
             subtour_vertices.push(t.clone());
         }
@@ -173,8 +178,14 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
     fn augment(&self, mut subtour: Vec<G::Vertex>, graph: &G) -> Vec<G::Vertex> {
         let mut unvisited: IndexSet<G::Vertex> = graph
             .vertices()
-            .filter(|v| !subtour.contains(v))
-            .cloned()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                !subtour.contains(v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         let mut closest_vertices: IndexMap<G::Vertex, Closest<G::Vertex>> = subtour
             .iter()
@@ -308,10 +319,11 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
             index_list.iter().enumerate().map(|(i, v)| (v, i)).collect();
 
         // computeDistanceMatrix
-        let mut longest_edge: Option<&G::Edge> = None;
+        let mut longest_edge: Option<G::Edge> = None;
         let mut longest_edge_weight = f64::NEG_INFINITY;
         let mut all_dist = vec![vec![0.0f64; n]; n];
         for edge in graph.edges() {
+            let edge = edge.borrow();
             let (source, target) = graph.edge_endpoints(edge).expect("edge of the graph");
             if source != target {
                 let (i, j) = (vertex_map[source], vertex_map[target]);
@@ -321,7 +333,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
                     all_dist[j][i] = w;
                     if longest_edge_weight < all_dist[i][j] {
                         longest_edge_weight = all_dist[i][j];
-                        longest_edge = Some(edge);
+                        longest_edge = Some(edge.clone());
                     }
                 }
             }
@@ -335,7 +347,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
             let longest = longest_edge.ok_or_else(|| {
                 GraphError::InvalidArgument("graph contains no usable edge".into())
             })?;
-            let (v, u) = graph.edge_endpoints(longest).expect("edge of the graph");
+            let (v, u) = graph.edge_endpoints(&longest).expect("edge of the graph");
             self.initial_subtour = Some(GraphWalk::from_vertex_list(
                 graph,
                 vec![v.clone(), u.clone()],

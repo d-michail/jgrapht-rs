@@ -13,6 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use crate::graph::DirectedGraph;
+use crate::graph::GraphExt;
 use crate::graph::IncidenceGraph;
 use crate::{GraphError, Result};
 use dashu_int::UBig;
@@ -61,33 +62,36 @@ impl DagAllPathsCounter {
         if !graph.contains_vertex(source) || !graph.contains_vertex(target) {
             return Err(GraphError::VertexNotFound);
         }
-        let mut in_degree: HashMap<_, _> = graph
-            .vertices()
-            .map(|vertex| Ok((vertex, graph.in_degree_of(vertex))))
-            .collect::<Result<_>>()?;
-        let mut queue: VecDeque<_> = graph
-            .vertices()
+        let mut in_degree: HashMap<G::Vertex, usize> = graph
+            .vertices_cloned()
+            .map(|vertex| {
+                let degree = graph.in_degree_of(&vertex);
+                (vertex, degree)
+            })
+            .collect();
+        let mut queue: VecDeque<G::Vertex> = graph
+            .vertices_cloned()
             .filter(|vertex| in_degree[vertex] == 0)
             .collect();
-        let mut vertices = Vec::with_capacity(graph.vertex_count());
+        let mut vertices: Vec<G::Vertex> = Vec::with_capacity(graph.vertex_count());
         while let Some(vertex) = queue.pop_front() {
-            vertices.push(vertex);
-            for edge in graph.out_edges_of(vertex) {
+            for edge in graph.out_edges_of(&vertex) {
                 let target = graph.edge_target(edge).expect("edge in graph");
                 let degree = in_degree.get_mut(target).expect("vertex in graph");
                 *degree -= 1;
                 if *degree == 0 {
-                    queue.push_back(target);
+                    queue.push_back(target.clone());
                 }
             }
+            vertices.push(vertex);
         }
         if vertices.len() != graph.vertex_count() {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Acyclic));
         }
-        let positions: HashMap<_, _> = vertices
+        let positions: HashMap<&G::Vertex, usize> = vertices
             .iter()
             .enumerate()
-            .map(|(index, &vertex)| (vertex, index))
+            .map(|(index, vertex)| (vertex, index))
             .collect();
         let source_index = positions[source];
         let target_index = positions[target];
@@ -101,7 +105,7 @@ impl DagAllPathsCounter {
             if count == UBig::ZERO {
                 continue;
             }
-            for edge in graph.out_edges_of(vertices[index]) {
+            for edge in graph.out_edges_of(&vertices[index]) {
                 let child = graph.edge_target(edge).expect("edge in graph");
                 ways[positions[child]] += &count;
             }

@@ -20,6 +20,7 @@ use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
 use jgrapht::graph::IncidenceGraph;
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use rand::{Rng, SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 
 fn directed_graph() -> DiGraph<&'static str> {
     let mut graph = DiGraph::<&str>::pseudo().weighted();
@@ -196,7 +197,9 @@ where
     let dijkstra = DijkstraShortestPath::new(graph).radius(radius);
     let bidirectional = BidirectionalDijkstraShortestPath::with_radius(graph, radius).unwrap();
     for source in graph.vertices() {
+        let source = source.borrow();
         for target in graph.vertices() {
+            let target = target.borrow();
             let expected = dijkstra.path(source, target).unwrap();
             let actual = bidirectional.path(source, target).unwrap();
             match (expected, actual) {

@@ -19,6 +19,7 @@ use super::util::Indexed;
 use crate::Result;
 use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt, GraphMut};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 
 fn simple_edges<G: Graph>(ix: &Indexed<'_, G>) -> Vec<(usize, usize)> {
@@ -238,16 +239,22 @@ where
     }
 
     fn numerator<H: Graph<Vertex = G::Vertex>>(&self, g: &H) -> f64 {
-        let edges: f64 = g.edges().map(|e| Self::weight_of(g, e)).sum();
+        let edges: f64 = g
+            .edges()
+            .map(|e| {
+                let e = e.borrow();
+                Self::weight_of(g, e)
+            })
+            .sum();
         match &self.kind {
-            DensityKind::NodeWeights(w) => edges + g.vertices().map(w).sum::<f64>(),
+            DensityKind::NodeWeights(w) => edges + g.vertices().map(|v| w(v.borrow())).sum::<f64>(),
             _ => edges,
         }
     }
 
     fn denominator<H: Graph<Vertex = G::Vertex>>(&self, g: &H) -> f64 {
         match &self.kind {
-            DensityKind::NodeWeightPerEdgeWeight(w) => g.vertices().map(w).sum(),
+            DensityKind::NodeWeightPerEdgeWeight(w) => g.vertices().map(|v| w(v.borrow())).sum(),
             _ => g.vertex_count() as f64,
         }
     }
@@ -283,11 +290,13 @@ where
         self.network.add_vertex(s.clone());
         self.network.add_vertex(t.clone());
         for v in self.graph.vertices() {
+            let v = v.borrow();
             self.network.add_vertex(v.clone());
             self.network.add_edge(&s, v)?;
             self.network.add_edge(v, &t)?;
         }
         for e in self.graph.edges() {
+            let e = e.borrow();
             let (a, b) = (
                 self.graph.edge_source(e).unwrap().clone(),
                 self.graph.edge_target(e).unwrap().clone(),

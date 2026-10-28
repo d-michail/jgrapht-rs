@@ -57,9 +57,13 @@ fn union_successors<G: OutgoingGraph>(g1: &G, g2: &G) -> Vec<Vec<usize>> {
     let mut succ = Vec::new();
     let mut offset = 0;
     for g in [g1, g2] {
-        let index: HashMap<&G::Vertex, usize> =
-            g.vertices().enumerate().map(|(i, v)| (v, i)).collect();
-        for v in g.vertices() {
+        let all_vertices: Vec<G::Vertex> = g.vertices_cloned().collect();
+        let index: HashMap<&G::Vertex, usize> = all_vertices
+            .iter()
+            .enumerate()
+            .map(|(i, v)| (v, i))
+            .collect();
+        for v in &all_vertices {
             let mut seen = HashSet::new();
             succ.push(
                 g.out_edges_of(v)
@@ -134,8 +138,8 @@ impl<'g, G: IncidenceGraph> ColorRefinementIsomorphismInspector<'g, G> {
         } else {
             return None;
         }
-        let vs1: Vec<&G::Vertex> = self.graph1.vertices().collect();
-        let vs2: Vec<&G::Vertex> = self.graph2.vertices().collect();
+        let vs1: Vec<G::Vertex> = self.graph1.vertices_cloned().collect();
+        let vs2: Vec<G::Vertex> = self.graph2.vertices_cloned().collect();
         let mut forward = IndexMap::new();
         let mut backward = IndexMap::new();
         for (c1, c2) in classes1.iter().zip(&classes2) {

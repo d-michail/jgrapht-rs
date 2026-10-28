@@ -22,6 +22,7 @@ use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::view::AsSubgraph;
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 const NIL: i64 = -1;
@@ -271,6 +272,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
         if let Some(initializer) = self.initializer.as_mut() {
             let initial_solution = initializer.get_matching()?;
             for e in initial_solution.edges() {
+                let e = e.borrow();
                 let (u, v) = graph.edge_endpoints(e).expect("edge of the graph");
                 self.matching
                     .match_(self.vertex_index_map[u], self.vertex_index_map[v]);
@@ -459,6 +461,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
         }
         self.init(); // reset data structures and use the provided matching as a starting point
         for e in matching.edges() {
+            let e = e.borrow();
             let (u, v) = graph.edge_endpoints(e).expect("edge of the graph");
             self.matching
                 .match_(self.vertex_index_map[u], self.vertex_index_map[v]);
@@ -472,8 +475,14 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
             .collect();
         let other_vertices: IndexSet<G::Vertex> = graph
             .vertices()
-            .filter(|v| !odd_vertices.contains(*v))
-            .cloned()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                !odd_vertices.contains(*v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         let subgraph = AsSubgraph::induced(graph, other_vertices.iter().cloned()); // induced subgraph
         let connected_components = ConnectivityInspector::new().connected_sets(&subgraph);

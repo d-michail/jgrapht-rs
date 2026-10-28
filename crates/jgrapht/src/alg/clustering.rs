@@ -23,6 +23,7 @@ use crate::util::UnionFind;
 use crate::{GraphError, Result};
 use rand::Rng;
 use rand::seq::SliceRandom;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 
 fn groups<G: Graph>(ix: &Indexed<'_, G>, label: &[usize]) -> Vec<Vec<G::Vertex>> {
@@ -100,7 +101,7 @@ pub fn k_spanning_tree_clustering<G: Graph>(g: &G, k: usize) -> Result<Vec<Vec<G
     let mut edges: Vec<usize> = tree
         .edges
         .iter()
-        .map(|e| ix.es.iter().position(|x| *x == e).unwrap())
+        .map(|e| ix.es.iter().position(|x| x == e).unwrap())
         .collect();
     edges.sort_by(|&a, &b| ix.w[a].total_cmp(&ix.w[b]));
     let mut uf = UnionFind::new(ix.n());
@@ -175,8 +176,15 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
         let mut degrees = HashMap::new();
         let m;
         if graph.graph_type().weighted {
-            m = graph.edges().map(|e| graph.weight_of(e)).sum();
+            m = graph
+                .edges()
+                .map(|e| {
+                    let e = e.borrow();
+                    graph.weight_of(e)
+                })
+                .sum();
             for v in graph.vertices() {
+                let v = v.borrow();
                 let mut sum = 0.0;
                 for e in graph.out_edges_of(v) {
                     let u = graph.opposite_vertex(e, v).unwrap();
@@ -188,6 +196,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
         } else {
             m = graph.edge_count() as f64;
             for v in graph.vertices() {
+                let v = v.borrow();
                 degrees.insert(v.clone(), graph.degree_of(v) as f64);
             }
         }
@@ -220,6 +229,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
         }
         let mut edge_weight = vec![0.0; total];
         for e in self.graph.edges() {
+            let e = e.borrow();
             let (v, u) = (
                 self.graph.edge_source(e).unwrap(),
                 self.graph.edge_target(e).unwrap(),
@@ -387,6 +397,7 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for KSpanningTreeClustering<'_, G>
         }
         let mut cluster_map: IndexMap<G::Vertex, IndexSet<G::Vertex>> = IndexMap::new();
         for v in g.vertices() {
+            let v = v.borrow();
             let rv = forest.find(v)?;
             cluster_map.entry(rv).or_default().insert(v.clone());
         }
@@ -433,7 +444,10 @@ impl<G: UndirectedGraph + IncidenceGraph> ClusteringAlgorithm<G::Vertex>
         let mut communities: Vec<HashSet<G::Vertex>> = self
             .graph
             .vertices()
-            .map(|v| HashSet::from([v.clone()]))
+            .map(|v| {
+                let v = v.borrow();
+                HashSet::from([v.clone()])
+            })
             .collect();
         let measurer = UndirectedModularityMeasurer::new(self.graph)?;
         let mut old: Option<f64> = None;
@@ -526,9 +540,9 @@ impl<G: IncidenceGraph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgor
     /// Computes a clustering.
     fn clustering(&self) -> Result<Clustering<G::Vertex>> {
         let g = self.graph;
-        let vs: Vec<&G::Vertex> = g.vertices().collect();
+        let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
         let index: HashMap<&G::Vertex, usize> =
-            vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+            vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let mut communities: BTreeMap<usize, Vec<usize>> =
             (0..vs.len()).map(|i| (i, vec![i])).collect();
         let m = g.edge_count() as f64;
@@ -536,6 +550,7 @@ impl<G: IncidenceGraph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgor
         // dQ[i][j]: change of modularity when merging communities i and j
         let mut dq: BTreeMap<usize, BTreeMap<usize, f64>> = BTreeMap::new();
         for e in g.edges() {
+            let e = e.borrow();
             let (vi, vj) = (
                 index[g.edge_source(e).unwrap()],
                 index[g.edge_target(e).unwrap()],
@@ -543,8 +558,8 @@ impl<G: IncidenceGraph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgor
             if vi == vj {
                 continue;
             }
-            let ki = g.degree_of(vs[vi]) as i64;
-            let kj = g.degree_of(vs[vj]) as i64;
+            let ki = g.degree_of(&vs[vi]) as i64;
+            let kj = g.degree_of(&vs[vj]) as i64;
             let value = (1.0 / m) - ((ki * kj) as f64 / (2.0 * m * m));
             dq.entry(vi).or_default().insert(vj, value);
             dq.entry(vj).or_default().insert(vi, value);
@@ -572,12 +587,12 @@ impl<G: IncidenceGraph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgor
         if g.graph_type().directed {
             b = vec![0.0; vs.len()];
             for i in 0..vs.len() {
-                a[i] = g.out_degree_of(vs[i]) as f64 / m;
-                b[i] = g.in_degree_of(vs[i]) as f64 / m;
+                a[i] = g.out_degree_of(&vs[i]) as f64 / m;
+                b[i] = g.in_degree_of(&vs[i]) as f64 / m;
             }
         } else {
             for i in 0..vs.len() {
-                a[i] = g.degree_of(vs[i]) as f64 / (2.0 * m);
+                a[i] = g.degree_of(&vs[i]) as f64 / (2.0 * m);
             }
             b = a.clone();
         }
@@ -601,7 +616,7 @@ impl<G: IncidenceGraph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgor
                     .filter(|x| !nbrs_i.contains(x))
                     .collect();
                 let ordered = match &self.java_hash {
-                    Some(hash) => java_hash_set_order(first, rest, |&x| hash(vs[x])),
+                    Some(hash) => java_hash_set_order(first, rest, |&x| hash(&vs[x])),
                     None => {
                         let mut all: Vec<usize> = first.into_iter().chain(rest).collect();
                         all.sort_unstable();
@@ -758,9 +773,9 @@ impl<G: IncidenceGraph, R: RandomSource> ClusteringAlgorithm<G::Vertex>
     fn clustering(&self) -> Result<Clustering<G::Vertex>> {
         let g = self.graph;
         let mut rng = self.rng.borrow_mut();
-        let vs: Vec<&G::Vertex> = g.vertices().collect();
+        let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
         let index: HashMap<&G::Vertex, usize> =
-            vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+            vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let nbrs: Vec<Vec<usize>> = vs
             .iter()
             .map(|v| {
@@ -814,7 +829,7 @@ impl<G: IncidenceGraph, R: RandomSource> ClusteringAlgorithm<G::Vertex>
             let mut all: Vec<usize> = (0..vs.len()).collect();
             java_shuffle(&mut all, &mut *rng);
             for &v in &all {
-                if g.degree_of(vs[v]) == 0 {
+                if g.degree_of(&vs[v]) == 0 {
                     continue;
                 }
                 let (counts, other_max) = counts_and_max(v, &labels);

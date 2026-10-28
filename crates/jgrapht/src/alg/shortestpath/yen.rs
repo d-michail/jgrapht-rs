@@ -777,38 +777,33 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
     }
 
     fn compute_reverse_distances(&self, sink: &G::Vertex) -> Result<HashMap<G::Vertex, f64>> {
-        let sink = self
-            .graph
-            .vertices()
-            .find(|vertex| *vertex == sink)
-            .ok_or(GraphError::VertexNotFound)?;
-        let mut distance = HashMap::from([(sink, 0.0)]);
-        let mut nodes = vec![sink];
+        if !self.graph.contains_vertex(sink) {
+            return Err(GraphError::VertexNotFound);
+        }
+        let mut distance: HashMap<G::Vertex, f64> = HashMap::from([(sink.clone(), 0.0)]);
+        let mut nodes: Vec<G::Vertex> = vec![sink.clone()];
         let mut heap = BinaryHeap::from([Reverse((OrderedF64(0.0), 0u64, 0usize))]);
         let mut ordinal = 0u64;
         while let Some(Reverse((OrderedF64(value), _, index))) = heap.pop() {
-            let vertex = nodes[index];
-            if value > distance[vertex] {
+            let vertex = nodes[index].clone();
+            if value > distance[&vertex] {
                 continue;
             }
-            for (edge, predecessor) in self.graph.incoming_of(vertex) {
+            for (edge, predecessor) in self.graph.incoming_of(&vertex) {
                 let weight = self.graph.weight_of(edge);
                 if weight.is_nan() || weight < 0.0 {
                     return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
                 }
                 let candidate = value + weight;
                 if candidate < distance.get(predecessor).copied().unwrap_or(f64::INFINITY) {
-                    distance.insert(predecessor, candidate);
-                    nodes.push(predecessor);
+                    distance.insert(predecessor.clone(), candidate);
+                    nodes.push(predecessor.clone());
                     ordinal += 1;
                     heap.push(Reverse((OrderedF64(candidate), ordinal, nodes.len() - 1)));
                 }
             }
         }
-        Ok(distance
-            .into_iter()
-            .map(|(vertex, value)| (vertex.clone(), value))
-            .collect())
+        Ok(distance)
     }
 
     fn add_spur_tasks_for(

@@ -16,6 +16,7 @@ use crate::graph::IncidenceGraph;
 use crate::graph::{GraphExt, UndirectedGraph};
 use crate::traverse::{LexBreadthFirstIterator, MaximumCardinalityIterator};
 use crate::walk::GraphWalk;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 /// `ChordalityInspector.IterationOrder`: the ordering that is checked for being a perfect
@@ -101,12 +102,10 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalityInspector<'g, G> {
             let order: Vec<G::Vertex> = match self.iteration_order {
                 IterationOrder::Mcs => MaximumCardinalityIterator::new(self.graph)
                     .take(n)
-                    .cloned()
                     .collect(),
-                IterationOrder::LexBfs => LexBreadthFirstIterator::new(self.graph)
-                    .take(n)
-                    .cloned()
-                    .collect(),
+                IterationOrder::LexBfs => {
+                    LexBreadthFirstIterator::new(self.graph).take(n).collect()
+                }
             };
             self.chordal = self.is_perfect_elimination_order_impl(&order, true);
             self.order = Some(order);
@@ -211,8 +210,14 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalityInspector<'g, G> {
     /// `a` and `c`.
     fn find_hole(&mut self, a: &G::Vertex, b: &G::Vertex, c: &G::Vertex) {
         let mut cycle = vec![a.clone(), b.clone(), c.clone()];
-        let mut visited: HashMap<G::Vertex, bool> =
-            self.graph.vertices().map(|v| (v.clone(), false)).collect();
+        let mut visited: HashMap<G::Vertex, bool> = self
+            .graph
+            .vertices()
+            .map(|v| {
+                let v = v.borrow();
+                (v.clone(), false)
+            })
+            .collect();
         visited.insert(a.clone(), true);
         visited.insert(b.clone(), true);
         self.dfs_visit(&mut cycle, &mut visited, a, b, c);

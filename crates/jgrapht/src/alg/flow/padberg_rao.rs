@@ -20,6 +20,7 @@ use crate::graph::IncidenceGraph;
 use crate::graph::UndirectedGraph;
 use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, UGraph};
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::VecDeque;
 
 /// Implementation of the algorithm by Padberg and Rao to compute Odd Minimum Cut-Sets. Let $G=(V,E)$
@@ -143,17 +144,29 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
         let g = self.network;
         let sink_partition: IndexSet<G::Vertex> = g
             .vertices()
-            .filter(|v| !source_partition.contains(*v))
-            .cloned()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                !source_partition.contains(*v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         let cut_edges: IndexSet<G::Edge> = g
             .edges()
             .filter(|e| {
-                g.edge_endpoints(e).is_some_and(|(u, v)| {
-                    source_partition.contains(u) ^ source_partition.contains(v)
-                })
+                let e = &(*e).borrow();
+                {
+                    g.edge_endpoints(e).is_some_and(|(u, v)| {
+                        source_partition.contains(u) ^ source_partition.contains(v)
+                    })
+                }
             })
-            .cloned()
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         Ok(Some(MinimumCut::new(
             weight,
@@ -185,8 +198,14 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
                 .expect("endpoint of a tree edge");
             let source_partition: IndexSet<G::Vertex> = tree
                 .vertices()
-                .filter(|v| component.contains(*v))
-                .cloned()
+                .filter(|v| {
+                    let v = &(*v).borrow();
+                    component.contains(*v)
+                })
+                .map(|x| {
+                    let x = x.borrow();
+                    x.clone()
+                })
                 .collect();
             if Self::is_odd_vertex_set(&source_partition, &self.odd_vertices) {
                 self.minimum_cut_weight = edge_weight;

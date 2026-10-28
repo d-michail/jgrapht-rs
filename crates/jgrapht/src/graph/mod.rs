@@ -36,6 +36,7 @@ pub use map::{
 };
 
 use crate::{GraphType, Result};
+use std::borrow::Borrow;
 use std::hash::Hash;
 
 /// Read-only access to a graph. Vertices and edges are user-provided values.
@@ -59,14 +60,24 @@ pub trait Graph {
     type Vertex: Clone + Eq + Hash;
     /// The edge type.
     type Edge: Clone + Eq + Hash;
+    /// What [`Graph::vertices`] yields: `&'a Vertex` for a graph that stores its vertices, the
+    /// vertex itself for a graph that computes them (for example the integers `0..n`). Call
+    /// `borrow()` to get a `&Vertex` from either.
+    type VertexRef<'a>: Borrow<Self::Vertex>
+    where
+        Self: 'a;
+    /// What [`Graph::edges`] yields; see [`Graph::VertexRef`].
+    type EdgeRef<'a>: Borrow<Self::Edge>
+    where
+        Self: 'a;
 
     /// Returns the graph type.
     fn graph_type(&self) -> GraphType;
 
     /// Returns the vertices.
-    fn vertices(&self) -> impl Iterator<Item = &Self::Vertex>;
+    fn vertices(&self) -> impl Iterator<Item = Self::VertexRef<'_>>;
     /// Returns the edges.
-    fn edges(&self) -> impl Iterator<Item = &Self::Edge>;
+    fn edges(&self) -> impl Iterator<Item = Self::EdgeRef<'_>>;
     /// Returns the vertex count.
     fn vertex_count(&self) -> usize;
     /// Returns the edge count.
@@ -182,20 +193,26 @@ where
     {
         return false;
     }
-    if !a.vertices().all(|v| b.contains_vertex(v)) {
+    if !a.vertices().all(|v| {
+        let v = v.borrow();
+        b.contains_vertex(v)
+    }) {
         return false;
     }
     let directed = a.graph_type().directed;
     a.edges().all(|e| {
-        let (Some((s, t)), Some((bs, bt))) = (a.edge_endpoints(e), b.edge_endpoints(e)) else {
-            return false;
-        };
-        let ends = if directed {
-            s == bs && t == bt
-        } else {
-            (s == bs && t == bt) || (s == bt && t == bs)
-        };
-        ends && a.edge_weight(e).map(f64::to_bits) == b.edge_weight(e).map(f64::to_bits)
+        let e = e.borrow();
+        {
+            let (Some((s, t)), Some((bs, bt))) = (a.edge_endpoints(e), b.edge_endpoints(e)) else {
+                return false;
+            };
+            let ends = if directed {
+                s == bs && t == bt
+            } else {
+                (s == bs && t == bt) || (s == bt && t == bs)
+            };
+            ends && a.edge_weight(e).map(f64::to_bits) == b.edge_weight(e).map(f64::to_bits)
+        }
     })
 }
 
@@ -213,8 +230,12 @@ pub fn graph_hash<G: Graph>(g: &G) -> u64 {
         s.finish()
     }
     let directed = g.graph_type().directed;
-    let mut total = g.vertices().map(h).fold(0u64, u64::wrapping_add);
+    let mut total = g
+        .vertices()
+        .map(|v| h(v.borrow()))
+        .fold(0u64, u64::wrapping_add);
     for e in g.edges() {
+        let e = e.borrow();
         let (s, t) = g.edge_endpoints(e).expect("edge endpoints");
         let (hs, ht) = (h(s), h(t));
         let ends = if directed {
@@ -244,6 +265,7 @@ where
     let labelled = std::any::TypeId::of::<G::Edge>() != std::any::TypeId::of::<DefaultEdge>();
     let mut out = String::from("([");
     for (i, v) in g.vertices().enumerate() {
+        let v = v.borrow();
         if i > 0 {
             out.push_str(", ");
         }
@@ -251,6 +273,7 @@ where
     }
     out.push_str("], [");
     for (i, e) in g.edges().enumerate() {
+        let e = e.borrow();
         if i > 0 {
             out.push_str(", ");
         }

@@ -23,6 +23,7 @@ use crate::graph::{
 use crate::walk::GraphWalk;
 use crate::{GraphError, GraphType, Result};
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 
 #[derive(Clone)]
 enum AugmentedEdge<V, E> {
@@ -101,6 +102,7 @@ impl ChinesePostman {
     ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         let mut odd = Vec::new();
         for vertex in graph.vertices() {
+            let vertex = vertex.borrow();
             if graph.degree_of(vertex) % 2 == 1 {
                 odd.push(vertex.clone());
             }
@@ -152,6 +154,7 @@ impl ChinesePostman {
         let mut negative = Vec::new();
         let mut positive = Vec::new();
         for vertex in graph.vertices() {
+            let vertex = vertex.borrow();
             let imbalance =
                 graph.out_degree_of(vertex) as isize - graph.in_degree_of(vertex) as isize;
             if imbalance < 0 {
@@ -239,6 +242,7 @@ impl ChinesePostman {
         euler_graph.add_vertices(graph.vertices_cloned());
         let mut edge_map = Vec::with_capacity(graph.edge_count() + shortcuts.len());
         for edge in graph.edges() {
+            let edge = edge.borrow();
             let (source, target) = graph.edge_endpoints(edge).unwrap();
             let synthetic = euler_graph.add_edge(source, target)?.unwrap();
             assert_eq!(synthetic, edge_map.len());

@@ -171,7 +171,7 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>> MartinShortestPath<'g, G, F> {
         while let Some(Reverse((_, label_index))) = heap.pop() {
             let vertex = labels[label_index].vertex;
             for &(target, edge) in &indexed.out[vertex] {
-                let edge_value = (self.edge_weight)(indexed.es[edge]);
+                let edge_value = (self.edge_weight)(&indexed.es[edge]);
                 let value: Vec<_> = labels[label_index]
                     .value
                     .iter()
@@ -301,7 +301,7 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
         while let Some(label_index) = queue.pop_front() {
             let vertex = labels[label_index].vertex;
             for &(target, edge) in &indexed.out[vertex] {
-                let edge_value = (self.edge_weight)(indexed.es[edge]);
+                let edge_value = (self.edge_weight)(&indexed.es[edge]);
                 let value: Vec<_> = labels[label_index]
                     .value
                     .iter()

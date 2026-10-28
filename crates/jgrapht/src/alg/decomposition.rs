@@ -19,6 +19,7 @@ use crate::graph::IncidenceGraph;
 use crate::graph::UndirectedGraph;
 use crate::graph::capability::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -555,6 +556,7 @@ where
         let g = self.graph;
         let (mut unmatched1, mut unmatched2) = (self.partition1.clone(), self.partition2.clone());
         for e in matching.edges() {
+            let e = e.borrow();
             let (source, target) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
             if self.partition1.contains(source) {
                 unmatched1.remove(source);
@@ -636,6 +638,7 @@ where
         });
         dg.add_vertices(g.vertices_cloned());
         for e in g.edges() {
+            let e = e.borrow();
             let (v1, v2) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
             if self.partition1.contains(v1) {
                 dg.add_edge(v1, v2)?;
@@ -666,6 +669,7 @@ where
             ..crate::GraphType::simple()
         });
         for e in g.edges() {
+            let e = e.borrow();
             let (v1, v2) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
             if subset.contains(v1) && subset.contains(v2) {
                 if matched.contains(e) {

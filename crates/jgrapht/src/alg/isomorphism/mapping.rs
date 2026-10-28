@@ -13,8 +13,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use super::ordering::GraphOrdering;
-use crate::graph::IncidenceGraph;
+use crate::graph::{GraphExt, IncidenceGraph};
 use indexmap::IndexMap;
+use std::borrow::Borrow;
 use std::collections::BTreeMap;
 use std::fmt;
 
@@ -59,12 +60,14 @@ impl<'g, G: IncidenceGraph> IsomorphicGraphMapping<'g, G> {
         let mut forward = IndexMap::with_capacity(graph1.vertex_count());
         let mut backward = IndexMap::with_capacity(graph1.vertex_count());
         for v in graph1.vertices() {
+            let v = v.borrow();
             let u = core1[g1.vertex_number(v)];
             if u != NULL_NODE {
                 forward.insert(v.clone(), g2.vertex(u).clone());
             }
         }
         for v in graph2.vertices() {
+            let v = v.borrow();
             let u = core2[g2.vertex_number(v)];
             if u != NULL_NODE {
                 backward.insert(v.clone(), g1.vertex(u).clone());
@@ -157,30 +160,33 @@ impl<'g, G: IncidenceGraph> IsomorphicGraphMapping<'g, G> {
     /// Whether this is a bijection that maps edges onto edges in both directions.
     pub fn is_valid_isomorphism(&self) -> bool {
         let (g1, g2) = (self.graph1, self.graph2);
-        if !g1
-            .vertices()
-            .all(|v| self.forward.get(v).is_some_and(|u| g2.contains_vertex(u)))
-        {
+        if !g1.vertices().all(|v| {
+            let v = v.borrow();
+            self.forward.get(v).is_some_and(|u| g2.contains_vertex(u))
+        }) {
             return false;
         }
-        if !g2
-            .vertices()
-            .all(|v| self.backward.get(v).is_some_and(|u| g1.contains_vertex(u)))
-        {
+        if !g2.vertices().all(|v| {
+            let v = v.borrow();
+            self.backward.get(v).is_some_and(|u| g1.contains_vertex(u))
+        }) {
             return false;
         }
-        g1.edges()
-            .all(|e| self.edge_correspondence(e, true).is_some())
-            && g2
-                .edges()
-                .all(|e| self.edge_correspondence(e, false).is_some())
+        g1.edges().all(|e| {
+            let e = e.borrow();
+            self.edge_correspondence(e, true).is_some()
+        }) && g2.edges().all(|e| {
+            let e = e.borrow();
+            self.edge_correspondence(e, false).is_some()
+        })
     }
 
     /// Whether `other` agrees with this mapping on every vertex of the second graph.
     pub fn is_equal_mapping(&self, other: &Self) -> bool {
-        self.graph2
-            .vertices()
-            .all(|v| self.backward.get(v) == other.backward.get(v))
+        self.graph2.vertices().all(|v| {
+            let v = v.borrow();
+            self.backward.get(v) == other.backward.get(v)
+        })
     }
 
     /// The mapping `self` followed by `other`, from `self`'s first graph to `other`'s second.
@@ -188,6 +194,7 @@ impl<'g, G: IncidenceGraph> IsomorphicGraphMapping<'g, G> {
         let mut forward = IndexMap::with_capacity(self.forward.len());
         let mut backward = IndexMap::with_capacity(self.forward.len());
         for v in self.graph1.vertices() {
+            let v = v.borrow();
             let u = self
                 .forward
                 .get(v)
@@ -208,7 +215,13 @@ impl<'g, G: IncidenceGraph> IsomorphicGraphMapping<'g, G> {
     /// Computes an identity automorphism (i.e. a self-mapping of a graph in which each vertex also
     /// maps to itself).
     pub fn identity(graph: &'g G) -> Self {
-        let map: IndexMap<_, _> = graph.vertices().map(|v| (v.clone(), v.clone())).collect();
+        let map: IndexMap<_, _> = graph
+            .vertices()
+            .map(|v| {
+                let v = v.borrow();
+                (v.clone(), v.clone())
+            })
+            .collect();
         IsomorphicGraphMapping {
             forward: map.clone(),
             backward: map,
@@ -244,8 +257,9 @@ where
     G::Vertex: fmt::Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let all_vertices: Vec<G::Vertex> = self.graph1.vertices_cloned().collect();
         let sorted: BTreeMap<String, &G::Vertex> =
-            self.graph1.vertices().map(|v| (v.to_string(), v)).collect();
+            all_vertices.iter().map(|v| (v.to_string(), v)).collect();
         write!(f, "[")?;
         for (i, (name, v)) in sorted.iter().enumerate() {
             if i > 0 {

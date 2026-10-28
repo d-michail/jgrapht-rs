@@ -19,6 +19,7 @@ use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// `HamiltonianPathSearchResult.Status`.
@@ -145,7 +146,7 @@ fn require_directed_or_undirected<G: Graph>(graph: &G) -> Result<()> {
 }
 
 fn singleton_path<G: Graph>(graph: &G) -> GraphWalk<G::Vertex, G::Edge> {
-    let only = graph.vertices().next().expect("one vertex").clone();
+    let only = graph.vertices_cloned().next().expect("one vertex");
     GraphWalk::new_unchecked(vec![only], Vec::new(), 0.0)
 }
 
@@ -709,6 +710,7 @@ impl BacktrackingHamiltonianPath {
         }
         let mut leaves = 0;
         for v in graph.vertices() {
+            let v = v.borrow();
             if Self::effective_undirected_degree(graph, v) == 1 {
                 leaves += 1;
                 if leaves > 2 {

@@ -24,6 +24,7 @@ use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::HashableSet;
 use indexmap::{IndexMap, IndexSet};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 /// Default numerical tolerance used by Blossom V.
@@ -246,7 +247,14 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
         let state = self.state.as_ref().expect("computed state");
         let matching = self.matching.as_ref().expect("computed matching");
         let mut error = Self::nonnegativity_error(state);
-        let matched: HashSet<_> = matching.edges().iter().cloned().collect();
+        let matched: HashSet<_> = matching
+            .edges()
+            .iter()
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
+            .collect();
         let scale = if self.objective_sense == ObjectiveSense::Maximize {
             -1.0
         } else {
@@ -665,6 +673,7 @@ mod tests {
             }
         }
         for edge in graph.edges() {
+            let edge = edge.borrow();
             let source = graph.edge_source(edge).unwrap();
             let target = graph.edge_target(edge).unwrap();
             if source == target {

@@ -18,6 +18,7 @@
 
 use jgrapht::alg::cyclic_exchange::AhujaOrlinSharmaCyclicExchangeLocalAugmentation;
 use jgrapht::*;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 
 mod chinese_postman_test {
@@ -68,7 +69,10 @@ mod chinese_postman_test {
                 .abs()
                 < 1e-8
         );
-        assert!(graph.edges().all(|edge| path.edge_list().contains(edge)));
+        assert!(graph.edges().all(|edge| {
+            let edge = edge.borrow();
+            path.edge_list().contains(edge)
+        }));
         assert_eq!(path.start_vertex(), path.end_vertex());
         assert_eq!(path.vertex_list().len(), path.edge_list().len() + 1);
         for index in 0..path.edge_list().len() {
@@ -4554,7 +4558,10 @@ mod berge_graph_inspector_test {
                 (
                     subg.vertex_count(),
                     subg.edge_count(),
-                    subg.vertices().all(|t| subg.edges_of(t).count() == 2),
+                    subg.vertices().all(|t| {
+                        let t = t.borrow();
+                        subg.edges_of(t).count() == 2
+                    }),
                 )
             })
         } else {
@@ -4563,7 +4570,10 @@ mod berge_graph_inspector_test {
                 (
                     subg.vertex_count(),
                     subg.edge_count(),
-                    subg.vertices().all(|t| subg.edges_of(t).count() == 2),
+                    subg.vertices().all(|t| {
+                        let t = t.borrow();
+                        subg.edges_of(t).count() == 2
+                    }),
                 )
             })
         }

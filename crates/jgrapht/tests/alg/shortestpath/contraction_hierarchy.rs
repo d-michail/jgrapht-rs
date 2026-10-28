@@ -21,6 +21,7 @@ use jgrapht::graph::OutgoingGraph;
 use jgrapht::util::java::RandomSource;
 use jgrapht::{DiGraph, Graph, GraphError, GraphMut, GraphMutExt, UGraph};
 use rand::{SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 
 const SEED: i64 = 19;
 
@@ -443,6 +444,7 @@ mod bidirectional_dijkstra {
             .single_source(&source)
             .unwrap();
         for sink in graph.vertices() {
+            let sink = sink.borrow();
             assert_eq!(expected.path(sink), actual.path(sink), "sink {sink:?}");
         }
     }
@@ -514,6 +516,7 @@ mod fixture_graphs {
                 .single_source(&source)
                 .unwrap();
             for sink in graph.vertices() {
+                let sink = sink.borrow();
                 assert_eq!(
                     expected.path(sink).map(|w| w.weight()),
                     actual.path(sink).map(|w| w.weight()),

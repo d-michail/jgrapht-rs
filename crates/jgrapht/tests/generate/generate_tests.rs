@@ -30,6 +30,7 @@ use jgrapht::util::java::RandomSource;
 use jgrapht::*;
 use rand::RngCore;
 use rand::{SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 
 const SEED: i64 = 5;
@@ -96,6 +97,7 @@ fn assert_gnm_shape<G: Graph<Vertex = i32> + IncidenceGraph>(
     assert_eq!(g.edge_count(), m);
     let mut seen = std::collections::HashSet::new();
     for e in g.edges() {
+        let e = e.borrow();
         let (a, b) = (*g.edge_source(e).unwrap(), *g.edge_target(e).unwrap());
         assert!(loops || a != b, "unexpected loop");
         let key = if directed || a <= b { (a, b) } else { (b, a) };
@@ -106,6 +108,7 @@ fn assert_gnm_shape<G: Graph<Vertex = i32> + IncidenceGraph>(
 /// Every edge joins the first partition `1..=n1` with the second one.
 fn assert_bipartite_edges<G: Graph<Vertex = i32> + IncidenceGraph>(g: &G, n1: i32) {
     for e in g.edges() {
+        let e = e.borrow();
         let (a, b) = (*g.edge_source(e).unwrap(), *g.edge_target(e).unwrap());
         assert!((a <= n1) != (b <= n1), "edge ({a}, {b}) inside a partition");
     }
@@ -1024,12 +1027,16 @@ mod gnm_random_graph_generator_test {
     /// Same seed => same sequence of edges (and generating twice with one generator continues the stream).
     fn same_topology<G: Graph<Vertex = i32>>(a: &G, b: &G) -> bool {
         let order = |g: &G| -> std::collections::HashMap<i32, usize> {
-            g.vertices().enumerate().map(|(i, v)| (*v, i)).collect()
+            g.vertices_cloned()
+                .enumerate()
+                .map(|(i, v)| (v, i))
+                .collect()
         };
         let (oa, ob) = (order(a), order(b));
         let edges = |g: &G, o: &std::collections::HashMap<i32, usize>| -> HashSet<(usize, usize)> {
             let mut s = HashSet::new();
             for e in g.edges() {
+                let e = e.borrow();
                 let (x, y) = (o[g.edge_source(e).unwrap()], o[g.edge_target(e).unwrap()]);
                 s.insert((x, y));
                 if !g.graph_type().directed {
@@ -1620,7 +1627,10 @@ mod prufer_watts_regular {
     }
 
     fn all_degrees<G: Graph<Vertex = i32> + IncidenceGraph>(g: &G, d: usize) {
-        assert!(g.vertices().all(|v| g.degree_of(v) == d));
+        assert!(g.vertices().all(|v| {
+            let v = v.borrow();
+            g.degree_of(v) == d
+        }));
     }
 
     #[test]

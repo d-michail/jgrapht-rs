@@ -57,8 +57,8 @@ mod line_graph_converter_test {
         target: &T,
     ) {
         assert_eq!(
-            target.vertices().collect::<HashSet<_>>(),
-            g.edges().collect::<HashSet<_>>()
+            target.vertices_cloned().collect::<HashSet<_>>(),
+            g.edges_cloned().collect::<HashSet<_>>()
         );
     }
 

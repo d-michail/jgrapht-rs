@@ -16,6 +16,7 @@ use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::java_int_hash_set::JavaIntHashSet;
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::{HashSet, VecDeque};
 
 /// An undirected multigraph over vertex indices: the graph or its complement.
@@ -154,6 +155,7 @@ impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
         let n = vertices.len();
         let mut edges = Vec::new();
         for e in graph.edges() {
+            let e = e.borrow();
             let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
             edges.push((index[s], index[t]));
         }

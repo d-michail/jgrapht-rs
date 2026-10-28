@@ -23,6 +23,7 @@ use crate::graph::OutgoingGraph;
 use crate::graph::UndirectedGraph;
 use crate::walk::GraphWalk;
 use indexmap::{IndexMap, IndexSet};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::hash::Hash;
 
@@ -387,6 +388,7 @@ pub trait StrongConnectivityAlgorithm {
             }
         }
         for e in g.edges() {
+            let e = e.borrow();
             let a = comp_of[g.edge_source(e).unwrap()];
             let b = comp_of[g.edge_target(e).unwrap()];
             if a != b {

@@ -20,6 +20,7 @@ use crate::graph::OutgoingGraph;
 use crate::graph::{DirectedExt, DirectedGraph, Graph, GraphExt, GraphMut, props};
 use crate::traverse::TopologicalOrderIterator;
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::VecDeque;
 
 /// Constructs the transitive closure of the input graph.
@@ -265,6 +266,7 @@ impl TransitiveReduction {
 
         let mut original_matrix: Vec<BitSet> = (0..n).map(|_| BitSet::new(n)).collect();
         for edge in directed_graph.edges() {
+            let edge = edge.borrow();
             let (v1, v2) = directed_graph.edge_endpoints(edge).expect("edge endpoints");
             original_matrix[index_of(v1)].set(index_of(v2), true);
         }

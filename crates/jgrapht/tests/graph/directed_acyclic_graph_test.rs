@@ -103,7 +103,7 @@ fn test_topo_iteration_order_linear_graph() {
     )
     .unwrap();
     let internal: Vec<i64> = dag.topological_order().unwrap();
-    let compare: Vec<i64> = TopologicalOrder::new(&dag).copied().collect();
+    let compare: Vec<i64> = TopologicalOrder::new(&dag).collect();
     assert_eq!(internal, compare);
 }
 
