@@ -291,9 +291,10 @@ built on it still require the `Graph` integrity contract and say so in their pan
 
 | Variant | Meaning | Replaces `InvalidArgument` for |
 |---|---|---|
-| `InvalidParameter { name, requirement }` | a numeric or collection parameter violates `ParameterRequirement` (`Positive`, `NonNegative`, `AtLeast(n)`, `AtMost(n)`, `NonEmpty`, `Finite`, `Probability`) | non-positive tolerance, radius, count, precision, ... |
+| `InvalidParameter { name, requirement }` | a numeric or collection parameter violates `ParameterRequirement` (`Positive`, `NonNegative`, `AtLeast(n)`, `AtMost(n)`, `NonEmpty`, `Finite`, `Probability`, `InRange(a, b)`, `AbsAtMost(n)`, `AtMostVertexCount`, `Consistent`, `FitsArea`, `ValidPartition`, `ValidSolution`) | non-positive tolerance, radius, count, precision, ... |
 | `InvalidWeight(WeightProblem)` | `Negative`, `NaN`, `NegativeOrNaN`, `NotFinite` | negative or NaN edge weights |
-| `InvalidGraph(GraphProperty)` | the graph lacks a required property: `Directed`, `Undirected`, `NotMixed`, `Simple`, `SimpleDirected`, `NoParallelEdges`, `NoSelfLoops`, `AllowsSelfLoops`, `AllowsParallelEdges`, `NonEmpty`, `AtLeastTwoVertices`, `Empty`, `Complete`, `CompleteBipartite`, `Bipartite`, `Connected`, `Weighted`, `Acyclic`, `Eulerian`, `Planar`, `NonPlanar`, `Tree` | "Graph must be ..." checks, `props::require_*` |
+| `InvalidGraph(GraphProperty)` | the graph lacks a required property: `Directed`, `Undirected`, `NotMixed`, `Simple`, `SimpleDirected`, `NoParallelEdges`, `NoSelfLoops`, `AllowsSelfLoops`, `AllowsParallelEdges`, `NonEmpty`, `AtLeastTwoVertices`, `Empty`, `Complete`, `CompleteBipartite`, `Bipartite`, `Connected`, `Weighted`, `Acyclic`, `Eulerian`, `Planar`, `NonPlanar`, `Tree`, `OreProperty`, `OneRootPerTree`, `SameDirection` | "Graph must be ..." checks, `props::require_*` |
+| `MissingParameter(name)`, `MissingVertexData(what)`, `InvalidState(what)`, `TooManyVertices { max, got }`, `DivisionByZero`, `NonTerminatingExpansion`, `Internal(what)` | a required parameter or per-vertex value is absent; an operation is called in the wrong state; the graph is too large; exact arithmetic failures; a broken internal invariant (a library bug) | generator and builder misconfiguration, missing weights, labels or demands |
 | `SourceEqualsSink` | flow or cut with identical source and sink | |
 | `Infeasible`, `Unbounded` | no feasible solution / no finite optimum where that is not a normal `Option` outcome | flow problems, perfect matching |
 
@@ -310,5 +311,5 @@ Also: `props::GRAPH_MUST_BE_*` message constants are removed; view mutators that
 `Unsupported(String)` now return `Unmodifiable` (`AsSubgraph::set_edge_weight`,
 `MaskSubgraph`), `NotWeighted` (`AsUnweighted::set_edge_weight`) or `NoVertexFactory`
 (`AsSubgraph::new_vertex`). The new enums are `#[non_exhaustive]`, exported from the crate root.
-The remaining `InvalidArgument(String)` and `Unsupported(String)` sites are converted with the
-algorithm family they belong to.
+The library no longer returns `InvalidArgument(String)`; the variant remains only for downstream
+code. `Unsupported(String)` is kept for operations a representation cannot offer.
