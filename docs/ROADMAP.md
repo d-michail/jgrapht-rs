@@ -21,7 +21,8 @@ The existing `alg/` is a *functional* port: one function per family (`maximal_cl
 3. ~~Rust API hardening~~ done (all 22 steps, see `RUST_API_ROADMAP.md`); was: complete the capability, `Result`/`Option`, iterator, stateful-result,
    error-type and panic work in [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md). This expands the old
    Phase 4 API pass and ISSUES I-6/I-8 into release-gated milestones.
-4. **Publish**: README mapping table is done; `CHANGELOG.md` and the crates.io metadata are in place; remaining is the first `0.1.0` tag and `cargo publish`, once the user is ready.
+4. ~~Typed errors, real doc comments, `serde` feature~~ done (ISSUES I-7, I-8, I-13).
+5. **Publish**: README mapping table is done; `CHANGELOG.md` and the crates.io metadata are in place; remaining is the first `0.1.0` tag and `cargo publish`, once the user is ready.
 
 ## Principles (carried over)
 
