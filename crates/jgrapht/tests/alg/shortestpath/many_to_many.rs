@@ -1,3 +1,5 @@
+use jgrapht::util::java::RandomSource;
+use rand::{SeedableRng, rngs::StdRng};
 // (C) Copyright 2003-2026, by John V Sichi and JGraphT Contributors.
 // Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
 //
@@ -19,7 +21,6 @@ use jgrapht::alg::shortestpath::{
 };
 use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
 use jgrapht::graph::{IncidenceGraph, OutgoingGraph};
-use jgrapht::util::java::JavaRandom;
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, Result, UGraph};
 use std::cell::Cell;
 use std::collections::HashSet;
@@ -221,9 +222,9 @@ fn sources_equal_targets_multigraph(kind: Kind) {
     }
 }
 
-fn generate_random_graph(n: usize, edges: usize, weights: &mut JavaRandom) -> DiGraph<usize> {
+fn generate_random_graph(n: usize, edges: usize, weights: &mut StdRng) -> DiGraph<usize> {
     let mut graph = DiGraph::<usize>::pseudo().weighted();
-    GnmRandomGraphGenerator::new(n, edges - n + 1, JavaRandom::new(17), false, false)
+    GnmRandomGraphGenerator::new(n, edges - n + 1, StdRng::seed_from_u64(17), false, false)
         .unwrap()
         .generate_indexed(&mut graph)
         .unwrap();
@@ -237,10 +238,10 @@ fn generate_random_graph(n: usize, edges: usize, weights: &mut JavaRandom) -> Di
     graph
 }
 
-fn random_vertices(n: usize, count: usize, random: &mut JavaRandom) -> HashSet<usize> {
+fn random_vertices(n: usize, count: usize, random: &mut StdRng) -> HashSet<usize> {
     let mut vertices = HashSet::with_capacity(count);
     while vertices.len() < count {
-        vertices.insert(random.next_int_bound(n as i32) as usize);
+        vertices.insert(random.next_int_bound(n));
     }
     vertices
 }
@@ -276,7 +277,7 @@ fn random_graphs(
     set_sizes: &[(usize, usize)],
     iterations: usize,
 ) {
-    let mut random = JavaRandom::new(17);
+    let mut random = StdRng::seed_from_u64(17);
     for &(source_count, target_count) in set_sizes {
         for _ in 0..iterations {
             let graph = generate_random_graph(n, degree * n, &mut random);
@@ -399,6 +400,7 @@ mod default_many_to_many {
 
 mod dijkstra_many_to_many {
     use super::*;
+    use rand::{SeedableRng, rngs::StdRng};
 
     #[test]
     fn test_empty_graph() {
@@ -530,7 +532,7 @@ mod dijkstra_many_to_many {
 
     #[test]
     fn test_get_paths_called_twice_returns_consistent_results() {
-        let mut random = JavaRandom::new(11);
+        let mut random = StdRng::seed_from_u64(11);
         let graph = random_directed_graph(&mut random, 30);
         let algorithm = DijkstraManyToManyShortestPaths::new(&graph);
         let first = algorithm.single_source(&0).unwrap();
@@ -541,7 +543,7 @@ mod dijkstra_many_to_many {
         }
     }
 
-    fn random_directed_graph(random: &mut JavaRandom, n: usize) -> DiGraph<usize> {
+    fn random_directed_graph(random: &mut StdRng, n: usize) -> DiGraph<usize> {
         let mut graph = DiGraph::<usize>::simple().weighted();
         graph.add_vertices(0..n);
         for source in 0..n {
@@ -565,7 +567,7 @@ mod dijkstra_many_to_many {
         for seed in [1, 2, 3, 5, 7, 11, 13, 17, 19, 23] {
             let sizes = [10, 20, 35, 50, 80];
             let n = sizes[seed % sizes.len()];
-            let mut random = JavaRandom::new(seed as i64);
+            let mut random = StdRng::seed_from_u64((seed as i64) as u64);
             let graph = random_directed_graph(&mut random, n);
             let algorithm = DijkstraManyToManyShortestPaths::new(&graph);
             for source in graph.vertices() {

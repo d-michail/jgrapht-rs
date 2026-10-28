@@ -14,9 +14,9 @@
 
 use jgrapht::alg::shortestpath::{EppsteinKShortestPath, EppsteinShortestPathIterator};
 use jgrapht::generate::{GnpRandomGraphGenerator, GraphGenerator};
-use jgrapht::util::java::JavaRandom;
 use jgrapht::{DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
-use rand::{Rng, SeedableRng, rngs::StdRng};
+use rand::Rng;
+use rand::{SeedableRng, rngs::StdRng};
 use std::collections::HashSet;
 
 fn graph(edges: &[(u32, u32, f64)]) -> DiGraph<u32> {
@@ -285,7 +285,7 @@ fn java_random_graph_workload_returns_distinct_ordered_valid_walks() {
     let mut values = StdRng::seed_from_u64(13);
     for _ in 0..1000 {
         let mut graph = DiGraph::<usize>::simple().weighted();
-        GnpRandomGraphGenerator::new(100, 0.5, JavaRandom::new(13), false)
+        GnpRandomGraphGenerator::new(100, 0.5, StdRng::seed_from_u64(13), false)
             .unwrap()
             .generate_indexed(&mut graph)
             .unwrap();

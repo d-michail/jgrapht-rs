@@ -132,7 +132,7 @@ mod scoring_coloring_clustering {
     use jgrapht::graph::sparse::{
         FullIncoming, LazyIncoming, NoIncoming, SparseIntDirectedGraph, SparseIntUndirectedGraph,
     };
-    use jgrapht::util::java::JavaRandom;
+    use rand::{SeedableRng, rngs::StdRng};
     use std::collections::HashMap;
 
     const EDGES: [(usize, usize); 6] = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 2)];
@@ -209,7 +209,7 @@ mod scoring_coloring_clustering {
             .clustering()
             .unwrap();
         assert!(!naive.clusters().is_empty());
-        let lp = LabelPropagationClustering::new(&g, 0, JavaRandom::new(7))
+        let lp = LabelPropagationClustering::new(&g, 0, StdRng::seed_from_u64(7))
             .unwrap()
             .clustering()
             .unwrap();

@@ -1,3 +1,5 @@
+use jgrapht::util::java::RandomSource;
+use rand::{SeedableRng, rngs::StdRng};
 // (C) Copyright 2003-2026, by John V Sichi and JGraphT Contributors.
 // Rust port (C) Copyright 2026, by Dimitrios Michail and jgrapht-rs Contributors.
 //
@@ -14,7 +16,6 @@
 
 use jgrapht::alg::metrics::GraphMeasurer;
 use jgrapht::alg::shortestpath::{FloydWarshallShortestPaths, JohnsonShortestPaths};
-use jgrapht::util::java::JavaRandom;
 use jgrapht::{DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use std::collections::BTreeSet;
 
@@ -39,7 +40,7 @@ fn graph2() -> UGraph<i32> {
 
 fn graph3() -> UGraph<i32> {
     let mut g = UGraph::<i32>::simple().weighted();
-    let mut random = JavaRandom::new(12345678);
+    let mut random = StdRng::seed_from_u64(12345678);
     let n = 100;
     let m = 100000;
     g.add_vertices(0..n);
@@ -50,8 +51,8 @@ fn graph3() -> UGraph<i32> {
             .unwrap();
     }
     for _ in n - 1..m {
-        let u = random.next_int_bound(n);
-        let v = random.next_int_bound(n);
+        let u = random.next_int_bound(n as usize) as i32;
+        let v = random.next_int_bound(n as usize) as i32;
         if u != v {
             // an existing edge is kept, but its weight is still overwritten, as in Java
             let _ = g.add_edge(&u, &v);
@@ -172,14 +173,41 @@ fn test_graph_pseudo_periphery_g2() {
     assert_eq!(set(gdm.graph_pseudo_periphery()), set(vec![0, 2, 3, 4, 6]));
 }
 
+/// The graph is random, so the periphery is checked against an independent Floyd-Warshall
+/// computation of the definition: `u` is in the pseudo-periphery when some `v` has
+/// `d(u, v) = ecc(u) = ecc(v)`.
 #[test]
 fn test_graph_pseudo_periphery_g3() {
-    let gdm = GraphMeasurer::new(&graph3()).unwrap();
-    assert_eq!(
-        set(gdm.graph_pseudo_periphery()),
-        set(vec![
-            6, 7, 13, 17, 19, 20, 21, 24, 32, 36, 37, 39, 41, 42, 46, 48, 51, 53, 60, 61, 63, 64,
-            66, 67, 69, 70, 71, 83, 89, 90, 95, 98
-        ])
-    );
+    let g = graph3();
+    let vs: Vec<i32> = g.vertices().copied().collect();
+    let n = vs.len();
+    let mut d = vec![vec![f64::INFINITY; n]; n];
+    for (i, row) in d.iter_mut().enumerate() {
+        row[i] = 0.0;
+    }
+    for e in g.edges() {
+        let (a, b) = (*g.edge_source(e).unwrap(), *g.edge_target(e).unwrap());
+        let w = g.edge_weight(e).unwrap();
+        let (a, b) = (a as usize, b as usize);
+        d[a][b] = d[a][b].min(w);
+        d[b][a] = d[b][a].min(w);
+    }
+    for k in 0..n {
+        for i in 0..n {
+            for j in 0..n {
+                d[i][j] = d[i][j].min(d[i][k] + d[k][j]);
+            }
+        }
+    }
+    let ecc: Vec<f64> = d
+        .iter()
+        .map(|row| row.iter().copied().fold(0.0, f64::max))
+        .collect();
+    let want: BTreeSet<i32> = (0..n)
+        .filter(|&u| (0..n).any(|v| d[u][v] == ecc[u] && ecc[u] == ecc[v]))
+        .map(|u| vs[u])
+        .collect();
+    assert!(!want.is_empty());
+    let gdm = GraphMeasurer::new(&g).unwrap();
+    assert_eq!(set(gdm.graph_pseudo_periphery()), want);
 }

@@ -12,104 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Java-compatible building blocks, so that seeded tests reproduce JGraphT's exact outputs.
-//!
-//! Kept only for the places that must match numbers produced by the JVM: the seeded generator
-//! tests and the NETGEN golden file, the Fruchterman–Reingold and random layouts, label
-//! propagation, the alias sampler and the random-greedy colouring tests. Everything else seeds
-//! `rand`'s `StdRng`; the algorithms accept any `rand::RngCore` through [`RandomSource`].
+//! Java-style building blocks (shuffle, priority queue, hash order) and the [`RandomSource`]
+//! abstraction. Randomised algorithms accept any `rand::RngCore`; seeded results are valid but
+//! are not expected to match JGraphT's for the same seed.
 
-/// `java.util.Random`: the same 48-bit linear congruential generator, so equal seeds give equal
-/// streams.
-#[derive(Debug, Clone)]
-pub struct JavaRandom {
-    seed: u64,
-}
-
-const MULTIPLIER: u64 = 0x5DEECE66D;
-const MASK: u64 = (1 << 48) - 1;
-
-impl JavaRandom {
-    /// Creates a new instance.
-    pub fn new(seed: i64) -> Self {
-        JavaRandom {
-            seed: (seed as u64 ^ MULTIPLIER) & MASK,
-        }
-    }
-    /// `new Random()`-like seeding from the system clock.
-    pub fn from_time() -> Self {
-        let t = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_or(0, |d| d.as_nanos() as i64);
-        Self::new(t)
-    }
-    /// Sets the seed.
-    pub fn set_seed(&mut self, seed: i64) {
-        self.seed = (seed as u64 ^ MULTIPLIER) & MASK;
-    }
-    fn next(&mut self, bits: u32) -> i32 {
-        self.seed = (self.seed.wrapping_mul(MULTIPLIER).wrapping_add(0xB)) & MASK;
-        (self.seed >> (48 - bits)) as i64 as i32
-    }
-    /// Returns the next int.
-    pub fn next_int(&mut self) -> i32 {
-        self.next(32)
-    }
-    /// `nextInt(bound)`: uniform in `[0, bound)`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `bound` is not positive.
-    pub fn next_int_bound(&mut self, bound: i32) -> i32 {
-        assert!(bound > 0, "bound must be positive");
-        let mut r = self.next(31);
-        let m = bound - 1;
-        if bound & m == 0 {
-            ((bound as i64 * r as i64) >> 31) as i32
-        } else {
-            let mut u = r;
-            loop {
-                r = u % bound;
-                if u.wrapping_sub(r).wrapping_add(m) >= 0 {
-                    break;
-                }
-                u = self.next(31);
-            }
-            r
-        }
-    }
-    /// Returns the next long.
-    pub fn next_long(&mut self) -> i64 {
-        ((self.next(32) as i64) << 32).wrapping_add(self.next(32) as i64)
-    }
-    /// Returns the next boolean.
-    pub fn next_boolean(&mut self) -> bool {
-        self.next(1) != 0
-    }
-    /// Returns the next double.
-    pub fn next_double(&mut self) -> f64 {
-        let hi = (self.next(26) as i64) << 27;
-        (hi + self.next(27) as i64) as f64 * (1.0 / (1u64 << 53) as f64)
-    }
-    /// Returns the next float.
-    pub fn next_float(&mut self) -> f32 {
-        self.next(24) as f32 / (1 << 24) as f32
-    }
-    /// `nextGaussian()` (polar method, without the cached second value across calls being shared).
-    pub fn next_gaussian(&mut self) -> f64 {
-        loop {
-            let v1 = 2.0 * self.next_double() - 1.0;
-            let v2 = 2.0 * self.next_double() - 1.0;
-            let s = v1 * v1 + v2 * v2;
-            if s < 1.0 && s != 0.0 {
-                let multiplier = (-2.0 * s.ln() / s).sqrt();
-                return v1 * multiplier;
-            }
-        }
-    }
-}
-
-/// Source of randomness for algorithms that need to match JGraphT draw for draw.
+/// Source of randomness used by the randomised algorithms; implemented for every `rand::RngCore`.
 pub trait RandomSource {
     /// Uniform over all `i32` values (`Random.nextInt()`).
     fn next_int(&mut self) -> i32;
@@ -121,24 +28,6 @@ pub trait RandomSource {
     fn next_boolean(&mut self) -> bool;
     /// Uniform in `[0, 1)` with float precision.
     fn next_float(&mut self) -> f32;
-}
-
-impl RandomSource for JavaRandom {
-    fn next_int(&mut self) -> i32 {
-        JavaRandom::next_int(self)
-    }
-    fn next_int_bound(&mut self, bound: usize) -> usize {
-        JavaRandom::next_int_bound(self, bound as i32) as usize
-    }
-    fn next_double(&mut self) -> f64 {
-        JavaRandom::next_double(self)
-    }
-    fn next_boolean(&mut self) -> bool {
-        JavaRandom::next_boolean(self)
-    }
-    fn next_float(&mut self) -> f32 {
-        JavaRandom::next_float(self)
-    }
 }
 
 impl<R: rand::RngCore> RandomSource for R {

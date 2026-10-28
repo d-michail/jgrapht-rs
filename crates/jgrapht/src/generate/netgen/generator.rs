@@ -69,9 +69,7 @@ const TS2S: usize = 8;
 /// NETGEN-style generator of minimum cost flow, maximum flow and assignment problems.
 ///
 /// The structure (chains of transshipment nodes from the sources, arcs to the sinks, then random
-/// arcs up to the requested count) and the random-number consumption follow JGraphT, so a
-/// [`JavaRandom`](crate::util::java::JavaRandom) given to [`NetworkGenerator::with_rng`] reproduces
-/// JGraphT's networks. The
+/// arcs up to the requested count) follow JGraphT. The
 /// seeded constructor [`NetworkGenerator::new`] uses `rand`'s `StdRng`.
 pub struct NetworkGenerator<V, E, R = StdRng> {
     config: NetworkGeneratorConfig,

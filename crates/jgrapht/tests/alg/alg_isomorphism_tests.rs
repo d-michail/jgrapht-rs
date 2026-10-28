@@ -1240,8 +1240,6 @@ mod vf2_subgraph_isomorphism_inspector_test {
     use super::subgraph_utils::*;
     use super::*;
     use jgrapht::graph::Undirected;
-    use rand::rngs::StdRng;
-    use rand::{Rng, SeedableRng};
     use std::cmp::Ordering;
 
     fn sg(vertices: &[i32], edges: &[(i32, i32)]) -> UGraph<i32> {

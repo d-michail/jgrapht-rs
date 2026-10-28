@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1469 | 344 | 124 | 347 | 16 | 19 | 426 | 193 |
+| `jgrapht` | 1459 | 343 | 124 | 347 | 16 | 19 | 419 | 191 |
 | `jgrapht-io` | 159 | 84 | 9 | 13 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -196,7 +196,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/cross.rs` | `BreadthFirstIterator::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::new` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/traverse/cross.rs` | `DepthFirstIterator::new` | 0 unwrap, 1 expect/panic/assert |
-| `jgrapht/src/util/java.rs` | `JavaRandom::next_int_bound` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/util/sampler.rs` | `AliasMethodSampler::with_epsilon` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/walk.rs` | `GraphWalk::try_new` | 0 unwrap, 2 expect/panic/assert |
 
@@ -1594,16 +1593,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/util/java.rs` | `JavaPriorityQueue::offer` | infallible | `()` |
 | `jgrapht/src/util/java.rs` | `JavaPriorityQueue::peek` | Option | `Option<&T>` |
 | `jgrapht/src/util/java.rs` | `JavaPriorityQueue::poll` | Option | `Option<T>` |
-| `jgrapht/src/util/java.rs` | `JavaRandom::from_time` | unchecked constructor | `Self` |
-| `jgrapht/src/util/java.rs` | `JavaRandom::new` | unchecked constructor | `Self` |
-| `jgrapht/src/util/java.rs` | `JavaRandom::next_boolean` | state query | `bool` |
-| `jgrapht/src/util/java.rs` | `JavaRandom::next_double` | state query | `f64` |
-| `jgrapht/src/util/java.rs` | `JavaRandom::next_float` | state query | `f32` |
-| `jgrapht/src/util/java.rs` | `JavaRandom::next_gaussian` | state query | `f64` |
-| `jgrapht/src/util/java.rs` | `JavaRandom::next_int` | state query | `i32` |
-| `jgrapht/src/util/java.rs` | `JavaRandom::next_int_bound` | state query | `i32` |
-| `jgrapht/src/util/java.rs` | `JavaRandom::next_long` | state query | `i64` |
-| `jgrapht/src/util/java.rs` | `JavaRandom::set_seed` | infallible | `()` |
 | `jgrapht/src/util/java.rs` | `RandomSource::next_boolean` | state query | `bool` |
 | `jgrapht/src/util/java.rs` | `RandomSource::next_double` | state query | `f64` |
 | `jgrapht/src/util/java.rs` | `RandomSource::next_float` | state query | `f32` |

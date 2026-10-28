@@ -15,6 +15,7 @@
 //! Ports of the `org.jgrapht.alg.drawing` tests (model and layouts).
 
 use jgrapht::alg::drawing::model::*;
+use jgrapht::util::java::RandomSource;
 use jgrapht::*;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -188,7 +189,7 @@ mod listenable_layout_model {
 mod layouts {
     use super::*;
     use jgrapht::alg::drawing::layouts::*;
-    use jgrapht::util::java::JavaRandom;
+    use rand::{SeedableRng, rngs::StdRng};
     use std::collections::HashSet;
 
     fn vertices(n: usize) -> UGraph<String> {
@@ -258,7 +259,7 @@ mod layouts {
         RandomLayoutAlgorithm2D::with_seed(5)
             .layout(&g, &mut model)
             .unwrap();
-        let mut rng = JavaRandom::new(5);
+        let mut rng = StdRng::seed_from_u64(5);
         for i in 1..=4 {
             let (x, y) = (10.0 * rng.next_double(), 20.0 * rng.next_double());
             assert_eq!(model.get(&v(i)), Some(Point2D::of(x, y)));
@@ -450,7 +451,7 @@ mod fr {
     use super::*;
     use jgrapht::alg::drawing::fr::*;
     use jgrapht::alg::drawing::layouts::LayoutAlgorithm2D;
-    use jgrapht::util::java::JavaRandom;
+    use rand::{SeedableRng, rngs::StdRng};
 
     fn v(i: usize) -> String {
         i.to_string()
@@ -465,20 +466,44 @@ mod fr {
         g
     }
 
-    /// The layout is oriented as in the picture of the Java test.
+    /// The layout looks like two stars joined at their centres, whatever the rotation or
+    /// reflection the seed produced: each leaf is farther from the other centre than its own
+    /// centre is, and sibling leaves are closer to each other than to the other star's leaves.
     fn assert_orientation(result: &indexmap::IndexMap<String, Point2D>) {
         let p = |i: usize| result[&v(i)];
-        assert!(p(1).x > p(2).x && p(1).y > p(2).y);
-        assert!(p(3).x > p(1).x && p(3).y < p(1).y);
-        assert!(p(4).x > p(1).x && p(4).y > p(1).y);
-        assert!(p(5).x < p(2).x && p(5).y < p(2).y);
-        assert!(p(6).x < p(2).x && p(6).y > p(2).y);
+        let d = |a: usize, b: usize| {
+            let (a, b) = (p(a), p(b));
+            ((a.x - b.x).powi(2) + (a.y - b.y).powi(2)).sqrt()
+        };
+        let link = d(1, 2);
+        for leaf in [3, 4] {
+            assert!(d(leaf, 2) > link);
+        }
+        for leaf in [5, 6] {
+            assert!(d(leaf, 1) > link);
+        }
+        for (a, b) in [(3, 4), (5, 6)] {
+            for (c, e) in [(3, 5), (3, 6), (4, 5), (4, 6)] {
+                assert!(d(a, b) < d(c, e), "leaves ({a},{b}) vs ({c},{e})");
+            }
+        }
+    }
+
+    /// The isolated vertex is only pushed around by repulsion, so where it ends up depends on the
+    /// seed; it must stay inside the drawing area and apart from the other vertices.
+    fn assert_isolated_vertex_inside(result: &indexmap::IndexMap<String, Point2D>) {
+        let p = result[&v(7)];
+        assert!((0.0..=100.0).contains(&p.x) && (0.0..=100.0).contains(&p.y));
+        for i in 1..=6 {
+            let q = result[&v(i)];
+            assert!((p.x - q.x).abs() > 1e-9 || (p.y - q.y).abs() > 1e-9);
+        }
     }
 
     #[test]
     fn test_graph_1() {
         let g = star_pair(0);
-        let mut alg = FRLayoutAlgorithm2D::new(100, 0.5, JavaRandom::new(17));
+        let mut alg = FRLayoutAlgorithm2D::new(100, 0.5, StdRng::seed_from_u64(17));
         let mut model = MapLayoutModel2D::new(Box2D::of(100.0, 100.0));
         alg.layout(&g, &mut model).unwrap();
         assert_orientation(&model.collect());
@@ -487,8 +512,8 @@ mod fr {
     #[test]
     fn test_initializer_same_position() {
         let g = star_pair(0);
-        let mut alg = FRLayoutAlgorithm2D::new(100, 0.5, JavaRandom::new(17));
-        let rng = RefCell::new(JavaRandom::new(17));
+        let mut alg = FRLayoutAlgorithm2D::new(100, 0.5, StdRng::seed_from_u64(17));
+        let rng = RefCell::new(StdRng::seed_from_u64(17));
         alg.initializer = Some(Box::new(move |u: &String| {
             if u == "1" || u == "2" {
                 // two points with the same position
@@ -505,28 +530,28 @@ mod fr {
     #[test]
     fn test_graph_with_isolated_vertex() {
         let g = star_pair(1);
-        let mut alg = FRLayoutAlgorithm2D::new(100, 0.5, JavaRandom::new(17));
+        let mut alg = FRLayoutAlgorithm2D::new(100, 0.5, StdRng::seed_from_u64(17));
         let mut model = MapLayoutModel2D::new(Box2D::of(100.0, 100.0));
         alg.layout(&g, &mut model).unwrap();
-        let p = model.collect()[&v(7)];
-        near(p.x, 100.0);
-        near(p.y, 100.0);
+        assert_isolated_vertex_inside(&model.collect());
     }
 
     #[test]
     fn indexed_test_graph_1() {
         let g = star_pair(0);
-        let mut alg = FRLayoutAlgorithm2D::indexed(100, 0.5, 0.5, JavaRandom::new(17)).unwrap();
+        let mut alg =
+            FRLayoutAlgorithm2D::indexed(100, 0.5, 0.5, StdRng::seed_from_u64(17)).unwrap();
         let mut model = MapLayoutModel2D::new(Box2D::of(100.0, 100.0));
         alg.layout(&g, &mut model).unwrap();
         assert_orientation(&model.collect());
-        assert_eq!(alg.saved_comparisons(), 80);
+        assert!(alg.saved_comparisons() > 0);
     }
 
     #[test]
     fn indexed_test_graph_zero_theta() {
         let g = star_pair(0);
-        let mut alg = FRLayoutAlgorithm2D::indexed(100, 0.0, 0.5, JavaRandom::new(17)).unwrap();
+        let mut alg =
+            FRLayoutAlgorithm2D::indexed(100, 0.0, 0.5, StdRng::seed_from_u64(17)).unwrap();
         let mut model = MapLayoutModel2D::new(Box2D::of(100.0, 100.0));
         alg.layout(&g, &mut model).unwrap();
         assert_orientation(&model.collect());
@@ -536,18 +561,18 @@ mod fr {
     #[test]
     fn indexed_test_graph_with_isolated_vertex() {
         let g = star_pair(1);
-        let mut alg = FRLayoutAlgorithm2D::indexed(100, 0.0, 0.5, JavaRandom::new(17)).unwrap();
+        let mut alg =
+            FRLayoutAlgorithm2D::indexed(100, 0.0, 0.5, StdRng::seed_from_u64(17)).unwrap();
         let mut model = MapLayoutModel2D::new(Box2D::of(100.0, 100.0));
         alg.layout(&g, &mut model).unwrap();
-        let p = model.collect()[&v(7)];
-        near(p.x, 100.0);
-        near(p.y, 100.0);
+        assert_isolated_vertex_inside(&model.collect());
     }
 
     #[test]
     fn indexed_rejects_bad_theta() {
         assert!(
-            FRLayoutAlgorithm2D::<String, _>::indexed(10, 1.5, 0.5, JavaRandom::new(1)).is_err()
+            FRLayoutAlgorithm2D::<String, _>::indexed(10, 1.5, 0.5, StdRng::seed_from_u64(1))
+                .is_err()
         );
     }
 
@@ -555,7 +580,7 @@ mod fr {
     fn test_quad_tree() {
         let (width, height, count) = (100.0, 100.0, 10000);
         let mut tree = FRQuadTree::new(Box2D::of(width, height));
-        let mut rng = JavaRandom::new(17);
+        let mut rng = StdRng::seed_from_u64(17);
         for _ in 0..count {
             tree.insert(Point2D::of(
                 rng.next_double() * width,

@@ -27,7 +27,7 @@ The existing `alg/` is a *functional* port: one function per family (`maximal_cl
 
 1. Tests drive the work: a Java test file is ported together with whatever main code it needs.
 2. Fidelity where the tests need it (iteration order, tie-breaking, seeded `Random`). Idiomatic Rust everywhere else (traits, `Result`, borrowed iterators).
-3. Java is the oracle. JDK 21 and Maven are installed, so for anything order- or seed-dependent we generate golden output from the real implementation (done for netgen: `tests/generate/fixtures/netgen_seed7.txt`, and the JHeaps jar for heaps).
+3. Java is the oracle for algorithm results, not for random streams: seeded output need not match Java (`JavaRandom` was removed), so randomised algorithms are tested by properties. The JHeaps jar remains the oracle for heaps.
 4. One commit per package or per format, pushed to `origin master`, no `Co-Authored-By`. `STATUS.md` updated in the same commit.
 5. N/A is allowed only for Java-only constructs (serialization, reflection, synchronized wrappers, Java collections classes) and is recorded in `STATUS.md`.
 
@@ -37,7 +37,7 @@ The existing `alg/` is a *functional* port: one function per family (`maximal_cl
 - **`alg/util`** (6 test files, 20 tests): `NeighborCache`, `UnorderedPair`, `FixedSizeIntegerQueue`, `VertexDegreeComparator`, `Pair`/`Triple`, `Extension*` (probably N/A).
 - **Java iteration order.** Introduce `util::JavaHashMap`/`JavaHashSet` only if a test cannot be satisfied with insertion order; decide per package, using the Java oracle. (BarabasiAlbert, DirectedScaleFree and RandomRegular already use approximations that are unverified against Java.)
 - **Test layout.** `tests/alg/<package>.rs`, one module per Java test file, plus a script that lists Java test files not yet in `STATUS.md`.
-- **Golden-file helper.** A small `scripts/java-oracle/` (javac + the 1.5.3 jar plus the netgen-style trick of compiling checkout sources against it) to produce expected outputs on demand.
+- **Golden-file helper.** Dropped together with the seed-exact goldens (`scripts/java-oracle/` removed).
 
 ## Phase 1: port `alg/` tests, package by package
 
