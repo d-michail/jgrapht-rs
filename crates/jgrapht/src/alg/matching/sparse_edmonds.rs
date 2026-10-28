@@ -122,7 +122,7 @@ struct Algorithm<'a, G: Graph> {
 impl<'a, G: IncidenceGraph> Algorithm<'a, G> {
     fn new(graph: &'a G) -> Self {
         let nodes = graph.vertex_count();
-        let vertex_map: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let vertex_map: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let vertex_index_map: HashMap<G::Vertex, usize> = vertex_map
             .iter()
             .enumerate()

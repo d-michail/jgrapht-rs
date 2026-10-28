@@ -19,6 +19,7 @@
 use super::shortestpath::{FloydWarshallShortestPaths, ShortestPathAlgorithm};
 use super::util::Indexed;
 use crate::graph::Graph;
+use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
 use std::collections::{HashMap, HashSet, VecDeque};
 
@@ -65,7 +66,7 @@ impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
         g: &G,
         algorithm: &A,
     ) -> crate::Result<Self> {
-        let vertices: Vec<V> = g.vertices().cloned().collect();
+        let vertices: Vec<V> = g.vertices_cloned().collect();
         let n = vertices.len();
         let mut pair_weight = vec![vec![0.0; n]; n];
         for (i, row) in pair_weight.iter_mut().enumerate() {

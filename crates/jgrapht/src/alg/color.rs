@@ -258,7 +258,7 @@ impl<'g, G: Graph> GreedyColoring<'g, G> {
 impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for GreedyColoring<'_, G> {
     /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
-        let order: Vec<G::Vertex> = self.graph.vertices().cloned().collect();
+        let order: Vec<G::Vertex> = self.graph.vertices_cloned().collect();
         color_in_order(self.graph, &order)
     }
 }
@@ -405,7 +405,7 @@ impl<G: IncidenceGraph, R: RandomSource> VertexColoringAlgorithm<G::Vertex>
     for RandomGreedyColoring<'_, G, R>
 {
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
-        let mut order: Vec<G::Vertex> = self.graph.vertices().cloned().collect();
+        let mut order: Vec<G::Vertex> = self.graph.vertices_cloned().collect();
         java_shuffle(&mut order, &mut *self.rng.borrow_mut());
         color_in_order(self.graph, &order)
     }
@@ -654,7 +654,7 @@ impl<V: Clone + Eq + Hash> BrownBacktrackColoring<V> {
     ///
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new<G: Graph<Vertex = V> + IncidenceGraph>(graph: &G) -> Self {
-        let vertex_list: Vec<V> = graph.vertices().cloned().collect();
+        let vertex_list: Vec<V> = graph.vertices_cloned().collect();
         let index: HashMap<&V, usize> = vertex_list
             .iter()
             .enumerate()

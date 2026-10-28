@@ -193,7 +193,7 @@ fn approximate_and_exact_weighted_matching() {
             .unwrap()
             .generate_indexed(&mut g)
             .unwrap();
-        for e in g.edges().cloned().collect::<Vec<_>>() {
+        for e in g.edges_cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(1..10) as f64)
                 .unwrap();
         }

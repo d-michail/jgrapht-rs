@@ -78,7 +78,7 @@ fn matchings_against_brute_force() {
             .unwrap()
             .generate_indexed(&mut g)
             .unwrap();
-        for e in g.edges().cloned().collect::<Vec<_>>() {
+        for e in g.edges_cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(1..9) as f64)
                 .unwrap();
         }
@@ -119,7 +119,7 @@ fn bipartite_matchings() {
             .generate_indexed(&mut g)
             .unwrap();
         // keep only edges between evens and odds so the graph is bipartite
-        for e in g.edges().cloned().collect::<Vec<_>>() {
+        for e in g.edges_cloned().collect::<Vec<_>>() {
             let (a, b) = (*g.edge_source(&e).unwrap(), *g.edge_target(&e).unwrap());
             if (a + b) % 2 == 0 {
                 g.remove_edge(&e);

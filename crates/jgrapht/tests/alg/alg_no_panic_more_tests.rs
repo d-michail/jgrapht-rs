@@ -42,7 +42,7 @@ fn matching_does_not_panic() {
         let _ = SparseEdmondsMaximumCardinalityMatching::new(g).and_then(|mut m| m.get_matching());
         let _ = KolmogorovWeightedPerfectMatching::new(g).and_then(|mut m| m.get_matching());
         let _ = KolmogorovWeightedMatching::new(g).and_then(|mut m| m.get_matching());
-        let vs: Vec<usize> = g.vertices().copied().collect();
+        let vs: Vec<usize> = g.vertices_cloned().collect();
         let (a, b) = vs.split_at(vs.len() / 2);
         let (a, b): (IndexSet<usize>, IndexSet<usize>) =
             (a.iter().copied().collect(), b.iter().copied().collect());
@@ -105,7 +105,7 @@ fn planarity_isomorphism_and_cuts_do_not_panic() {
         let _ = GusfieldGomoryHuCutTree::new(g).and_then(|mut t| t.gomory_hu_tree());
         let _ = AHUUnrootedTreeIsomorphismInspector::new(g, g).map(|i| i.mapping());
         let _ = PadbergRaoOddMinimumCutset::new(g).and_then(|mut p| {
-            let odd: indexmap::IndexSet<usize> = g.vertices().copied().take(2).collect();
+            let odd: indexmap::IndexSet<usize> = g.vertices_cloned().take(2).collect();
             p.minimum_odd_cut(odd, false)
         });
     });

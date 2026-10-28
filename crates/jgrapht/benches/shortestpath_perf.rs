@@ -90,7 +90,7 @@ fn many_to_many_state(n: usize) -> (DiGraph<usize>, Vec<usize>) {
     }
 
     let mut random = StdRng::seed_from_u64(SEED as u64);
-    let edges: Vec<_> = graph.edges().cloned().collect();
+    let edges: Vec<_> = graph.edges_cloned().collect();
     for edge in edges {
         graph
             .set_edge_weight(&edge, 1.0 + random.random_range(0..1000) as f64)

@@ -221,7 +221,7 @@ impl<'g, G: IncomingGraph + OutgoingGraph> DijkstraManyToManyShortestPaths<'g, G
         &self,
         source: &G::Vertex,
     ) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
-        let targets: HashSet<_> = self.graph.vertices().cloned().collect();
+        let targets: HashSet<_> = self.graph.vertices_cloned().collect();
         forward_tree(self.graph, source, &targets)
     }
 }

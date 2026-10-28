@@ -58,7 +58,7 @@ impl TransitiveClosure {
                 crate::GraphProperty::SimpleDirected,
             ));
         }
-        let vertex_set: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let vertex_set: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let mut new_edge_targets: IndexSet<G::Vertex> = IndexSet::new();
 
         let bound = compute_binary_log(vertex_set.len());
@@ -259,7 +259,7 @@ impl TransitiveReduction {
     pub fn reduce<G: Graph + GraphMut>(&self, directed_graph: &mut G) -> Result<()> {
         props::require_directed(directed_graph)?;
 
-        let vertices: Vec<G::Vertex> = directed_graph.vertices().cloned().collect();
+        let vertices: Vec<G::Vertex> = directed_graph.vertices_cloned().collect();
         let n = vertices.len();
         let index_of = |v: &G::Vertex| vertices.iter().position(|x| x == v).expect("vertex");
 

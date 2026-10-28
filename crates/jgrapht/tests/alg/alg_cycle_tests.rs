@@ -1144,7 +1144,7 @@ mod cycle_detector_test {
         let mut g = G::with_loops();
         create_graph(&mut g);
         g.remove_vertex(&s("v2"));
-        let acyclic: HashSet<String> = g.vertices().cloned().collect();
+        let acyclic: HashSet<String> = g.vertices_cloned().collect();
         run_test(&g, HashSet::new(), acyclic);
     }
 
@@ -3234,13 +3234,13 @@ mod hierholzer_eulerian_cycle_test {
         let mut rng = StdRng::seed_from_u64(17);
         for size in (13..52).step_by(2) {
             let mut g = complete::<jgrapht::graph::Undirected>(GraphType::pseudograph(), size);
-            let vertices: Vec<i32> = g.vertices().copied().collect();
+            let vertices: Vec<i32> = g.vertices_cloned().collect();
             for v in vertices {
                 for _ in 0..=rng.random_range(0..10) {
                     g.add_edge(&v, &v).unwrap();
                 }
             }
-            let edges: Vec<DefaultEdge> = g.edges().cloned().collect();
+            let edges: Vec<DefaultEdge> = g.edges_cloned().collect();
             for e in edges {
                 let (s, t) = {
                     let (s, t) = g.edge_endpoints(&e).unwrap();
@@ -3262,13 +3262,13 @@ mod hierholzer_eulerian_cycle_test {
         let mut rng = StdRng::seed_from_u64(17);
         for size in (5..52).step_by(2) {
             let mut g = complete::<jgrapht::graph::Directed>(GraphType::pseudograph(), size);
-            let vertices: Vec<i32> = g.vertices().copied().collect();
+            let vertices: Vec<i32> = g.vertices_cloned().collect();
             for v in vertices {
                 for _ in 0..=rng.random_range(0..10) {
                     g.add_edge(&v, &v).unwrap();
                 }
             }
-            let edges: Vec<DefaultEdge> = g.edges().cloned().collect();
+            let edges: Vec<DefaultEdge> = g.edges_cloned().collect();
             for e in edges {
                 let (s, t) = {
                     let (s, t) = g.edge_endpoints(&e).unwrap();
@@ -3297,7 +3297,7 @@ mod hierholzer_eulerian_cycle_test {
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
-        let edges: Vec<DefaultEdge> = g.edges().cloned().collect();
+        let edges: Vec<DefaultEdge> = g.edges_cloned().collect();
         for e in edges {
             let (s, t) = {
                 let (s, t) = g.edge_endpoints(&e).unwrap();
@@ -3306,7 +3306,7 @@ mod hierholzer_eulerian_cycle_test {
             g.add_edge(&t, &s).unwrap();
         }
         if extra_loops {
-            let vertices: Vec<i32> = g.vertices().copied().collect();
+            let vertices: Vec<i32> = g.vertices_cloned().collect();
             for v in vertices {
                 for _ in 0..=rng.random_range(0..10) {
                     g.add_edge(&v, &v).unwrap();
@@ -4523,7 +4523,7 @@ mod berge_graph_inspector_test {
 
     /// The complement of `g` (an edge for every non-adjacent pair of distinct vertices).
     fn complement_of<G: Graph>(g: &G) -> UGraph<G::Vertex> {
-        let vs: Vec<G::Vertex> = g.vertices().cloned().collect();
+        let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
         let mut c = UGraph::<G::Vertex>::simple();
         c.add_vertices(vs.iter().cloned());
         for i in 0..vs.len() {
@@ -4957,6 +4957,7 @@ mod weak_chordality_certificate {
 }
 
 mod berge_certificate {
+    use jgrapht::GraphExt;
     use jgrapht::alg::cycle::{BergeCertificate, BergeGraphInspector};
     use jgrapht::{Graph, GraphMut, GraphMutExt, UGraph};
 
@@ -4970,7 +4971,7 @@ mod berge_certificate {
 
     fn complement(g: &UGraph<i32>) -> UGraph<i32> {
         let mut c = UGraph::<i32>::simple();
-        let vs: Vec<i32> = g.vertices().copied().collect();
+        let vs: Vec<i32> = g.vertices_cloned().collect();
         for &v in &vs {
             c.add_vertex(v);
         }

@@ -137,7 +137,7 @@ fn directed_algorithms_do_not_panic() {
 }
 
 fn shortest_paths<G: IncidenceGraph<Vertex = usize> + IncomingGraph + GraphMut>(g: &G) {
-    let vs: Vec<usize> = g.vertices().copied().collect();
+    let vs: Vec<usize> = g.vertices_cloned().collect();
     for a in vs.iter().chain([&99]) {
         for b in vs.iter().chain([&99]) {
             let _ = Dijkstra::new(g).path_weight(a, b);

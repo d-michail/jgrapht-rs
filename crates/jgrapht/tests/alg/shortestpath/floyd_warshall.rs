@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{
     DijkstraShortestPath, FloydWarshallShortestPaths, ShortestPathAlgorithm,
 };
@@ -234,10 +235,10 @@ where
         GnpRandomGraphGenerator::new(N, P, StdRng::seed_from_u64(seed), true).unwrap();
     generator.generate_default(&mut graph).unwrap();
     let mut random = StdRng::seed_from_u64(seed ^ 0x55aa);
-    for edge in graph.edges().copied().collect::<Vec<_>>() {
+    for edge in graph.edges_cloned().collect::<Vec<_>>() {
         graph.set_edge_weight(&edge, random.random()).unwrap();
     }
-    let vertices = graph.vertices().copied().collect::<Vec<_>>();
+    let vertices = graph.vertices_cloned().collect::<Vec<_>>();
     for &source in &vertices {
         for _ in 0..(N as f64 * P) as usize {
             let target = vertices[random.random_range(0..vertices.len())];

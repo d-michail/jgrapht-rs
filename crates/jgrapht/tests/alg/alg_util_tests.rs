@@ -97,7 +97,7 @@ mod vertex_degree_comparator_test {
         for _ in 0..20 {
             let mut graph = UGraph::<i32>::simple().with_vertex_factory(|i| i as i32);
             generator.generate_default(&mut graph).unwrap();
-            let mut vertices: Vec<i32> = graph.vertices().copied().collect();
+            let mut vertices: Vec<i32> = graph.vertices_cloned().collect();
             vertices.sort_by(vertex_degree_comparator(&graph));
             for w in vertices.windows(2) {
                 assert!(graph.degree_of(&w[0]) <= graph.degree_of(&w[1]));

@@ -213,7 +213,7 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_roots(forest: &'g G, roots: impl IntoIterator<Item = G::Vertex>) -> Result<Self> {
-        let mapping = VertexToIntegerMapping::new(forest.vertices().cloned())?;
+        let mapping = VertexToIntegerMapping::new(forest.vertices_cloned())?;
         let n = forest.vertex_count();
         let mut d = HeavyPathDecomposition {
             graph: forest,
@@ -634,7 +634,7 @@ where
             self_loops: true,
             ..crate::GraphType::simple()
         });
-        dg.add_vertices(g.vertices().cloned());
+        dg.add_vertices(g.vertices_cloned());
         for e in g.edges() {
             let (v1, v2) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
             if self.partition1.contains(v1) {

@@ -27,6 +27,7 @@ use crate::{
     BaseExporter, EventDrivenImporter, GraphExporter, GraphImporter, ImportEvent,
     IntegerIdProvider, IoError, Result,
 };
+use jgrapht::GraphExt;
 use jgrapht::{Graph, GraphMut, OutgoingGraph};
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -682,7 +683,7 @@ where
                 }
             }
             CsvFormat::AdjacencyList => {
-                let vertices: Vec<_> = graph.vertices().cloned().collect();
+                let vertices: Vec<_> = graph.vertices_cloned().collect();
                 for vertex in &vertices {
                     let id = self.base.vertex_id(vertex)?;
                     write!(output, "{}", escape_field(&id, self.delimiter))?;
@@ -707,7 +708,7 @@ where
                 }
             }
             CsvFormat::Matrix => {
-                let vertices: Vec<_> = graph.vertices().cloned().collect();
+                let vertices: Vec<_> = graph.vertices_cloned().collect();
                 let node_ids = self.parameters.contains(&CsvParameter::MatrixNodeId);
                 let zero_missing = self
                     .parameters

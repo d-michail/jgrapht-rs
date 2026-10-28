@@ -13,6 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use super::forward_graph;
+use crate::graph::GraphExt;
 use crate::graph::IncidenceGraph;
 use crate::graph::{DirectedGraph, Graph, GraphMut, UndirectedGraph};
 use crate::{GraphError, GraphType, Result};
@@ -160,7 +161,7 @@ impl<G: Graph> AsSubgraph<G> {
         edge_subset: Option<Vec<G::Edge>>,
     ) -> Self {
         let vertices: IndexSet<G::Vertex> = match vertex_subset {
-            None => base.vertices().cloned().collect(),
+            None => base.vertices_cloned().collect(),
             Some(vs) => {
                 let wanted: IndexSet<G::Vertex> = vs.into_iter().collect();
                 base.vertices()

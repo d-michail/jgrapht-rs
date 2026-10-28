@@ -374,7 +374,7 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for KSpanningTreeClustering<'_, G>
         let g = self.graph;
         let mut edges = super::spanning::prim(g).edges;
         edges.sort_by(|a, b| g.weight_of(a).total_cmp(&g.weight_of(b)));
-        let mut forest = super::util::UnionFind::new(g.vertices().cloned());
+        let mut forest = super::util::UnionFind::new(g.vertices_cloned());
         for edge in edges {
             if forest.number_of_sets() == self.k {
                 break;

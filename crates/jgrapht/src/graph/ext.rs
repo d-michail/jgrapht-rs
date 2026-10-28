@@ -19,6 +19,17 @@ use crate::Result;
 
 /// The `GraphExt` trait.
 pub trait GraphExt: Graph {
+    /// The vertices as owned values. Prefer this over `vertices().cloned()`: graphs that compute
+    /// their vertices have nothing to borrow.
+    fn vertices_cloned(&self) -> impl Iterator<Item = Self::Vertex> {
+        self.vertices().cloned()
+    }
+
+    /// The edges as owned values; see [`GraphExt::vertices_cloned`].
+    fn edges_cloned(&self) -> impl Iterator<Item = Self::Edge> {
+        self.edges().cloned()
+    }
+
     /// `(source, target)` of an edge.
     fn edge_endpoints(&self, e: &Self::Edge) -> Option<(&Self::Vertex, &Self::Vertex)> {
         Some((self.edge_source(e)?, self.edge_target(e)?))

@@ -169,7 +169,7 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
     /// $|V|$ such cuts).
     fn calculate_min_cut_without_tree_compression(&mut self) -> f64 {
         let tree = self.gomory_hu_tree.as_mut().unwrap();
-        let edges: Vec<DefaultEdge> = tree.edges().cloned().collect();
+        let edges: Vec<DefaultEdge> = tree.edges_cloned().collect();
         for edge in edges {
             let (source, target) = {
                 let (u, v) = tree.edge_endpoints(&edge).unwrap();

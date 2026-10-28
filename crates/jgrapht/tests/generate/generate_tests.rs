@@ -724,7 +724,7 @@ mod windmill_graphs_generator_test {
     use super::*;
 
     fn verify_degree(g: &UGraph<i32>, mode: WindmillMode, m: usize, n: usize) {
-        let vs: Vec<i32> = g.vertices().copied().collect();
+        let vs: Vec<i32> = g.vertices_cloned().collect();
         if mode == WindmillMode::DutchWindmill {
             assert_eq!(g.degree_of(&vs[0]), 2 * m);
             assert!(vs[1..].iter().all(|v| g.degree_of(v) == 2));
@@ -1819,7 +1819,7 @@ mod complement_tests {
             .generate_into(&mut target)
             .unwrap();
         assert_eq!(
-            target.vertices().copied().collect::<HashSet<_>>(),
+            target.vertices_cloned().collect::<HashSet<_>>(),
             HashSet::from([0, 1, 2, 3])
         );
         has_edges(&target, &[(0, 3), (2, 3), (1, 3)]);

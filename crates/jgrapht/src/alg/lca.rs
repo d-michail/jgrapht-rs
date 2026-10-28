@@ -130,7 +130,7 @@ impl<V: Clone + Eq + Hash> Forest<V> {
                 requirement: crate::ParameterRequirement::NonEmpty,
             });
         }
-        let vertices: Vec<V> = g.vertices().cloned().collect();
+        let vertices: Vec<V> = g.vertices_cloned().collect();
         let index: HashMap<V, usize> = vertices
             .iter()
             .cloned()

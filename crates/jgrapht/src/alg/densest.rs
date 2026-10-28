@@ -228,7 +228,7 @@ where
         alg.initialize_network()?;
         // an empty denominator means the whole (empty) graph is the solution
         if alg.denominator(graph) == 0.0 {
-            alg.densest = Some(graph.vertices().cloned().collect());
+            alg.densest = Some(graph.vertices_cloned().collect());
         }
         Ok(alg)
     }
@@ -303,7 +303,7 @@ where
     }
 
     fn update_network(&mut self) -> Result<()> {
-        let vertices: Vec<G::Vertex> = self.graph.vertices().cloned().collect();
+        let vertices: Vec<G::Vertex> = self.graph.vertices_cloned().collect();
         for v in &vertices {
             let (sw, tw) = (self.source_weight(v), self.sink_weight(v));
             let to_sink = self.network.get_edge(v, &self.t).cloned().unwrap();

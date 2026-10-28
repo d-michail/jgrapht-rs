@@ -309,7 +309,7 @@ impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
             self.base.check_simple()?;
             self.base.cliques = Some(Vec::new());
             let deadline = self.base.deadline();
-            let mut candidates: Vec<G::Vertex> = self.base.graph.vertices().cloned().collect();
+            let mut candidates: Vec<G::Vertex> = self.base.graph.vertices_cloned().collect();
             self.find_cliques(&mut Vec::new(), &mut candidates, &mut Vec::new(), deadline);
         }
         Ok(self.base.cliques.as_deref().unwrap())
@@ -437,7 +437,7 @@ impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
             self.base.check_simple()?;
             self.base.cliques = Some(Vec::new());
             let deadline = self.base.deadline();
-            let mut p: IndexSet<G::Vertex> = self.base.graph.vertices().cloned().collect();
+            let mut p: IndexSet<G::Vertex> = self.base.graph.vertices_cloned().collect();
             self.find_cliques(&mut p, &IndexSet::new(), &mut IndexSet::new(), deadline);
         }
         Ok(self.base.cliques.as_deref().unwrap())
@@ -656,7 +656,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> CliqueMinimalSeparatorDecompositio
     /// Simple copy of the graph: no loops, parallel edges collapsed.
     fn simple_copy(g: &G) -> crate::UGraph<G::Vertex> {
         let mut copy = crate::UGraph::<G::Vertex>::simple();
-        copy.add_vertices(g.vertices().cloned());
+        copy.add_vertices(g.vertices_cloned());
         for e in g.edges() {
             let (a, b) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
             if a != b {
@@ -674,7 +674,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> CliqueMinimalSeparatorDecompositio
             return;
         }
         let mut chordal = crate::UGraph::<G::Vertex>::simple();
-        chordal.add_vertices(self.graph.vertices().cloned());
+        chordal.add_vertices(self.graph.vertices_cloned());
         let mut gprime = Self::simple_copy(self.graph);
         let mut s: i64 = -1;
         let mut labels: indexmap::IndexMap<G::Vertex, i64> =
@@ -789,7 +789,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> CliqueMinimalSeparatorDecompositio
             hprime.remove_vertex(v);
         }
         if gprime.vertex_count() > 0 {
-            let atom: HashableSet<G::Vertex> = gprime.vertices().cloned().collect();
+            let atom: HashableSet<G::Vertex> = gprime.vertices_cloned().collect();
             if !atoms.contains(&atom) {
                 atoms.push(atom);
             }

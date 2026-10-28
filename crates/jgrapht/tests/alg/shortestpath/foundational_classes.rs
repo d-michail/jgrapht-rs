@@ -125,7 +125,7 @@ where
             }
         }
     }
-    let edges = graph.edges().copied().collect::<Vec<_>>();
+    let edges = graph.edges_cloned().collect::<Vec<_>>();
     for edge in edges {
         graph
             .set_edge_weight(&edge, random.random::<f64>())

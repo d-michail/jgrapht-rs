@@ -23,6 +23,7 @@
 #![deny(missing_docs)]
 
 use crate::{EventDrivenImporter, GraphExporter, GraphImporter, ImportEvent, IoError, Result};
+use jgrapht::GraphExt;
 use jgrapht::{Graph, GraphMut};
 use std::io::{Read, Write};
 
@@ -409,7 +410,7 @@ impl<G: Graph> GraphExporter<G> for Graph6Exporter {
                 "graph6 cannot represent loops or multiple edges".into(),
             ));
         }
-        let vertices: Vec<_> = graph.vertices().cloned().collect();
+        let vertices: Vec<_> = graph.vertices_cloned().collect();
         let mut bits = BitWriter::default();
         match self.format {
             Graph6Format::Sparse6 => output.write_all(b":")?,

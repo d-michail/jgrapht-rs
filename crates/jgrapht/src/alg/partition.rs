@@ -113,7 +113,7 @@ impl<G: IncidenceGraph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G
             return self.cached.as_ref();
         }
         let g = self.graph;
-        let mut unknown: IndexSet<G::Vertex> = g.vertices().cloned().collect();
+        let mut unknown: IndexSet<G::Vertex> = g.vertices_cloned().collect();
         let mut odd: HashSet<G::Vertex> = HashSet::new();
         let mut queue: VecDeque<G::Vertex> = VecDeque::new();
         while !unknown.is_empty() {

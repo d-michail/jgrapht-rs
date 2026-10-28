@@ -12,9 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{EppsteinKShortestPath, EppsteinShortestPathIterator};
 use jgrapht::generate::{GnpRandomGraphGenerator, GraphGenerator};
-use jgrapht::{DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
+use jgrapht::{DiGraph, GraphMut, GraphMutExt, UGraph};
 use rand::Rng;
 use rand::{SeedableRng, rngs::StdRng};
 use std::collections::HashSet;
@@ -289,7 +290,7 @@ fn java_random_graph_workload_returns_distinct_ordered_valid_walks() {
             .unwrap()
             .generate_indexed(&mut graph)
             .unwrap();
-        for edge in graph.edges().copied().collect::<Vec<_>>() {
+        for edge in graph.edges_cloned().collect::<Vec<_>>() {
             graph
                 .set_edge_weight(&edge, values.random_range(0..10) as f64)
                 .unwrap();

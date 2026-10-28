@@ -245,7 +245,7 @@ macro_rules! lca_tree_tests {
                 let (n, q) = (2000, 100_000);
                 let mut random = StdRng::seed_from_u64((0x88) as u64);
                 let g = int_graph(n, &(1..n).map(|i| (i, i + 1)).collect::<Vec<_>>());
-                let vertices: Vec<i32> = g.vertices().copied().collect();
+                let vertices: Vec<i32> = g.vertices_cloned().collect();
                 let queries = generate_queries(q, &vertices, &mut random);
                 let alg = $solver(&g, &[n]).unwrap();
                 let lcas = alg.batch_lca(&queries).unwrap();
@@ -381,7 +381,7 @@ macro_rules! lca_tree_tests {
                 let (n, q) = (100_000, 200_000);
                 let mut random = StdRng::seed_from_u64((0x88) as u64);
                 let g = forest(1, n, 1, random.random::<i64>());
-                let vertices: Vec<i32> = g.vertices().copied().collect();
+                let vertices: Vec<i32> = g.vertices_cloned().collect();
                 let alg1 = $solver(&g, &[vertices[0]]).unwrap();
                 let alg2 = other(&g, &[vertices[0]]).unwrap();
                 let queries = generate_queries(q, &vertices, &mut random);
@@ -397,7 +397,7 @@ macro_rules! lca_tree_tests {
                 let mut random = StdRng::seed_from_u64((0x55) as u64);
                 let num_trees = 100 + random.random_range(0..200) as usize;
                 let g = forest(num_trees, n, 1, random.random::<i64>());
-                let vertices: Vec<i32> = g.vertices().copied().collect();
+                let vertices: Vec<i32> = g.vertices_cloned().collect();
                 let roots = roots_of(&g);
                 let alg1 = $solver(&g, &roots).unwrap();
                 let alg2 = other(&g, &roots).unwrap();
@@ -414,7 +414,7 @@ macro_rules! lca_tree_tests {
                 for _ in 0..10_000 {
                     let n = 10 + random.random_range(0..100) as usize;
                     let g = forest(1, n, 1, random.random::<i32>() as i64);
-                    let vertices: Vec<i32> = g.vertices().copied().collect();
+                    let vertices: Vec<i32> = g.vertices_cloned().collect();
                     let roots = [vertices[0]];
                     let alg1 = $solver(&g, &roots).unwrap();
                     let alg2 = other(&g, &roots).unwrap();
@@ -435,7 +435,7 @@ macro_rules! lca_tree_tests {
                     let roots = roots_of(&g);
                     let alg1 = $solver(&g, &roots).unwrap();
                     let alg2 = other(&g, &roots).unwrap();
-                    let vertices: Vec<i32> = g.vertices().copied().collect();
+                    let vertices: Vec<i32> = g.vertices_cloned().collect();
                     let queries = generate_queries(50, &vertices, &mut random);
                     assert_eq!(
                         alg1.batch_lca(&queries).unwrap(),

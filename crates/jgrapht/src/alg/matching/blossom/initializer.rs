@@ -123,7 +123,7 @@ impl<'g, G: Graph> BlossomVInitializer<'g, G> {
 
     fn init_graph(&self, options: BlossomVOptions) -> BlossomVState<'g, G> {
         let node_num = self.graph.vertex_count();
-        let graph_vertices: Vec<_> = self.graph.vertices().cloned().collect();
+        let graph_vertices: Vec<_> = self.graph.vertices_cloned().collect();
         let mut vertex_map = HashMap::with_capacity(node_num);
         let mut arena = BlossomArena::default();
         for (position, vertex) in graph_vertices.iter().enumerate() {

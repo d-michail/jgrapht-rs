@@ -240,7 +240,7 @@ fn set_up_dag_with_multiple_edges(
 }
 
 fn replay_and_test_dag(source: &DiGraph<i64>, rng: &mut StdRng) {
-    let mut edges: Vec<DefaultEdge> = source.edges().copied().collect();
+    let mut edges: Vec<DefaultEdge> = source.edges_cloned().collect();
     edges.shuffle(rng);
     let mut graph = DiGraph::<i64>::dag_multi();
     for v in source.vertices() {

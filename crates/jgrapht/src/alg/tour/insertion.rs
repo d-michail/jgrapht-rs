@@ -302,7 +302,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
         if graph.vertex_count() == 1 {
             return Ok(Some(singleton_tour(graph)));
         }
-        let index_list: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let index_list: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let n = index_list.len();
         let vertex_map: std::collections::HashMap<&G::Vertex, usize> =
             index_list.iter().enumerate().map(|(i, v)| (v, i)).collect();

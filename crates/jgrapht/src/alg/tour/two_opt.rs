@@ -132,7 +132,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
     /// Initialize graph and mapping to integer vertices.
     fn init(graph: &G) -> State<G::Vertex> {
         let n = graph.vertex_count();
-        let rev_index: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let rev_index: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let index: HashMap<G::Vertex, usize> = rev_index
             .iter()
             .enumerate()

@@ -235,7 +235,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     /// Prepares the data structures
     fn init(&mut self) {
         let graph = self.graph;
-        self.vertices = graph.vertices().cloned().collect();
+        self.vertices = graph.vertices_cloned().collect();
         self.vertex_index_map = self
             .vertices
             .iter()

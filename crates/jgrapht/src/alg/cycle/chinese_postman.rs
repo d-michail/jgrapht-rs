@@ -236,7 +236,7 @@ impl ChinesePostman {
             GraphType::pseudograph().weighted(graph.graph_type().weighted),
             |id| id as usize,
         );
-        euler_graph.add_vertices(graph.vertices().cloned());
+        euler_graph.add_vertices(graph.vertices_cloned());
         let mut edge_map = Vec::with_capacity(graph.edge_count() + shortcuts.len());
         for edge in graph.edges() {
             let (source, target) = graph.edge_endpoints(edge).unwrap();

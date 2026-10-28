@@ -31,7 +31,7 @@ fn gnp(seed: u64, n: usize, p: f64) -> UGraph<usize> {
         .generate_indexed(&mut g)
         .unwrap();
     let mut rng = StdRng::seed_from_u64(seed ^ 0xabc);
-    for e in g.edges().cloned().collect::<Vec<_>>() {
+    for e in g.edges_cloned().collect::<Vec<_>>() {
         g.set_edge_weight(&e, rng.random_range(1..10) as f64)
             .unwrap();
     }
@@ -56,7 +56,7 @@ fn densest_subgraph() {
         }
         // the brute force counts edges, so give Goldberg an unweighted copy
         let mut plain = UGraph::<usize>::simple();
-        plain.add_vertices(g.vertices().copied());
+        plain.add_vertices(g.vertices_cloned());
         for e in g.edges() {
             let (u, v) = g.edge_endpoints(e).unwrap();
             plain.add_edge(u, v).unwrap();
@@ -115,7 +115,7 @@ fn spanner_stretch() {
     for k in 1..=3usize {
         let g = gnp(rng.random(), 14, 0.5);
         let kept = greedy_spanner(&g, k).unwrap();
-        let sub = AsSubgraph::with_edges(&g, g.vertices().cloned(), kept.iter().cloned());
+        let sub = AsSubgraph::with_edges(&g, g.vertices_cloned(), kept.iter().cloned());
         let (full, sp) = (
             FloydWarshallShortestPaths::new(&g)
                 .unwrap()

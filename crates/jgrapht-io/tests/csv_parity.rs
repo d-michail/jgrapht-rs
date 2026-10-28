@@ -123,6 +123,7 @@ mod dsv_utils_test {
 
 mod csv_exporter_test {
     use super::*;
+    use jgrapht::GraphExt;
 
     const DIRECTED_EDGE_LIST: &str = "1;2\n1;3\n3;1\n3;4\n4;5\n5;1\n";
     const UNDIRECTED_EDGE_LIST: &str = "1;2\n1;3\n3;4\n4;5\n5;1\n";
@@ -177,7 +178,7 @@ mod csv_exporter_test {
     #[test]
     fn directed_weighted_edge_list() {
         let mut graph = graph_with_edges(&[(1, 2), (1, 3), (3, 1), (3, 4), (4, 5), (5, 1)], true);
-        for edge in graph.edges().cloned().collect::<Vec<_>>() {
+        for edge in graph.edges_cloned().collect::<Vec<_>>() {
             graph.set_edge_weight(&edge, 2.0).unwrap();
         }
         let mut csv = exporter(CsvFormat::EdgeList);
@@ -204,7 +205,7 @@ mod csv_exporter_test {
     fn directed_weighted_adjacency_list() {
         let edges = [EDGES.as_slice(), &[(5, 5)]].concat();
         let mut graph = graph_with_edges(&edges, true);
-        for edge in graph.edges().cloned().collect::<Vec<_>>() {
+        for edge in graph.edges_cloned().collect::<Vec<_>>() {
             graph.set_edge_weight(&edge, 3.3).unwrap();
         }
         let mut csv = exporter(CsvFormat::AdjacencyList);

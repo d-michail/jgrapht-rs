@@ -125,7 +125,7 @@ fn all_pairs_shortest_paths(seed: i64) {
     let mut random = StdRng::seed_from_u64(seed as u64);
     for _ in 0..5 {
         let mut graph = java_directed_gnp(&mut random, 20, 0.35, true);
-        let edges = graph.edges().copied().collect::<Vec<_>>();
+        let edges = graph.edges_cloned().collect::<Vec<_>>();
         for edge in edges {
             graph
                 .set_edge_weight(&edge, random.random::<f64>())

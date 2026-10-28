@@ -92,7 +92,7 @@ fn generate_isomorphic_graph(
 ) -> (UGraph<i32>, HashMap<i32, i32>) {
     let mut permutation: Vec<usize> = (0..graph.vertex_count()).collect();
     permutation.shuffle(rng);
-    let vertices: Vec<i32> = graph.vertices().copied().collect();
+    let vertices: Vec<i32> = graph.vertices_cloned().collect();
     let mapping: HashMap<i32, i32> = (0..vertices.len())
         .map(|i| (vertices[i], vertices[permutation[i]]))
         .collect();

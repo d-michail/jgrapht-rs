@@ -148,7 +148,7 @@ impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
     ///
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(graph: &'g G) -> Self {
-        let vertices: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let vertices: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let index: std::collections::HashMap<&G::Vertex, usize> =
             vertices.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let n = vertices.len();

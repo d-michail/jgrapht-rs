@@ -570,7 +570,7 @@ impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for RecursiveExactVcImpl
         // (for unit weights the weighted sum equals the vertex count, so one code path suffices)
         let weighted = true;
         // vertices sorted by weight / degree, ascending (stable)
-        let mut vertices: Vec<G::Vertex> = g.vertices().cloned().collect();
+        let mut vertices: Vec<G::Vertex> = g.vertices_cloned().collect();
         let mut keyed: Vec<(f64, G::Vertex)> = Vec::new();
         for v in vertices.drain(..) {
             let ratio = weight_of(&self.weights, &v)? / g.degree_of(&v) as f64;

@@ -46,8 +46,7 @@ where
         }
     };
     let idx: HashMap<A::Vertex, usize> = a
-        .vertices()
-        .cloned()
+        .vertices_cloned()
         .enumerate()
         .map(|(i, v)| (v, i))
         .collect();

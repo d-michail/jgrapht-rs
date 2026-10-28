@@ -88,7 +88,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
         }
 
         let mut mst_and_matching = UGraph::<G::Vertex>::pseudo();
-        mst_and_matching.add_vertices(graph.vertices().cloned());
+        mst_and_matching.add_vertices(graph.vertices_cloned());
 
         let spanning_tree = KruskalMinimumSpanningTree::new(graph).spanning_tree();
         for edge in spanning_tree.edges {

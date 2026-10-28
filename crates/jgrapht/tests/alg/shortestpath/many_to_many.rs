@@ -1,3 +1,4 @@
+use jgrapht::GraphExt;
 use jgrapht::util::java::RandomSource;
 use rand::{SeedableRng, rngs::StdRng};
 // (C) Copyright 2003-2026, by John V Sichi and JGraphT Contributors.
@@ -232,7 +233,7 @@ fn generate_random_graph(n: usize, edges: usize, weights: &mut StdRng) -> DiGrap
         graph.add_edge(&vertex, &(vertex + 1)).unwrap();
         graph.add_edge(&(vertex + 1), &vertex).unwrap();
     }
-    for edge in graph.edges().copied().collect::<Vec<_>>() {
+    for edge in graph.edges_cloned().collect::<Vec<_>>() {
         graph.set_edge_weight(&edge, weights.next_double()).unwrap();
     }
     graph

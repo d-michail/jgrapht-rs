@@ -119,7 +119,7 @@ mod minimum_spanning_tree {
                         .unwrap()
                         .generate_default(&mut g)
                         .unwrap();
-                        let edges: Vec<_> = g.edges().cloned().collect();
+                        let edges: Vec<_> = g.edges_cloned().collect();
                         for e in edges {
                             g.set_edge_weight(&e, weights.random::<f64>()).unwrap();
                         }

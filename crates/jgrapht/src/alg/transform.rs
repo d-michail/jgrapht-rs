@@ -29,7 +29,7 @@ where
     G: Graph,
     T: GraphMut<Vertex = G::Vertex>,
 {
-    target.add_vertices(g.vertices().cloned());
+    target.add_vertices(g.vertices_cloned());
     let directed = g.graph_type().directed;
     let vs: Vec<_> = g.vertices().collect();
     for (i, u) in vs.iter().enumerate() {
@@ -84,7 +84,7 @@ where
     T: GraphMut<Vertex = G::Edge>,
     F: Fn(&G::Edge, &G::Edge) -> f64,
 {
-    target.add_vertices(g.edges().cloned());
+    target.add_vertices(g.edges_cloned());
     let link = |target: &mut T, e1: &G::Edge, e2: &G::Edge| -> Result<()> {
         if let Some(edge) = target.add_edge(e1, e2)? {
             if let Some(f) = &weight {

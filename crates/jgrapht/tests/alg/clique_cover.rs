@@ -93,7 +93,7 @@ fn koenig_cover_equals_matching() {
     let mut rng = StdRng::seed_from_u64(3);
     for _ in 0..20 {
         let mut g = random(rng.random(), 10, 0.5);
-        for e in g.edges().cloned().collect::<Vec<_>>() {
+        for e in g.edges_cloned().collect::<Vec<_>>() {
             if (g.edge_source(&e).unwrap() + g.edge_target(&e).unwrap()) % 2 == 0 {
                 g.remove_edge(&e);
             }

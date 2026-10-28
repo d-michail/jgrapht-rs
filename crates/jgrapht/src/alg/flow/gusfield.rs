@@ -31,7 +31,7 @@ fn index_vertices<G: Graph>(network: &G) -> Result<(Vec<G::Vertex>, HashMap<G::V
             crate::GraphProperty::AtLeastTwoVertices,
         ));
     }
-    let vertex_list: Vec<G::Vertex> = network.vertices().cloned().collect();
+    let vertex_list: Vec<G::Vertex> = network.vertices_cloned().collect();
     let index_map = vertex_list
         .iter()
         .enumerate()

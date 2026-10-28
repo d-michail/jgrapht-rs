@@ -837,7 +837,7 @@ mod maximum_weight_bipartite_matching_test {
                 }
             }
             // assign random weights
-            for e in g.edges().cloned().collect::<Vec<_>>() {
+            for e in g.edges_cloned().collect::<Vec<_>>() {
                 g.set_edge_weight(&e, 1000.0 * f64::from(rng.random::<i32>()))
                     .unwrap();
             }

@@ -56,6 +56,7 @@ fn vertex_attributes(input: &str) -> IndexMap<String, AttributeMap> {
 
 mod exporter_test {
     use super::*;
+    use jgrapht::GraphExt;
 
     fn sample(multiple: bool) -> UGraph<&'static str> {
         let mut graph = if multiple {
@@ -157,7 +158,7 @@ mod exporter_test {
     #[test]
     fn with_subgraph() {
         let graph = sample(false);
-        let edges: Vec<_> = graph.edges().cloned().collect();
+        let edges: Vec<_> = graph.edges_cloned().collect();
         let mut subgraph = DotSubgraph::new(["v1", "v2"], [edges[0]]);
         subgraph.graph_attributes.insert(
             "pencolor".into(),

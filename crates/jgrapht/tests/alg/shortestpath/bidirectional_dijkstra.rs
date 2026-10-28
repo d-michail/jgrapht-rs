@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{
     BidirectionalDijkstraShortestPath, DijkstraShortestPath, ShortestPathAlgorithm,
 };
@@ -225,7 +226,7 @@ fn random_directed(weighted: bool) -> DiGraph<usize> {
         .unwrap();
     if weighted {
         let mut random = StdRng::seed_from_u64(7);
-        for edge in graph.edges().copied().collect::<Vec<_>>() {
+        for edge in graph.edges_cloned().collect::<Vec<_>>() {
             graph.set_edge_weight(&edge, random.random()).unwrap();
         }
     }

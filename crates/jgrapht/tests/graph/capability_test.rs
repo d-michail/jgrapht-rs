@@ -84,6 +84,7 @@ fn parallel_edges_are_each_yielded() {
 }
 
 mod base_graph_parity {
+    use jgrapht::GraphExt;
     use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
     use jgrapht::graph::{DiGraph, FastutilMapGraph, GraphMut, UGraph};
     use jgrapht::graph::{Directed, Undirected};
@@ -101,7 +102,7 @@ mod base_graph_parity {
             v.sort();
             v
         };
-        let vs: Vec<_> = g.vertices().cloned().chain([absent]).collect();
+        let vs: Vec<_> = g.vertices_cloned().chain([absent]).collect();
         for v in &vs {
             let (mut all, mut ins, mut outs) = (vec![], vec![], vec![]);
             let (mut degree, mut in_degree, mut out_degree) = (0, 0, 0);

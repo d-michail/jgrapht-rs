@@ -523,7 +523,7 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
         let weighted = g.graph_type().weighted;
         let starts: Vec<G::Vertex> = match &self.start_vertices {
             Some(s) => s.clone(),
-            None => g.vertices().cloned().collect(),
+            None => g.vertices_cloned().collect(),
         };
         let divide_by_two = self.start_vertices.is_none() && !g.graph_type().directed;
         let mut stack: Vec<G::Vertex> = Vec::new();

@@ -16,6 +16,7 @@
 
 use super::interfaces::{CentersLocationAlgorithm, CentersSolution};
 use super::util::Indexed;
+use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
 use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, props};
@@ -180,7 +181,7 @@ impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonH
         if n == k {
             // every vertex is a center: nothing to assign, nothing to cover
             return Ok(CentersSolution::new(
-                graph.vertices().cloned().collect(),
+                graph.vertices_cloned().collect(),
                 IndexMap::new(),
                 0.0,
             ));

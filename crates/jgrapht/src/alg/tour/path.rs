@@ -271,7 +271,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
             return Ok(HamiltonianPathSearchResult::found(singleton_path(graph), 0));
         }
         // Kahn's algorithm
-        let index_list: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let index_list: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let vertex_map: HashMap<G::Vertex, usize> = index_list
             .iter()
             .enumerate()
@@ -473,7 +473,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath 
                 self.max_vertices
             )));
         }
-        let index_list: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let index_list: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let vertex_map: HashMap<G::Vertex, usize> = index_list
             .iter()
             .enumerate()
@@ -663,7 +663,7 @@ impl BacktrackingHamiltonianPath {
                 self.states_expanded,
             ));
         }
-        let index_to_vertex: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let index_to_vertex: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let vertex_to_index: HashMap<G::Vertex, usize> = index_to_vertex
             .iter()
             .enumerate()

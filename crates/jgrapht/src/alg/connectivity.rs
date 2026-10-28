@@ -795,7 +795,7 @@ impl<'g, G: IncidenceGraph> BiconnectivityInspector<'g, G> {
     ///
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(graph: &'g G) -> Self {
-        let vs: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let vs: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let n = vs.len();
         let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let adj: Vec<Vec<(G::Edge, usize)>> = vs

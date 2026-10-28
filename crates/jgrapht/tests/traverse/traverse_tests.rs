@@ -814,7 +814,7 @@ mod lex_bfs {
             assert!(graph.contains_vertex(v));
             returned.insert(v.clone());
         }
-        assert_eq!(returned, graph.vertices().cloned().collect());
+        assert_eq!(returned, graph.vertices_cloned().collect());
         assert!(!it.has_next());
     }
 
@@ -897,7 +897,7 @@ mod max_cardinality {
             assert!(graph.contains_vertex(v));
             returned.insert(v.clone());
         }
-        assert_eq!(returned, graph.vertices().cloned().collect());
+        assert_eq!(returned, graph.vertices_cloned().collect());
         assert!(!it.has_next());
     }
 

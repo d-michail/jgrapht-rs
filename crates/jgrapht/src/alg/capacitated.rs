@@ -88,7 +88,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> CapacitatedSpanningTree<V, E> {
         }
         // partition and tree correspond to each other
         let tree =
-            AsSubgraph::with_edges(graph, graph.vertices().cloned(), self.edges.iter().cloned());
+            AsSubgraph::with_edges(graph, graph.vertices_cloned(), self.edges.iter().cloned());
         let Ok(mut dfs) = DepthFirstIterator::from_start(&tree, root) else {
             return false;
         };
@@ -471,7 +471,7 @@ impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
         let mut closest_vertex: HashMap<G::Vertex, G::Vertex> = HashMap::new();
         let mut restriction: HashMap<G::Vertex, IndexSet<usize>> = HashMap::new();
         let mut shortest_gate: HashMap<usize, G::Vertex> = HashMap::new();
-        let mut vertices: IndexSet<G::Vertex> = p.graph.vertices().cloned().collect();
+        let mut vertices: IndexSet<G::Vertex> = p.graph.vertices_cloned().collect();
         vertices.shift_remove(&p.root);
 
         loop {
@@ -1165,7 +1165,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
         tabu_list: &IndexSet<V>,
     ) -> Result<()> {
         self.update_pseudo_nodes_of_new_labels(solution)?;
-        let vertices: Vec<V> = p.graph.vertices().cloned().collect();
+        let vertices: Vec<V> = p.graph.vertices_cloned().collect();
         for v1 in &vertices {
             if *v1 == p.root {
                 continue;

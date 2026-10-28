@@ -55,11 +55,11 @@ fn check_ids<G: Graph<Vertex = usize, Edge = usize>>(g: &G, n: usize, m: usize) 
     assert_eq!(g.vertex_count(), n);
     assert_eq!(g.edge_count(), m);
     assert_eq!(
-        g.edges().copied().collect::<Vec<_>>(),
+        g.edges_cloned().collect::<Vec<_>>(),
         (0..m).collect::<Vec<_>>()
     );
     assert_eq!(
-        g.vertices().copied().collect::<Vec<_>>(),
+        g.vertices_cloned().collect::<Vec<_>>(),
         (0..n).collect::<Vec<_>>()
     );
     for v in 0..n {
