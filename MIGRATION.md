@@ -313,3 +313,33 @@ Also: `props::GRAPH_MUST_BE_*` message constants are removed; view mutators that
 (`AsSubgraph::new_vertex`). The new enums are `#[non_exhaustive]`, exported from the crate root.
 The library no longer returns `InvalidArgument(String)`; the variant remains only for downstream
 code. `Unsupported(String)` is kept for operations a representation cannot offer.
+
+## Java-to-Rust map
+
+| JGraphT (Java)                         | jgrapht-rs                                                         |
+|----------------------------------------|--------------------------------------------------------------------|
+| `Graph<V,E>` interface                 | `Graph`, `DirectedGraph`, `UndirectedGraph` (read), `GraphMut` (write) |
+| `SimpleGraph`, `Multigraph`, ...       | `BaseGraph` + `GraphType`: `UGraph::simple()`, `::multi()`, `::pseudo()`, `DiGraph::dag()`, `.weighted()` |
+| `Graphs` utility class                 | `GraphExt`, `DirectedExt`, `GraphMutExt` extension traits           |
+| `GraphTests`                           | `graph::props`                                                     |
+| `AsSubgraph`, `EdgeReversedGraph`, ... | `view` wrappers: `AsSubgraph`, `MaskSubgraph`, `EdgeReversed`, `AsUndirected`, `AsWeighted`, `AsUnweighted`, `Unmodifiable`, `GraphUnion` |
+| `ListenableGraph`                      | `event::Listenable` + `GraphListener`                               |
+| `GraphPath` / `GraphWalk`              | `GraphWalk`                                                        |
+| `GraphIterator`                        | `traverse` iterators (`Bfs`, `Dfs`, `TopologicalOrder`, ...)        |
+| generators                             | `generate` (`GraphGenerator` trait)                                |
+| `*Algorithm` interfaces                | small traits (e.g. `ShortestPathAlgorithm`) plus plain functions   |
+| `java.io.Serializable`                 | the `serde` feature                                                |
+
+| JGraphT package | Rust location | Port status |
+|---|---|---|
+| `org.jgrapht` and `org.jgrapht.graph` | `jgrapht::{Graph, GraphMut, GraphType}`, `graph`, `view`, `event`, `walk` | done |
+| `org.jgrapht.traverse` | `jgrapht::traverse` | done |
+| `org.jgrapht.generate` and `generate.netgen` | `jgrapht::generate` | done |
+| `org.jgrapht.alg` | `jgrapht::alg` | done class by class |
+| `org.jgrapht.nio` | companion crate `jgrapht-io` | done for all planned formats |
+| `org.jgrapht.opt.graph.sparse` | `jgrapht::graph::sparse` | done |
+| `org.jgrapht.opt.graph.fastutil` | `jgrapht::graph::map` | done with Rust map backends |
+
+The Java integration modules (`ext`, `guava`, `unimi-dsi`, `osm`, and demos) are out of scope. The
+status registers (`crates/*/tests/STATUS.md`) are the source of truth for individual upstream test
+classes. The Java sources used as the oracle live in a separate JGraphT checkout.

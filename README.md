@@ -1,21 +1,29 @@
 # jgrapht-rs
 
-A Rust port of the core of [JGraphT](https://jgrapht.org), the Java graph library.
+A graph library for Rust: graph data structures, a large collection of graph algorithms, graph
+generators and import/export for common file formats. It is a port of the core of
+[JGraphT](https://jgrapht.org), redesigned for Rust.
 
-It is a re-design rather than a transliteration: graphs are **traits**, vertices and edges are
-**your own types** (`Clone + Eq + Hash`), iterators borrow from the graph instead of building
-sets, views are plain wrapper types, and fallible operations return `Result` instead of throwing.
-Heap-based algorithms (Dijkstra, A\*, Prim, Johnson, ...) use the priority queues from
-[`rheaps`](https://crates.io/crates/rheaps), the Rust port of JHeaps.
+- **Graphs are traits.** Algorithms ask for the narrowest capability they need (`Graph`,
+  `OutgoingGraph`, `IncomingGraph`, `IncidenceGraph`), so a graph that cannot answer a query does
+  not pretend to.
+- **Your own vertex and edge types** (`Clone + Eq + Hash`); the default edge is `DefaultEdge`.
+- **No hidden state.** Iterators borrow from the graph, views are plain wrapper types, and results
+  are plain structs instead of getters that only work after a `compute()` call.
+- **Errors are values.** Fallible operations return `Result<_, GraphError>` with typed variants;
+  absent values (an unreachable vertex, no cycle) are `Option`.
+- **Compact graphs.** Sparse CSR graphs keep only the edge arrays; the default graph is an
+  insertion-ordered adjacency map.
+- **Optional `serde` support** for graphs and result types, in any serde format.
+- Heap-based algorithms (Dijkstra, A\*, Prim, Johnson, ...) use the priority queues from
+  [`rheaps`](https://crates.io/crates/rheaps).
 
 > **Status:** pre-release. The API is unstable, and neither crate is published yet. The workspace
-> requires Rust 1.88 or newer.
->
-> The graph, traversal, generator, sparse/map backend, and graph-I/O ports are complete. Most
-> algorithm packages are also complete; the remaining fidelity work is in shortest paths. See the
-> [core status register](crates/jgrapht/tests/STATUS.md),
-> [I/O status register](crates/jgrapht-io/tests/STATUS.md), and
-> [fidelity roadmap](docs/FIDELITY_ROADMAP.md) for the exact coverage and documented deviations.
+> requires Rust 1.88 or newer. The graph, traversal, generator, sparse and map backends and graph
+> I/O are complete, and most algorithm packages are too. Coverage against the upstream test suite
+> is tracked in the [core status register](crates/jgrapht/tests/STATUS.md) and the
+> [I/O status register](crates/jgrapht-io/tests/STATUS.md); open work is in
+> [`docs/ISSUES.md`](docs/ISSUES.md). Coming from JGraphT? See [`MIGRATION.md`](MIGRATION.md).
 
 ## Crates
 
@@ -54,25 +62,23 @@ From the repository root, run it with:
 cargo run --example quickstart
 ```
 
-## Design
+## Using the library
 
-| JGraphT (Java)                         | jgrapht-rs                                                         |
-|----------------------------------------|--------------------------------------------------------------------|
-| `Graph<V,E>` interface                 | `Graph`, `DirectedGraph`, `UndirectedGraph` (read), `GraphMut` (write) |
-| `SimpleGraph`, `Multigraph`, ...       | `BaseGraph` + `GraphType`: `UGraph::simple()`, `::multi()`, `::pseudo()`, `DiGraph::dag()`, `.weighted()` |
-| `Graphs` utility class                 | `GraphExt`, `DirectedExt`, `GraphMutExt` extension traits           |
-| `GraphTests`                           | `graph::props`                                                     |
-| `AsSubgraph`, `EdgeReversedGraph`, ... | `view` wrappers: `AsSubgraph`, `MaskSubgraph`, `EdgeReversed`, `AsUndirected`, `AsWeighted`, `AsUnweighted`, `Unmodifiable`, `GraphUnion` |
-| `ListenableGraph`                      | `event::Listenable` + `GraphListener`                               |
-| `GraphPath` / `GraphWalk`              | `GraphWalk`                                                        |
-| `GraphIterator`                        | `traverse` iterators (`Bfs`, `Dfs`, `TopologicalOrder`, ...)        |
-| generators                             | `generate` (`GraphGenerator` trait)                                |
-| `*Algorithm` interfaces                | small traits (e.g. `ShortestPathAlgorithm`) plus plain functions   |
+- Build graphs with `UGraph` (undirected) and `DiGraph` (directed): `UGraph::simple()`, `::multi()`,
+  `::pseudo()`, `DiGraph::dag()`, then `.weighted()`. `GraphType` describes what a graph allows.
+- `GraphExt`, `DirectedExt` and `GraphMutExt` add convenience methods to every graph;
+  `graph::props` tests structural properties (bipartite, planar, Eulerian, ...).
+- Views (`AsSubgraph`, `MaskSubgraph`, `EdgeReversed`, `AsUndirected`, `AsWeighted`, `AsUnweighted`,
+  `Unmodifiable`, `GraphUnion`) borrow their base graph; `event::Listenable` reports changes.
+- Algorithms are small traits (for example `ShortestPathAlgorithm`) plus plain functions; paths are
+  `GraphWalk`s.
+- Weights live on edges as `f64` (`1.0` for unweighted graphs). Use the built-in `DefaultEdge`, or
+  your own edge type with `BaseGraph::with_edge_factory` or `add_edge_with`.
+- Enable the `serde` feature to serialize graphs and result objects.
 
-Enable the `serde` feature to serialize graphs and result objects in any serde format (the counterpart of `java.io.Serializable`; see the user guide).
-
-Edges are values too: use the built-in `DefaultEdge`, or your own type via
-`BaseGraph::with_edge_factory`. Weights live on edges as `f64` (`1.0` for unweighted graphs).
+The [user guide](docs/USER_GUIDE.md) explains the design decisions that are not obvious from the
+signatures: absent values and errors, capability bounds, vertex references, views and snapshots,
+randomness and serialization.
 
 ## Algorithms
 
@@ -104,22 +110,6 @@ Edges are values too: use the built-in `DefaultEdge`, or your own type via
 - **Generators:** complete, bipartite, ring, path, star, wheel, grid, hypercube, G(n,p), G(n,m),
   Barabási–Albert, Watts–Strogatz, Prüfer trees
 
-## Java-to-Rust package map
-
-| JGraphT package | Rust location | Port status |
-|---|---|---|
-| `org.jgrapht` and `org.jgrapht.graph` | `jgrapht::{Graph, GraphMut, GraphType}`, `graph`, `view`, `event`, `walk` | done |
-| `org.jgrapht.traverse` | `jgrapht::traverse` | done |
-| `org.jgrapht.generate` and `generate.netgen` | `jgrapht::generate` | done |
-| `org.jgrapht.alg` | `jgrapht::alg` | done class by class |
-| `org.jgrapht.nio` | companion crate `jgrapht-io` | done for all planned formats |
-| `org.jgrapht.opt.graph.sparse` | `jgrapht::graph::sparse` | done |
-| `org.jgrapht.opt.graph.fastutil` | `jgrapht::graph::map` | done with Rust map backends |
-
-The Java integration modules (`ext`, `guava`, `unimi-dsi`, `osm`, and demos) are currently out of
-scope. The status registers linked above are the source of truth for individual upstream test
-classes.
-
 ## Development
 
 ```sh
@@ -128,7 +118,7 @@ cargo clippy --workspace --all-targets
 cargo fmt --all
 ```
 
-The Java-port suites can also be run independently:
+The test suites can also be run independently:
 
 ```sh
 cargo test -p jgrapht --test alg
@@ -153,10 +143,6 @@ or use the manual **Benchmarks** workflow on GitHub (Actions tab, Run workflow).
 printed to the terminal and written to `target/criterion/report/index.html`; the workflow logs show
 them for the GitHub runs. Details, the list of benchmark files and reference numbers are in
 [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
-
-The Java sources used as the oracle live in a separate JGraphT checkout. Rust test modules mirror
-the upstream test classes, while `crates/jgrapht/tests/STATUS.md` and
-`crates/jgrapht-io/tests/STATUS.md` record ported and deliberately inapplicable cases.
 
 ## License
 
