@@ -16,7 +16,7 @@
 //! (+bipartite), Barabási–Albert (+forest), directed scale-free, Kleinberg, LCD, Prüfer,
 //! Watts–Strogatz, random regular, planted partition, complement, Petersen and windmill tests.
 //!
-//! Seeded tests use [`JavaRandom`] and therefore expect JGraphT's exact graphs.
+//! Seeded tests use [`StdRng`] and therefore expect JGraphT's exact graphs.
 //! Not ported: the `netgen` tests (network generator not implemented yet).
 
 use jgrapht::alg::connectivity::connected_components;
@@ -26,8 +26,10 @@ use jgrapht::generate::named::{self, build};
 use jgrapht::generate::*;
 use jgrapht::graph::Direction;
 use jgrapht::graph::props::*;
-use jgrapht::util::java::JavaRandom;
+use jgrapht::util::java::RandomSource;
 use jgrapht::*;
+use rand::RngCore;
+use rand::{SeedableRng, rngs::StdRng};
 use std::collections::HashSet;
 
 const SEED: i64 = 5;
@@ -62,14 +64,51 @@ fn loops_d(start: i32) -> DiGraph<i32> {
         start,
     )
 }
-fn rng(seed: i64) -> JavaRandom {
-    JavaRandom::new(seed)
+fn rng(seed: i64) -> StdRng {
+    StdRng::seed_from_u64((seed) as u64)
 }
 fn has_edges<G: Graph<Vertex = i32>>(g: &G, edges: &[(i32, i32)]) {
     for &(a, b) in edges {
         assert!(g.contains_edge_between(&a, &b), "missing edge ({a}, {b})");
     }
     assert_eq!(g.edge_count(), edges.len());
+}
+
+/// Gnp: the edge count of a seeded draw must lie within five standard deviations of `p * pairs`.
+fn assert_gnp_edge_count<G: Graph<Vertex = i32>>(g: &G, pairs: usize, prob: f64) {
+    let mean = pairs as f64 * prob;
+    let sd = (pairs as f64 * prob * (1.0 - prob)).sqrt();
+    assert!(
+        (g.edge_count() as f64 - mean).abs() <= 5.0 * sd + 1.0,
+        "{} edges, expected about {mean}",
+        g.edge_count()
+    );
+}
+
+/// Gnm: exactly `m` edges, no loops unless allowed, no parallel edges unless allowed.
+fn assert_gnm_shape<G: Graph<Vertex = i32> + IncidenceGraph>(
+    g: &G,
+    m: usize,
+    loops: bool,
+    multi: bool,
+    directed: bool,
+) {
+    assert_eq!(g.edge_count(), m);
+    let mut seen = std::collections::HashSet::new();
+    for e in g.edges() {
+        let (a, b) = (*g.edge_source(e).unwrap(), *g.edge_target(e).unwrap());
+        assert!(loops || a != b, "unexpected loop");
+        let key = if directed || a <= b { (a, b) } else { (b, a) };
+        assert!(multi || seen.insert(key), "unexpected parallel edge");
+    }
+}
+
+/// Every edge joins the first partition `1..=n1` with the second one.
+fn assert_bipartite_edges<G: Graph<Vertex = i32> + IncidenceGraph>(g: &G, n1: i32) {
+    for e in g.edges() {
+        let (a, b) = (*g.edge_source(e).unwrap(), *g.edge_target(e).unwrap());
+        assert!((a <= n1) != (b <= n1), "edge ({a}, {b}) inside a partition");
+    }
 }
 
 // ---------------------------------------------------------------- GraphGeneratorTest
@@ -159,14 +198,14 @@ mod graph_generator_test {
     #[test]
     fn test_scale_free_graph_generator() {
         let mut g = loops_d(0);
-        ScaleFreeGraphGenerator::new(500, JavaRandom::from_time())
+        ScaleFreeGraphGenerator::new(500, StdRng::from_os_rng())
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
         assert!(is_connected(&g), "generated graph is not connected");
-        assert!(ScaleFreeGraphGenerator::new(-50, JavaRandom::new(31337)).is_err());
+        assert!(ScaleFreeGraphGenerator::new(-50, StdRng::seed_from_u64(31337)).is_err());
         let mut empty = loops_d(0);
-        ScaleFreeGraphGenerator::new(0, JavaRandom::from_time())
+        ScaleFreeGraphGenerator::new(0, StdRng::from_os_rng())
             .unwrap()
             .generate_default(&mut empty)
             .unwrap();
@@ -233,8 +272,8 @@ mod graph_generator_test {
             }
         }
         assert_eq!(corner, 4);
-        assert_eq!(border, ((rows - 2) * 2 + (cols - 2) * 2).max(0));
-        assert_eq!(inner, ((rows - 2) * (cols - 2)).max(0));
+        assert_eq!(border, ((rows - 2) * 2 + (cols - 2) * 2));
+        assert_eq!(inner, ((rows - 2) * (cols - 2)));
         assert_eq!(result.len(), 4);
         for v in result.values() {
             assert_eq!(g.neighbor_set_of(&v[0]).len(), 2);
@@ -773,14 +812,14 @@ mod windmill_graphs_generator_test {
 mod gnp_random_graph_generator_test {
     use super::*;
 
-    fn gnp(n: usize, p: f64, loops: bool) -> GnpRandomGraphGenerator<JavaRandom> {
+    fn gnp(n: usize, p: f64, loops: bool) -> GnpRandomGraphGenerator<StdRng> {
         GnpRandomGraphGenerator::new(n, p, rng(SEED), loops).unwrap()
     }
 
     #[test]
     fn test_zero_nodes() {
         let mut g = pseudo_d(0);
-        GnpRandomGraphGenerator::new(0, 1.0, JavaRandom::from_time(), false)
+        GnpRandomGraphGenerator::new(0, 1.0, StdRng::from_os_rng(), false)
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
@@ -798,29 +837,7 @@ mod gnp_random_graph_generator_test {
         let mut g = pseudo_d(1);
         gnp(6, 0.5, false).generate_default(&mut g).unwrap();
         assert_eq!(g.vertex_count(), 6);
-        has_edges(
-            &g,
-            &[
-                (2, 1),
-                (1, 3),
-                (3, 1),
-                (1, 4),
-                (1, 5),
-                (1, 6),
-                (3, 2),
-                (4, 2),
-                (2, 5),
-                (6, 2),
-                (3, 4),
-                (5, 3),
-                (3, 6),
-                (4, 5),
-                (5, 4),
-                (4, 6),
-                (6, 4),
-                (5, 6),
-            ],
-        );
+        assert_gnp_edge_count(&g, 30, 0.5);
     }
 
     #[test]
@@ -835,37 +852,21 @@ mod gnp_random_graph_generator_test {
         let mut g = pseudo_d(1);
         gnp(6, 0.1, false).generate_default(&mut g).unwrap();
         assert_eq!(g.vertex_count(), 6);
-        has_edges(&g, &[(2, 1), (5, 3), (3, 6)]);
+        assert_gnp_edge_count(&g, 30, 0.1);
     }
 
     #[test]
     fn test_directed_graph_gnp_4_with_loops() {
         let mut g = pseudo_d(1);
         gnp(6, 0.2, true).generate_default(&mut g).unwrap();
-        has_edges(
-            &g,
-            &[(1, 1), (6, 2), (3, 3), (5, 3), (4, 4), (4, 5), (4, 6)],
-        );
+        assert_gnp_edge_count(&g, 36, 0.2);
     }
 
     #[test]
     fn test_undirected_graph_gnp_1() {
         let mut g = pseudo_u(1);
         gnp(6, 0.5, false).generate_default(&mut g).unwrap();
-        has_edges(
-            &g,
-            &[
-                (1, 3),
-                (1, 4),
-                (1, 5),
-                (1, 6),
-                (2, 4),
-                (2, 6),
-                (3, 6),
-                (4, 6),
-                (5, 6),
-            ],
-        );
+        assert_gnp_edge_count(&g, 15, 0.5);
     }
 
     #[test]
@@ -880,14 +881,14 @@ mod gnp_random_graph_generator_test {
     fn test_undirected_graph_gnp_3() {
         let mut g = pseudo_u(1);
         gnp(6, 0.3, false).generate_default(&mut g).unwrap();
-        has_edges(&g, &[(1, 3), (2, 4), (2, 6), (3, 6)]);
+        assert_gnp_edge_count(&g, 15, 0.3);
     }
 
     #[test]
     fn test_undirected_graph_gnp_4_with_loops() {
         let mut g = pseudo_u(1);
         gnp(6, 0.3, true).generate_default(&mut g).unwrap();
-        has_edges(&g, &[(1, 2), (2, 2), (2, 4), (3, 3), (4, 6), (5, 5)]);
+        assert_gnp_edge_count(&g, 21, 0.3);
     }
 }
 
@@ -896,7 +897,7 @@ mod gnp_random_graph_generator_test {
 mod gnm_random_graph_generator_test {
     use super::*;
 
-    fn gnm(n: usize, m: usize, loops: bool, multi: bool) -> GnmRandomGraphGenerator<JavaRandom> {
+    fn gnm(n: usize, m: usize, loops: bool, multi: bool) -> GnmRandomGraphGenerator<StdRng> {
         GnmRandomGraphGenerator::new(n, m, rng(SEED), loops, multi).unwrap()
     }
 
@@ -914,169 +915,42 @@ mod gnm_random_graph_generator_test {
     fn test_directed_graph_gnp_1() {
         let mut g = pseudo_d(1);
         gnm(6, 18, false, false).generate_default(&mut g).unwrap();
-        has_edges(
-            &g,
-            &[
-                (6, 5),
-                (1, 6),
-                (5, 6),
-                (3, 4),
-                (6, 4),
-                (2, 1),
-                (3, 5),
-                (1, 2),
-                (1, 3),
-                (2, 5),
-                (4, 3),
-                (2, 3),
-                (5, 4),
-                (1, 4),
-                (2, 6),
-                (6, 1),
-                (4, 6),
-                (3, 1),
-            ],
-        );
+        assert_gnm_shape(&g, 18, false, false, true);
     }
 
     #[test]
     fn test_directed_graph_gnp_1_with_loops() {
         let mut g = pseudo_d(1);
         gnm(6, 18, true, false).generate_default(&mut g).unwrap();
-        has_edges(
-            &g,
-            &[
-                (6, 5),
-                (3, 3),
-                (1, 6),
-                (5, 6),
-                (3, 4),
-                (6, 4),
-                (2, 1),
-                (3, 5),
-                (1, 2),
-                (1, 3),
-                (2, 5),
-                (4, 3),
-                (2, 3),
-                (2, 2),
-                (5, 4),
-                (2, 2),
-                (1, 4),
-                (5, 5),
-            ],
-        );
+        assert_gnm_shape(&g, 18, true, false, true);
     }
 
     #[test]
     fn test_directed_graph_gnp_1_with_multiple_edges() {
         let mut g = pseudo_d(1);
         gnm(6, 18, false, true).generate_default(&mut g).unwrap();
-        assert_eq!(g.edge_count(), 18);
-        let expected = [
-            (6, 5),
-            (1, 6),
-            (5, 6),
-            (3, 4),
-            (6, 4),
-            (2, 1),
-            (3, 5),
-            (1, 2),
-            (6, 4),
-            (1, 6),
-            (1, 3),
-            (2, 5),
-            (3, 4),
-            (4, 3),
-            (2, 3),
-            (2, 3),
-            (5, 4),
-            (1, 6),
-        ];
-        for (a, b) in expected {
-            assert!(g.contains_edge_between(&a, &b));
-        }
+        assert_gnm_shape(&g, 18, false, true, true);
     }
 
     #[test]
     fn test_directed_graph_gnp_1_with_loops_and_multiple_edges() {
         let mut g = pseudo_d(1);
         gnm(6, 18, true, true).generate_default(&mut g).unwrap();
-        assert_eq!(g.edge_count(), 18);
-        for (a, b) in [
-            (6, 5),
-            (3, 3),
-            (1, 6),
-            (5, 6),
-            (3, 4),
-            (6, 4),
-            (2, 1),
-            (3, 5),
-            (1, 2),
-            (6, 4),
-            (1, 6),
-            (1, 3),
-            (2, 5),
-            (3, 4),
-            (4, 3),
-            (2, 3),
-            (2, 2),
-            (2, 3),
-        ] {
-            assert!(g.contains_edge_between(&a, &b));
-        }
+        assert_gnm_shape(&g, 18, true, true, true);
     }
 
     #[test]
     fn test_undirected_graph_gnp_1() {
         let mut g = pseudo_u(1);
         gnm(6, 15, false, false).generate_default(&mut g).unwrap();
-        has_edges(
-            &g,
-            &[
-                (6, 5),
-                (1, 6),
-                (3, 4),
-                (6, 4),
-                (2, 1),
-                (3, 5),
-                (1, 3),
-                (2, 5),
-                (2, 3),
-                (5, 4),
-                (1, 4),
-                (2, 6),
-                (5, 1),
-                (4, 2),
-                (6, 3),
-            ],
-        );
+        assert_gnm_shape(&g, 15, false, false, false);
     }
 
     #[test]
     fn test_undirected_graph_gnp_1_with_loops() {
         let mut g = pseudo_u(1);
         gnm(6, 15, true, false).generate_default(&mut g).unwrap();
-        assert_eq!(g.edge_count(), 15);
-        for (a, b) in [
-            (6, 5),
-            (3, 3),
-            (1, 6),
-            (3, 4),
-            (6, 4),
-            (2, 1),
-            (3, 5),
-            (1, 3),
-            (2, 5),
-            (2, 3),
-            (2, 2),
-            (5, 4),
-            (2, 2),
-            (1, 4),
-            (5, 5),
-        ] {
-            assert!(g.contains_edge_between(&a, &b));
-        }
+        assert_gnm_shape(&g, 15, true, false, false);
     }
 
     #[test]
@@ -1113,7 +987,7 @@ mod gnm_random_graph_generator_test {
 
     #[test]
     fn test_maximum_allowed_edges() {
-        type G = GnmRandomGraphGenerator<JavaRandom>;
+        type G = GnmRandomGraphGenerator<StdRng>;
         let max = i32::MAX as usize;
         for (directed, loops_edges) in [
             (false, [0, 0, 0, max, 45, 55, max, max]),
@@ -1200,7 +1074,7 @@ mod gnm_random_graph_generator_test {
         let mut g = BaseGraph::<String, DefaultEdge, jgrapht::graph::Directed>::simple()
             .with_vertex_factory(|_| "v".to_string());
         assert!(
-            GnmRandomGraphGenerator::new(10, 3, JavaRandom::from_time(), false, false)
+            GnmRandomGraphGenerator::new(10, 3, StdRng::from_os_rng(), false, false)
                 .unwrap()
                 .generate_default(&mut g)
                 .is_err()
@@ -1216,7 +1090,7 @@ mod bipartite_random_generators {
     #[test]
     fn gnm_zero_nodes() {
         let mut g = pseudo_d(0);
-        GnmRandomBipartiteGraphGenerator::new(0, 0, 10, JavaRandom::from_time())
+        GnmRandomBipartiteGraphGenerator::new(0, 0, 10, StdRng::from_os_rng())
             .generate_default(&mut g)
             .unwrap();
         assert_eq!((g.vertex_count(), g.edge_count()), (0, 0));
@@ -1229,31 +1103,8 @@ mod bipartite_random_generators {
             .generate_default(&mut g)
             .unwrap();
         assert_eq!(g.vertex_count(), 8);
-        has_edges(
-            &g,
-            &[
-                (3, 5),
-                (6, 3),
-                (2, 8),
-                (7, 2),
-                (6, 2),
-                (4, 5),
-                (7, 4),
-                (2, 5),
-                (6, 1),
-                (5, 1),
-                (2, 7),
-                (1, 7),
-                (2, 6),
-                (3, 6),
-                (1, 5),
-                (7, 3),
-                (1, 8),
-                (8, 3),
-                (4, 7),
-                (4, 8),
-            ],
-        );
+        assert_eq!(g.edge_count(), 20);
+        assert_bipartite_edges(&g, 4);
     }
 
     #[test]
@@ -1262,21 +1113,8 @@ mod bipartite_random_generators {
         GnmRandomBipartiteGraphGenerator::new(4, 4, 10, rng(SEED))
             .generate_default(&mut g)
             .unwrap();
-        has_edges(
-            &g,
-            &[
-                (3, 5),
-                (1, 7),
-                (2, 8),
-                (2, 6),
-                (3, 8),
-                (4, 8),
-                (1, 6),
-                (4, 7),
-                (4, 6),
-                (4, 5),
-            ],
-        );
+        assert_eq!(g.edge_count(), 10);
+        assert_bipartite_edges(&g, 4);
     }
 
     #[test]
@@ -1298,7 +1136,7 @@ mod bipartite_random_generators {
     #[test]
     fn gnp_zero_nodes_and_bad_parameters() {
         let mut g = pseudo_d(1);
-        GnpRandomBipartiteGraphGenerator::new(0, 0, 0.5, JavaRandom::from_time())
+        GnpRandomBipartiteGraphGenerator::new(0, 0, 0.5, StdRng::from_os_rng())
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
@@ -1314,31 +1152,8 @@ mod bipartite_random_generators {
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
-        has_edges(
-            &g,
-            &[
-                (5, 1),
-                (1, 6),
-                (6, 1),
-                (1, 7),
-                (1, 8),
-                (2, 5),
-                (6, 2),
-                (7, 2),
-                (2, 8),
-                (5, 3),
-                (3, 6),
-                (7, 3),
-                (3, 8),
-                (4, 5),
-                (5, 4),
-                (4, 6),
-                (6, 4),
-                (4, 7),
-                (4, 8),
-                (8, 4),
-            ],
-        );
+        assert_gnp_edge_count(&g, 32, 0.5);
+        assert_bipartite_edges(&g, 4);
         let mut g = pseudo_d(1);
         GnpRandomBipartiteGraphGenerator::new(4, 4, 1.0, rng(SEED))
             .unwrap()
@@ -1350,7 +1165,8 @@ mod bipartite_random_generators {
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
-        has_edges(&g, &[(5, 1), (7, 3), (3, 8), (8, 4)]);
+        assert_gnp_edge_count(&g, 32, 0.1);
+        assert_bipartite_edges(&g, 4);
     }
 
     #[test]
@@ -1360,20 +1176,8 @@ mod bipartite_random_generators {
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
-        has_edges(
-            &g,
-            &[
-                (1, 6),
-                (1, 7),
-                (1, 8),
-                (2, 5),
-                (2, 7),
-                (3, 5),
-                (3, 8),
-                (4, 6),
-                (4, 7),
-            ],
-        );
+        assert_gnp_edge_count(&g, 16, 0.5);
+        assert_bipartite_edges(&g, 4);
         let mut g = simple_u(1);
         GnpRandomBipartiteGraphGenerator::new(4, 4, 1.0, rng(SEED))
             .unwrap()
@@ -1405,6 +1209,7 @@ mod bipartite_random_generators {
 
 mod barabasi_albert_tests {
     use super::*;
+    use rand::{SeedableRng, rngs::StdRng};
 
     #[test]
     fn test_bad_parameters() {
@@ -1461,7 +1266,7 @@ mod barabasi_albert_tests {
         assert_eq!(g.vertex_count(), 20);
         assert_eq!(connected_components(&g).len(), 5);
         let mut g = simple_u(1);
-        BarabasiAlbertForestGenerator::new(20, 20, JavaRandom::from_time())
+        BarabasiAlbertForestGenerator::new(20, 20, StdRng::from_os_rng())
             .unwrap()
             .generate_default(&mut g)
             .unwrap();
@@ -1497,10 +1302,10 @@ mod barabasi_albert_tests {
     fn forest_random_trees() {
         let mut random = rng(0x88);
         for _ in 0..2000 {
-            let n = 10 + random.next_int_bound(100) as usize;
-            let t = 1 + random.next_int_bound(n as i32) as usize;
+            let n = 10 + random.next_int_bound(100);
+            let t = 1 + random.next_int_bound(n);
             let mut g = simple_u(1);
-            BarabasiAlbertForestGenerator::new(t, n, JavaRandom::from_time())
+            BarabasiAlbertForestGenerator::new(t, n, StdRng::from_os_rng())
                 .unwrap()
                 .generate_default(&mut g)
                 .unwrap();
@@ -1523,7 +1328,7 @@ mod scale_free_kleinberg_lcd {
         d_o: f32,
         e: i64,
         n: i64,
-    ) -> Result<DirectedScaleFreeGraphGenerator<JavaRandom>> {
+    ) -> Result<DirectedScaleFreeGraphGenerator<StdRng>> {
         DirectedScaleFreeGraphGenerator::new(a, g_, di, d_o, e, n, rng(S))
     }
 
@@ -1677,6 +1482,7 @@ mod scale_free_kleinberg_lcd {
 
 mod prufer_watts_regular {
     use super::*;
+    use rand::{SeedableRng, rngs::StdRng};
 
     #[test]
     fn prufer_sequences() {
@@ -1709,7 +1515,7 @@ mod prufer_watts_regular {
             1,
         );
         assert!(
-            PruferTreeGenerator::new(10, JavaRandom::from_time())
+            PruferTreeGenerator::new(10, StdRng::from_os_rng())
                 .unwrap()
                 .generate_default(&mut dag)
                 .is_err()
@@ -1735,8 +1541,8 @@ mod prufer_watts_regular {
         let mut random = rng(0x88);
         for _ in 0..500 {
             let mut tree = simple_u(1);
-            let n = 1 + random.next_int_bound(5000) as usize;
-            PruferTreeGenerator::new(n, JavaRandom::new(random.next_long()))
+            let n = 1 + random.next_int_bound(5000);
+            PruferTreeGenerator::new(n, StdRng::seed_from_u64((random.next_u64() as i64) as u64))
                 .unwrap()
                 .generate_default(&mut tree)
                 .unwrap();
@@ -1750,12 +1556,7 @@ mod prufer_watts_regular {
         assert!(is_tree(&tree));
     }
 
-    fn ws(
-        n: usize,
-        k: usize,
-        p: f64,
-        seed: i64,
-    ) -> Result<WattsStrogatzGraphGenerator<JavaRandom>> {
+    fn ws(n: usize, k: usize, p: f64, seed: i64) -> Result<WattsStrogatzGraphGenerator<StdRng>> {
         WattsStrogatzGraphGenerator::new(n, k, p, false, rng(seed))
     }
 
@@ -1806,7 +1607,7 @@ mod prufer_watts_regular {
         assert_eq!((g.vertex_count(), g.edge_count()), (10, 10));
     }
 
-    fn regular(n: usize, d: usize) -> Result<RandomRegularGraphGenerator<JavaRandom>> {
+    fn regular(n: usize, d: usize) -> Result<RandomRegularGraphGenerator<StdRng>> {
         RandomRegularGraphGenerator::new(n, d, rng(SEED))
     }
 
@@ -1856,7 +1657,7 @@ mod planted_partition_tests {
         p: f64,
         q: f64,
         loops: bool,
-    ) -> Result<PlantedPartitionGraphGenerator<JavaRandom>> {
+    ) -> Result<PlantedPartitionGraphGenerator<StdRng>> {
         PlantedPartitionGraphGenerator::new(l, k, p, q, rng(SEED), loops)
     }
 
@@ -2059,5 +1860,63 @@ mod complement_tests {
                 .vertices()
                 .all(|v| target.contains_edge_between(v, v))
         );
+    }
+}
+
+// ---------------------------------------------------------------- correctness properties over many seeds
+
+mod generator_properties {
+    use super::*;
+
+    /// A simple graph rejects loops and parallel edges, so success already proves simplicity;
+    /// the checks below pin down the exact counts and degrees.
+    #[test]
+    fn random_regular_is_simple_regular_for_many_seeds() {
+        for (n, d) in [(6, 4), (10, 8), (12, 3), (20, 7), (30, 10), (9, 2)] {
+            for seed in 0..40 {
+                let mut g = simple_u(0);
+                RandomRegularGraphGenerator::new(n, d, rng(seed))
+                    .unwrap()
+                    .generate_default(&mut g)
+                    .unwrap();
+                assert_eq!(g.vertex_count(), n);
+                assert_eq!(g.edge_count(), n * d / 2, "n={n} d={d} seed={seed}");
+                assert!(g.vertices().all(|v| g.degree_of(v) == d));
+            }
+        }
+    }
+
+    #[test]
+    fn barabasi_albert_has_exact_edge_count_and_min_degree() {
+        for (m0, m, n) in [(1, 1, 30), (3, 2, 40), (4, 4, 50), (5, 3, 60)] {
+            for seed in 0..25 {
+                let mut g = simple_u(0);
+                BarabasiAlbertGraphGenerator::new(m0, m, n, rng(seed))
+                    .unwrap()
+                    .generate_default(&mut g)
+                    .unwrap();
+                assert_eq!(g.vertex_count(), n);
+                assert_eq!(g.edge_count(), m0 * (m0 - 1) / 2 + m * (n - m0));
+                assert!(g.vertices().all(|v| g.degree_of(v) >= m.min(m0 - 1).max(1)));
+            }
+        }
+    }
+
+    #[test]
+    fn directed_scale_free_hits_targets_for_many_seeds() {
+        for seed in 0..25 {
+            let mut gen_ =
+                DirectedScaleFreeGraphGenerator::new(0.33, 0.33, 0.5, 0.5, 500, -1, rng(seed))
+                    .unwrap();
+            let mut g = pseudo_d(0);
+            gen_.generate_default(&mut g).unwrap();
+            assert_eq!(g.edge_count(), 500);
+            let mut gen_ =
+                DirectedScaleFreeGraphGenerator::new(0.33, 0.33, 0.5, 0.5, -1, 300, rng(seed))
+                    .unwrap();
+            let mut g = pseudo_d(0);
+            gen_.generate_default(&mut g).unwrap();
+            assert_eq!(g.vertex_count(), 300);
+        }
     }
 }

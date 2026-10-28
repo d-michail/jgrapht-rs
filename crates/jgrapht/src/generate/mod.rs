@@ -14,8 +14,8 @@
 
 //! Graph generators, ported from JGraphT step for step: vertices are created through the target's
 //! vertex factory (`add_new_vertex`) in the same order, edges are added in the same order, and the
-//! random generators consume random numbers exactly like the Java code, so seeded runs with a
-//! [`JavaRandom`](crate::util::java::JavaRandom) reproduce JGraphT's graphs.
+//! random generators follow the Java algorithms; seeded runs are reproducible but do not match
+//! JGraphT's graphs for the same seed.
 //!
 //! Invalid parameters are reported when generating (as `Err`), before the target is touched.
 //! A generator may refuse individual edges (a simple target rejects parallel edges); like JGraphT it

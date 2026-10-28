@@ -18,16 +18,18 @@ use jgrapht::alg::shortestpath::{
 };
 use jgrapht::generate::{GnmRandomGraphGenerator, GnpRandomGraphGenerator, GraphGenerator};
 use jgrapht::graph::OutgoingGraph;
-use jgrapht::util::java::JavaRandom;
+use jgrapht::util::java::RandomSource;
 use jgrapht::{DiGraph, Graph, GraphError, GraphMut, GraphMutExt, UGraph};
 use rand::{SeedableRng, rngs::StdRng};
 
 const SEED: i64 = 19;
 
 fn precompute<G: Graph>(graph: &G) -> ContractionHierarchy<'_, G> {
-    ContractionHierarchyPrecomputation::with_random_supplier(graph, 4, || JavaRandom::new(SEED))
-        .compute_contraction_hierarchy()
-        .unwrap()
+    ContractionHierarchyPrecomputation::with_random_supplier(graph, 4, || {
+        StdRng::seed_from_u64((SEED) as u64)
+    })
+    .compute_contraction_hierarchy()
+    .unwrap()
 }
 
 fn has_edge<G: Graph>(h: &ContractionHierarchy<'_, G>, s: &G::Vertex, t: &G::Vertex) -> bool {
@@ -59,6 +61,7 @@ fn assert_simple<G: Graph>(h: &ContractionHierarchy<'_, G>) {
 
 mod precomputation {
     use super::*;
+    use rand::{SeedableRng, rngs::StdRng};
 
     #[test]
     fn test_empty_graph() {
@@ -220,7 +223,7 @@ mod precomputation {
                 .unwrap()
                 .generate_indexed(&mut graph)
                 .unwrap();
-            let mut random = JavaRandom::new(SEED);
+            let mut random = StdRng::seed_from_u64((SEED) as u64);
             let edges: Vec<_> = graph.edges().copied().collect();
             for e in &edges {
                 graph.set_edge_weight(e, random.next_double()).unwrap();
@@ -282,7 +285,7 @@ mod precomputation {
             .unwrap();
         let signature = |p: usize| {
             let h = ContractionHierarchyPrecomputation::with_random_supplier(&graph, p, || {
-                JavaRandom::new(SEED)
+                StdRng::seed_from_u64((SEED) as u64)
             })
             .compute_contraction_hierarchy()
             .unwrap();
@@ -297,6 +300,7 @@ mod precomputation {
 
 mod bidirectional_dijkstra {
     use super::*;
+    use rand::{SeedableRng, rngs::StdRng};
 
     fn weighted_graph(edges: &[(i32, i32, f64)]) -> UGraph<i32> {
         let mut graph = UGraph::<i32>::simple().weighted();
@@ -386,7 +390,7 @@ mod bidirectional_dijkstra {
     fn test_ring_graph() {
         let size = 100;
         let mut graph = UGraph::<usize>::simple().weighted();
-        let mut random = JavaRandom::new(SEED);
+        let mut random = StdRng::seed_from_u64((SEED) as u64);
         graph.add_vertices(0..size);
         for i in 0..size {
             let j = (i + 1) % size;
@@ -400,7 +404,7 @@ mod bidirectional_dijkstra {
     #[test]
     fn test_on_random_graphs() {
         let n = 100;
-        let mut random = JavaRandom::new(SEED);
+        let mut random = StdRng::seed_from_u64((SEED) as u64);
         for _ in 0..20 {
             let mut graph = DiGraph::<usize>::pseudo().weighted();
             GnmRandomGraphGenerator::new(
@@ -442,10 +446,11 @@ mod bidirectional_dijkstra {
     }
 }
 
-/// Compares levels, vertex ids and the edge list of the hierarchy with the one computed by JGraphT
-/// (`scripts/java-oracle/ContractionHierarchyOracle.java`, `Random(19)` per worker) for the same
-/// graphs and numbers of workers.
-mod java_golden {
+/// Hierarchies of the fixture graphs for 1, 3 and 4 workers. The contraction order depends on the
+/// random tie-breaking values, so instead of fixed levels the structure of the hierarchy and the
+/// queries on it are checked: levels order the edges, and the bidirectional search finds the same
+/// paths as Dijkstra from every source.
+mod fixture_graphs {
     use super::*;
     use std::collections::HashMap;
 
@@ -484,80 +489,59 @@ mod java_golden {
         result
     }
 
-    fn check<G: Graph<Vertex = usize>>(graph: &G, p: usize, expected: &[&str], name: &str) {
+    fn check<G: OutgoingGraph<Vertex = usize>>(graph: &G, p: usize, name: &str)
+    where
+        G::Edge: std::fmt::Debug,
+    {
         let h = ContractionHierarchyPrecomputation::with_random_supplier(graph, p, || {
-            JavaRandom::new(19)
+            StdRng::seed_from_u64(19)
         })
         .compute_contraction_hierarchy()
         .unwrap();
-        let mut got = Vec::new();
-        for v in 0..graph.vertex_count() {
-            let cv = &h.vertices()[h.contraction_mapping()[&v]];
-            got.push(format!("L {v} {} {}", cv.contraction_level, cv.vertex_id));
-        }
         for e in h.edges() {
-            got.push(format!(
-                "E {} {} {:?} {} {} {}",
-                h.vertices()[e.source].vertex,
-                h.vertices()[e.target].vertex,
-                e.weight,
-                e.original_edges,
-                e.edge.is_some() as u8,
-                e.is_upward as u8
-            ));
+            let (ls, lt) = (
+                h.vertices()[e.source].contraction_level,
+                h.vertices()[e.target].contraction_level,
+            );
+            assert_ne!(ls, lt, "{name} p={p}");
+            assert_eq!(e.is_upward, ls < lt, "{name} p={p}");
         }
-        let levels = graph.vertex_count();
-        assert_eq!(
-            got[..levels],
-            *expected[..levels].to_vec(),
-            "{name} p={p}: levels"
-        );
-        // Java adds the shortcuts of one vertex in `HashSet` order, here they follow insertion
-        // order, so only the edge multiset is compared.
-        let sorted = |v: &[String]| {
-            let mut v = v.to_vec();
-            v.sort();
-            v
-        };
-        let expected_edges: Vec<String> =
-            expected[levels..].iter().map(|s| s.to_string()).collect();
-        assert_eq!(
-            sorted(&got[levels..]),
-            sorted(&expected_edges),
-            "{name} p={p}: edges"
-        );
+        for source in 0..graph.vertex_count() {
+            let expected = Dijkstra::new(graph).single_source(&source).unwrap();
+            let actual = ContractionHierarchyBidirectionalDijkstra::new(&h)
+                .single_source(&source)
+                .unwrap();
+            for sink in graph.vertices() {
+                assert_eq!(
+                    expected.path(sink).map(|w| w.weight()),
+                    actual.path(sink).map(|w| w.weight()),
+                    "{name} p={p} {source}->{sink}"
+                );
+            }
+        }
     }
 
     #[test]
-    fn hierarchy_matches_jgrapht() {
+    fn hierarchy_is_valid_and_answers_queries() {
         let graphs = graphs();
-        let golden = include_str!("../fixtures/ch_golden.txt");
-        let mut blocks: Vec<(String, usize, Vec<&str>)> = Vec::new();
-        for line in golden.lines() {
-            if let Some(rest) = line.strip_prefix("case ") {
-                let (name, p) = rest.split_once(' ').unwrap();
-                blocks.push((name.to_string(), p.parse().unwrap(), Vec::new()));
-            } else {
-                blocks.last_mut().unwrap().2.push(line);
-            }
-        }
-        assert_eq!(blocks.len(), 12);
-        for (name, p, expected) in blocks {
-            let case = &graphs[&name];
-            if case.directed {
-                let mut g = DiGraph::<usize>::pseudo().weighted();
-                g.add_vertices(0..case.n);
-                for &(s, t, w) in &case.edges {
-                    g.add_weighted_edge(&s, &t, w).unwrap();
+        assert_eq!(graphs.len(), 4);
+        for (name, case) in &graphs {
+            for p in [1, 3, 4] {
+                if case.directed {
+                    let mut g = DiGraph::<usize>::pseudo().weighted();
+                    g.add_vertices(0..case.n);
+                    for &(s, t, w) in &case.edges {
+                        g.add_weighted_edge(&s, &t, w).unwrap();
+                    }
+                    check(&g, p, name);
+                } else {
+                    let mut g = UGraph::<usize>::pseudo().weighted();
+                    g.add_vertices(0..case.n);
+                    for &(s, t, w) in &case.edges {
+                        g.add_weighted_edge(&s, &t, w).unwrap();
+                    }
+                    check(&g, p, name);
                 }
-                check(&g, p, &expected, &name);
-            } else {
-                let mut g = UGraph::<usize>::pseudo().weighted();
-                g.add_vertices(0..case.n);
-                for &(s, t, w) in &case.edges {
-                    g.add_weighted_edge(&s, &t, w).unwrap();
-                }
-                check(&g, p, &expected, &name);
             }
         }
     }

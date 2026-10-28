@@ -14,7 +14,7 @@
 
 use jgrapht::alg::shortestpath::{YenKShortestPath, YenShortestPathIterator};
 use jgrapht::graph::IncidenceGraph;
-use jgrapht::util::java::JavaRandom;
+use jgrapht::util::java::RandomSource;
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, GraphWalk, UGraph};
 use std::collections::HashSet;
 
@@ -417,6 +417,7 @@ mod yen_error_reporting {
 
 mod yen_k_shortest_path_test {
     use super::*;
+    use rand::{SeedableRng, rngs::StdRng};
 
     #[test]
     fn test_k_equals_zero() {
@@ -465,7 +466,7 @@ mod yen_k_shortest_path_test {
 
     #[test]
     fn test_on_random_graphs() {
-        let mut random = JavaRandom::new(13);
+        let mut random = StdRng::seed_from_u64(13);
         for _ in 0..50 {
             let mut graph = DiGraph::<u32>::pseudo().weighted();
             graph.add_vertices(0..25);
@@ -486,11 +487,10 @@ mod yen_k_shortest_path_test {
             let target = (random.next_double() * 25.0) as u32;
 
             let edges = graph.edges().copied().collect::<Vec<_>>();
-            let mut selection_random = JavaRandom::new(13);
+            let mut selection_random = StdRng::seed_from_u64(13);
             let mut forbidden = HashSet::new();
             while forbidden.len() < 5 {
-                forbidden
-                    .insert(edges[selection_random.next_int_bound(edges.len() as i32) as usize]);
+                forbidden.insert(edges[selection_random.next_int_bound(edges.len())]);
             }
             let all = YenKShortestPath::new(&graph)
                 .get_paths(&source, &target, usize::MAX)

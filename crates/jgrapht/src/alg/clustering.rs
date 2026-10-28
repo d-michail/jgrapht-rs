@@ -730,8 +730,7 @@ impl<G: IncidenceGraph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgor
 /// # Rust notes
 ///
 /// Asynchronous label propagation clustering as in JGraphT (`LabelPropagationClustering`): vertices
-/// in random order adopt the most frequent neighbour label, ties broken at random. The random
-/// draws reproduce JGraphT's for a [`JavaRandom`](crate::util::java::JavaRandom) with the same seed.
+/// in random order adopt the most frequent neighbour label, ties broken at random.
 pub struct LabelPropagationClustering<'g, G: Graph, R> {
     graph: &'g G,
     max_iterations: usize,

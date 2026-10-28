@@ -23,10 +23,11 @@ use crate::graph::Graph;
 use crate::graph::GraphExt;
 use crate::util::OrderedF64;
 use crate::util::heap::JavaPairingHeap;
-use crate::util::java::{JavaRandom, RandomSource};
+use crate::util::java::RandomSource;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use indexmap::IndexSet;
+use rand::{SeedableRng, rngs::StdRng};
 use rheaps::{AddressableHeap, DecreaseKeyHeap};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::Deref;
@@ -226,8 +227,8 @@ impl<'g, G: Graph> ContractionHierarchy<'g, G> {
 /// order, so no locking is needed and the result does not depend on thread scheduling. As in
 /// Java, every worker owns one random generator (created by the supplier, in worker order) that
 /// supplies the tie-breaking values of the vertices in its chunk of the initial segment, so a
-/// seeded supplier such as `|| JavaRandom::new(seed)` reproduces JGraphT's hierarchy for the same
-/// `parallelism`. The set of vertices that a vertex shortcut candidate is checked against is
+/// seeded supplier such as `|| StdRng::seed_from_u64(seed)` makes the hierarchy reproducible for
+/// the same `parallelism`. The set of vertices that a vertex shortcut candidate is checked against is
 /// iterated in insertion order (Java: `HashSet` order), which only changes the order in which the
 /// shortcut edges of one vertex are added to the hierarchy.
 pub struct ContractionHierarchyPrecomputation<'g, G: Graph> {
@@ -250,7 +251,7 @@ impl<'g, G: Graph> ContractionHierarchyPrecomputation<'g, G> {
     /// Constructs a new instance of the algorithm for a given `graph` which uses `parallelism`
     /// worker threads (at least one).
     pub fn with_parallelism(graph: &'g G, parallelism: usize) -> Self {
-        Self::with_random_supplier(graph, parallelism, JavaRandom::from_time)
+        Self::with_random_supplier(graph, parallelism, StdRng::from_os_rng)
     }
 
     /// Constructs a new instance of the algorithm for a given `graph`, `parallelism` and

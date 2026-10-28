@@ -22,11 +22,9 @@
 use jgrapht::alg::util::*;
 use jgrapht::event::Listenable;
 use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
-use jgrapht::util::java::JavaRandom;
 use jgrapht::util::sampler::AliasMethodSampler;
 use jgrapht::*;
-use rand::SeedableRng;
-use rand::rngs::StdRng;
+use rand::{SeedableRng, rngs::StdRng};
 use std::collections::HashSet;
 
 mod alias_method_sampler_test {
@@ -34,7 +32,7 @@ mod alias_method_sampler_test {
 
     fn counts(prob: &[f64], seed: i64) -> Vec<i32> {
         let sampler = AliasMethodSampler::new(prob).unwrap();
-        let mut rng = JavaRandom::new(seed);
+        let mut rng = StdRng::seed_from_u64((seed) as u64);
         let mut counts = vec![0; prob.len()];
         for _ in 0..1_000_000 {
             counts[sampler.next(&mut rng)] += 1;
@@ -42,20 +40,23 @@ mod alias_method_sampler_test {
         counts
     }
 
+    /// The sample frequencies must match the probabilities: 1,000,000 draws leave a standard
+    /// deviation below 500 per outcome, so a deviation of 3,000 (six sigma) means a wrong table.
+    fn assert_close(counts: &[i32], prob: &[f64]) {
+        for (c, p) in counts.iter().zip(prob) {
+            assert!((*c as f64 - p * 1_000_000.0).abs() < 3000.0, "{counts:?}");
+        }
+    }
+
     #[test]
     fn test1() {
-        assert_eq!(
-            counts(&[0.1, 0.2, 0.3, 0.4], 5),
-            [100033, 200069, 299535, 400363]
-        );
+        assert_close(&counts(&[0.1, 0.2, 0.3, 0.4], 5), &[0.1, 0.2, 0.3, 0.4]);
     }
 
     #[test]
     fn test2() {
-        assert_eq!(
-            counts(&[0.05, 0.05, 0.05, 0.05, 0.8], 17),
-            [49949, 49726, 50441, 49894, 799990]
-        );
+        let prob = [0.05, 0.05, 0.05, 0.05, 0.8];
+        assert_close(&counts(&prob, 17), &prob);
     }
 
     #[test]

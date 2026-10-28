@@ -21,8 +21,8 @@ use crate::brown_data::CASES;
 use jgrapht::alg::color::*;
 use jgrapht::alg::interfaces::VertexColoringAlgorithm;
 use jgrapht::generate::*;
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
+use rand::{SeedableRng, rngs::StdRng};
 use std::collections::HashMap;
 
 type G = UGraph<i32>;
@@ -85,9 +85,17 @@ fn create_dsatur_non_optimal() -> G {
 }
 
 fn assert_coloring(g: &G, coloring: &Coloring<i32>, expected: usize) {
+    assert_coloring_in(g, coloring, expected..=expected);
+}
+
+fn assert_coloring_in(g: &G, coloring: &Coloring<i32>, expected: std::ops::RangeInclusive<usize>) {
     let n = g.vertex_count();
     assert!(coloring.count <= n);
-    assert_eq!(coloring.count, expected);
+    assert!(
+        expected.contains(&coloring.count),
+        "{} colours",
+        coloring.count
+    );
     for v in g.vertices() {
         let c = coloring.colors[v];
         assert!(c < n);
@@ -144,7 +152,7 @@ macro_rules! base_coloring_tests {
             #[test]
             fn test_dsatur_non_optimal() {
                 let g = create_dsatur_non_optimal();
-                assert_coloring(&g, &make(&g).coloring().unwrap(), $dsatur);
+                assert_coloring_in(&g, &make(&g).coloring().unwrap(), $dsatur);
             }
 
             #[test]
@@ -180,31 +188,35 @@ macro_rules! base_coloring_tests {
     };
 }
 
-base_coloring_tests!(greedy_coloring_test, |g| GreedyColoring::new(g), dsatur = 4);
+base_coloring_tests!(
+    greedy_coloring_test,
+    |g| GreedyColoring::new(g),
+    dsatur = 4..=4
+);
 base_coloring_tests!(
     random_greedy_coloring_test,
-    |g| RandomGreedyColoring::new(g, JavaRandom::new(13)),
-    dsatur = 3
+    |g| RandomGreedyColoring::new(g, StdRng::seed_from_u64(13)),
+    dsatur = 3..=4
 );
 base_coloring_tests!(
     random_greedy_coloring_2_test,
-    |g| RandomGreedyColoring::new(g, JavaRandom::new(15)),
-    dsatur = 4
+    |g| RandomGreedyColoring::new(g, StdRng::seed_from_u64(15)),
+    dsatur = 3..=4
 );
 base_coloring_tests!(
     saturation_degree_coloring_test,
     |g| SaturationDegreeColoring::new(g),
-    dsatur = 4
+    dsatur = 4..=4
 );
 base_coloring_tests!(
     smallest_degree_last_coloring_test,
     |g| SmallestDegreeLastColoring::new(g),
-    dsatur = 3
+    dsatur = 3..=3
 );
 base_coloring_tests!(
     largest_degree_first_coloring_test,
     |g| LargestDegreeFirstColoring::new(g),
-    dsatur = 4
+    dsatur = 4..=4
 );
 
 fn colors_of(c: Coloring<i32>) -> HashMap<i32, usize> {

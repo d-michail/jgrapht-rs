@@ -465,12 +465,9 @@ impl<G: IncidenceGraph> BidirectionalDijkstra<'_, G> {
         let mut best_path = f64::INFINITY;
         let mut common: Option<&G::Vertex> = None;
         let mut current = 0;
-        loop {
-            let (Some(min), Some(other_min)) =
-                (sides[current].min_key(), sides[1 - current].min_key())
-            else {
-                break;
-            };
+        while let (Some(min), Some(other_min)) =
+            (sides[current].min_key(), sides[1 - current].min_key())
+        {
             if min + other_min >= best_path {
                 break;
             }

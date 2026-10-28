@@ -22,16 +22,18 @@
 use jgrapht::alg::flow::{MaximumFlowValueAlgorithm, MinimumCostFlowProblem, PushRelabelMFImpl};
 use jgrapht::alg::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
 use jgrapht::generate::netgen::*;
-use jgrapht::util::java::JavaRandom;
+use jgrapht::util::java::RandomSource;
 use jgrapht::*;
+use rand::RngCore;
+use rand::{SeedableRng, rngs::StdRng};
 use std::collections::HashSet;
 
 mod distributor_test {
     use super::*;
     use std::collections::HashMap;
 
-    fn rng() -> JavaRandom {
-        JavaRandom::new(1)
+    fn rng() -> StdRng {
+        StdRng::seed_from_u64(1)
     }
 
     fn lower_bounds<K: std::hash::Hash + Eq + 'static>(m: &[(K, i32)]) -> impl Fn(&K) -> i32 + '_ {
@@ -350,6 +352,7 @@ mod config_builder_test {
 
 mod network_generator_test {
     use super::*;
+    use rand::{SeedableRng, rngs::StdRng};
 
     const EPS: f64 = 1e-9;
     type G = DiGraph<i32>;
@@ -587,8 +590,8 @@ mod network_generator_test {
         compare(&g1, &g2, |e| p1.cost(e).to_bits(), |e| p2.cost(e).to_bits());
     }
 
-    fn rng() -> JavaRandom {
-        JavaRandom::new(1)
+    fn rng() -> StdRng {
+        StdRng::seed_from_u64(1)
     }
 
     fn mcf_config(
@@ -630,7 +633,7 @@ mod network_generator_test {
                         for tn in [0i64, 1, 2, 5, 10, 20, 30] {
                             let arcs = NetworkGeneratorConfig::minimum_arc_num_for(s, tn, t);
                             let config = mcf_config(s, ts, tn, tt, t, arcs, s.max(t) as i32);
-                            test_min_cost(&config, rng.next_long() as u64);
+                            test_min_cost(&config, rng.next_u64() as i64 as u64);
                         }
                     }
                 }
@@ -649,7 +652,7 @@ mod network_generator_test {
                             let arcs =
                                 NetworkGeneratorConfig::maximum_arc_num_full(s, ts, tn, tt, t);
                             let config = mcf_config(s, ts, tn, tt, t, arcs, 10 * s as i32);
-                            test_min_cost(&config, rng.next_long() as u64);
+                            test_min_cost(&config, rng.next_u64() as i64 as u64);
                         }
                     }
                 }
@@ -663,7 +666,7 @@ mod network_generator_test {
         let arcs = NetworkGeneratorConfig::minimum_arc_num_for(s, tn, t);
         test_min_cost(
             &mcf_config(s, 0, tn, 0, t, arcs, 10 * s as i32),
-            rng().next_long() as u64,
+            rng().next_u64() as i64 as u64,
         );
     }
 
@@ -689,7 +692,10 @@ mod network_generator_test {
             for t in 1..5i64 {
                 for tn in 0..30i64 {
                     let arcs = NetworkGeneratorConfig::minimum_arc_num_for(s, tn, t);
-                    test_max_flow(&max_flow_config(s, tn, t, arcs), rng.next_long() as u64);
+                    test_max_flow(
+                        &max_flow_config(s, tn, t, arcs),
+                        rng.next_u64() as i64 as u64,
+                    );
                 }
             }
         }
@@ -702,7 +708,10 @@ mod network_generator_test {
             for t in 1..5i64 {
                 for tn in 0..30i64 {
                     let arcs = NetworkGeneratorConfig::maximum_arc_num_for(s, tn, t);
-                    test_max_flow(&max_flow_config(s, tn, t, arcs), rng.next_long() as u64);
+                    test_max_flow(
+                        &max_flow_config(s, tn, t, arcs),
+                        rng.next_u64() as i64 as u64,
+                    );
                 }
             }
         }
@@ -716,8 +725,11 @@ mod network_generator_test {
                 for tn in 0..30i64 {
                     let lb = NetworkGeneratorConfig::minimum_arc_num_for(s, tn, t);
                     let ub = NetworkGeneratorConfig::maximum_arc_num_for(s, tn, t);
-                    let arcs = rng.next_int_bound((ub - lb + 1) as i32) as i64 + lb;
-                    test_max_flow(&max_flow_config(s, tn, t, arcs), rng.next_long() as u64);
+                    let arcs = rng.next_int_bound((ub - lb + 1) as usize) as i64 + lb;
+                    test_max_flow(
+                        &max_flow_config(s, tn, t, arcs),
+                        rng.next_u64() as i64 as u64,
+                    );
                 }
             }
         }
@@ -734,7 +746,7 @@ mod network_generator_test {
     fn bipartite_matching_minimum_number_of_arcs() {
         let mut rng = rng();
         for i in 1..50 {
-            test_bipartite(&bipartite_config(i, i), rng.next_long() as u64);
+            test_bipartite(&bipartite_config(i, i), rng.next_u64() as i64 as u64);
         }
     }
 
@@ -742,7 +754,7 @@ mod network_generator_test {
     fn bipartite_matching_maximum_number_of_arcs() {
         let mut rng = rng();
         for i in 1..50 {
-            test_bipartite(&bipartite_config(i, i * i), rng.next_long() as u64);
+            test_bipartite(&bipartite_config(i, i * i), rng.next_u64() as i64 as u64);
         }
     }
 
@@ -750,8 +762,8 @@ mod network_generator_test {
     fn bipartite_matching_random_number_of_arcs() {
         let mut rng = rng();
         for i in 1..50 {
-            let arcs = rng.next_int_bound(i * i - i + 1) + i;
-            test_bipartite(&bipartite_config(i, arcs), rng.next_long() as u64);
+            let arcs = rng.next_int_bound((i * i - i + 1) as usize) as i32 + i;
+            test_bipartite(&bipartite_config(i, arcs), rng.next_u64());
         }
     }
 
@@ -761,47 +773,50 @@ mod network_generator_test {
             .set_bipartite_matching_problem_params_cost(1000, 250000, 1, 100)
             .build()
             .unwrap();
-        test_bipartite(&config, rng().next_long() as u64);
+        test_bipartite(&config, rng().next_u64() as i64 as u64);
     }
 }
 
-/// Output of JGraphT's `NetworkGenerator` (seed 7, see the config below), sorted; produced by
-/// running the Java implementation.
+/// A seeded run with the configuration of the JGraphT example. The exact arcs depend on the random
+/// stream, so the structure is checked: node and arc counts, a simple graph, balanced supplies
+/// that add up to the requested total, and costs and capacities inside the configured ranges.
 #[test]
-fn matches_jgrapht_for_a_fixed_seed() {
+fn seeded_network_has_the_requested_structure() {
     let c = NetworkGeneratorConfigBuilder::new()
         .set_params(30, 120, 3, 4, 1, 2, 500, 1, 100, -5, 50, 80, 10)
         .build()
         .unwrap();
-    let mut g = DiGraph::<i32>::with_graph_type(GraphType {
-        self_loops: true,
-        ..GraphType::simple()
-    })
-    .weighted()
-    .with_vertex_factory(|i| i as i32);
-    let mut generator = NetworkGenerator::<i32, DefaultEdge, _>::with_rng(c, JavaRandom::new(7));
-    let p = generator
-        .generate_minimum_cost_flow_problem(&mut g)
-        .unwrap();
-    let graph = p.graph();
-    let mut lines: Vec<String> = graph
-        .edges()
-        .map(|e| {
-            format!(
-                "{}->{} cap={} cost={}",
-                graph.edge_source(e).unwrap(),
-                graph.edge_target(e).unwrap(),
-                p.arc_capacity_upper_bound(e),
-                p.arc_cost(e)
-            )
+    for seed in 0..20u64 {
+        let mut g = DiGraph::<i32>::with_graph_type(GraphType {
+            self_loops: true,
+            ..GraphType::simple()
         })
-        .collect();
-    lines.extend(
-        graph
-            .vertices()
-            .map(|v| format!("s{v}={}", p.node_supply(v))),
-    );
-    lines.sort();
-    let expected = include_str!("fixtures/netgen_seed7.txt");
-    assert_eq!(lines.join("\n"), expected.trim_end());
+        .weighted()
+        .with_vertex_factory(|i| i as i32);
+        let mut generator = NetworkGenerator::<i32, DefaultEdge, _>::with_rng(
+            c.clone(),
+            StdRng::seed_from_u64(seed),
+        );
+        let p = generator
+            .generate_minimum_cost_flow_problem(&mut g)
+            .unwrap();
+        let graph = p.graph();
+        assert_eq!(graph.vertex_count(), 30);
+        assert_eq!(graph.edge_count(), 120);
+        let supplies: Vec<i32> = graph.vertices().map(|v| p.node_supply(v)).collect();
+        assert_eq!(supplies.iter().sum::<i32>(), 0, "seed {seed}");
+        assert_eq!(
+            supplies.iter().filter(|s| **s > 0).sum::<i32>(),
+            500,
+            "seed {seed}"
+        );
+        for e in graph.edges() {
+            let cost = p.arc_cost(e);
+            assert!(
+                (-5.0..=50.0).contains(&cost) || cost == i32::MAX as f64,
+                "cost {cost}"
+            );
+            assert!(p.arc_capacity_upper_bound(e) >= 1, "seed {seed}");
+        }
+    }
 }

@@ -135,14 +135,11 @@ impl Run<'_> {
     fn compute(&self, source: usize) {
         self.relax(source, usize::MAX, None, 0.0);
         let mut removed: Vec<usize> = Vec::new();
-        loop {
-            let Some(first) = self
-                .buckets
-                .iter()
-                .position(|b| !b.lock().unwrap().is_empty())
-            else {
-                break;
-            };
+        while let Some(first) = self
+            .buckets
+            .iter()
+            .position(|b| !b.lock().unwrap().is_empty())
+        {
             let mut elements = self.take_bucket(first);
             while !elements.is_empty() {
                 let batch: Vec<usize> = elements.iter().copied().collect();

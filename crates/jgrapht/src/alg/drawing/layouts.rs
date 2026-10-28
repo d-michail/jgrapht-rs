@@ -20,8 +20,9 @@ use crate::alg::partition::BipartitePartitioning;
 use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::ToleranceDoubleComparator;
-use crate::util::java::{JavaRandom, RandomSource};
+use crate::util::java::RandomSource;
 use crate::{GraphError, Result};
+use rand::{SeedableRng, rngs::StdRng};
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -148,14 +149,14 @@ impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for CircularLayoutAlgorithm2D<G::Ve
 /// # Rust notes
 ///
 /// Uniformly random positions (`RandomLayoutAlgorithm2D`).
-pub struct RandomLayoutAlgorithm2D<R = JavaRandom> {
+pub struct RandomLayoutAlgorithm2D<R = StdRng> {
     rng: R,
 }
 
-impl RandomLayoutAlgorithm2D<JavaRandom> {
-    /// A layout reproducing JGraphT's for the same seed.
+impl RandomLayoutAlgorithm2D<StdRng> {
+    /// A layout drawn from a seeded `StdRng`.
     pub fn with_seed(seed: i64) -> Self {
-        Self::new(JavaRandom::new(seed))
+        Self::new(StdRng::seed_from_u64(seed as u64))
     }
 }
 

@@ -21,9 +21,9 @@ use crate::clustering_data::{Case, GREEDY, LP, NAIVE};
 use crate::common::construct_graph;
 use jgrapht::alg::clustering::*;
 use jgrapht::alg::interfaces::{Clustering, ClusteringAlgorithm};
-use jgrapht::util::java::JavaRandom;
 use jgrapht::*;
-use std::collections::HashSet;
+use rand::{SeedableRng, rngs::StdRng};
+use std::collections::{HashMap, HashSet};
 
 fn set(items: &[i32]) -> HashSet<i32> {
     items.iter().copied().collect()
@@ -424,16 +424,42 @@ mod naive_greedy_modularity_algorithm_test {
 mod label_propagation_clustering_test {
     use super::*;
 
+    /// Label propagation is randomised, so the clusters depend on the seed. What must hold for
+    /// every seed is that the result is a partition of the vertices in which no vertex has a
+    /// strictly more frequent label among its neighbours than its own (the stopping condition),
+    /// and that vertices without neighbours stay alone.
     #[test]
     fn all_cases() {
         for case in LP {
-            let c = with_ugraph!(case, |g| {
-                LabelPropagationClustering::new(&g, 0, JavaRandom::new(case.seed.unwrap()))
-                    .unwrap()
-                    .clustering()
-                    .unwrap()
-            });
-            check_case(case, &c);
+            for seed in 0..30u64 {
+                with_ugraph!(case, |g| {
+                    let c = LabelPropagationClustering::new(&g, 0, StdRng::seed_from_u64(seed))
+                        .unwrap()
+                        .clustering()
+                        .unwrap();
+                    let sets = as_sets(&c);
+                    let mut label = HashMap::new();
+                    for (i, s) in sets.iter().enumerate() {
+                        for v in s {
+                            assert!(label.insert(*v, i).is_none(), "{} seed {seed}", case.name);
+                        }
+                    }
+                    assert_eq!(label.len(), case.vertices.len(), "{}", case.name);
+                    for v in g.vertices() {
+                        let mut freq: HashMap<usize, usize> = HashMap::new();
+                        for u in g.neighbors_of(v) {
+                            *freq.entry(label[u]).or_insert(0) += 1;
+                        }
+                        if freq.is_empty() {
+                            assert_eq!(sets[label[v]].len(), 1, "{}", case.name);
+                            continue;
+                        }
+                        let best = freq.values().copied().max().unwrap();
+                        let own = freq.get(&label[v]).copied().unwrap_or(0);
+                        assert_eq!(own, best, "{} seed {seed} vertex {v}", case.name);
+                    }
+                });
+            }
         }
     }
 }

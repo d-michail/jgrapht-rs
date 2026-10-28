@@ -12,9 +12,9 @@ Review of 2026-10-27 on `master` (e8d4f07). Build and `cargo test --workspace` a
 
 **I-3. (resolved)** Shortest-path package (1i) is complete: all Java test classes are ported and contraction hierarchies, CH many-to-many and transit node routing follow the Java techniques (see `FIDELITY_ROADMAP.md` section G). What remains is `HashSet` iteration order in tie situations, documented there.
 
-**I-4. Unverified Java iteration order.** `BarabasiAlbert`, `DirectedScaleFree` and `RandomRegular` use approximations not checked against Java (Phase 0 note), and `PathGrowingWeightedMatching` starts from the first inserted vertex rather than Java's `HashSet` order. Tests pass; results can differ from Java for the same seed. Resolve with golden files from the Java oracle if exact reproducibility matters to users.
+**I-4. (resolved)** `JavaRandom` was removed; seeded results are not expected to match Java, and the affected tests check properties (see `tests/STATUS.md`). `PathGrowingWeightedMatching` still starts from the first inserted vertex rather than Java's `HashSet` order.
 
-**I-5. Ignored tests (4).** Two Brown backtracking colouring cases (`insertions2_3Test`, `jeanTest`, very slow upstream too), the `ApBetweenness` overflow test (about a minute) and the `MaximumWeightBipartiteMatching` n = 1000 case. Run them occasionally (`cargo test -- --ignored`), ideally in a scheduled CI job.
+**I-5. Ignored tests (4).** Two Brown backtracking colouring cases (`insertions2_3Test`, `jeanTest`, very slow upstream too), the `ApBetweenness` overflow test (about a minute) and the `MaximumWeightBipartiteMatching` n = 1000 case. A weekly scheduled CI job runs them (`cargo test --release -- --ignored`).
 
 ## API and robustness
 
@@ -30,6 +30,6 @@ Review of 2026-10-27 on `master` (e8d4f07). Build and `cargo test --workspace` a
 
 ## Process
 
-**I-11. `cargo fmt --check` is not in CI**, and `benches/` have no regression gate (the Java numbers comparison is manual). The 4 Java `jgrapht-ext`/guava/unimi/osm bridges remain out of scope.
+**I-11. (partly resolved)** `cargo fmt --check` is in CI; `benches/` have no regression gate (the Java numbers comparison is manual). The 4 Java `jgrapht-ext`/guava/unimi/osm bridges remain out of scope.
 
-**I-12. Docs drift.** `FIDELITY_ROADMAP.md` section G still says "checkpoint commit: see the first local commit after `b887d7e`" and sections F/G mention uncommitted work and hand-off rules (no attribution lines in commits) that predate the current workflow. Trim once 1i closes.
+**I-12. (resolved)** The hand-off text in `FIDELITY_ROADMAP.md` sections F/G was trimmed.

@@ -2740,8 +2740,8 @@ mod hierholzer_eulerian_cycle_test {
     use jgrapht::generate::{Complete, GnpRandomGraphGenerator, GraphGenerator};
     use jgrapht::graph::props::is_eulerian;
     use jgrapht::graph::{Direction, GraphExt};
-    use rand::rngs::StdRng;
-    use rand::{Rng, SeedableRng};
+    use rand::Rng;
+    use rand::{SeedableRng, rngs::StdRng};
     use std::collections::HashSet;
 
     fn assert_eulerian<G: IncidenceGraph>(g: &G, cycle: &GraphWalk<G::Vertex, G::Edge>) {
