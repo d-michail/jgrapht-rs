@@ -192,6 +192,8 @@ impl EventDrivenImporter for Graph6EventDrivenImporter {
         }
         let (format, encoded) = if let Some(rest) = line.strip_prefix(">>sparse6<<:") {
             (Graph6Format::Sparse6, rest)
+        } else if let Some(rest) = line.strip_prefix(">>digraph6<<&") {
+            (Graph6Format::Digraph6, rest)
         } else if let Some(rest) = line.strip_prefix(">>graph6<<") {
             (Graph6Format::Graph6, rest)
         } else if let Some(rest) = line.strip_prefix(':') {

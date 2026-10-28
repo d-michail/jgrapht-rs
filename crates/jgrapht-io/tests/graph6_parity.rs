@@ -59,6 +59,28 @@ mod importer_test {
     use super::*;
 
     #[test]
+    fn digraph6_header() {
+        // the directed triangle 0 -> 1 -> 2 -> 0, with and without the nauty header
+        let mut source = DiGraph::<usize>::pseudo();
+        source.add_vertices(0..3);
+        for (a, b) in [(0, 1), (1, 2), (2, 0)] {
+            source.add_edge(&a, &b).unwrap();
+        }
+        let encoded = Graph6Exporter::new(Graph6Format::Digraph6)
+            .export_to_string(&source)
+            .unwrap();
+        assert!(encoded.starts_with('&'));
+        for text in [encoded.clone(), format!(">>digraph6<<{encoded}")] {
+            let mut graph = DiGraph::<usize>::pseudo().with_vertex_factory(|id| id as usize);
+            Graph6Importer::new().import_str(&mut graph, &text).unwrap();
+            assert_eq!((graph.vertex_count(), graph.edge_count()), (3, 3));
+            for (a, b) in [(0, 1), (1, 2), (2, 0)] {
+                assert!(graph.contains_edge_between(&a, &b));
+            }
+        }
+    }
+
+    #[test]
     fn example_graph() {
         let graph = import_undirected(":Fa@x^\n");
         assert_eq!((graph.vertex_count(), graph.edge_count()), (7, 4));
