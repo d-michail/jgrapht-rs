@@ -70,9 +70,10 @@
 //! ```
 //! use jgrapht::graph::sparse::{FullIncoming, SparseIntDirectedGraph};
 //! use jgrapht::*;
+//! use std::borrow::Borrow;
 //!
 //! fn in_degree_sum<G: IncomingGraph>(g: &G) -> usize {
-//!     g.vertices().map(|v| { let v = v.borrow(); g.in_degree_of(v) }).sum()
+//!     g.vertices().map(|v| g.in_degree_of(v.borrow())).sum()
 //! }
 //!
 //! let g = SparseIntDirectedGraph::<FullIncoming>::from_edges(3, &[(0, 1), (1, 2)])?;
