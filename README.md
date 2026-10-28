@@ -143,7 +143,8 @@ at least 10 independent `cargo bench` processes, because one criterion run is a 
 and says nothing about run-to-run variance. Each run's mean is the observation; the table shows
 mean, standard deviation and coefficient of variation over the runs. With `-b <ref>` the two
 revisions alternate (base, head, base, ...) so machine drift affects both, and a slowdown only fails
-when it exceeds the threshold and is statistically significant (Welch t-test, p < 0.05). Use an
+when it exceeds the threshold and is statistically significant (Welch t-test, p < 0.05). All runs execute strictly one after the other on a single machine (the workflow is one job on one
+runner, no matrix). Use an
 idle machine: shared runners are noisy, and numbers are only comparable on the same machine.
 Criterion's HTML reports are in `target/criterion/report/index.html`.
 

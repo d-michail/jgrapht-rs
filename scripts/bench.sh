@@ -7,6 +7,7 @@
 #   scripts/bench.sh -b master graph_perf     # also run <ref>; interleaved runs, Welch t-test, fail on regression
 #   scripts/bench.sh -b master -t 1.15        # stricter slowdown threshold (default 1.30)
 #
+# Everything runs strictly one process at a time on this machine: no parallel jobs, no other machine.
 # One run is one separate `cargo bench` process (criterion's own 10 samples inside it). The value of
 # a run is criterion's mean, and the statistics are over the runs, so at least 10 runs are required.
 # With -b the base revision is built in a temporary git worktree with its own target directory and the
