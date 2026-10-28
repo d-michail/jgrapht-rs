@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::graph::OutgoingGraph;
 use jgrapht::alg::shortestpath::{
     ContractionHierarchy, ContractionHierarchyBidirectionalDijkstra,
     ContractionHierarchyPrecomputation, Dijkstra, ShortestPathAlgorithm,
 };
 use jgrapht::generate::{GnmRandomGraphGenerator, GnpRandomGraphGenerator, GraphGenerator};
+use jgrapht::graph::OutgoingGraph;
 use jgrapht::util::java::JavaRandom;
 use jgrapht::{DiGraph, Graph, GraphError, GraphMut, GraphMutExt, UGraph};
 use rand::{SeedableRng, rngs::StdRng};
@@ -268,7 +268,8 @@ mod precomputation {
         let mut graph = DiGraph::<i32>::simple().weighted();
         graph.add_vertices([1, 2]);
         graph.add_weighted_edge(&1, &2, -1.0).unwrap();
-        let result = ContractionHierarchyPrecomputation::new(&graph).compute_contraction_hierarchy();
+        let result =
+            ContractionHierarchyPrecomputation::new(&graph).compute_contraction_hierarchy();
         assert!(matches!(result, Err(GraphError::InvalidWeight(_))));
     }
 
@@ -365,7 +366,14 @@ mod bidirectional_dijkstra {
         ]);
         let h = precompute(&graph);
         let dijkstra = ContractionHierarchyBidirectionalDijkstra::new(&h);
-        let vertices = |s, t| dijkstra.path(&s, &t).unwrap().unwrap().vertex_list().to_vec();
+        let vertices = |s, t| {
+            dijkstra
+                .path(&s, &t)
+                .unwrap()
+                .unwrap()
+                .vertex_list()
+                .to_vec()
+        };
         assert_eq!(vertices(1, 1), [1]);
         assert_eq!(vertices(1, 2), [1, 2]);
         assert_eq!(vertices(1, 3), [1, 4, 5, 6, 3]);
@@ -395,10 +403,16 @@ mod bidirectional_dijkstra {
         let mut random = JavaRandom::new(SEED);
         for _ in 0..20 {
             let mut graph = DiGraph::<usize>::pseudo().weighted();
-            GnmRandomGraphGenerator::new(n, 5 * n - n + 1, StdRng::seed_from_u64(SEED as u64), true, true)
-                .unwrap()
-                .generate_indexed(&mut graph)
-                .unwrap();
+            GnmRandomGraphGenerator::new(
+                n,
+                5 * n - n + 1,
+                StdRng::seed_from_u64(SEED as u64),
+                true,
+                true,
+            )
+            .unwrap()
+            .generate_indexed(&mut graph)
+            .unwrap();
             // make the graph connected
             for i in 0..n - 1 {
                 graph.add_edge(&i, &(i + 1)).unwrap();
@@ -451,7 +465,11 @@ mod java_golden {
             let edges = (0..m)
                 .map(|_| {
                     let t: Vec<_> = lines.next().unwrap().split(' ').collect();
-                    (t[0].parse().unwrap(), t[1].parse().unwrap(), t[2].parse().unwrap())
+                    (
+                        t[0].parse().unwrap(),
+                        t[1].parse().unwrap(),
+                        t[2].parse().unwrap(),
+                    )
                 })
                 .collect();
             result.insert(
@@ -489,7 +507,11 @@ mod java_golden {
             ));
         }
         let levels = graph.vertex_count();
-        assert_eq!(got[..levels], *expected[..levels].to_vec(), "{name} p={p}: levels");
+        assert_eq!(
+            got[..levels],
+            *expected[..levels].to_vec(),
+            "{name} p={p}: levels"
+        );
         // Java adds the shortcuts of one vertex in `HashSet` order, here they follow insertion
         // order, so only the edge multiset is compared.
         let sorted = |v: &[String]| {

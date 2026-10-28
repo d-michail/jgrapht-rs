@@ -16,7 +16,9 @@
 //! contract makes every exporter return `IoError::Export` instead of panicking, a user callback
 //! that fails surfaces as `IoError::Callback` with its error as the source, and importers document
 //! that an error may leave earlier elements in the graph.
-use jgrapht::{DefaultEdge, DiGraph, Graph, GraphType, IncidenceGraph, IncomingGraph, OutgoingGraph};
+use jgrapht::{
+    DefaultEdge, DiGraph, Graph, GraphType, IncidenceGraph, IncomingGraph, OutgoingGraph,
+};
 use jgrapht_io::csv::{CsvExporter, CsvFormat, CsvImporter};
 use jgrapht_io::dimacs::{DimacsExporter, DimacsImporter};
 use jgrapht_io::dot::{DotExporter, DotImporter};
@@ -126,7 +128,10 @@ fn is_export_error(result: Result<(), IoError>) -> bool {
 #[test]
 fn exporters_report_an_edge_without_endpoints_as_an_error() {
     for defect in [Defect::NoSource, Defect::ForeignTarget] {
-        assert!(is_export_error(export(JsonExporter::<usize, usize>::new(), defect)));
+        assert!(is_export_error(export(
+            JsonExporter::<usize, usize>::new(),
+            defect
+        )));
         assert!(is_export_error(export(
             CsvExporter::<usize, usize>::new(CsvFormat::AdjacencyList),
             defect
@@ -139,12 +144,30 @@ fn exporters_report_an_edge_without_endpoints_as_an_error() {
             MatrixExporter::<usize, usize>::new(MatrixFormat::SparseAdjacency),
             defect
         )));
-        assert!(is_export_error(export(DimacsExporter::<usize, usize>::new(), defect)));
-        assert!(is_export_error(export(DotExporter::<usize, usize>::new(), defect)));
-        assert!(is_export_error(export(GmlExporter::<usize, usize>::new(), defect)));
-        assert!(is_export_error(export(GexfExporter::<usize, usize>::new(), defect)));
-        assert!(is_export_error(export(GraphMlExporter::<usize, usize>::new(), defect)));
-        assert!(is_export_error(export(LemonExporter::<usize, usize>::new(), defect)));
+        assert!(is_export_error(export(
+            DimacsExporter::<usize, usize>::new(),
+            defect
+        )));
+        assert!(is_export_error(export(
+            DotExporter::<usize, usize>::new(),
+            defect
+        )));
+        assert!(is_export_error(export(
+            GmlExporter::<usize, usize>::new(),
+            defect
+        )));
+        assert!(is_export_error(export(
+            GexfExporter::<usize, usize>::new(),
+            defect
+        )));
+        assert!(is_export_error(export(
+            GraphMlExporter::<usize, usize>::new(),
+            defect
+        )));
+        assert!(is_export_error(export(
+            LemonExporter::<usize, usize>::new(),
+            defect
+        )));
     }
 }
 
@@ -195,7 +218,11 @@ fn a_failing_vertex_factory_surfaces_as_a_callback_error_in_every_importer() {
 
     let mut importer = DotImporter::<usize, DefaultEdge>::new();
     importer.try_set_vertex_factory(parse);
-    assert_callback_failure(importer.import_str(&mut target(), "digraph { 1 -> x }").unwrap_err());
+    assert_callback_failure(
+        importer
+            .import_str(&mut target(), "digraph { 1 -> x }")
+            .unwrap_err(),
+    );
 
     let mut importer = JsonImporter::<usize, DefaultEdge>::new();
     importer.try_set_vertex_factory(parse);
@@ -223,7 +250,9 @@ fn numeric_id_factories_report_their_failures_too() {
     };
     let mut importer = DimacsImporter::<usize>::new();
     importer.try_set_vertex_factory(boom);
-    let error = importer.import_str(&mut target(), "p edge 2 1\ne 1 2\n").unwrap_err();
+    let error = importer
+        .import_str(&mut target(), "p edge 2 1\ne 1 2\n")
+        .unwrap_err();
     assert!(matches!(error, IoError::Callback(_)), "{error}");
 
     let mut importer = Graph6Importer::<usize>::new();
@@ -248,7 +277,10 @@ fn an_importer_error_leaves_the_elements_read_before_it_in_the_graph() {
     let error = DimacsImporter::<usize>::new()
         .import_str(&mut graph, "p edge 3 2\ne 1 2\ne 1 9\n")
         .unwrap_err();
-    assert!(matches!(error, IoError::Import(_) | IoError::Graph(_)), "{error}");
+    assert!(
+        matches!(error, IoError::Import(_) | IoError::Graph(_)),
+        "{error}"
+    );
     assert_eq!(graph.vertex_count(), 3);
     assert_eq!(graph.edge_count(), 1);
 }

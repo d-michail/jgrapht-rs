@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::graph::IncidenceGraph;
 use jgrapht::generate::named;
+use jgrapht::graph::IncidenceGraph;
 use jgrapht::{DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use jgrapht_io::graph6::{Graph6Exporter, Graph6Format, Graph6Importer};
 use jgrapht_io::{GraphExporter, GraphImporter};

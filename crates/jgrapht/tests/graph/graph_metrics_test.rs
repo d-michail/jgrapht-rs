@@ -23,7 +23,10 @@ use rand::{Rng, SeedableRng, rngs::StdRng};
 
 const EPSILON: f64 = 0.000000001;
 
-fn generate_ints<G: GraphMut<Vertex = i32> + IncidenceGraph>(g: &mut G, gen_: &mut impl GraphGenerator) {
+fn generate_ints<G: GraphMut<Vertex = i32> + IncidenceGraph>(
+    g: &mut G,
+    gen_: &mut impl GraphGenerator,
+) {
     gen_.generate(g, |i| i as i32).unwrap();
 }
 

@@ -14,11 +14,11 @@
 
 //! Graph clustering.
 
-use crate::graph::OutgoingGraph;
-use crate::graph::IncidenceGraph;
 use super::spanning::kruskal;
 use super::util::Indexed;
 use crate::graph::Graph;
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use crate::util::UnionFind;
 use crate::{GraphError, Result};
 use rand::Rng;
@@ -159,10 +159,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
         let mut degrees = HashMap::new();
         let m;
         if graph.graph_type().weighted {
-            m = graph
-                .edges()
-                .map(|e| graph.weight_of(e))
-                .sum();
+            m = graph.edges().map(|e| graph.weight_of(e)).sum();
             for v in graph.vertices() {
                 let mut sum = 0.0;
                 for e in graph.out_edges_of(v) {
@@ -339,10 +336,7 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for KSpanningTreeClustering<'_, G>
     fn clustering(&self) -> Result<Clustering<G::Vertex>> {
         let g = self.graph;
         let mut edges = super::spanning::prim(g).edges;
-        edges.sort_by(|a, b| {
-            g.weight_of(a)
-                .total_cmp(&g.weight_of(b))
-        });
+        edges.sort_by(|a, b| g.weight_of(a).total_cmp(&g.weight_of(b)));
         let mut forest = super::util::UnionFind::new(g.vertices().cloned());
         for edge in edges {
             if forest.number_of_sets() == self.k {
@@ -390,7 +384,9 @@ impl<'g, G: UndirectedGraph> NaiveGreedyModularityAlgorithm<'g, G> {
     }
 }
 
-impl<G: UndirectedGraph + IncidenceGraph> ClusteringAlgorithm<G::Vertex> for NaiveGreedyModularityAlgorithm<'_, G> {
+impl<G: UndirectedGraph + IncidenceGraph> ClusteringAlgorithm<G::Vertex>
+    for NaiveGreedyModularityAlgorithm<'_, G>
+{
     /// Computes a clustering.
     fn clustering(&self) -> Result<Clustering<G::Vertex>> {
         let mut communities: Vec<HashSet<G::Vertex>> = self
@@ -452,7 +448,7 @@ type Handle = <MaxHeap as AddressableHeap<Reverse<OrderedF64>, (usize, usize)>>:
 /// [paper](https://doi.org/10.1103/PhysRevE.70.066111):
 ///
 /// - Clauset, A., Newman, M. E., & Moore, C. “Finding community structure in very large
-/// networks.” Physical Review E 70(6), 2004.
+///   networks.” Physical Review E 70(6), 2004.
 ///
 /// # Rust notes
 ///
@@ -679,7 +675,7 @@ impl<G: IncidenceGraph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgor
 /// [paper](http://dx.doi.org/10.1103/PhysRevE.76.036106):
 ///
 /// - Raghavan, U. N., Albert, R., and Kumara, S. (2007). Near linear time algorithm to detect
-/// community structures in large-scale networks. Physical review E, 76(3), 036106.
+///   community structures in large-scale networks. Physical review E, 76(3), 036106.
 ///
 /// As the paper title suggests the running time is close to linear. The algorithm runs in
 /// iterations, each of which runs in $O(n + m)$ where $n$ is the number of vertices and $m$ is the

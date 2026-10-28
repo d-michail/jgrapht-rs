@@ -12,12 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::forward_graph;
+use crate::graph::IncidenceGraph;
 use crate::graph::{DirectedGraph, Graph, GraphMut, UndirectedGraph};
 use crate::{GraphError, GraphType, Result};
 use indexmap::IndexSet;
-
 
 /// Subgraph that *hides* the vertices and edges selected by two predicates (JGraphT's
 /// `MaskSubgraph`: `true` means masked). An edge is hidden if it is masked or either endpoint is.

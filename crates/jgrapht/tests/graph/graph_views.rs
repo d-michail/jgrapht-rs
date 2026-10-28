@@ -90,27 +90,19 @@ mod as_undirected_graph_test {
     fn test_degree_and_edges_of() {
         let f = setup();
         let u = AsUndirected(&f.directed);
-        assert_eq!(
-            [V1, V2, V3, V4].map(|v| u.degree_of(&v)),
-            [1, 3, 1, 3]
-        );
+        assert_eq!([V1, V2, V3, V4].map(|v| u.degree_of(&v)), [1, 3, 1, 3]);
         assert_eq!(set(u.edges_of(&V1).copied()), set([f.e12]));
-        assert_eq!(
-            set(u.edges_of(&V2).copied()),
-            set([f.e12, f.e23, f.e24])
-        );
+        assert_eq!(set(u.edges_of(&V2).copied()), set([f.e12, f.e23, f.e24]));
         assert_eq!(set(u.edges_of(&V3).copied()), set([f.e23]));
-        assert_eq!(
-            set(u.edges_of(&V4).copied()),
-            set([f.e24, f.loop_])
-        );
+        assert_eq!(set(u.edges_of(&V4).copied()), set([f.e24, f.loop_]));
     }
 
     #[test]
     fn test_in_out_degrees_and_edges() {
         let f = setup();
         let u = AsUndirected(&f.directed);
-        for want in [[1, 3, 1, 3]] {
+        {
+            let want = [1, 3, 1, 3];
             assert_eq!([V1, V2, V3, V4].map(|v| u.in_degree_of(&v)), want);
             assert_eq!([V1, V2, V3, V4].map(|v| u.out_degree_of(&v)), want);
         }
@@ -209,10 +201,7 @@ mod as_unweighted_graph_test {
     fn set_edge_weight() {
         let (mut g, [_, e23, ..]) = setup();
         let mut u = AsUnweighted(&mut g);
-        assert_eq!(
-            u.set_edge_weight(&e23, 81.0),
-            Err(GraphError::NotWeighted)
-        );
+        assert_eq!(u.set_edge_weight(&e23, 81.0), Err(GraphError::NotWeighted));
     }
 
     #[test]
@@ -439,10 +428,7 @@ mod as_subgraph_test {
         assert_eq!(sg.edges_of(&5).count(), 2);
         sg.remove_edge(&e14);
         assert_eq!(sg.edge_count(), 4);
-        assert_eq!(
-            [1, 3, 4, 5].map(|v| sg.edges_of(&v).count()),
-            [1, 2, 1, 2]
-        );
+        assert_eq!([1, 3, 4, 5].map(|v| sg.edges_of(&v).count()), [1, 2, 1, 2]);
         drop(sg);
         assert_eq!(g.edge_count(), 10); // the base is untouched
     }
@@ -517,18 +503,9 @@ mod as_subgraph_test {
             assert_eq!(&set(sg.in_edges_of(&v).copied()), want);
             assert_eq!(&set(sg.out_edges_of(&v).copied()), want);
         }
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.degree_of(&v)),
-            [2, 4, 2, 4]
-        );
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.in_degree_of(&v)),
-            [2, 4, 2, 4]
-        );
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.out_degree_of(&v)),
-            [2, 4, 2, 4]
-        );
+        assert_eq!([1, 2, 3, 4].map(|v| sg.degree_of(&v)), [2, 4, 2, 4]);
+        assert_eq!([1, 2, 3, 4].map(|v| sg.in_degree_of(&v)), [2, 4, 2, 4]);
+        assert_eq!([1, 2, 3, 4].map(|v| sg.out_degree_of(&v)), [2, 4, 2, 4]);
     }
 
     #[test]
@@ -537,41 +514,20 @@ mod as_subgraph_test {
         let sg = AsSubgraph::with_edges(&g, [1, 2, 3, 4], [e12, e13, e23, e24_1, e24_2, e44]);
         assert_eq!(sg.edge_count(), 6);
         assert_eq!(set(sg.edges_of(&1).copied()), set([e12, e13]));
-        assert_eq!(
-            set(sg.edges_of(&2).copied()),
-            set([e12, e24_1, e24_2, e23])
-        );
+        assert_eq!(set(sg.edges_of(&2).copied()), set([e12, e24_1, e24_2, e23]));
         assert_eq!(set(sg.edges_of(&3).copied()), set([e13, e23]));
-        assert_eq!(
-            set(sg.edges_of(&4).copied()),
-            set([e24_1, e24_2, e44])
-        );
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.degree_of(&v)),
-            [2, 4, 2, 4]
-        );
+        assert_eq!(set(sg.edges_of(&4).copied()), set([e24_1, e24_2, e44]));
+        assert_eq!([1, 2, 3, 4].map(|v| sg.degree_of(&v)), [2, 4, 2, 4]);
         assert_eq!(sg.in_edges_of(&1).count(), 0);
         assert_eq!(set(sg.in_edges_of(&2).copied()), set([e12]));
         assert_eq!(set(sg.in_edges_of(&3).copied()), set([e13, e23]));
-        assert_eq!(
-            set(sg.in_edges_of(&4).copied()),
-            set([e24_1, e24_2, e44])
-        );
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.in_degree_of(&v)),
-            [0, 1, 2, 3]
-        );
+        assert_eq!(set(sg.in_edges_of(&4).copied()), set([e24_1, e24_2, e44]));
+        assert_eq!([1, 2, 3, 4].map(|v| sg.in_degree_of(&v)), [0, 1, 2, 3]);
         assert_eq!(set(sg.out_edges_of(&1).copied()), set([e12, e13]));
-        assert_eq!(
-            set(sg.out_edges_of(&2).copied()),
-            set([e24_1, e24_2, e23])
-        );
+        assert_eq!(set(sg.out_edges_of(&2).copied()), set([e24_1, e24_2, e23]));
         assert_eq!(sg.out_edges_of(&3).count(), 0);
         assert_eq!(set(sg.out_edges_of(&4).copied()), set([e44]));
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.out_degree_of(&v)),
-            [2, 3, 0, 1]
-        );
+        assert_eq!([1, 2, 3, 4].map(|v| sg.out_degree_of(&v)), [2, 3, 0, 1]);
     }
 }
 
@@ -624,18 +580,9 @@ mod mask_subgraph_test {
             assert_eq!(&set(sg.in_edges_of(&v).copied()), want);
             assert_eq!(&set(sg.out_edges_of(&v).copied()), want);
         }
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.degree_of(&v)),
-            [2, 4, 2, 4]
-        );
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.in_degree_of(&v)),
-            [2, 4, 2, 4]
-        );
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.out_degree_of(&v)),
-            [2, 4, 2, 4]
-        );
+        assert_eq!([1, 2, 3, 4].map(|v| sg.degree_of(&v)), [2, 4, 2, 4]);
+        assert_eq!([1, 2, 3, 4].map(|v| sg.in_degree_of(&v)), [2, 4, 2, 4]);
+        assert_eq!([1, 2, 3, 4].map(|v| sg.out_degree_of(&v)), [2, 4, 2, 4]);
     }
 
     #[test]
@@ -644,41 +591,20 @@ mod mask_subgraph_test {
         let sg = MaskSubgraph::new(&g, |v: &i32| *v == 5, |e: &DefaultEdge| *e == e24_3);
         assert_eq!(sg.edge_count(), 6);
         assert_eq!(set(sg.edges_of(&1).copied()), set([e12, e13]));
-        assert_eq!(
-            set(sg.edges_of(&2).copied()),
-            set([e12, e24_1, e24_2, e23])
-        );
+        assert_eq!(set(sg.edges_of(&2).copied()), set([e12, e24_1, e24_2, e23]));
         assert_eq!(set(sg.edges_of(&3).copied()), set([e13, e23]));
-        assert_eq!(
-            set(sg.edges_of(&4).copied()),
-            set([e24_1, e24_2, e44])
-        );
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.degree_of(&v)),
-            [2, 4, 2, 4]
-        );
+        assert_eq!(set(sg.edges_of(&4).copied()), set([e24_1, e24_2, e44]));
+        assert_eq!([1, 2, 3, 4].map(|v| sg.degree_of(&v)), [2, 4, 2, 4]);
         assert_eq!(sg.in_edges_of(&1).count(), 0);
         assert_eq!(set(sg.in_edges_of(&2).copied()), set([e12]));
         assert_eq!(set(sg.in_edges_of(&3).copied()), set([e13, e23]));
-        assert_eq!(
-            set(sg.in_edges_of(&4).copied()),
-            set([e24_1, e24_2, e44])
-        );
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.in_degree_of(&v)),
-            [0, 1, 2, 3]
-        );
+        assert_eq!(set(sg.in_edges_of(&4).copied()), set([e24_1, e24_2, e44]));
+        assert_eq!([1, 2, 3, 4].map(|v| sg.in_degree_of(&v)), [0, 1, 2, 3]);
         assert_eq!(set(sg.out_edges_of(&1).copied()), set([e12, e13]));
-        assert_eq!(
-            set(sg.out_edges_of(&2).copied()),
-            set([e24_1, e24_2, e23])
-        );
+        assert_eq!(set(sg.out_edges_of(&2).copied()), set([e24_1, e24_2, e23]));
         assert_eq!(sg.out_edges_of(&3).count(), 0);
         assert_eq!(set(sg.out_edges_of(&4).copied()), set([e44]));
-        assert_eq!(
-            [1, 2, 3, 4].map(|v| sg.out_degree_of(&v)),
-            [2, 3, 0, 1]
-        );
+        assert_eq!([1, 2, 3, 4].map(|v| sg.out_degree_of(&v)), [2, 3, 0, 1]);
     }
 }
 
@@ -729,7 +655,9 @@ mod as_graph_union_test {
         }
     }
 
-    fn check_vertices_and_edges<G: Graph<Vertex = &'static str, Edge = DefaultEdge> + IncidenceGraph>(
+    fn check_vertices_and_edges<
+        G: Graph<Vertex = &'static str, Edge = DefaultEdge> + IncidenceGraph,
+    >(
         u: &G,
         e: &[DefaultEdge; 8],
     ) {
@@ -737,16 +665,10 @@ mod as_graph_union_test {
         assert_eq!(set(u.edges().copied()), set(e.iter().copied()));
         let [e1, e2, e3, e4, e5, e6, e7, e8] = *e;
         assert_eq!(set(u.edges_of(&V0).copied()), set([e1, e3]));
-        assert_eq!(
-            set(u.edges_of(&V1).copied()),
-            set([e1, e2, e4, e7])
-        );
+        assert_eq!(set(u.edges_of(&V1).copied()), set([e1, e2, e4, e7]));
         assert_eq!(set(u.edges_of(&V2).copied()), set([e4, e5]));
         assert_eq!(set(u.edges_of(&V3).copied()), set([e5, e6]));
-        assert_eq!(
-            set(u.edges_of(&V4).copied()),
-            set([e2, e3, e6, e7, e8])
-        );
+        assert_eq!(set(u.edges_of(&V4).copied()), set([e2, e3, e6, e7, e8]));
         assert_eq!(
             [V0, V1, V2, V3, V4].map(|v| u.degree_of(&v)),
             [2, 4, 2, 2, 6]
@@ -799,10 +721,7 @@ mod as_graph_union_test {
         assert_eq!(set(u.out_edges_of(&V1).copied()), set([e2, e4]));
         assert_eq!(set(u.out_edges_of(&V2).copied()), set([e5]));
         assert_eq!(set(u.out_edges_of(&V3).copied()), set([e6]));
-        assert_eq!(
-            set(u.out_edges_of(&V4).copied()),
-            set([e3, e7, e8])
-        );
+        assert_eq!(set(u.out_edges_of(&V4).copied()), set([e3, e7, e8]));
         assert_eq!(
             [V0, V1, V2, V3, V4].map(|v| u.out_degree_of(&v)),
             [1, 2, 1, 1, 3]
@@ -825,25 +744,16 @@ mod as_graph_union_test {
         assert_eq!(set(u.in_edges_of(&V1).copied()), set([e1, e2, e7]));
         assert_eq!(set(u.in_edges_of(&V2).copied()), set([e4]));
         assert_eq!(set(u.in_edges_of(&V3).copied()), set([e5]));
-        assert_eq!(
-            set(u.in_edges_of(&V4).copied()),
-            set([e2, e3, e6, e8])
-        );
+        assert_eq!(set(u.in_edges_of(&V4).copied()), set([e2, e3, e6, e8]));
         assert_eq!(
             [V0, V1, V2, V3, V4].map(|v| u.in_degree_of(&v)),
             [2, 3, 1, 1, 5]
         );
         assert_eq!(set(u.out_edges_of(&V0).copied()), set([e1, e3]));
-        assert_eq!(
-            set(u.out_edges_of(&V1).copied()),
-            set([e1, e2, e4])
-        );
+        assert_eq!(set(u.out_edges_of(&V1).copied()), set([e1, e2, e4]));
         assert_eq!(set(u.out_edges_of(&V2).copied()), set([e5]));
         assert_eq!(set(u.out_edges_of(&V3).copied()), set([e6]));
-        assert_eq!(
-            set(u.out_edges_of(&V4).copied()),
-            set([e2, e3, e7, e8])
-        );
+        assert_eq!(set(u.out_edges_of(&V4).copied()), set([e2, e3, e7, e8]));
         assert_eq!(
             [V0, V1, V2, V3, V4].map(|v| u.out_degree_of(&v)),
             [2, 3, 1, 1, 5]

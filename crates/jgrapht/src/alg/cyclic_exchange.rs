@@ -16,9 +16,9 @@
 //! (`AhujaOrlinSharmaCyclicExchangeLocalAugmentation`): finds a negative cost cycle of bounded
 //! length in a labelled directed improvement graph that visits every label at most once.
 
+use crate::graph::DirectedGraph;
 use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
-use crate::graph::DirectedGraph;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use indexmap::IndexMap;

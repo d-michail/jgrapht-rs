@@ -113,7 +113,10 @@ fn automorphism_counts() {
     // directed cycle vs directed path orientation
     let c3 = build(DiGraph::<usize>::simple(), Ring(3));
     assert_eq!(count_isomorphisms(&c3, &c3), 3);
-    assert!(!is_isomorphic(&c3, &build(DiGraph::<usize>::simple(), Linear(3))));
+    assert!(!is_isomorphic(
+        &c3,
+        &build(DiGraph::<usize>::simple(), Linear(3))
+    ));
 }
 
 #[test]

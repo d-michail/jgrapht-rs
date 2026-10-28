@@ -12,14 +12,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
-use crate::graph::OutgoingGraph;
 use super::mapping::IsomorphicGraphMapping;
 use super::vf2::check_types;
 use crate::alg::color::refine_colors;
 use crate::error::Result;
+use crate::graph::GraphExt;
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use crate::graph::props::is_forest;
-use crate::graph::{GraphExt};
 use indexmap::IndexMap;
 use std::collections::{HashMap, HashSet};
 use thiserror::Error;

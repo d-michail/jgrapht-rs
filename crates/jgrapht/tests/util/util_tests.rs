@@ -37,7 +37,7 @@ fn vertex_mapping_not_unique_elements() {
 
 #[test]
 fn vertex_mapping_random_instances() {
-    let mut random = StdRng::seed_from_u64((0x88) as u64);
+    let mut random = StdRng::seed_from_u64(0x88_u64);
     let mut supplier = string_supplier(random.random_range(0..100));
     for _ in 0..1024 {
         let n = 10 + random.random_range(0..1024) as usize;
@@ -93,7 +93,7 @@ fn radix_sort_empty_and_small() {
 
 #[test]
 fn radix_sort_random_huge_array() {
-    let mut random = StdRng::seed_from_u64((0x881) as u64);
+    let mut random = StdRng::seed_from_u64(0x881_u64);
     let mut list: Vec<u32> = (0..1_000_000)
         .map(|_| random.random_range(0..i32::MAX) as u32)
         .collect();
@@ -103,7 +103,7 @@ fn radix_sort_random_huge_array() {
 
 #[test]
 fn radix_sort_random_arrays() {
-    let mut random = StdRng::seed_from_u64((0x88) as u64);
+    let mut random = StdRng::seed_from_u64(0x88_u64);
     for _ in 0..50_000 {
         let n = 1 + random.random_range(0..100) as usize;
         let mut list: Vec<u32> = (0..n)

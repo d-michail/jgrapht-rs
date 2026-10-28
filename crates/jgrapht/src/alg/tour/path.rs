@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::base::require_not_empty;
 use crate::alg::connectivity::{BiconnectivityInspector, ConnectivityInspector};
 use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use indexmap::IndexSet;
@@ -34,11 +34,11 @@ pub enum SearchStatus {
 /// A Hamiltonian path search can terminate in three distinct ways:
 ///
 /// - `Status#PATH_FOUND` — a Hamiltonian path was discovered. The path is available via
-/// `getPath()`.
+///   `getPath()`.
 /// - `Status#PROVEN_ABSENT` — the search ran to completion (or was rejected by a sound
-/// precheck) and proved that no Hamiltonian path exists.
+///   precheck) and proved that no Hamiltonian path exists.
 /// - `Status#ABORTED` — the search hit a configured limit before completing. Whether a
-/// Hamiltonian path exists in the input graph is unknown.
+///   Hamiltonian path exists in the input graph is unknown.
 ///
 /// Callers must consult `getStatus()` before interpreting an empty `getPath()`:
 /// an empty path may mean either `Status#PROVEN_ABSENT` or `Status#ABORTED`, and
@@ -241,14 +241,14 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
     /// The return value distinguishes:
     ///
     /// - `HamiltonianPathSearchResult.Status#PATH_FOUND` — the algorithm produced a
-    /// Hamiltonian path; it is accessible via
-    /// `get_path`.
+    ///   Hamiltonian path; it is accessible via
+    ///   `get_path`.
     /// - `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` — the algorithm ran to
-    /// completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
-    /// exists.
+    ///   completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
+    ///   exists.
     /// - `HamiltonianPathSearchResult.Status#ABORTED` — the algorithm performed a bounded
-    /// search that hit its limit before completing. Whether a Hamiltonian path exists in the
-    /// graph is unknown.
+    ///   search that hit its limit before completing. Whether a Hamiltonian path exists in the
+    ///   graph is unknown.
     ///
     /// Unbounded implementations only return `PATH_FOUND` or `PROVEN_ABSENT`.
     /// Implementations that accept an execution budget (e.g. a maximum state count) may also
@@ -270,10 +270,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
             .enumerate()
             .map(|(i, v)| (v.clone(), i))
             .collect();
-        let mut in_degree: Vec<usize> = index_list
-            .iter()
-            .map(|v| graph.in_degree_of(v))
-            .collect();
+        let mut in_degree: Vec<usize> = index_list.iter().map(|v| graph.in_degree_of(v)).collect();
         let mut queue: VecDeque<usize> = (0..n).filter(|&i| in_degree[i] == 0).collect();
         let mut topo = Vec::with_capacity(n);
         while let Some(u) = queue.pop_front() {
@@ -433,14 +430,14 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath 
     /// The return value distinguishes:
     ///
     /// - `HamiltonianPathSearchResult.Status#PATH_FOUND` — the algorithm produced a
-    /// Hamiltonian path; it is accessible via
-    /// `get_path`.
+    ///   Hamiltonian path; it is accessible via
+    ///   `get_path`.
     /// - `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` — the algorithm ran to
-    /// completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
-    /// exists.
+    ///   completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
+    ///   exists.
     /// - `HamiltonianPathSearchResult.Status#ABORTED` — the algorithm performed a bounded
-    /// search that hit its limit before completing. Whether a Hamiltonian path exists in the
-    /// graph is unknown.
+    ///   search that hit its limit before completing. Whether a Hamiltonian path exists in the
+    ///   graph is unknown.
     ///
     /// Unbounded implementations only return `PATH_FOUND` or `PROVEN_ABSENT`.
     /// Implementations that accept an execution budget (e.g. a maximum state count) may also
@@ -559,27 +556,27 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath 
 ///
 /// - If the graph contains exactly one vertex, the singleton path is returned.
 /// - If an undirected graph is not connected, no Hamiltonian path can exist, so a
-/// `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` result is returned without DFS
-/// search.
+///   `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` result is returned without DFS
+///   search.
 /// - If an undirected graph has more than two vertices of degree 1, no Hamiltonian path can
-/// exist (a Hamiltonian path has at most two endpoints, and any degree-1 vertex must be one of
-/// them).
+///   exist (a Hamiltonian path has at most two endpoints, and any degree-1 vertex must be one of
+///   them).
 /// - For undirected graphs, every cut vertex (articulation point) must belong to at most two
-/// biconnected blocks. A Hamiltonian path visits each vertex once with at most two path-edges
-/// incident to it, so it cannot enter more than two blocks meeting at a single cut vertex.
+///   biconnected blocks. A Hamiltonian path visits each vertex once with at most two path-edges
+///   incident to it, so it cannot enter more than two blocks meeting at a single cut vertex.
 /// - For undirected graphs, the bridge tree (whose nodes are the 2-edge-connected components
-/// and whose edges are the original graph's bridges) must itself be a path. Equivalently, no
-/// 2-edge-connected component may have more than two incident bridges, since a Hamiltonian
-/// path enters and leaves each such component at most once.
+///   and whose edges are the original graph's bridges) must itself be a path. Equivalently, no
+///   2-edge-connected component may have more than two incident bridges, since a Hamiltonian
+///   path enters and leaves each such component at most once.
 /// - For directed graphs, the strongly connected component condensation must itself admit a
-/// Hamiltonian path. Any Hamiltonian path in the original directed graph projects to one on the
-/// condensation DAG; when that condensation has no Hamiltonian path, the original graph cannot
-/// either.
+///   Hamiltonian path. Any Hamiltonian path in the original directed graph projects to one on the
+///   condensation DAG; when that condensation has no Hamiltonian path, the original graph cannot
+///   either.
 /// - At every search step the current endpoint must be able to reach every still-unvisited
-/// vertex through unvisited intermediaries. Otherwise the branch is pruned.
+///   vertex through unvisited intermediaries. Otherwise the branch is pruned.
 /// - Candidate next vertices are tried in ascending order of their remaining (unvisited)
-/// onward degree. This is a minimum-remaining-values style heuristic: vertices with few onward
-/// options tend to fail or commit early, which generally reduces search.
+///   onward degree. This is a minimum-remaining-values style heuristic: vertices with few onward
+///   options tend to fail or commit early, which generally reduces search.
 ///
 /// Empty graphs are rejected with an error, matching the convention used by the other
 /// Hamiltonian / TSP solvers (for example `HeldKarpTSP`). Graphs with self-loops are accepted but self-loops
@@ -923,14 +920,14 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for BacktrackingHamiltonianP
     /// The return value distinguishes:
     ///
     /// - `HamiltonianPathSearchResult.Status#PATH_FOUND` — the algorithm produced a
-    /// Hamiltonian path; it is accessible via
-    /// `get_path`.
+    ///   Hamiltonian path; it is accessible via
+    ///   `get_path`.
     /// - `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` — the algorithm ran to
-    /// completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
-    /// exists.
+    ///   completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
+    ///   exists.
     /// - `HamiltonianPathSearchResult.Status#ABORTED` — the algorithm performed a bounded
-    /// search that hit its limit before completing. Whether a Hamiltonian path exists in the
-    /// graph is unknown.
+    ///   search that hit its limit before completing. Whether a Hamiltonian path exists in the
+    ///   graph is unknown.
     ///
     /// Unbounded implementations only return `PATH_FOUND` or `PROVEN_ABSENT`.
     /// Implementations that accept an execution budget (e.g. a maximum state count) may also

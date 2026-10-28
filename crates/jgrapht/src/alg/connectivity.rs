@@ -14,12 +14,12 @@
 
 //! Connected components, strong connectivity, biconnectivity and condensation.
 
-use crate::graph::{IncidenceGraph, OutgoingGraph};
 use super::flow::MaximumFlowValueAlgorithm;
 use super::interfaces::StrongConnectivityAlgorithm;
 use super::util::Indexed;
 use crate::event::GraphListener;
 use crate::graph::{DirectedGraph, Graph, GraphExt};
+use crate::graph::{IncidenceGraph, OutgoingGraph};
 use crate::traverse::DfsPostOrder;
 use crate::view::AsSubgraph;
 use crate::view::EdgeReversed;
@@ -124,7 +124,9 @@ pub fn strongly_connected_components<G: DirectedGraph>(g: &G) -> Vec<Vec<G::Vert
 }
 
 /// Strongly connected components via Kosaraju–Sharir (two DFS passes).
-pub fn strongly_connected_components_kosaraju<G: DirectedGraph + IncidenceGraph>(g: &G) -> Vec<Vec<G::Vertex>> {
+pub fn strongly_connected_components_kosaraju<G: DirectedGraph + IncidenceGraph>(
+    g: &G,
+) -> Vec<Vec<G::Vertex>> {
     let order: Vec<_> = DfsPostOrder::all(g).collect();
     let rev = EdgeReversed(g);
     let mut seen: HashSet<&G::Vertex> = HashSet::new();
@@ -384,7 +386,10 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
         self.partial.clear();
     }
 
-    fn lazy_find<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G) -> &Vec<Option<HashSet<V>>> {
+    fn lazy_find<G: Graph<Vertex = V> + IncidenceGraph>(
+        &mut self,
+        g: &G,
+    ) -> &Vec<Option<HashSet<V>>> {
         if self.connected_sets.is_none() {
             let mut sets: Vec<Option<HashSet<V>>> = Vec::new();
             self.vertex_to_set.clear();
@@ -416,7 +421,11 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
     }
 
     /// The connected set containing `v`.
-    pub fn connected_set_of<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G, v: &V) -> Result<HashSet<V>> {
+    pub fn connected_set_of<G: Graph<Vertex = V> + IncidenceGraph>(
+        &mut self,
+        g: &G,
+        v: &V,
+    ) -> Result<HashSet<V>> {
         if !g.contains_vertex(v) {
             return Err(GraphError::VertexNotFound);
         }
@@ -435,13 +444,21 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
     /// maximally connected component. All graph vertices occur in exactly one set. For more on
     /// maximally connected component, see
     /// [http://www.nist.gov/dads/HTML/maximallyConnectedComponent.html](http://www.nist.gov/dads/HTML/maximallyConnectedComponent.html).
-    pub fn connected_sets<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G) -> Vec<HashSet<V>> {
+    pub fn connected_sets<G: Graph<Vertex = V> + IncidenceGraph>(
+        &mut self,
+        g: &G,
+    ) -> Vec<HashSet<V>> {
         self.lazy_find(g).iter().flatten().cloned().collect()
     }
 
     /// Tests whether two vertices lay respectively in the same connected component (undirected
     /// graph), or in the same weakly connected component (directed graph).
-    pub fn path_exists<G: Graph<Vertex = V> + IncidenceGraph>(&mut self, g: &G, s: &V, t: &V) -> Result<bool> {
+    pub fn path_exists<G: Graph<Vertex = V> + IncidenceGraph>(
+        &mut self,
+        g: &G,
+        s: &V,
+        t: &V,
+    ) -> Result<bool> {
         Ok(self.connected_set_of(g, s)?.contains(t))
     }
 

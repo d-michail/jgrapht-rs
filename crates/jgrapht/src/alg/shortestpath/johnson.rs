@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::GraphExt;
-use crate::graph::OutgoingGraph;
 use super::bellman_ford::relax_all;
 use super::search::search;
 use super::{AllPairsPaths, ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::Graph;
+use crate::graph::GraphExt;
+use crate::graph::OutgoingGraph;
 use crate::util::OrderedF64;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};

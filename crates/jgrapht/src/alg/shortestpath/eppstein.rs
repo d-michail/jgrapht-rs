@@ -19,8 +19,8 @@
 //! persistent heaps contain only sidetracks reachable from the source, and cross edges are built
 //! only for paths-graph vertices reachable from its root.
 
-use crate::graph::{IncomingGraph, OutgoingGraph};
 use crate::graph::{Graph, GraphExt};
+use crate::graph::{IncomingGraph, OutgoingGraph};
 use crate::util::OrderedF64;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
@@ -84,11 +84,11 @@ struct ImplicitPath {
 /// article:
 ///
 /// - An outgoing edge of vertex $v$ is inserted in the paths graph iff it is reachable from the
-/// `source`.
+///   `source`.
 /// - The cross edges in the paths graph are added only for those vertices which are reachable from
-/// the root vertex.
+///   the root vertex.
 /// - Weights of the edges in the paths graph are mot maintained explicitly, because they are
-/// computed during its traversal.
+///   computed during its traversal.
 ///
 /// # Rust notes
 ///
@@ -118,7 +118,9 @@ impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinShortestPathIterator<'g, G> {
     pub fn new(graph: &'g G, source: &G::Vertex, sink: &G::Vertex) -> Result<Self> {
         let graph_type = graph.graph_type();
         if !graph_type.directed || !graph_type.is_simple() {
-            return Err(GraphError::InvalidGraph(crate::GraphProperty::SimpleDirected));
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::SimpleDirected,
+            ));
         }
         if !graph.contains_vertex(source) || !graph.contains_vertex(sink) {
             return Err(GraphError::VertexNotFound);
@@ -313,8 +315,7 @@ impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinShortestPathIterator<'g, G> {
                 continue;
             }
             let source_distance = self.distance[vertex];
-            let delta = self.graph.weight_of(&edge) + self.distance[&target]
-                - source_distance;
+            let delta = self.graph.weight_of(&edge) + self.distance[&target] - source_distance;
             let node = self.allocate(PathsGraphVertex::new(Some(edge), delta));
             if outroot.is_none_or(|root| delta < self.paths_graph[root].delta) {
                 if let Some(old) = outroot.replace(node) {
@@ -587,7 +588,9 @@ fn reverse_shortest_path_tree<G: IncomingGraph>(
         for (edge, source) in graph.incoming_of(vertex) {
             let weight = graph.weight_of(edge);
             if weight.is_nan() || weight < 0.0 {
-                return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+                return Err(GraphError::InvalidWeight(
+                    crate::WeightProblem::NegativeOrNaN,
+                ));
             }
             let source_index = index[source];
             let updated = current_distance + weight;

@@ -15,12 +15,12 @@
 //! Traits and result types shared by several algorithms (JGraphT's `alg.interfaces`).
 //! More are added as the algorithm families that need them are ported.
 
-use crate::graph::UndirectedGraph;
-use crate::graph::OutgoingGraph;
 use super::color::Coloring;
 use super::cover::VertexCover;
 use crate::Result;
 use crate::graph::Graph;
+use crate::graph::OutgoingGraph;
+use crate::graph::UndirectedGraph;
 use crate::walk::GraphWalk;
 use indexmap::{IndexMap, IndexSet};
 use std::collections::HashSet;
@@ -158,7 +158,6 @@ pub trait LowestCommonAncestorAlgorithm<V: Eq + Hash + Clone> {
     fn batch_lca(&self, queries: &[(V, V)]) -> Result<Vec<Option<V>>> {
         queries.iter().map(|(a, b)| self.lca(a, b)).collect()
     }
-
 }
 
 /// A lowest-common-ancestor algorithm that can report *all* lowest common ancestors of two

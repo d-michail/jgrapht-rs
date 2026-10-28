@@ -24,7 +24,6 @@ mod common;
 
 mod capability_test;
 mod directed_acyclic_graph_test;
-mod props_test;
 mod error_test;
 mod fixtures_test;
 mod graph_basic;
@@ -37,6 +36,7 @@ mod graph_walk_test;
 mod graphs_test;
 mod listenable_graph_test;
 mod map_graph_test;
+mod props_test;
 mod simple_directed_graph_test;
 mod sparse_int_graph_test;
 mod views;

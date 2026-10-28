@@ -21,9 +21,9 @@
 //! for the key updates, which scans the heap array. Edge lookup in the working graph scans the
 //! incidence list of the first endpoint, like JGraphT's default specifics.
 
-use crate::graph::UndirectedGraph;
 use crate::error::{GraphError, Result};
-use crate::graph::{GraphExt};
+use crate::graph::GraphExt;
+use crate::graph::UndirectedGraph;
 use indexmap::{IndexMap, IndexSet};
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -209,7 +209,9 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
     /// weight, or has a self-loop.
     pub fn new<G: UndirectedGraph<Vertex = V>>(graph: &G) -> Result<Self> {
         if graph.vertex_count() < 2 {
-            return Err(GraphError::InvalidGraph(crate::GraphProperty::AtLeastTwoVertices));
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::AtLeastTwoVertices,
+            ));
         }
 
         let mut this = Self {

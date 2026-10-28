@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::chordality::{ChordalityInspector, IterationOrder};
+use crate::graph::IncidenceGraph;
 use crate::graph::{GraphExt, UndirectedGraph};
 use indexmap::IndexMap;
 use std::collections::HashMap;
@@ -24,13 +24,13 @@ use std::collections::HashMap;
 /// In the context of this implementation following definitions are used:
 ///
 /// - A set of vertices $S$ of a graph $G=(V, E)$ is called a *u-v separator*, if vertices $u$
-/// and $v$ in the induced graph on vertices $V(G) - S$ are in different connected components.
+///   and $v$ in the induced graph on vertices $V(G) - S$ are in different connected components.
 /// - A set $S$ is called a *minimal u-v separator* if it is a u-v separator and no proper
-/// subset of $S$ is a u-v separator.
+///   subset of $S$ is a u-v separator.
 /// - A set $S$ is called a *minimal vertex separator* if it is minimal u-v separator for some
-/// vertices $u$ and $v$ of the graph $G$.
+///   vertices $u$ and $v$ of the graph $G$.
 /// - A set of vertices $S$ is called a *minimal separator* if no proper subset of $S$ is a
-/// separator of the graph $G$.
+///   separator of the graph $G$.
 ///
 /// Let $\sigma = (v_1, v_2, \dots, v_n)$ be some perfect elimination order (peo) of the graph $G =
 /// (V, E)$. The induced graph on vertices $(v_1, v_2, \dots, v_i)$ with respect to peo $\sigma$ is

@@ -13,7 +13,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Port of the JGraphT util tests. See ../STATUS.md.
-#![allow(clippy::bool_assert_comparison, clippy::approx_constant, clippy::useless_vec, dead_code)]
+#![allow(
+    clippy::bool_assert_comparison,
+    clippy::approx_constant,
+    clippy::useless_vec,
+    dead_code
+)]
 
 mod heap_equivalence;
 mod util_tests;

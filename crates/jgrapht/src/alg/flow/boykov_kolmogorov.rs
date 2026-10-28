@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
 use super::DEFAULT_EPSILON;
 use super::base::{FlowNet, flow_algorithm_api};
 use crate::error::Result;
+use crate::graph::OutgoingGraph;
 use std::collections::VecDeque;
 
 const FREE_NODE_TIMESTAMP: u64 = 0;

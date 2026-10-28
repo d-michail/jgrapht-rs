@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use jgrapht::{DefaultEdge, GraphMut, GraphMutExt, UGraph};
-use jgrapht_io::lemon::{LemonExporter, LemonParameter};
 use jgrapht_io::GraphExporter;
+use jgrapht_io::lemon::{LemonExporter, LemonParameter};
 
 const UNDIRECTED: &str = "#Creator: JGraphT Lemon (LGF) Exporter\n\
 #Version: 1\n\
@@ -95,7 +95,10 @@ fn graph(weighted: bool) -> UGraph<&'static str> {
 #[test]
 fn undirected() {
     let mut exporter: LemonExporter<&str, DefaultEdge> = LemonExporter::new();
-    assert_eq!(exporter.export_to_string(&graph(false)).unwrap(), UNDIRECTED);
+    assert_eq!(
+        exporter.export_to_string(&graph(false)).unwrap(),
+        UNDIRECTED
+    );
 }
 
 #[test]

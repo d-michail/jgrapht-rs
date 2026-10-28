@@ -40,8 +40,8 @@ pub use structured::{
     Wheel, Windmill, WindmillMode,
 };
 
-use crate::graph::IncidenceGraph;
 use crate::graph::Graph;
+use crate::graph::IncidenceGraph;
 use crate::view::forward_graph;
 use crate::{GraphError, GraphMut, GraphType, Result};
 use std::collections::HashMap;
@@ -98,7 +98,10 @@ pub trait GraphGenerator {
     }
 
     /// Generates into a graph whose vertices are `usize` indices `0, 1, ...`.
-    fn generate_indexed<G: GraphMut<Vertex = usize> + IncidenceGraph>(&mut self, target: &mut G) -> Result<()> {
+    fn generate_indexed<G: GraphMut<Vertex = usize> + IncidenceGraph>(
+        &mut self,
+        target: &mut G,
+    ) -> Result<()> {
         self.generate(target, |i| i)
     }
 }

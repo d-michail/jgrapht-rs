@@ -218,6 +218,9 @@ fn attributes(pairs: &[(String, Value)], forbidden: &[&str]) -> AttributeMap {
 type VertexAttributeConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
 type EdgeAttributeConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()>>;
 
+/// A fallible vertex factory, called with the vertex number of the input.
+type VertexFactory<V, Id> = Box<dyn FnMut(Id) -> std::result::Result<V, crate::CallbackError>>;
+
 /// Imports a graph from Graph Modelling Language (GML).
 ///
 /// The destination graph must support the features present in the input, such
@@ -226,7 +229,7 @@ type EdgeAttributeConsumer<E> = Box<dyn FnMut(&E, &str, &Attribute) -> Result<()
 /// the configured consumers; nested structures are represented as strings.
 /// Node identifiers are also reported as an `ID` vertex attribute.
 pub struct GmlImporter<V, E = DefaultEdge> {
-    vertex_factory: Option<Box<dyn FnMut(i64) -> std::result::Result<V, crate::CallbackError>>>,
+    vertex_factory: Option<VertexFactory<V, i64>>,
     vertex_attribute_consumer: Option<VertexAttributeConsumer<V>>,
     edge_attribute_consumer: Option<EdgeAttributeConsumer<E>>,
     edge: PhantomData<E>,
@@ -604,8 +607,10 @@ where
             writeln!(
                 output,
                 "\t\tsource {}\n\t\ttarget {}",
-                ids.get(source).ok_or_else(crate::exporter::missing_endpoint)?,
-                ids.get(target).ok_or_else(crate::exporter::missing_endpoint)?
+                ids.get(source)
+                    .ok_or_else(crate::exporter::missing_endpoint)?,
+                ids.get(target)
+                    .ok_or_else(crate::exporter::missing_endpoint)?
             )?;
             let edge_attributes = self.base.edge_attributes(edge).unwrap_or_default();
             if self.is_parameter(GmlParameter::ExportEdgeLabels) {

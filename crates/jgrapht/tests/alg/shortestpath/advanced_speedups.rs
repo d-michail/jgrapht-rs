@@ -83,7 +83,10 @@ fn contraction_hierarchy_turns_undirected_edges_into_two_arcs() {
                 && edge.target == hierarchy.contraction_mapping()[&1])
     );
     let query = ContractionHierarchyBidirectionalDijkstra::new(&hierarchy);
-    assert_eq!(query.path(&3, &1).unwrap().unwrap().vertex_list(), [3, 2, 1]);
+    assert_eq!(
+        query.path(&3, &1).unwrap().unwrap().vertex_list(),
+        [3, 2, 1]
+    );
 }
 
 #[test]
@@ -161,7 +164,10 @@ fn transit_node_routing_uses_highest_level_and_matches_hierarchy() {
     assert!(routing.transit_vertices().contains(&2));
     let cv1 = hierarchy.contraction_mapping()[&1];
     assert_eq!(routing.access_vertices().forward(cv1).len(), 1);
-    assert_eq!(routing.access_vertices().forward(cv1)[0].path.edge_list(), [e12]);
+    assert_eq!(
+        routing.access_vertices().forward(cv1)[0].path.edge_list(),
+        [e12]
+    );
     assert!(routing.locality_filter().is_local(&1, &3));
     assert!(!routing.locality_filter().is_local(&1, &2));
 

@@ -69,12 +69,12 @@ type SeparatorWithEdge = (Separator, (usize, usize));
 /// The following definitions of are equivalent:
 ///
 /// - A graph is weakly chordal (weakly triangulated) if neither it nor its complement contains a
-/// [chordless cycles](http://mathworld.wolfram.com/ChordlessCycle.html) with five or more
-/// vertices.
+///   [chordless cycles](http://mathworld.wolfram.com/ChordlessCycle.html) with five or more
+///   vertices.
 /// - A 2-pair in a graph is a pair of non-adjacent vertices $x$, $y$ such that every chordless
-/// path has exactly two edges. A graph is weakly chordal if every connected
-/// [induced subgraph](https://en.wikipedia.org/wiki/Induced_subgraph) $H$ that is not a
-/// complete graph, contains a 2-pair.
+///   path has exactly two edges. A graph is weakly chordal if every connected
+///   [induced subgraph](https://en.wikipedia.org/wiki/Induced_subgraph) $H$ that is not a
+///   complete graph, contains a 2-pair.
 ///
 /// Chordal and weakly chordal graphs are
 /// [perfect](http://mathworld.wolfram.com/PerfectGraph.html).

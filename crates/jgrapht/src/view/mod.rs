@@ -72,8 +72,8 @@ macro_rules! forward_graph {
             -> impl Iterator<Item = &'a <Self as Graph>::Edge> { $inner.edges_between(u, v) }
     };
 }
-pub(crate) use forward_graph;
 pub(crate) use capability::forward_incidence;
+pub(crate) use forward_graph;
 
 /// Forwards mutation to an inner graph.
 macro_rules! forward_graph_mut {

@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::graph::OutgoingGraph;
 use super::*;
+use jgrapht::graph::OutgoingGraph;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use std::collections::HashSet;
@@ -377,7 +377,10 @@ where
 }
 
 fn path_set(paths: &[GraphWalk<i32, DefaultEdge>]) -> HashSet<Vec<i32>> {
-    paths.iter().map(|path| path.vertex_list().to_vec()).collect()
+    paths
+        .iter()
+        .map(|path| path.vertex_list().to_vec())
+        .collect()
 }
 
 #[test]

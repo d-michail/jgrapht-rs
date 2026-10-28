@@ -335,11 +335,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
         if self.verify(g).is_err() {
             return false;
         }
-        let w: f64 = self
-            .edges
-            .iter()
-            .map(|e| g.weight_of(e))
-            .sum();
+        let w: f64 = self.edges.iter().map(|e| g.weight_of(e)).sum();
         (w - self.weight).abs() <= 1e-9 * w.abs().max(1.0)
     }
 

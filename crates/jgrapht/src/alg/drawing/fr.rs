@@ -213,7 +213,7 @@ pub fn inverse_linear_temperature(a: f64, b: f64) -> TemperatureModel {
 /// [force directed graph drawing](https://en.wikipedia.org/wiki/Force-directed_graph_drawing) algorithms and is described in the paper:
 ///
 /// - Thomas M. J. Fruchterman and Edward M. Reingold. Graph drawing by force-directed placement.
-/// Software: Practice and experience, 21(11):1129--1164, 1991.
+///   Software: Practice and experience, 21(11):1129--1164, 1991.
 ///
 /// # Rust notes
 ///

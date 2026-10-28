@@ -14,9 +14,9 @@
 
 //! `TransitiveClosure` and `TransitiveReduction` (JGraphT `org.jgrapht.alg`).
 
+use crate::error::{GraphError, Result};
 use crate::graph::IncidenceGraph;
 use crate::graph::OutgoingGraph;
-use crate::error::{GraphError, Result};
 use crate::graph::{DirectedExt, DirectedGraph, Graph, GraphExt, GraphMut, props};
 use crate::traverse::TopologicalOrderIterator;
 use indexmap::IndexSet;
@@ -46,7 +46,9 @@ impl TransitiveClosure {
         props::require_directed(graph)?;
         let t = graph.graph_type();
         if t.self_loops || t.multiple_edges {
-            return Err(GraphError::InvalidGraph(crate::GraphProperty::SimpleDirected));
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::SimpleDirected,
+            ));
         }
         let vertex_set: Vec<G::Vertex> = graph.vertices().cloned().collect();
         let mut new_edge_targets: IndexSet<G::Vertex> = IndexSet::new();

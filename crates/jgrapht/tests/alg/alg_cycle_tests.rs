@@ -32,9 +32,7 @@ mod chinese_postman_test {
         let mut graph = UGraph::<i32>::with_graph_type(graph_type).weighted();
         graph.add_vertices(vertices.iter().copied());
         for &(source, target, weight) in edges {
-            graph
-                .add_weighted_edge(&source, &target, weight)
-                .unwrap();
+            graph.add_weighted_edge(&source, &target, weight).unwrap();
         }
         graph
     }
@@ -47,9 +45,7 @@ mod chinese_postman_test {
         let mut graph = DiGraph::<i32>::with_graph_type(graph_type).weighted();
         graph.add_vertices(vertices.iter().copied());
         for &(source, target, weight) in edges {
-            graph
-                .add_weighted_edge(&source, &target, weight)
-                .unwrap();
+            graph.add_weighted_edge(&source, &target, weight).unwrap();
         }
         graph
     }
@@ -111,13 +107,7 @@ mod chinese_postman_test {
             &undirected(
                 GraphType::multigraph(),
                 &[1, 2, 3, 4],
-                &[
-                    (1, 2, 1.),
-                    (1, 4, 3.),
-                    (2, 3, 20.),
-                    (2, 3, 10.),
-                    (3, 4, 2.),
-                ],
+                &[(1, 2, 1.), (1, 4, 3.), (2, 3, 20.), (2, 3, 10.), (3, 4, 2.)],
             ),
             42.,
             8,
@@ -131,9 +121,19 @@ mod chinese_postman_test {
                 GraphType::simple(),
                 &(1..=8).collect::<Vec<_>>(),
                 &[
-                    (1, 2, 50.), (1, 3, 50.), (1, 4, 50.), (2, 4, 50.), (2, 5, 70.),
-                    (2, 6, 50.), (3, 4, 70.), (3, 7, 70.), (3, 8, 120.), (4, 6, 60.),
-                    (5, 6, 70.), (6, 8, 60.), (7, 8, 70.),
+                    (1, 2, 50.),
+                    (1, 3, 50.),
+                    (1, 4, 50.),
+                    (2, 4, 50.),
+                    (2, 5, 70.),
+                    (2, 6, 50.),
+                    (3, 4, 70.),
+                    (3, 7, 70.),
+                    (3, 8, 120.),
+                    (4, 6, 60.),
+                    (5, 6, 70.),
+                    (6, 8, 60.),
+                    (7, 8, 70.),
                 ],
             ),
             1000.,
@@ -144,8 +144,14 @@ mod chinese_postman_test {
                 GraphType::simple(),
                 &[1, 2, 3, 4, 5],
                 &[
-                    (1, 2, 8.), (1, 3, 5.), (1, 4, 6.), (2, 3, 5.), (2, 5, 6.),
-                    (3, 4, 5.), (3, 5, 5.), (4, 5, 8.),
+                    (1, 2, 8.),
+                    (1, 3, 5.),
+                    (1, 4, 6.),
+                    (2, 3, 5.),
+                    (2, 5, 6.),
+                    (3, 4, 5.),
+                    (3, 5, 5.),
+                    (4, 5, 8.),
                 ],
             ),
             60.,
@@ -156,9 +162,18 @@ mod chinese_postman_test {
                 GraphType::simple(),
                 &[1, 2, 3, 4, 5, 6, 7],
                 &[
-                    (1, 2, 5.), (1, 4, 4.), (1, 5, 1.), (2, 3, 3.), (2, 5, 1.),
-                    (2, 7, 1.), (3, 4, 2.), (3, 5, 3.), (3, 6, 1.), (3, 7, 2.),
-                    (4, 5, 1.), (6, 7, 3.),
+                    (1, 2, 5.),
+                    (1, 4, 4.),
+                    (1, 5, 1.),
+                    (2, 3, 3.),
+                    (2, 5, 1.),
+                    (2, 7, 1.),
+                    (3, 4, 2.),
+                    (3, 5, 3.),
+                    (3, 6, 1.),
+                    (3, 7, 2.),
+                    (4, 5, 1.),
+                    (6, 7, 3.),
                 ],
             ),
             31.,
@@ -169,10 +184,22 @@ mod chinese_postman_test {
                 GraphType::simple(),
                 &(1..=10).collect::<Vec<_>>(),
                 &[
-                    (1, 2, 100.), (1, 3, 150.), (1, 4, 200.), (2, 3, 120.),
-                    (2, 5, 250.), (3, 6, 200.), (4, 5, 100.), (4, 7, 80.),
-                    (4, 8, 160.), (5, 6, 100.), (5, 7, 100.), (6, 7, 150.),
-                    (6, 10, 160.), (7, 9, 100.), (8, 9, 40.), (9, 10, 80.),
+                    (1, 2, 100.),
+                    (1, 3, 150.),
+                    (1, 4, 200.),
+                    (2, 3, 120.),
+                    (2, 5, 250.),
+                    (3, 6, 200.),
+                    (4, 5, 100.),
+                    (4, 7, 80.),
+                    (4, 8, 160.),
+                    (5, 6, 100.),
+                    (5, 7, 100.),
+                    (6, 7, 150.),
+                    (6, 10, 160.),
+                    (7, 9, 100.),
+                    (8, 9, 40.),
+                    (9, 10, 80.),
                 ],
             ),
             2590.,
@@ -196,7 +223,11 @@ mod chinese_postman_test {
                 GraphType::pseudograph(),
                 &[1, 2, 3, 4],
                 &[
-                    (1, 2, 1.), (2, 3, 3.), (2, 3, 20.), (3, 4, 10.), (4, 4, 5.),
+                    (1, 2, 1.),
+                    (2, 3, 3.),
+                    (2, 3, 20.),
+                    (3, 4, 10.),
+                    (4, 4, 5.),
                     (4, 1, 2.),
                 ],
             ),
@@ -217,7 +248,11 @@ mod chinese_postman_test {
                 GraphType::simple(),
                 &[1, 2, 3, 4],
                 &[
-                    (1, 2, 8.), (1, 3, 3.), (2, 3, 10.), (2, 4, 5.), (3, 4, 15.),
+                    (1, 2, 8.),
+                    (1, 3, 3.),
+                    (2, 3, 10.),
+                    (2, 4, 5.),
+                    (3, 4, 15.),
                     (4, 1, 4.),
                 ],
             ),
@@ -229,7 +264,11 @@ mod chinese_postman_test {
                 GraphType::multigraph(),
                 &[1, 2, 3, 4],
                 &[
-                    (1, 2, 21.), (2, 3, 8.), (3, 1, 5.), (3, 4, 20.), (4, 2, 12.),
+                    (1, 2, 21.),
+                    (2, 3, 8.),
+                    (3, 1, 5.),
+                    (3, 4, 20.),
+                    (4, 2, 12.),
                     (4, 2, 2.),
                 ],
             ),
@@ -241,8 +280,16 @@ mod chinese_postman_test {
                 GraphType::simple(),
                 &[1, 2, 3, 4, 5, 6],
                 &[
-                    (1, 2, 10.), (1, 3, 20.), (2, 4, 50.), (2, 5, 10.), (3, 4, 20.),
-                    (3, 5, 33.), (4, 5, 5.), (4, 6, 12.), (5, 1, 12.), (5, 6, 1.),
+                    (1, 2, 10.),
+                    (1, 3, 20.),
+                    (2, 4, 50.),
+                    (2, 5, 10.),
+                    (3, 4, 20.),
+                    (3, 5, 33.),
+                    (4, 5, 5.),
+                    (4, 6, 12.),
+                    (5, 1, 12.),
+                    (5, 6, 1.),
                     (6, 3, 22.),
                 ],
             ),
@@ -258,9 +305,20 @@ mod chinese_postman_test {
                 GraphType::simple(),
                 &(1..=11).collect::<Vec<_>>(),
                 &[
-                    (1, 2, 1.), (1, 11, 1.), (2, 3, 1.), (3, 4, 1.), (3, 5, 1.),
-                    (4, 9, 1.), (5, 7, 1.), (6, 9, 1.), (7, 6, 1.), (8, 7, 1.),
-                    (9, 8, 1.), (9, 10, 1.), (10, 1, 1.), (11, 9, 1.),
+                    (1, 2, 1.),
+                    (1, 11, 1.),
+                    (2, 3, 1.),
+                    (3, 4, 1.),
+                    (3, 5, 1.),
+                    (4, 9, 1.),
+                    (5, 7, 1.),
+                    (6, 9, 1.),
+                    (7, 6, 1.),
+                    (8, 7, 1.),
+                    (9, 8, 1.),
+                    (9, 10, 1.),
+                    (10, 1, 1.),
+                    (11, 9, 1.),
                 ],
             ),
             22.,
@@ -3639,7 +3697,7 @@ mod howard_minimum_mean_cycle_test {
     fn graph6() {
         test_on_graph(
             GRAPH6,
-            3.6000000000000001,
+            3.6,
             Some(&[(14, 6), (6, 10), (10, 13), (13, 3), (3, 14)]),
         );
     }
@@ -3648,7 +3706,7 @@ mod howard_minimum_mean_cycle_test {
     fn graph7() {
         test_on_graph(
             GRAPH7,
-            4.4285714285714288,
+            4.428_571_428_571_429,
             Some(&[(0, 14), (14, 13), (13, 3), (3, 9), (9, 5), (5, 11), (11, 0)]),
         );
     }
@@ -4873,8 +4931,8 @@ mod berge_graph_inspector_test {
 }
 
 mod weak_chordality_certificate {
-    use jgrapht::{GraphMutExt, UGraph};
     use jgrapht::alg::cycle::{WeakChordalityCertificate, WeakChordalityInspector};
+    use jgrapht::{GraphMutExt, UGraph};
 
     #[test]
     fn a_hole_and_an_antihole_are_told_apart() {
@@ -4886,7 +4944,8 @@ mod weak_chordality_certificate {
         let mut inspector = WeakChordalityInspector::new(&c5);
         let certificate = inspector.get_certificate().cloned();
         match certificate {
-            Some(WeakChordalityCertificate::Hole(v)) | Some(WeakChordalityCertificate::Antihole(v)) => {
+            Some(WeakChordalityCertificate::Hole(v))
+            | Some(WeakChordalityCertificate::Antihole(v)) => {
                 assert_eq!(v.first(), v.last());
                 assert_eq!(v.len(), 6);
             }
@@ -4937,17 +4996,28 @@ mod berge_certificate {
 
         let antihole = complement(&hole);
         let mut inspector = BergeGraphInspector::new();
-        assert!(!inspector.is_berge_with_certificate(&antihole, true).unwrap());
+        assert!(
+            !inspector
+                .is_berge_with_certificate(&antihole, true)
+                .unwrap()
+        );
         let certificate = inspector.get_certificate().unwrap();
         assert!(matches!(certificate, BergeCertificate::OddAntihole(_)));
         assert!(!certificate.is_hole());
-        assert_eq!(certificate.vertex_list().first(), certificate.vertex_list().last());
+        assert_eq!(
+            certificate.vertex_list().first(),
+            certificate.vertex_list().last()
+        );
     }
 
     #[test]
     fn a_berge_graph_has_no_certificate() {
         let mut inspector = BergeGraphInspector::new();
-        assert!(inspector.is_berge_with_certificate(&cycle(6), true).unwrap());
+        assert!(
+            inspector
+                .is_berge_with_certificate(&cycle(6), true)
+                .unwrap()
+        );
         assert!(inspector.get_certificate().is_none());
     }
 }

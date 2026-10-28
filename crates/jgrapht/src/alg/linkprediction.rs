@@ -14,9 +14,9 @@
 
 //! Neighbourhood-based vertex similarity and link prediction scores (direction ignored).
 
-use crate::graph::OutgoingGraph;
 use super::interfaces::LinkPredictionAlgorithm;
 use super::util::Indexed;
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet};
@@ -138,7 +138,11 @@ fn not_well_defined<T>(msg: &str) -> Result<T> {
     Err(GraphError::IndexNotWellDefined(msg.to_string()))
 }
 
-fn common_successors<G: OutgoingGraph>(g: &G, u: &G::Vertex, v: &G::Vertex) -> Result<Vec<G::Vertex>> {
+fn common_successors<G: OutgoingGraph>(
+    g: &G,
+    u: &G::Vertex,
+    v: &G::Vertex,
+) -> Result<Vec<G::Vertex>> {
     let gu: HashSet<G::Vertex> = g
         .out_edges_of(u)
         .filter_map(|e| g.opposite_vertex(e, u).cloned())

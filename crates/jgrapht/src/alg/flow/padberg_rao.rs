@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::IncidenceGraph;
 use super::base::{MinimumCut, MinimumSTCutAlgorithm};
 use super::{DEFAULT_EPSILON, GusfieldGomoryHuCutTree, PushRelabelMFImpl};
 use crate::alg::connectivity::ConnectivityInspector;
 use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
+use crate::graph::UndirectedGraph;
 use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, UGraph};
 use indexmap::IndexSet;
 use std::collections::VecDeque;
@@ -107,7 +107,10 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
                 requirement: crate::ParameterRequirement::Even,
             });
         }
-        if odd_vertices.iter().any(|v| !self.network.contains_vertex(v)) {
+        if odd_vertices
+            .iter()
+            .any(|v| !self.network.contains_vertex(v))
+        {
             return Err(GraphError::VertexNotFound);
         }
         if odd_vertices.is_empty() {

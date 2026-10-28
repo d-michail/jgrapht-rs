@@ -12,11 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::IncidenceGraph;
 use super::base::{MaximumFlowValueAlgorithm, MinimumCut, MinimumSTCutAlgorithm};
 use super::{DEFAULT_EPSILON, PushRelabelMFImpl};
 use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
+use crate::graph::UndirectedGraph;
 use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
 use indexmap::IndexSet;
 use std::collections::{HashMap, VecDeque};
@@ -27,7 +27,9 @@ type CutAlgorithm<'g, G> =
 /// Shared set-up of the two Gusfield algorithms: the vertex order and index map.
 fn index_vertices<G: Graph>(network: &G) -> Result<(Vec<G::Vertex>, HashMap<G::Vertex, usize>)> {
     if network.vertex_count() < 2 {
-        return Err(GraphError::InvalidGraph(crate::GraphProperty::AtLeastTwoVertices));
+        return Err(GraphError::InvalidGraph(
+            crate::GraphProperty::AtLeastTwoVertices,
+        ));
     }
     let vertex_list: Vec<G::Vertex> = network.vertices().cloned().collect();
     let index_map = vertex_list
@@ -95,7 +97,9 @@ pub struct GusfieldEquivalentFlowTree<'g, G: Graph> {
     flow_matrix: Vec<Vec<f64>>,
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldEquivalentFlowTree<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
+    GusfieldEquivalentFlowTree<'g, G>
+{
     /// Constructs a new GusfieldEquivalentFlowTree instance.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
@@ -340,8 +344,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
                 cheapest = Some((e, w));
             }
         }
-        let (edge, _) =
-            cheapest.ok_or(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty))?;
+        let (edge, _) = cheapest.ok_or(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty))?;
         let (u, v) = tree.edge_endpoints(edge).unwrap();
         let (u, v) = (u.clone(), v.clone());
         self.minimum_cut(&u, &v)

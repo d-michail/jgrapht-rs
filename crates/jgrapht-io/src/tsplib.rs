@@ -22,9 +22,9 @@
 
 #![deny(missing_docs)]
 
-use jgrapht::graph::IncidenceGraph;
 use crate::{GraphImporter, IoError, Result};
 use indexmap::IndexMap;
+use jgrapht::graph::IncidenceGraph;
 use jgrapht::{Graph, GraphMut};
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;

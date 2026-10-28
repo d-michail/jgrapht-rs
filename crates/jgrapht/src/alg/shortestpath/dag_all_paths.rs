@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use crate::graph::DirectedGraph;
+use crate::graph::IncidenceGraph;
 use crate::{GraphError, Result};
 use dashu_int::UBig;
 use std::collections::{HashMap, VecDeque};
@@ -39,12 +39,12 @@ impl DagAllPathsCounter {
     /// Edge case semantics:
     ///
     /// - If `source` or `target` is not contained in the graph, fails
-    /// with an error.
+    ///   with an error.
     /// - If `source.equals(target)`, the empty path (length 0) is counted as one path and
-    /// paths that leave `source` and return to it cannot exist in a DAG, thus the result is
+    ///   paths that leave `source` and return to it cannot exist in a DAG, thus the result is
     /// 1.
     /// - If there is no path from `source` to `target`, returns
-    /// `BigInteger#ZERO`.
+    ///   `BigInteger#ZERO`.
     pub fn count_all_paths<G: DirectedGraph + IncidenceGraph>(
         graph: &G,
         source: &G::Vertex,

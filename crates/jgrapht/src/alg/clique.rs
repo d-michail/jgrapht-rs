@@ -14,10 +14,10 @@
 
 //! Cliques and independent sets.
 
-use crate::graph::IncidenceGraph;
 use super::color::ChordalGraphColoring;
 use super::cycle::IterationOrder;
 use super::util::Indexed;
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, UndirectedGraph};
 use std::collections::HashSet;
 
@@ -211,7 +211,7 @@ fn expired(deadline: Option<Instant>) -> bool {
 /// Implementation of the Bron-Kerbosch clique enumeration algorithm as described in:
 ///
 /// - R. Samudrala and J. Moult. A graph-theoretic algorithm for comparative modeling of protein
-/// structure. Journal of Molecular Biology, 279(1):287--302, 1998.
+///   structure. Journal of Molecular Biology, 279(1):287--302, 1998.
 ///
 /// The algorithm first computes all maximal cliques and then returns the result to the user. A
 /// timeout can be set using the constructor parameters.
@@ -296,7 +296,9 @@ impl<'g, G: IncidenceGraph> BronKerboschCliqueFinder<'g, G> {
     }
 }
 
-impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex> for BronKerboschCliqueFinder<'_, G> {
+impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
+    for BronKerboschCliqueFinder<'_, G>
+{
     fn cliques(&mut self) -> Result<&[HashSet<G::Vertex>]> {
         if self.base.cliques.is_none() {
             self.base.check_simple()?;
@@ -314,7 +316,7 @@ impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex> for BronKer
 /// The pivoting follows the rule from the paper
 ///
 /// - E. Tomita, A. Tanaka, and H. Takahashi. The worst-case time complexity for generating all
-/// maximal cliques and computational experiments. Theor. Comput. Sci. 363(1):28–42, 2006.
+///   maximal cliques and computational experiments. Theor. Comput. Sci. 363(1):28–42, 2006.
 ///
 /// where the authors show that using that rule guarantees that the Bron-Kerbosch algorithm has
 /// worst-case running time $O(3^{n/3})$ where $n$ is the number of vertices of the graph, excluding
@@ -438,8 +440,8 @@ impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
 /// degeneracy ordering of the vertices. The algorithm is described in
 ///
 /// - David Eppstein, Maarten Löffler and Darren Strash. Listing All Maximal Cliques in Sparse
-/// Graphs in Near-Optimal Time. Algorithms and Computation: 21st International Symposium (ISSAC),
-/// 403--414, 2010.
+///   Graphs in Near-Optimal Time. Algorithms and Computation: 21st International Symposium (ISSAC),
+///   403--414, 2010.
 ///
 /// and has running time $O(d n 3^{d/3})$ where $n$ is the number of vertices of the graph and $d$ is
 /// the degeneracy of the graph. The algorithm looks for a maximal clique parameterized by

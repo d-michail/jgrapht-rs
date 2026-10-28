@@ -69,8 +69,8 @@ impl BlossomVPrimalUpdater {
     /// - If minus node is a blossom, add it to the heap of "-" blossoms
     /// - Remove growEdge from the heap of infinity edges
     /// - Remove former infinity edges and add new (+, +) in-tree and cross-tree edges, (+, -)
-    /// cross tree edges to the appropriate heaps (due to the changes of the labels of the minus and
-    /// plus nodes)
+    ///   cross tree edges to the appropriate heaps (due to the changes of the labels of the minus and
+    ///   plus nodes)
     /// - Add new infinity edge from the plus node
     /// - Add new tree edges is necessary
     /// - Subtract tree.eps from the slacks of all edges incident to the minus node
@@ -144,10 +144,10 @@ impl BlossomVPrimalUpdater {
     /// - Labels of all nodes change to INFINITY
     /// - tree.eps is subtracted from "-" nodes' duals and added to the "+" nodes' duals
     /// - tree.eps is subtracted from all edges incident to "+" nodes and added to all edges
-    /// incident to "-" nodes. Consecutively, the slacks of the (+, -) in-tree edges stay
-    /// unchanged
+    ///   incident to "-" nodes. Consecutively, the slacks of the (+, -) in-tree edges stay
+    ///   unchanged
     /// - Former (-, +) and (+, +) are substituted with the (+, inf) edges (removed and added to
-    /// appropriate heaps).
+    ///   appropriate heaps).
     /// - The cardinality of the matching is increased by 1
     /// - Tree structure references are set to null
     /// - Tree roots are removed from the linked list of tree roots
@@ -171,17 +171,17 @@ impl BlossomVPrimalUpdater {
     /// In the shrink operation the following main actions are performed:
     ///
     /// - Lazy dual updates are applied to all inner edges and nodes on the circuit. Thus, the
-    /// inner edges and nodes in the pseudonodes have valid slacks and dual variables
+    ///   inner edges and nodes in the pseudonodes have valid slacks and dual variables
     /// - The endpoints of the boundary edges are moved to the new blossom node, which has label
-    /// `BlossomVNode.Label#PLUS`
+    ///   `BlossomVNode.Label#PLUS`
     /// - Lazy dual updates are applied to boundary edges and newly created blossom
     /// - Children of blossom nodes are moved to the blossom, their parent edges are changed
-    /// respectively
+    ///   respectively
     /// - The blossomSibling references are set so that they form a circular linked list
     /// - If the blossom becomes a tree root, it substitutes the previous tree's root in the linked
-    /// list of tree roots
+    ///   list of tree roots
     /// - Since the newly created blossom with "+" label can change the classification of edges,
-    /// their presence in heaps is updated
+    ///   their presence in heaps is updated
     pub(crate) fn shrink<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         forming_edge: EdgeId,
@@ -251,13 +251,13 @@ impl BlossomVPrimalUpdater {
     ///
     /// - Endpoints of the boundary edges are updated
     /// - The matching in the blossom is changed. **Note:** the resulting matching doesn't
-    /// depend on the previous matching
+    ///   depend on the previous matching
     /// - isOuter flags are updated
     /// - node.tree are updated
     /// - Tree structure is updated including parent edges and tree children of the nodes on the
-    /// even branch
+    ///   even branch
     /// - The endpoints of some edges change their labels to "+" => their slacks are changed
-    /// according to the lazy delta spreading and their presence in heaps also changes
+    ///   according to the lazy delta spreading and their presence in heaps also changes
     pub(crate) fn expand<G: Graph>(
         state: &mut BlossomVState<'_, G>,
         blossom: NodeId,

@@ -513,7 +513,8 @@ impl EventDrivenImporter for JsonEventDrivenImporter {
     }
 }
 
-type VertexFactory<V> = Box<dyn FnMut(&str, &AttributeMap) -> std::result::Result<V, crate::CallbackError>>;
+type VertexFactory<V> =
+    Box<dyn FnMut(&str, &AttributeMap) -> std::result::Result<V, crate::CallbackError>>;
 type EdgeFactory<E> = Box<dyn FnMut(&AttributeMap) -> E>;
 
 /// Imports a graph from JGraphT's JSON interchange format.

@@ -14,10 +14,10 @@
 
 //! Densest subgraph (density = edges / vertices, direction and multiplicity ignored).
 
-use crate::graph::OutgoingGraph;
 use super::flow::{MinimumSTCutAlgorithm, PushRelabelMFImpl};
 use super::util::Indexed;
 use crate::Result;
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt, GraphMut};
 use std::collections::HashSet;
 

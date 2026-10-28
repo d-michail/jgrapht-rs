@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncomingGraph;
 use crate::alg::connectivity::GabowStrongConnectivityInspector;
 use crate::alg::interfaces::StrongConnectivityAlgorithm;
 use crate::error::Result;
+use crate::graph::IncomingGraph;
 use crate::graph::{DirectedGraph, Graph, GraphExt};
 use crate::util::ToleranceDoubleComparator;
 use crate::walk::GraphWalk;
@@ -169,8 +169,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
                 u = self.policy_successor(component, &u);
             }
             if self.vertex_level[&u] == current_cycle_level {
-                let mut current_weight =
-                    component.weight_of(&self.policy_graph[&u]);
+                let mut current_weight = component.weight_of(&self.policy_graph[&u]);
                 let mut current_size = 1;
                 let mut v = self.policy_successor(component, &u);
                 while v != u {
@@ -218,9 +217,8 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
                     .expect("edge of the component");
                 if self.policy_graph[v] == *e && !reached[v] {
                     reached.insert(v.clone(), true);
-                    let updated_distance = self.vertex_distance[&u]
-                        + component.weight_of(e)
-                        - current_mean;
+                    let updated_distance =
+                        self.vertex_distance[&u] + component.weight_of(e) - current_mean;
                     self.vertex_distance.insert(v.clone(), updated_distance);
                     queue.push_back(v.clone());
                 }
@@ -233,9 +231,8 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
                     .opposite_vertex(e, u)
                     .expect("edge of the component");
                 let old_distance = self.vertex_distance[v];
-                let updated_distance = self.vertex_distance[u]
-                    + component.weight_of(e)
-                    - current_mean;
+                let updated_distance =
+                    self.vertex_distance[u] + component.weight_of(e) - current_mean;
                 if old_distance > updated_distance {
                     if self.comparator.compare(old_distance, updated_distance) > 0 {
                         improved = true;
@@ -276,8 +273,8 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
     }
 }
 
-impl<'g, G: DirectedGraph + IncomingGraph, S: StrongConnectivityAlgorithm<G = G>> MinimumCycleMeanAlgorithm<G>
-    for HowardMinimumMeanCycle<'g, G, S>
+impl<'g, G: DirectedGraph + IncomingGraph, S: StrongConnectivityAlgorithm<G = G>>
+    MinimumCycleMeanAlgorithm<G> for HowardMinimumMeanCycle<'g, G, S>
 {
     /// Computes minimum mean among all cycle; `None` if no cycle has been found.
     fn get_cycle_mean(&mut self) -> Option<f64> {

@@ -33,7 +33,6 @@ use std::collections::HashSet;
 
 mod line_graph_converter_test {
     use super::*;
-    
 
     #[test]
     fn test_empty_graph() {
@@ -130,7 +129,6 @@ mod line_graph_converter_test {
             assert!(target.contains_edge_between(a, b));
         }
     }
-
 
     #[test]
     fn self_loop_test_undirected() {
@@ -486,7 +484,7 @@ mod bipartite_partitioning_test {
 
     #[test]
     fn test_bipartite() {
-        let mut random = StdRng::seed_from_u64((0x88) as u64);
+        let mut random = StdRng::seed_from_u64(0x88_u64);
         for _ in 0..100 {
             let mut graph = int_graph();
             let (a, b) = (
@@ -502,7 +500,7 @@ mod bipartite_partitioning_test {
 
     #[test]
     fn test_bipartite_2() {
-        let mut random = StdRng::seed_from_u64((0x88) as u64);
+        let mut random = StdRng::seed_from_u64(0x88_u64);
         for _ in 0..100 {
             let mut graph = int_graph();
             let n1 = 1 + random.random_range(0..100) as usize;
@@ -524,7 +522,7 @@ mod bipartite_partitioning_test {
 
     #[test]
     fn test_forest() {
-        let mut random = StdRng::seed_from_u64((0x88) as u64);
+        let mut random = StdRng::seed_from_u64(0x88_u64);
         for _ in 0..100 {
             let mut graph = int_graph();
             let t = 10 + random.random_range(0..50) as usize;
@@ -607,7 +605,6 @@ mod gon_algorithm_test {
     fn gon() -> GonHeuristic<i32> {
         GonHeuristic::with_rng(StdRng::from_os_rng())
     }
-
 
     #[test]
     fn test_empty_graph() {
@@ -980,7 +977,7 @@ mod goldberg_maximum_density_subgraph_tests {
         with_node_weights,
         [
             0.0,
-            |_: &P, p2: &P| vec![p2.clone()],
+            |_: &P, p2: &P| vec![*p2],
             2.1,
             7.0,
             &[0, 1],

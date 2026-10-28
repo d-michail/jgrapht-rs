@@ -40,21 +40,21 @@ const PROCESSED_TREE: usize = usize::MAX;
 /// classification of constraints the following strategies of changing the duals can be used:
 ///
 /// - Single tree strategy greedily increases the duals of the tree with respect to the in-tree and
-/// cross-tree constraints. This can result in a zero-change update. If a tight (+, +) cross-tree
-/// edge is encountered during this operation, an immediate augmentation is performed
-/// afterwards.
+///   cross-tree constraints. This can result in a zero-change update. If a tight (+, +) cross-tree
+///   edge is encountered during this operation, an immediate augmentation is performed
+///   afterwards.
 ///
 /// - Multiple tree fixed delta approach considers only in-tree constraints and constraints imposed
-/// by the (+, +) cross-tree edges. Since this approach increases the trees' epsilons by the same
-/// amount, it doesn't need to consider other two dual constraints. If a tight (+, +) cross-tree edge
-/// is encountered during this operation, an immediate augmentation is performed afterwards.
+///   by the (+, +) cross-tree edges. Since this approach increases the trees' epsilons by the same
+///   amount, it doesn't need to consider other two dual constraints. If a tight (+, +) cross-tree edge
+///   is encountered during this operation, an immediate augmentation is performed afterwards.
 ///
 /// - Multiple tree variable delta approach considers all types of constraints. It determines a
-/// connected components in the auxiliary graph, where only tight (-, +) and (+, -) cross-tree edges
-/// are present. For these connected components it computes the same dual change, therefore the
-/// constraints imposed by the (-, +) and (+, -) cross-tree edges can't be violated. If a tight (+,
-/// +) cross-tree edge is encountered during this operation, an immediate augmentation is performed
-/// afterwards.
+///   connected components in the auxiliary graph, where only tight (-, +) and (+, -) cross-tree edges
+///   are present. For these connected components it computes the same dual change, therefore the
+///   constraints imposed by the (-, +) and (+, -) cross-tree edges can't be violated. If a tight (+,
+///   +) cross-tree edge is encountered during this operation, an immediate augmentation is performed
+///   afterwards.
 pub(crate) struct BlossomVDualUpdater;
 
 impl BlossomVDualUpdater {

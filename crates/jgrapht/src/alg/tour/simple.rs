@@ -12,15 +12,15 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::OutgoingGraph;
-use crate::graph::IncidenceGraph;
 use super::base::{
     HamiltonianCycleAlgorithm, check_graph, closed_vertex_list_to_tour, edge_set_to_tour,
     require_not_empty, singleton_tour, vertex_list_to_tour,
 };
 use crate::alg::spanning::kruskal;
 use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
+use crate::graph::UndirectedGraph;
 use crate::graph::props::has_ore_property;
 use crate::graph::{Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
 use crate::traverse::DepthFirstIterator;
@@ -67,7 +67,9 @@ impl<R: RandomSource> RandomTourTSP<R> {
     }
 }
 
-impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgorithm<G> for RandomTourTSP<R> {
+impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgorithm<G>
+    for RandomTourTSP<R>
+{
     /// Computes a tour using the greedy heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -167,9 +169,10 @@ impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgori
         let n = graph.vertex_count();
         let mut path: Vec<G::Vertex> = graph.vertices().cloned().collect();
         let initial_index = match self.initial_vertices.pop_front() {
-            Some(first) => path.iter().position(|v| *v == first).ok_or_else(|| {
-                GraphError::VertexNotFound
-            })?,
+            Some(first) => path
+                .iter()
+                .position(|v| *v == first)
+                .ok_or(GraphError::VertexNotFound)?,
             None => self.rng.next_int_bound(n),
         };
         path.swap(0, initial_index);
@@ -295,10 +298,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for Greedy
         }
         let mut edges: Vec<&G::Edge> = graph.edges().collect();
         edges.sort_by(|a, b| {
-            let (wa, wb) = (
-                graph.weight_of(a),
-                graph.weight_of(b),
-            );
+            let (wa, wb) = (graph.weight_of(a), graph.weight_of(b));
             wa.total_cmp(&wb)
         });
         let index: HashMap<&G::Vertex, usize> =

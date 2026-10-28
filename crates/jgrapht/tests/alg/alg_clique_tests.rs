@@ -156,7 +156,7 @@ bron_kerbosch_tests!(
 
 #[test]
 fn all_variants_random_instances() {
-    let mut rng = StdRng::seed_from_u64((33) as u64);
+    let mut rng = StdRng::seed_from_u64(33_u64);
     for _ in 0..10 {
         let mut g = UGraph::<i32>::simple().with_vertex_factory(|i| i as i32);
         GnpRandomGraphGenerator::new(
@@ -283,13 +283,19 @@ mod clique_minimal_separator_decomposition_test {
             .collect()
     }
 
-    fn atoms_of<T: Eq + std::hash::Hash + Clone, G: jgrapht::UndirectedGraph<Vertex = T> + IncidenceGraph>(
+    fn atoms_of<
+        T: Eq + std::hash::Hash + Clone,
+        G: jgrapht::UndirectedGraph<Vertex = T> + IncidenceGraph,
+    >(
         c: &mut CliqueMinimalSeparatorDecomposition<G>,
     ) -> HashSet<HashableSet<T>> {
         c.atoms().iter().cloned().collect()
     }
 
-    fn separators_of<T: Eq + std::hash::Hash + Clone, G: jgrapht::UndirectedGraph<Vertex = T> + IncidenceGraph>(
+    fn separators_of<
+        T: Eq + std::hash::Hash + Clone,
+        G: jgrapht::UndirectedGraph<Vertex = T> + IncidenceGraph,
+    >(
         c: &mut CliqueMinimalSeparatorDecomposition<G>,
     ) -> HashSet<HashableSet<T>> {
         c.separators().iter().cloned().collect()

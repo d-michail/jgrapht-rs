@@ -12,9 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt, props};
 use indexmap::IndexSet;
 use std::cmp::Ordering;
@@ -70,7 +70,9 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         if self.partition1.len() != self.partition2.len() {
-            return Err(GraphError::InvalidGraph(crate::GraphProperty::CompleteBipartite));
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::CompleteBipartite,
+            ));
         }
         let p1: HashSet<G::Vertex> = self.partition1.iter().cloned().collect();
         let p2: HashSet<G::Vertex> = self.partition2.iter().cloned().collect();
@@ -79,7 +81,9 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
         }
         let partition = self.partition1.len();
         if graph.edge_count() != partition * partition {
-            return Err(GraphError::InvalidGraph(crate::GraphProperty::CompleteBipartite));
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::CompleteBipartite,
+            ));
         }
         if !props::is_simple(graph) {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Simple));
@@ -127,11 +131,10 @@ impl KuhnMunkresMatrixImplementation {
                 if source == target {
                     continue;
                 }
-                cost_matrix[i][j] = g
-                    .weight_of(
-                        g.get_edge(source, target)
-                            .expect("complete bipartite graph"),
-                    );
+                cost_matrix[i][j] = g.weight_of(
+                    g.get_edge(source, target)
+                        .expect("complete bipartite graph"),
+                );
             }
         }
         KuhnMunkresMatrixImplementation {

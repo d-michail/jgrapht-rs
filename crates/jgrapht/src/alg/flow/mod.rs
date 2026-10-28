@@ -31,8 +31,8 @@ pub use dinic::DinicMFImpl;
 pub use edmonds_karp::EdmondsKarpMFImpl;
 pub use gusfield::{GusfieldEquivalentFlowTree, GusfieldGomoryHuCutTree};
 pub use mincost::{
-    CapacityScalingMinimumCostFlow, MinimumCostFlow, MinimumCostFlowAlgorithm, MinimumCostSolution,
-    MinimumCostFlowProblem, MinimumCostFlowProblemImpl,
+    CapacityScalingMinimumCostFlow, MinimumCostFlow, MinimumCostFlowAlgorithm,
+    MinimumCostFlowProblem, MinimumCostFlowProblemImpl, MinimumCostSolution,
 };
 pub use padberg_rao::PadbergRaoOddMinimumCutset;
 pub use push_relabel::PushRelabelMFImpl;

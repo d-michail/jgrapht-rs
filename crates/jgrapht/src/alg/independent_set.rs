@@ -14,8 +14,8 @@
 
 //! Independent set algorithms (`org.jgrapht.alg.independentset`).
 
-use crate::graph::IncidenceGraph;
 use super::cycle::{ChordalityInspector, IterationOrder};
+use crate::graph::IncidenceGraph;
 use crate::graph::{GraphExt, UndirectedGraph};
 use std::collections::HashSet;
 

@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::alg::transitive::{TransitiveClosure, TransitiveReduction};
 use jgrapht::alg::clique::ChordalGraphMaxCliqueFinder;
 use jgrapht::alg::color::ChordalGraphColoring;
 use jgrapht::alg::independent_set::ChordalGraphIndependentSetFinder;
+use jgrapht::alg::transitive::{TransitiveClosure, TransitiveReduction};
 use jgrapht::alg::{connectivity::*, cycle::*, lca::Lca};
 use jgrapht::generate::*;
 use jgrapht::*;
@@ -85,7 +85,12 @@ fn cycles() {
     let g = dg(&[(1, 2), (2, 3), (3, 1), (2, 4), (4, 2)]);
     assert!(CycleDetector::new(&g).detect_cycles());
     assert_eq!(
-        sorted(JohnsonSimpleCycles::new(&g).unwrap().find_simple_cycles().unwrap()),
+        sorted(
+            JohnsonSimpleCycles::new(&g)
+                .unwrap()
+                .find_simple_cycles()
+                .unwrap()
+        ),
         [vec![1, 2, 3], vec![2, 4]]
     );
     assert!(!CycleDetector::new(&dg(&[(1, 2), (2, 3)])).detect_cycles());
@@ -108,13 +113,17 @@ fn cycles() {
 fn eulerian() {
     let mut g = UGraph::<usize>::simple();
     Ring(5).generate_indexed(&mut g).unwrap();
-    let w = HierholzerEulerianCycle::new().get_eulerian_cycle(&g).unwrap();
+    let w = HierholzerEulerianCycle::new()
+        .get_eulerian_cycle(&g)
+        .unwrap();
     assert_eq!(w.length(), 5);
     assert_eq!(w.start_vertex(), w.end_vertex());
     assert!(w.is_valid(&g));
     assert!(!HierholzerEulerianCycle::new().is_eulerian(&ug(&[(1, 2), (2, 3)])));
     let d = dg(&[(1, 2), (2, 3), (3, 1), (1, 4), (4, 1)]);
-    let w = HierholzerEulerianCycle::new().get_eulerian_cycle(&d).unwrap();
+    let w = HierholzerEulerianCycle::new()
+        .get_eulerian_cycle(&d)
+        .unwrap();
     assert_eq!(w.length(), 5);
     assert!(w.is_valid(&d));
     assert!(!HierholzerEulerianCycle::new().is_eulerian(&ug(&[(1, 2), (3, 4)])));
@@ -124,11 +133,17 @@ fn chordal() {
     let tri_fan = ug(&[(1, 2), (2, 3), (3, 1), (3, 4), (4, 2)]);
     assert!(jgrapht::graph::props::is_chordal(&tri_fan));
     assert_eq!(
-        ChordalGraphColoring::new(&tri_fan).coloring().unwrap().count,
+        ChordalGraphColoring::new(&tri_fan)
+            .coloring()
+            .unwrap()
+            .count,
         3
     );
     assert_eq!(
-        ChordalGraphMaxCliqueFinder::new(&tri_fan).clique().unwrap().len(),
+        ChordalGraphMaxCliqueFinder::new(&tri_fan)
+            .clique()
+            .unwrap()
+            .len(),
         3
     );
     let c4 = ug(&[(1, 2), (2, 3), (3, 4), (4, 1)]);

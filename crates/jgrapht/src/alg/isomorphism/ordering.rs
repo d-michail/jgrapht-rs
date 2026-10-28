@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use crate::graph::Graph;
+use crate::graph::IncidenceGraph;
 use std::borrow::Cow;
 use std::cell::{Cell, OnceCell};
 use std::collections::HashMap;

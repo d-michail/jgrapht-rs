@@ -133,9 +133,7 @@ mod christofides_three_halves_approx_metric_tsp_test {
         for &(source, target, weight) in edges {
             graph.add_vertex(source);
             graph.add_vertex(target);
-            graph
-                .add_weighted_edge(&source, &target, weight)
-                .unwrap();
+            graph.add_weighted_edge(&source, &target, weight).unwrap();
         }
         graph
     }
@@ -157,15 +155,19 @@ mod christofides_three_halves_approx_metric_tsp_test {
 
     #[test]
     fn rejects_directed_empty_and_incomplete_graphs() {
-        assert!(ChristofidesThreeHalvesApproxMetricTSP::new()
-            .get_tour(&Ug::simple().weighted())
-            .is_err());
+        assert!(
+            ChristofidesThreeHalvesApproxMetricTSP::new()
+                .get_tour(&Ug::simple().weighted())
+                .is_err()
+        );
 
         let mut incomplete = Ug::simple().weighted();
         incomplete.add_vertices([0, 1]);
-        assert!(ChristofidesThreeHalvesApproxMetricTSP::new()
-            .get_tour(&incomplete)
-            .is_err());
+        assert!(
+            ChristofidesThreeHalvesApproxMetricTSP::new()
+                .get_tour(&incomplete)
+                .is_err()
+        );
     }
 
     #[test]
@@ -183,54 +185,156 @@ mod christofides_three_halves_approx_metric_tsp_test {
     fn upstream_weighted_instances() {
         test_instance(
             &[
-                (1, 0, 2.), (2, 0, 5.), (2, 1, 6.), (3, 0, 2.), (3, 1, 4.), (3, 2, 5.),
+                (1, 0, 2.),
+                (2, 0, 5.),
+                (2, 1, 6.),
+                (3, 0, 2.),
+                (3, 1, 4.),
+                (3, 2, 5.),
             ],
             15.,
         );
         test_instance(
             &[
-                (1, 0, 8.), (2, 0, 4.), (2, 1, 4.), (3, 0, 5.), (3, 1, 8.), (3, 2, 6.),
-                (4, 0, 7.), (4, 1, 7.), (4, 2, 5.), (4, 3, 6.),
+                (1, 0, 8.),
+                (2, 0, 4.),
+                (2, 1, 4.),
+                (3, 0, 5.),
+                (3, 1, 8.),
+                (3, 2, 6.),
+                (4, 0, 7.),
+                (4, 1, 7.),
+                (4, 2, 5.),
+                (4, 3, 6.),
             ],
             26.,
         );
         test_instance(
             &[
-                (1, 0, 3.), (2, 0, 6.), (2, 1, 7.), (3, 0, 6.), (3, 1, 7.), (3, 2, 7.),
-                (4, 0, 5.), (4, 1, 6.), (4, 2, 9.), (4, 3, 9.), (5, 0, 3.), (5, 1, 2.),
-                (5, 2, 10.), (5, 3, 10.), (5, 4, 9.),
+                (1, 0, 3.),
+                (2, 0, 6.),
+                (2, 1, 7.),
+                (3, 0, 6.),
+                (3, 1, 7.),
+                (3, 2, 7.),
+                (4, 0, 5.),
+                (4, 1, 6.),
+                (4, 2, 9.),
+                (4, 3, 9.),
+                (5, 0, 3.),
+                (5, 1, 2.),
+                (5, 2, 10.),
+                (5, 3, 10.),
+                (5, 4, 9.),
             ],
             33.,
         );
         test_instance(
             &[
-                (1, 0, 6.), (2, 0, 2.), (2, 1, 9.), (3, 0, 7.), (3, 1, 1.), (3, 2, 8.),
-                (4, 0, 2.), (4, 1, 7.), (4, 2, 3.), (4, 3, 8.), (5, 0, 5.), (5, 1, 5.),
-                (5, 2, 6.), (5, 3, 6.), (5, 4, 3.), (6, 0, 4.), (6, 1, 5.), (6, 2, 5.),
-                (6, 3, 6.), (6, 4, 2.), (6, 5, 5.),
+                (1, 0, 6.),
+                (2, 0, 2.),
+                (2, 1, 9.),
+                (3, 0, 7.),
+                (3, 1, 1.),
+                (3, 2, 8.),
+                (4, 0, 2.),
+                (4, 1, 7.),
+                (4, 2, 3.),
+                (4, 3, 8.),
+                (5, 0, 5.),
+                (5, 1, 5.),
+                (5, 2, 6.),
+                (5, 3, 6.),
+                (5, 4, 3.),
+                (6, 0, 4.),
+                (6, 1, 5.),
+                (6, 2, 5.),
+                (6, 3, 6.),
+                (6, 4, 2.),
+                (6, 5, 5.),
             ],
             24.,
         );
         test_instance(
             &[
-                (1, 0, 1.), (2, 0, 3.), (2, 1, 2.), (3, 0, 5.), (3, 1, 6.), (3, 2, 8.),
-                (4, 0, 4.), (4, 1, 5.), (4, 2, 7.), (4, 3, 4.), (5, 0, 6.), (5, 1, 7.),
-                (5, 2, 9.), (5, 3, 6.), (5, 4, 8.), (6, 0, 6.), (6, 1, 7.), (6, 2, 9.),
-                (6, 3, 6.), (6, 4, 8.), (6, 5, 9.), (7, 0, 4.), (7, 1, 5.), (7, 2, 7.),
-                (7, 3, 4.), (7, 4, 6.), (7, 5, 7.), (7, 6, 6.),
+                (1, 0, 1.),
+                (2, 0, 3.),
+                (2, 1, 2.),
+                (3, 0, 5.),
+                (3, 1, 6.),
+                (3, 2, 8.),
+                (4, 0, 4.),
+                (4, 1, 5.),
+                (4, 2, 7.),
+                (4, 3, 4.),
+                (5, 0, 6.),
+                (5, 1, 7.),
+                (5, 2, 9.),
+                (5, 3, 6.),
+                (5, 4, 8.),
+                (6, 0, 6.),
+                (6, 1, 7.),
+                (6, 2, 9.),
+                (6, 3, 6.),
+                (6, 4, 8.),
+                (6, 5, 9.),
+                (7, 0, 4.),
+                (7, 1, 5.),
+                (7, 2, 7.),
+                (7, 3, 4.),
+                (7, 4, 6.),
+                (7, 5, 7.),
+                (7, 6, 6.),
             ],
             39.,
         );
         test_instance(
             &[
-                (1, 0, 5.), (2, 0, 4.), (2, 1, 5.), (3, 0, 3.), (3, 1, 7.), (3, 2, 6.),
-                (4, 0, 5.), (4, 1, 7.), (4, 2, 6.), (4, 3, 5.), (5, 0, 5.), (5, 1, 8.),
-                (5, 2, 7.), (5, 3, 6.), (5, 4, 8.), (6, 0, 5.), (6, 1, 8.), (6, 2, 7.),
-                (6, 3, 6.), (6, 4, 8.), (6, 5, 7.), (7, 0, 5.), (7, 1, 7.), (7, 2, 6.),
-                (7, 3, 5.), (7, 4, 7.), (7, 5, 6.), (7, 6, 8.), (8, 0, 5.), (8, 1, 6.),
-                (8, 2, 5.), (8, 3, 4.), (8, 4, 6.), (8, 5, 5.), (8, 6, 8.), (8, 7, 7.),
-                (9, 0, 5.), (9, 1, 5.), (9, 2, 4.), (9, 3, 3.), (9, 4, 5.), (9, 5, 4.),
-                (9, 6, 8.), (9, 7, 7.), (9, 8, 6.),
+                (1, 0, 5.),
+                (2, 0, 4.),
+                (2, 1, 5.),
+                (3, 0, 3.),
+                (3, 1, 7.),
+                (3, 2, 6.),
+                (4, 0, 5.),
+                (4, 1, 7.),
+                (4, 2, 6.),
+                (4, 3, 5.),
+                (5, 0, 5.),
+                (5, 1, 8.),
+                (5, 2, 7.),
+                (5, 3, 6.),
+                (5, 4, 8.),
+                (6, 0, 5.),
+                (6, 1, 8.),
+                (6, 2, 7.),
+                (6, 3, 6.),
+                (6, 4, 8.),
+                (6, 5, 7.),
+                (7, 0, 5.),
+                (7, 1, 7.),
+                (7, 2, 6.),
+                (7, 3, 5.),
+                (7, 4, 7.),
+                (7, 5, 6.),
+                (7, 6, 8.),
+                (8, 0, 5.),
+                (8, 1, 6.),
+                (8, 2, 5.),
+                (8, 3, 4.),
+                (8, 4, 6.),
+                (8, 5, 5.),
+                (8, 6, 8.),
+                (8, 7, 7.),
+                (9, 0, 5.),
+                (9, 1, 5.),
+                (9, 2, 4.),
+                (9, 3, 3.),
+                (9, 4, 5.),
+                (9, 5, 4.),
+                (9, 6, 8.),
+                (9, 7, 7.),
+                (9, 8, 6.),
             ],
             52.,
         );
@@ -315,7 +419,9 @@ fn random_directed(n: i32, p: f64, rnd: &mut StdRng) -> Dg {
 mod dag_hamiltonian_path_test {
     use super::*;
 
-    fn dag<G: IncidenceGraph>(graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
+    fn dag<G: IncidenceGraph>(
+        graph: &G,
+    ) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         DagHamiltonianPath::new().get_path(graph)
     }
 
@@ -550,7 +656,7 @@ mod held_karp_hamiltonian_path_test {
 
     #[test]
     fn cross_validation_against_backtracking_undirected() {
-        let mut random = StdRng::seed_from_u64(0xBEEFFACE12345678u64 as u64);
+        let mut random = StdRng::seed_from_u64(0xBEEFFACE12345678u64);
         for n in 2..=8 {
             for p in [0.3, 0.5, 0.8] {
                 for _ in 0..25 {
@@ -562,7 +668,7 @@ mod held_karp_hamiltonian_path_test {
 
     #[test]
     fn cross_validation_against_backtracking_directed() {
-        let mut random = StdRng::seed_from_u64(0xFEEDBEEF87654321u64 as u64);
+        let mut random = StdRng::seed_from_u64(0xFEEDBEEF87654321u64);
         for n in 2..=8 {
             for p in [0.3, 0.5, 0.8] {
                 for _ in 0..25 {
@@ -991,7 +1097,6 @@ mod two_approx_metric_tsp_test {
         assert!(2.0 * mst_weight(&g) >= tour.weight());
     }
 
-
     #[test]
     fn invalid_instance_not_complete() {
         let g = weighted_str(&["A", "B", "C"], &[("A", "B", 20.0), ("A", "C", 42.0)]);
@@ -1027,7 +1132,6 @@ mod two_opt_heuristic_tsp_test {
         assert_hamiltonian(&g, &tour);
         assert!(2.0 * mst_weight(&g) >= tour.weight());
     }
-
 
     #[test]
     fn invalid_instance_not_complete() {
@@ -1406,7 +1510,6 @@ mod palmer_hamiltonian_cycle_test {
 mod farthest_insertion_heuristic_tsp_test {
     use super::*;
 
-
     #[test]
     fn empty_graph() {
         let g = Ug::with_loops().weighted();
@@ -1655,7 +1758,10 @@ mod nearest_neighbor_heuristic_tsp_test {
         let locs = locations();
         let g = geometric_graph(&locs);
         let mut initial = locs.clone();
-        jgrapht::util::java::java_shuffle(&mut initial, &mut StdRng::seed_from_u64(0x4A47_7261_7068_54));
+        jgrapht::util::java::java_shuffle(
+            &mut initial,
+            &mut StdRng::seed_from_u64(0x004A_4772_6170_6854),
+        );
         let mut alg = NearestNeighborHeuristicTSP::with_initial_vertices(initial.clone());
         for expected in &initial {
             let tour = alg.get_tour(&g).unwrap().unwrap();

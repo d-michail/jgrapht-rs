@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::graph::OutgoingGraph;
 use jgrapht::alg::shortestpath::{IntVertexDijkstraShortestPath, ShortestPathAlgorithm};
+use jgrapht::graph::OutgoingGraph;
 use jgrapht::{DefaultEdge, DiGraph, GraphMutExt, UGraph};
 
 fn assert_weights<G>(graph: &G, expected: &[(i32, &[f64])])

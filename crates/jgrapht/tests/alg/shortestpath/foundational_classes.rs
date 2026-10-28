@@ -40,8 +40,14 @@ fn bfs_shortest_path_test_path_between() {
     let bfs = BFSShortestPath::new(&graph);
 
     assert_eq!(bfs.path(&"v1", &"v2").unwrap().unwrap().edge_list(), [e12]);
-    assert_eq!(bfs.path(&"v1", &"v4").unwrap().unwrap().edge_list(), [e12, e24]);
-    assert_eq!(bfs.path(&"v1", &"v5").unwrap().unwrap().edge_list(), [e13, e35]);
+    assert_eq!(
+        bfs.path(&"v1", &"v4").unwrap().unwrap().edge_list(),
+        [e12, e24]
+    );
+    assert_eq!(
+        bfs.path(&"v1", &"v5").unwrap().unwrap().edge_list(),
+        [e13, e35]
+    );
     assert!(bfs.path(&"v4", &"v3").unwrap().is_none());
 }
 
@@ -134,7 +140,10 @@ fn assert_same_weight(expected: f64, actual: f64) {
     );
 }
 
-fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(graph: &G, random: &mut StdRng) {
+fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(
+    graph: &G,
+    random: &mut StdRng,
+) {
     let mut landmarks = HashSet::new();
     while landmarks.len() < 2 {
         landmarks.insert(random.random_range(0..30));

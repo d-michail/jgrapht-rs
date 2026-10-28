@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::walk::GraphWalk;
@@ -135,7 +135,9 @@ where
             for (edge, neighbor) in self.graph.outgoing_of(&vertex) {
                 let weight = self.graph.weight_of(edge);
                 if weight.is_nan() || weight < 0.0 {
-                    return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+                    return Err(GraphError::InvalidWeight(
+                        crate::WeightProblem::NegativeOrNaN,
+                    ));
                 }
                 let neighbor_index = index_of(*neighbor);
                 let candidate = current_distance + weight;

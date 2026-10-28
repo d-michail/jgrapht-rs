@@ -46,9 +46,9 @@ use std::collections::HashMap;
 /// |E| + n_{\Delta} + m_{\Delta})}{p} + \frac{L}{\Delta}\cdot d\cdot l_{\Delta}\cdot \log n)$, where
 ///
 /// - $n_{\Delta}$ - number of vertex pairs $(u,v)$, where $u$ and $v$ are connected by some
-/// $\Delta$-path.
+///   $\Delta$-path.
 /// - $m_{\Delta}$ - number of vertex triples $(u,v^{\prime},v)$, where $u$ and $v^{\prime}$ are
-/// connected by some $\Delta$-path and edge $(v^{\prime},v)$ has weight at most $\Delta$.
+///   connected by some $\Delta$-path and edge $(v^{\prime},v)$ has weight at most $\Delta$.
 /// - $L$ - maximum weight of a shortest path from selected source to any sink.
 /// - $d$ - maximum vertex degree.
 /// - $l_{\Delta}$ - maximum number of edges in a $\Delta$-path $+1$.
@@ -81,7 +81,9 @@ impl<G: Graph> ShortestPathAlgorithm<G> for DeltaStepping<'_, G> {
         let ix = Indexed::new(self.g);
         let s = *ix.idx.get(source).ok_or(GraphError::VertexNotFound)?;
         if ix.w.iter().any(|w| w.is_nan() || *w < 0.0) {
-            return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+            return Err(GraphError::InvalidWeight(
+                crate::WeightProblem::NegativeOrNaN,
+            ));
         }
         let max_w = ix.w.iter().copied().fold(0.0, f64::max);
         let max_deg = ix.out.iter().map(Vec::len).max().unwrap_or(1).max(1);

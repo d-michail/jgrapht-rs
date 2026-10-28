@@ -24,10 +24,9 @@
 //! [`weight_failure_cases`] lists the weights that weight-sensitive algorithms must reject.
 #![allow(dead_code)]
 
+use jgrapht::GraphType;
 use jgrapht::graph::Graph;
 use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
-use jgrapht::GraphType;
-
 
 /// A small directed multigraph over `u32` vertices and `u32` edge ids.
 ///
@@ -65,10 +64,7 @@ impl FixtureGraph {
     /// A graph that breaks the integrity contract in three independent ways:
     /// edge 0 targets vertex 99 (not a vertex), edge 1 has no source, edge 2 has no weight.
     pub fn inconsistent() -> Self {
-        let mut g = Self::new(
-            &[0, 1, 2],
-            &[(0, 99, 1.0), (0, 1, 1.0), (1, 2, 1.0)],
-        );
+        let mut g = Self::new(&[0, 1, 2], &[(0, 99, 1.0), (0, 1, 1.0), (1, 2, 1.0)]);
         g.edges[1].0 = None;
         g.edges[2].2 = None;
         g

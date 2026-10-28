@@ -12,11 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
-use crate::graph::capability::IncidenceGraph;
 use crate::alg::connectivity::ConnectivityInspector;
 use crate::alg::shortestpath::{Dijkstra, ShortestPathAlgorithm};
 use crate::error::{GraphError, Result};
+use crate::graph::OutgoingGraph;
+use crate::graph::capability::IncidenceGraph;
 use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
 use crate::view::AsSubgraph;
 use crate::walk::GraphWalk;
@@ -186,7 +186,10 @@ impl Core {
         }
     }
 
-    fn bf_odd_hole_certificate<S: Graph<Vertex = usize, Edge = DefaultEdge> + IncidenceGraph>(&mut self, g: &S) {
+    fn bf_odd_hole_certificate<S: Graph<Vertex = usize, Edge = DefaultEdge> + IncidenceGraph>(
+        &mut self,
+        g: &S,
+    ) {
         let vertices: Vec<usize> = g.vertices().copied().collect();
         for &start in &vertices {
             if g.degree_of(&start) < 2 {
@@ -425,7 +428,10 @@ impl Core {
         false
     }
 
-    fn find_all_components<S: Graph<Vertex = usize> + IncidenceGraph>(g: &S, f: &VSet) -> Vec<VSet> {
+    fn find_all_components<S: Graph<Vertex = usize> + IncidenceGraph>(
+        g: &S,
+        f: &VSet,
+    ) -> Vec<VSet> {
         connected_sets(&AsSubgraph::induced(g, f.iter().copied()))
     }
 
@@ -1183,10 +1189,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// `hasConfigurationType1`.
-    pub fn has_configuration_type1<G: Graph<Vertex = V>>(
-        &mut self,
-        g: &G,
-    ) -> Result<bool> {
+    pub fn has_configuration_type1<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
         let r = self.core.has_configuration_type1(&h);
@@ -1195,10 +1198,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// `hasConfigurationType2`.
-    pub fn has_configuration_type2<G: Graph<Vertex = V>>(
-        &mut self,
-        g: &G,
-    ) -> Result<bool> {
+    pub fn has_configuration_type2<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
         let r = self.core.has_configuration_type2(&h);
@@ -1207,10 +1207,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// `hasConfigurationType3`.
-    pub fn has_configuration_type3<G: Graph<Vertex = V>>(
-        &mut self,
-        g: &G,
-    ) -> Result<bool> {
+    pub fn has_configuration_type3<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
         let r = self.core.has_configuration_type3(&h);

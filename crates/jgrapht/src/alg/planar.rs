@@ -18,9 +18,9 @@
 //! The original works on a web of linked objects; here nodes and edges live in two arenas and
 //! refer to each other by index. Directions of edges are ignored.
 
-use crate::graph::IncidenceGraph;
 use super::interfaces::Embedding;
-use crate::graph::{GraphExt};
+use crate::graph::GraphExt;
+use crate::graph::IncidenceGraph;
 use crate::view::AsSubgraph;
 use indexmap::IndexMap;
 use std::collections::{HashMap, HashSet};

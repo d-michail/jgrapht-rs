@@ -23,10 +23,10 @@ use jgrapht::alg::util::*;
 use jgrapht::event::Listenable;
 use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
 use jgrapht::util::java::JavaRandom;
-use rand::SeedableRng;
-use rand::rngs::StdRng;
 use jgrapht::util::sampler::AliasMethodSampler;
 use jgrapht::*;
+use rand::SeedableRng;
+use rand::rngs::StdRng;
 use std::collections::HashSet;
 
 mod alias_method_sampler_test {
@@ -91,7 +91,8 @@ mod vertex_degree_comparator_test {
     #[test]
     fn test_vertex_degree_comparator() {
         let mut generator =
-            GnmRandomGraphGenerator::new(100, 1000, StdRng::seed_from_u64(0), false, false).unwrap();
+            GnmRandomGraphGenerator::new(100, 1000, StdRng::seed_from_u64(0), false, false)
+                .unwrap();
         for _ in 0..20 {
             let mut graph = UGraph::<i32>::simple().with_vertex_factory(|i| i as i32);
             generator.generate_default(&mut graph).unwrap();
@@ -193,7 +194,7 @@ mod union_find_test {
 
 mod neighbor_cache_test {
     use super::*;
-    
+
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -221,7 +222,11 @@ mod neighbor_cache_test {
         g.remove_edge(&e);
     }
 
-    fn neighbors(cache: &Cache, g: &impl IncidenceGraph<Vertex = String>, v: &str) -> HashSet<String> {
+    fn neighbors(
+        cache: &Cache,
+        g: &impl IncidenceGraph<Vertex = String>,
+        v: &str,
+    ) -> HashSet<String> {
         cache
             .borrow_mut()
             .neighbors_of(g, &s(v))
@@ -309,7 +314,6 @@ mod neighbor_cache_test {
         g.remove_vertex(&s(V2));
         assert_eq!(succs(&g, V1).len(), 0);
     }
-
 
     fn abcd() -> (Listenable<UGraph<String>>, Cache) {
         let (mut g, cache) = setup(UGraph::<String>::simple());

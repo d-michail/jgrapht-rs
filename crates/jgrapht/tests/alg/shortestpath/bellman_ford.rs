@@ -75,19 +75,35 @@ fn test_path_between() {
     let algorithm = BellmanFordShortestPath::new(&graph);
 
     assert_eq!(
-        algorithm.get_path(&"v1", &"v2").unwrap().unwrap().edge_list(),
+        algorithm
+            .get_path(&"v1", &"v2")
+            .unwrap()
+            .unwrap()
+            .edge_list(),
         [e12]
     );
     assert_eq!(
-        algorithm.get_path(&"v1", &"v4").unwrap().unwrap().edge_list(),
+        algorithm
+            .get_path(&"v1", &"v4")
+            .unwrap()
+            .unwrap()
+            .edge_list(),
         [e12, e24]
     );
     assert_eq!(
-        algorithm.get_path(&"v1", &"v5").unwrap().unwrap().edge_list(),
+        algorithm
+            .get_path(&"v1", &"v5")
+            .unwrap()
+            .unwrap()
+            .edge_list(),
         [e12, e24, e45]
     );
     assert_eq!(
-        algorithm.get_path(&"v3", &"v4").unwrap().unwrap().edge_list(),
+        algorithm
+            .get_path(&"v3", &"v4")
+            .unwrap()
+            .unwrap()
+            .edge_list(),
         [e13, e12, e24]
     );
 }
@@ -107,7 +123,10 @@ fn test_undirected() {
         ("v4", 10.0),
         ("v5", 15.0),
     ] {
-        assert_eq!(paths.weight(&vertex), Some(weight).filter(|w: &f64| w.is_finite()));
+        assert_eq!(
+            paths.weight(&vertex),
+            Some(weight).filter(|w: &f64| w.is_finite())
+        );
     }
 }
 
@@ -117,11 +136,19 @@ fn test_with_negative_edges() {
     let algorithm = BellmanFordShortestPath::new(&graph);
 
     assert_eq!(
-        algorithm.get_path(&"v1", &"v4").unwrap().unwrap().edge_list(),
+        algorithm
+            .get_path(&"v1", &"v4")
+            .unwrap()
+            .unwrap()
+            .edge_list(),
         [e13, e34]
     );
     assert_eq!(
-        algorithm.get_path(&"v1", &"v5").unwrap().unwrap().edge_list(),
+        algorithm
+            .get_path(&"v1", &"v5")
+            .unwrap()
+            .unwrap()
+            .edge_list(),
         [e15]
     );
 }
@@ -173,7 +200,10 @@ fn test_wikipedia_example_bellman_ford() {
         ("x", -7.0),
         ("z", 0.0),
     ] {
-        assert_eq!(paths.weight(&vertex), Some(weight).filter(|w: &f64| w.is_finite()));
+        assert_eq!(
+            paths.weight(&vertex),
+            Some(weight).filter(|w: &f64| w.is_finite())
+        );
     }
 }
 

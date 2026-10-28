@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use super::greedy::GreedyMaximumCardinalityMatching;
 use crate::alg::util::FixedSizeIntegerQueue;
 use crate::error::Result;
+use crate::graph::IncidenceGraph;
+use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use indexmap::IndexSet;
 use std::collections::{HashMap, HashSet, VecDeque};

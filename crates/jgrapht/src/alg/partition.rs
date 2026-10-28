@@ -14,9 +14,9 @@
 
 //! Bipartiteness.
 
-use crate::graph::IncidenceGraph;
 use super::interfaces::{Partitioning, PartitioningAlgorithm};
 use super::util::Indexed;
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt, props};
 use indexmap::IndexSet;
 use std::collections::HashSet;

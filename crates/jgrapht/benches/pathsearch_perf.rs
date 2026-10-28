@@ -31,9 +31,9 @@ use jgrapht::alg::tour::{
     BacktrackingHamiltonianPath, HamiltonianPathAlgorithm, HeldKarpHamiltonianPath,
 };
 use jgrapht::traverse::topological_sort;
+use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use jgrapht::*;
 
 fn k_shortest_paths(c: &mut Criterion) {
     let (n, k) = (300, 50);
@@ -259,7 +259,7 @@ fn undirected_graph(n: usize) -> UGraph<usize> {
 
 fn hamiltonian_graph(family: HamiltonianFamily, n: usize) -> HamiltonianGraph {
     let seed = 0xBEEF_CAFE_1234_5678u64 ^ ((n as u64) << 16) ^ family.ordinal();
-    let mut random = StdRng::seed_from_u64(seed as u64);
+    let mut random = StdRng::seed_from_u64(seed);
     match family {
         HamiltonianFamily::Path => {
             let mut graph = undirected_graph(n);

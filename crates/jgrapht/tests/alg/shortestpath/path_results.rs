@@ -114,7 +114,10 @@ fn tree_single_source_paths_test_paths() {
     assert_eq!(paths.weight(&2), Some(-5.0));
     assert_eq!(paths.path(&3).unwrap().edge_list(), [e12[0], e23[2]]);
     assert_eq!(paths.weight(&3), Some(-10.0));
-    assert_eq!(paths.path(&4).unwrap().edge_list(), [e12[0], e23[2], e34[0]]);
+    assert_eq!(
+        paths.path(&4).unwrap().edge_list(),
+        [e12[0], e23[2], e34[0]]
+    );
     assert_eq!(paths.weight(&4), Some(-110.0));
 }
 

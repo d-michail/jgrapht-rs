@@ -863,8 +863,14 @@ where
                         "GEXF edge id provider is missing".into()
                     ))?
                 ),
-                escape(ids.get(source).ok_or_else(crate::exporter::missing_endpoint)?),
-                escape(ids.get(target).ok_or_else(crate::exporter::missing_endpoint)?)
+                escape(
+                    ids.get(source)
+                        .ok_or_else(crate::exporter::missing_endpoint)?
+                ),
+                escape(
+                    ids.get(target)
+                        .ok_or_else(crate::exporter::missing_endpoint)?
+                )
             )?;
             if self.parameter(GexfParameter::ExportEdgeTypes) {
                 write!(

@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
 use super::{AllPairsPaths, ShortestPathAlgorithm, SingleSourcePaths};
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};

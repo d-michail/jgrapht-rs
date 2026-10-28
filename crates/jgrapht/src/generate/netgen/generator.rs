@@ -12,11 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
 use super::config::NetworkGeneratorConfig;
 use super::distributor::Distributor;
 use super::problems::{BipartiteMatchingProblem, MaximumFlowProblem, NetworkInfo};
 use crate::alg::flow::MinimumCostFlowProblemImpl;
+use crate::graph::OutgoingGraph;
 use crate::graph::props::require_directed;
 use crate::graph::{Graph, GraphMut};
 use crate::util::ElementsSequenceGenerator;
@@ -102,7 +102,9 @@ where
     E: Clone + Eq + std::hash::Hash,
     R: RandomSource,
 {
-    pub fn generate_bipartite_matching_problem<G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph>(
+    pub fn generate_bipartite_matching_problem<
+        G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph,
+    >(
         &mut self,
         graph: &mut G,
     ) -> Result<BipartiteMatchingProblem<V, E>> {
@@ -141,7 +143,10 @@ where
         })
     }
 
-    pub fn generate_minimum_cost_flow_problem<'g, G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph>(
+    pub fn generate_minimum_cost_flow_problem<
+        'g,
+        G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph,
+    >(
         &mut self,
         graph: &'g mut G,
     ) -> Result<MinimumCostFlowProblemImpl<'g, G>>

@@ -12,15 +12,15 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::OutgoingGraph;
-use crate::graph::capability::IncidenceGraph;
 use super::base::{HamiltonianCycleAlgorithm, check_graph, singleton_tour, vertex_list_to_tour};
 use crate::Result;
 use crate::alg::cycle::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
 use crate::alg::matching::MatchingAlgorithm;
 use crate::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
 use crate::alg::spanning::{KruskalMinimumSpanningTree, SpanningTreeAlgorithm};
+use crate::graph::OutgoingGraph;
+use crate::graph::UndirectedGraph;
+use crate::graph::capability::IncidenceGraph;
 use crate::graph::{Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
 use crate::view::AsSubgraph;
 use crate::walk::GraphWalk;
@@ -45,17 +45,17 @@ use std::collections::HashSet;
 /// - Compute minimum weight perfect matching in the induced subgraph on odd degree vertices.
 /// - Add edges from the minimum weight perfect matching to the MST (forming a pseudograph).
 /// - Compute an Eulerian cycle in the obtained pseudograph and form a closed tour in this
-/// cycle.
+///   cycle.
 ///
 /// The following two observations yield the $3/2$ approximation bound:
 ///
 /// - The cost of every minimum spanning tree is less than or equal to the cost of every
-/// Hamiltonian cycle since after one edge removal every Hamiltonian cycle becomes a spanning
-/// tree
+///   Hamiltonian cycle since after one edge removal every Hamiltonian cycle becomes a spanning
+///   tree
 /// - Twice the cost of a perfect matching in a graph is less than or equal to the cost of every
-/// Hamiltonian cycle. This follows from the fact that after forming a closed tour using the edges of
-/// a perfect matching the cost of the edges not from the matching is greater than or equal to the
-/// cost of the matching edges.
+///   Hamiltonian cycle. This follows from the fact that after forming a closed tour using the edges of
+///   a perfect matching the cost of the edges not from the matching is greater than or equal to the
+///   cost of the matching edges.
 ///
 /// For more details, see *Christofides, N.: Worst-case analysis of a new heuristic for the
 /// travelling salesman problem. Graduate School of Industrial Administration, Carnegie Mellon
@@ -77,7 +77,9 @@ impl ChristofidesThreeHalvesApproxMetricTSP {
     }
 }
 
-impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for ChristofidesThreeHalvesApproxMetricTSP {
+impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
+    for ChristofidesThreeHalvesApproxMetricTSP
+{
     /// Computes a $3/2$-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
         check_graph(graph)?;

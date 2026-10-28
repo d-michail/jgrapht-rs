@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
 use super::DEFAULT_EPSILON;
 use super::base::{FlowNet, flow_algorithm_api};
 use crate::error::{GraphError, Result};
+use crate::graph::OutgoingGraph;
 use std::collections::{HashSet, VecDeque};
 
 /// This class computes a maximum flow in a

@@ -19,12 +19,12 @@
 //! exceed the capacity; every subset hangs below the root as one or more subtrees. Hash sets and
 //! maps of the Java code are insertion-ordered here, which makes the heuristics deterministic.
 
-use crate::graph::GraphExt;
-use crate::graph::IncidenceGraph;
 use super::connectivity::ConnectivityInspector;
 use super::spanning::prim;
 use super::util::Pair;
 use crate::graph::Graph;
+use crate::graph::GraphExt;
+use crate::graph::IncidenceGraph;
 use crate::traverse::DepthFirstIterator;
 use crate::view::AsSubgraph;
 use crate::{GraphError, Result};
@@ -1032,7 +1032,10 @@ struct ImprovementGraph<V: Eq + Hash + Clone> {
     path_exchange: IndexMap<Iv, i64>,
 }
 
-fn prim_of_set<G: IncidenceGraph>(p: &Problem<'_, G>, set: &IndexSet<G::Vertex>) -> SpanningTree<G::Edge> {
+fn prim_of_set<G: IncidenceGraph>(
+    p: &Problem<'_, G>,
+    set: &IndexSet<G::Vertex>,
+) -> SpanningTree<G::Edge> {
     prim(&AsSubgraph::induced(p.graph, set.iter().cloned()))
 }
 

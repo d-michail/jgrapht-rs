@@ -174,12 +174,12 @@ mod graph_ordering_test {
         for (i, name) in names.iter().enumerate() {
             let n = num(name);
             assert_eq!(
-                sorted(outs[i].iter().map(|s| num(*s))),
+                sorted(outs[i].iter().map(|s| num(s))),
                 sorted(ordering.out_edges(n).iter().copied()),
                 "out {name}"
             );
             assert_eq!(
-                sorted(ins[i].iter().map(|s| num(*s))),
+                sorted(ins[i].iter().map(|s| num(s))),
                 sorted(ordering.in_edges(n).iter().copied()),
                 "in {name}"
             );
@@ -999,7 +999,7 @@ mod color_refinement_isomorphism_inspector_test {
 mod subgraph_utils {
     use super::*;
     use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+    use rand::{Rng, SeedableRng};
 
     pub type G = DiGraph<i32>;
 
@@ -1241,7 +1241,7 @@ mod vf2_subgraph_isomorphism_inspector_test {
     use super::*;
     use jgrapht::graph::Undirected;
     use rand::rngs::StdRng;
-use rand::{Rng, SeedableRng};
+    use rand::{Rng, SeedableRng};
     use std::cmp::Ordering;
 
     fn sg(vertices: &[i32], edges: &[(i32, i32)]) -> UGraph<i32> {

@@ -300,7 +300,11 @@ fn java_random_graph_workload_returns_distinct_ordered_valid_walks() {
             .unwrap()
             .take(10)
             .collect();
-        assert!(paths.windows(2).all(|pair| pair[0].weight() <= pair[1].weight()));
+        assert!(
+            paths
+                .windows(2)
+                .all(|pair| pair[0].weight() <= pair[1].weight())
+        );
         assert!(paths.iter().all(|path| path.is_valid(&graph)));
         assert_eq!(
             paths

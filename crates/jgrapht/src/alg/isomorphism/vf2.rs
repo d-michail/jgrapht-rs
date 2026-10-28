@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::IsomorphismInspector;
 use super::mapping::{IsomorphicGraphMapping, NULL_NODE};
 use super::ordering::GraphOrdering;
 use crate::error::{GraphError, Result};
 use crate::graph::Graph;
+use crate::graph::IncidenceGraph;
 use std::cmp::Ordering;
 
 /// Compares vertices of the two graphs; vertices may be matched only when it returns `Equal`.
@@ -524,7 +524,9 @@ impl<'a, 'g, G: IncidenceGraph> Iterator for VF2MappingIterator<'a, 'g, G> {
 pub(super) fn check_types<G: IncidenceGraph>(g1: &G, g2: &G) -> Result<()> {
     let (t1, t2) = (g1.graph_type(), g2.graph_type());
     if t1.multiple_edges || t2.multiple_edges {
-        return Err(GraphError::InvalidGraph(crate::GraphProperty::NoParallelEdges));
+        return Err(GraphError::InvalidGraph(
+            crate::GraphProperty::NoParallelEdges,
+        ));
     }
     if t1.mixed || t2.mixed {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::NotMixed));

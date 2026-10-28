@@ -18,7 +18,10 @@ use jgrapht::graph::{Graph, GraphExt, IncidenceGraph, IncomingGraph, OutgoingGra
 
 #[test]
 fn full_fixture_supports_every_query() {
-    let g = FullFixture::new(&[0, 1, 2, 3], &[(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0), (0, 2, 10.0)]);
+    let g = FullFixture::new(
+        &[0, 1, 2, 3],
+        &[(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0), (0, 2, 10.0)],
+    );
     assert_eq!(IncidenceGraph::edges_of(&g, &2).count(), 3);
     assert_eq!(IncomingGraph::in_edges_of(&g, &2).count(), 2);
     assert_eq!(OutgoingGraph::out_edges_of(&g, &2).count(), 1);

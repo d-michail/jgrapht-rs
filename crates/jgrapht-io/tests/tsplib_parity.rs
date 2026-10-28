@@ -136,10 +136,22 @@ fn graph_with_node_coord_section() {
     assert_eq!(
         metadata.nodes.values().cloned().collect::<Vec<_>>(),
         vec![
-            TsplibNode { number: 1, coordinates: vec![10.2, 15.0] },
-            TsplibNode { number: 2, coordinates: vec![14.2, 15.0] },
-            TsplibNode { number: 3, coordinates: vec![14.8, 20.0] },
-            TsplibNode { number: 4, coordinates: vec![10.8, 20.0] },
+            TsplibNode {
+                number: 1,
+                coordinates: vec![10.2, 15.0]
+            },
+            TsplibNode {
+                number: 2,
+                coordinates: vec![14.2, 15.0]
+            },
+            TsplibNode {
+                number: 3,
+                coordinates: vec![14.8, 20.0]
+            },
+            TsplibNode {
+                number: 4,
+                coordinates: vec![10.8, 20.0]
+            },
         ]
     );
 }
@@ -169,7 +181,10 @@ fn standalone_tour_section() {
     let input = "TYPE : TSP\nDIMENSION : 4\nEDGE_WEIGHT_TYPE : EUC_2D\n\
                  TOUR_SECTION\n9\n4\n7\n2\n-1\nEOF\n";
     let mut importer = TsplibImporter::new();
-    let tour = importer.import_tour(&reference, input.as_bytes()).unwrap().unwrap();
+    let tour = importer
+        .import_tour(&reference, input.as_bytes())
+        .unwrap()
+        .unwrap();
     let numbers: Vec<_> = tour
         .iter()
         .map(|vertex| reference.nodes[vertex].number)
@@ -215,7 +230,12 @@ fn edge_weight_type_ceil_2d() {
 
 #[test]
 fn edge_weight_type_geo() {
-    assert_distances(&points_2d("GEO"), [446., 727., 549., 541., 680., 446.], true, true);
+    assert_distances(
+        &points_2d("GEO"),
+        [446., 727., 549., 541., 680., 446.],
+        true,
+        true,
+    );
 }
 
 #[test]

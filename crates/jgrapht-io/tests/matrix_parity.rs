@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use jgrapht::{DefaultEdge, DiGraph, GraphMut, GraphMutExt, UGraph};
-use jgrapht_io::matrix::{MatrixExporter, MatrixFormat};
 use jgrapht_io::GraphExporter;
+use jgrapht_io::matrix::{MatrixExporter, MatrixFormat};
 
 const LAPLACIAN: &str = "1 1 2\n1 2 -1\n1 3 -1\n2 2 1\n2 1 -1\n3 3 1\n3 1 -1\n";
 const NORMALIZED_LAPLACIAN: &str = "1 1 1\n1 2 -0.7071067811865475\n1 3 -0.7071067811865475\n2 2 1\n2 1 -0.7071067811865475\n3 3 1\n3 1 -0.7071067811865475\n";
@@ -34,10 +34,7 @@ fn laplacian() {
     assert_eq!(exporter.export_to_string(&graph).unwrap(), LAPLACIAN);
 
     exporter.set_format(MatrixFormat::SparseNormalizedLaplacian);
-    assert_eq!(
-        exporter.format(),
-        MatrixFormat::SparseNormalizedLaplacian
-    );
+    assert_eq!(exporter.format(), MatrixFormat::SparseNormalizedLaplacian);
     assert_eq!(
         exporter.export_to_string(&graph).unwrap(),
         NORMALIZED_LAPLACIAN

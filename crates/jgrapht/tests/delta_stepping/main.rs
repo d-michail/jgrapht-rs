@@ -125,7 +125,14 @@ fn test_comparable_and_non_comparable_vertices() {
 #[test]
 fn test_get_path() {
     let g = simple_graph();
-    let vertices = |t| delta_stepping(&g).path(&S, &t).unwrap().unwrap().vertex_list().to_vec();
+    let vertices = |t| {
+        delta_stepping(&g)
+            .path(&S, &t)
+            .unwrap()
+            .unwrap()
+            .vertex_list()
+            .to_vec()
+    };
     assert_eq!(vertices(S), [S]);
     assert_eq!(vertices(T), [S, Y, T]);
     assert_eq!(vertices(X), [S, Y, T, X]);

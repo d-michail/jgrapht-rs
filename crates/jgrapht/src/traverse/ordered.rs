@@ -17,9 +17,9 @@
 //! Events: `vertex_traversed` fires when the next vertex is determined (`has_next`) and
 //! `vertex_finished` when it is handed out (`next`).
 
-use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use super::events::{TraversalListener, TraversalListeners};
 use crate::graph::{DirectedGraph, Graph, GraphExt, UndirectedGraph};
+use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::util::java::JavaPriorityQueue;
 use crate::{GraphError, Result};
 use indexmap::{IndexMap, IndexSet};
@@ -143,7 +143,9 @@ impl<'g, G: IncidenceGraph + 'g> TopologicalAdvance<'g, G> {
     }
 }
 
-impl<'g, G: IncidenceGraph + 'g + OutgoingGraph> Advance<'g, G::Vertex> for TopologicalAdvance<'g, G> {
+impl<'g, G: IncidenceGraph + 'g + OutgoingGraph> Advance<'g, G::Vertex>
+    for TopologicalAdvance<'g, G>
+{
     type Output = Result<&'g G::Vertex>;
     fn output(item: Result<&'g G::Vertex>) -> Self::Output {
         item
@@ -188,7 +190,9 @@ impl<'g, G: IncidenceGraph + 'g + OutgoingGraph> Advance<'g, G::Vertex> for Topo
 /// `Err(GraphError::InvalidGraph(GraphProperty::Acyclic))` and then ends. Collect with `collect::<Result<Vec<_>>>()`.
 pub type TopologicalOrderIterator<'g, G> = Ordered<'g, G, TopologicalAdvance<'g, G>>;
 
-impl<'g, G: DirectedGraph + 'g + IncomingGraph + OutgoingGraph + IncidenceGraph> TopologicalOrderIterator<'g, G> {
+impl<'g, G: DirectedGraph + 'g + IncomingGraph + OutgoingGraph + IncidenceGraph>
+    TopologicalOrderIterator<'g, G>
+{
     pub fn new(g: &'g G) -> Result<Self> {
         Self::build(g, Queue::Fifo(VecDeque::new()))
     }
@@ -460,7 +464,9 @@ pub struct DegeneracyAdvance<'g, G: Graph + 'g> {
     min_degree: usize,
 }
 
-impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> Advance<'g, G::Vertex> for DegeneracyAdvance<'g, G> {
+impl<'g, G: IncidenceGraph + 'g + IncidenceGraph> Advance<'g, G::Vertex>
+    for DegeneracyAdvance<'g, G>
+{
     type Output = &'g G::Vertex;
     fn output(item: Result<&'g G::Vertex>) -> Self::Output {
         item.expect("this ordering cannot fail")

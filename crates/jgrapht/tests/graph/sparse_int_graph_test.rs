@@ -225,15 +225,13 @@ fn test_directed() {
 
 #[test]
 fn test_directed_lazy_incoming() {
-    let g = SparseIntDirectedGraph::<LazyIncoming>::from_edges(8, &DIRECTED)
-    .unwrap();
+    let g = SparseIntDirectedGraph::<LazyIncoming>::from_edges(8, &DIRECTED).unwrap();
     check_directed(&g, false);
 }
 
 #[test]
 fn test_directed_lazy_no_incoming() {
-    let g = SparseIntDirectedGraph::<NoIncoming>::from_edges(8, &DIRECTED)
-    .unwrap();
+    let g = SparseIntDirectedGraph::<NoIncoming>::from_edges(8, &DIRECTED).unwrap();
     check_ids(&g, 8, 13);
     for (v, row) in DIRECTED_ROWS.iter().enumerate() {
         assert_eq!(g.out_degree_of(&v), row.2);

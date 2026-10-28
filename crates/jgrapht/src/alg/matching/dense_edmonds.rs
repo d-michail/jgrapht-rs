@@ -12,13 +12,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use super::greedy::GreedyMaximumCardinalityMatching;
 use crate::alg::connectivity::ConnectivityInspector;
 use crate::alg::util::{FixedSizeIntegerQueue, UnionFind};
 use crate::error::Result;
+use crate::graph::IncidenceGraph;
+use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::view::AsSubgraph;
 use indexmap::IndexSet;
@@ -152,7 +152,7 @@ impl SimpleMatching {
 /// - [Java implementation by Keith Schwarz](http://www.keithschwarz.com/interesting/code/?dir=edmonds-matching)
 /// - [C++ implementation Boost library](http://www.boost.org/doc/libs/1_38_0/libs/graph/doc/maximum_matching.html)
 /// - Cook, W.J., Cunningham, W.H., Pulleyblank, W.R., Schrijver, A. Combinatorial Optimization.
-/// Wiley 1997, chapter 5
+///   Wiley 1997, chapter 5
 /// - [Gabow, H.N. Data Structures for Weighted Matching and Extensions to b-matching and f-factors, 2016](https://arxiv.org/pdf/1611.07541.pdf)
 ///
 /// For future reference - A more efficient algorithm than the one implemented in this class exists:
@@ -191,7 +191,9 @@ pub struct DenseEdmondsMaximumCardinalityMatching<'g, G: Graph> {
     w_ancestors: HashSet<usize>,
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> DenseEdmondsMaximumCardinalityMatching<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
+    DenseEdmondsMaximumCardinalityMatching<'g, G>
+{
     /// Uses `GreedyMaximumCardinalityMatching` (unsorted) as the initializer. Fails if the graph is
     /// not undirected.
     pub fn new(graph: &'g G) -> Result<Self> {

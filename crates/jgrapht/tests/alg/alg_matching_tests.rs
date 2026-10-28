@@ -21,9 +21,9 @@
 use indexmap::IndexSet;
 use jgrapht::alg::matching::*;
 use jgrapht::generate::*;
+use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use jgrapht::*;
 use std::collections::{HashMap, HashSet};
 
 type UG = UGraph<i32>;
@@ -596,7 +596,11 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
     }
 
     /// `verifyMatching` of the base class: also certified maximum by `DenseEdmonds`.
-    fn verify<G: jgrapht::UndirectedGraph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(g: &G, m: &M, cardinality: usize) {
+    fn verify<G: jgrapht::UndirectedGraph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(
+        g: &G,
+        m: &M,
+        cardinality: usize,
+    ) {
         verify_matching(g, m, cardinality);
         let mut matcher = DenseEdmondsMaximumCardinalityMatching::new(g).unwrap();
         assert!(matcher.is_maximum_matching(m).unwrap());
@@ -1400,9 +1404,14 @@ mod dense_edmonds_maximum_cardinality_matching_test {
         let vertices = 100;
         for _ in 0..100 {
             let edges = random.random_range(0..max_edges(vertices) / 2);
-            let mut generator =
-                GnmRandomGraphGenerator::new(vertices, edges, StdRng::seed_from_u64(0), false, false)
-                    .unwrap();
+            let mut generator = GnmRandomGraphGenerator::new(
+                vertices,
+                edges,
+                StdRng::seed_from_u64(0),
+                false,
+                false,
+            )
+            .unwrap();
             let mut graph = integer_graph();
             generator.generate_default(&mut graph).unwrap();
             let mut matcher = DenseEdmondsMaximumCardinalityMatching::new(&graph).unwrap();
@@ -1417,7 +1426,8 @@ mod dense_edmonds_maximum_cardinality_matching_test {
         for n in 4..12 {
             for m in 5..max_edges(n) {
                 let mut generator =
-                    GnmRandomGraphGenerator::new(n, m, StdRng::seed_from_u64(17), false, false).unwrap();
+                    GnmRandomGraphGenerator::new(n, m, StdRng::seed_from_u64(17), false, false)
+                        .unwrap();
                 for _ in 0..25 {
                     let mut graph = integer_graph();
                     generator.generate_default(&mut graph).unwrap();
@@ -1548,9 +1558,14 @@ mod sparse_edmonds_maximum_cardinality_matching_test {
         let vertices = 100;
         for _ in 0..100 {
             let edges = random.random_range(0..max_edges(vertices) / 2);
-            let mut generator =
-                GnmRandomGraphGenerator::new(vertices, edges, StdRng::seed_from_u64(0), false, false)
-                    .unwrap();
+            let mut generator = GnmRandomGraphGenerator::new(
+                vertices,
+                edges,
+                StdRng::seed_from_u64(0),
+                false,
+                false,
+            )
+            .unwrap();
             let mut graph = integer_graph();
             generator.generate_default(&mut graph).unwrap();
             sparse_solution(&graph, None);
@@ -1559,7 +1574,8 @@ mod sparse_edmonds_maximum_cardinality_matching_test {
 
     fn barabasi(seed: i64) {
         let mut generator =
-            BarabasiAlbertGraphGenerator::new(6, 6, 250, StdRng::seed_from_u64(seed as u64)).unwrap();
+            BarabasiAlbertGraphGenerator::new(6, 6, 250, StdRng::seed_from_u64(seed as u64))
+                .unwrap();
         let mut graph = integer_graph();
         generator.generate_default(&mut graph).unwrap();
         sparse_solution(&graph, None);
@@ -1584,7 +1600,8 @@ mod sparse_edmonds_maximum_cardinality_matching_test {
         for n in 4..12 {
             for m in 5..max_edges(n) {
                 let mut generator =
-                    GnmRandomGraphGenerator::new(n, m, StdRng::seed_from_u64(19), false, false).unwrap();
+                    GnmRandomGraphGenerator::new(n, m, StdRng::seed_from_u64(19), false, false)
+                        .unwrap();
                 for _ in 0..25 {
                     let mut graph = integer_graph();
                     generator.generate_default(&mut graph).unwrap();

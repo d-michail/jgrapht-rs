@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
 use super::SingleSourcePaths;
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::{GraphError, Result};
@@ -59,7 +59,9 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
             let weight = graph.weight_of(edge);
             weight.is_nan() || weight < 0.0
         }) {
-            return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+            return Err(GraphError::InvalidWeight(
+                crate::WeightProblem::NegativeOrNaN,
+            ));
         }
         Ok(Self {
             graph,

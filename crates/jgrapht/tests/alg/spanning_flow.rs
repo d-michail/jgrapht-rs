@@ -153,7 +153,6 @@ fn max_flow_algorithms() {
     );
 }
 
-
 #[test]
 fn flow_algorithms_agree_randomly() {
     let mut rng = StdRng::seed_from_u64(5);

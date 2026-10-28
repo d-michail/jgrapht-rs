@@ -23,7 +23,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 static VERTEX_COMPARISONS: AtomicUsize = AtomicUsize::new(0);
 
+// `PartialEq` only adds a comparison counter; equality is still `self.0 == other.0`, so it agrees with `Hash`.
 #[derive(Clone, Copy, Debug, Hash)]
+#[allow(clippy::derived_hash_with_manual_eq)]
 struct CountedVertex(usize);
 
 impl PartialEq for CountedVertex {
@@ -67,17 +69,11 @@ where
         [1, 3, 0, 1, 3]
     );
     assert_eq!(
-        graph
-            .in_edges_of(&5)
-            .copied()
-            .collect::<HashSet<_>>(),
+        graph.in_edges_of(&5).copied().collect::<HashSet<_>>(),
         HashSet::from([e55a, e55b])
     );
     assert_eq!(
-        graph
-            .out_edges_of(&5)
-            .copied()
-            .collect::<HashSet<_>>(),
+        graph.out_edges_of(&5).copied().collect::<HashSet<_>>(),
         HashSet::from([e52, e55a, e55b])
     );
     assert_eq!(
@@ -117,24 +113,15 @@ where
     for (index, wanted) in expected.iter().enumerate() {
         let vertex = index + 1;
         assert_eq!(
-            graph
-                .edges_of(&vertex)
-                .copied()
-                .collect::<HashSet<_>>(),
+            graph.edges_of(&vertex).copied().collect::<HashSet<_>>(),
             *wanted
         );
         assert_eq!(
-            graph
-                .in_edges_of(&vertex)
-                .copied()
-                .collect::<HashSet<_>>(),
+            graph.in_edges_of(&vertex).copied().collect::<HashSet<_>>(),
             *wanted
         );
         assert_eq!(
-            graph
-                .out_edges_of(&vertex)
-                .copied()
-                .collect::<HashSet<_>>(),
+            graph.out_edges_of(&vertex).copied().collect::<HashSet<_>>(),
             *wanted
         );
     }

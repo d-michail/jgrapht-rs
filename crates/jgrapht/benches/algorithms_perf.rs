@@ -21,7 +21,9 @@ mod common;
 use common::*;
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use jgrapht::alg::clique::maximal_cliques;
-use jgrapht::alg::flow::{DinicMFImpl, EdmondsKarpMFImpl, MaximumFlowValueAlgorithm, PushRelabelMFImpl};
+use jgrapht::alg::flow::{
+    DinicMFImpl, EdmondsKarpMFImpl, MaximumFlowValueAlgorithm, PushRelabelMFImpl,
+};
 use jgrapht::alg::spanning::{kruskal, prim};
 use jgrapht::*;
 

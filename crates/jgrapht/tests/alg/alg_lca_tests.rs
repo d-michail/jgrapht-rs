@@ -108,7 +108,10 @@ macro_rules! lca_tree_tests {
             use super::*;
 
             /// A solver of another kind, to compare answers with.
-            fn other<G: IncidenceGraph>(g: &G, roots: &[G::Vertex]) -> Result<Boxed<'static, G::Vertex>>
+            fn other<G: IncidenceGraph>(
+                g: &G,
+                roots: &[G::Vertex],
+            ) -> Result<Boxed<'static, G::Vertex>>
             where
                 G::Vertex: 'static,
             {

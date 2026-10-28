@@ -16,10 +16,10 @@
 //! center, periphery, girth, triangle counts. Distances are weighted shortest-path distances
 //! (all `1.0` for unweighted graphs).
 
-use crate::graph::OutgoingGraph;
 use super::shortestpath::{FloydWarshallShortestPaths, ShortestPathAlgorithm};
 use super::util::Indexed;
 use crate::graph::Graph;
+use crate::graph::OutgoingGraph;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 const TOLERANCE: f64 = 1e-9;

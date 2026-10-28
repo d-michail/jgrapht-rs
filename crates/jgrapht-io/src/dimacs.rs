@@ -31,6 +31,7 @@ use std::io::{BufRead, BufReader, Read, Write};
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+
 /// A supported DIMACS challenge dialect.
 pub enum DimacsFormat {
     /// The shortest-path challenge format (`p sp`, with `a` arc records).
@@ -219,6 +220,9 @@ impl EventDrivenImporter for DimacsEventDrivenImporter {
     }
 }
 
+/// A fallible vertex factory, called with the vertex number of the input.
+type VertexFactory<V, Id> = Box<dyn FnMut(Id) -> std::result::Result<V, crate::CallbackError>>;
+
 /// Imports a DIMACS graph into a mutable graph.
 ///
 /// Vertices are created for the one-based identifier range declared by the
@@ -227,7 +231,7 @@ impl EventDrivenImporter for DimacsEventDrivenImporter {
 /// replaced with the configured default weight.
 pub struct DimacsImporter<V> {
     default_weight: f64,
-    vertex_factory: Option<Box<dyn FnMut(usize) -> std::result::Result<V, crate::CallbackError>>>,
+    vertex_factory: Option<VertexFactory<V, usize>>,
 }
 
 impl<V> Default for DimacsImporter<V> {

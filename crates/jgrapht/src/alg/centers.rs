@@ -14,10 +14,10 @@
 
 //! Facility location: k-center.
 
-use crate::graph::UndirectedGraph;
-use crate::graph::OutgoingGraph;
 use super::interfaces::{CentersLocationAlgorithm, CentersSolution};
 use super::util::Indexed;
+use crate::graph::OutgoingGraph;
+use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, props};
 use crate::util::OrderedF64;
 use crate::util::java::RandomSource;
@@ -162,7 +162,11 @@ fn check_graph<G: UndirectedGraph + OutgoingGraph>(graph: &G) -> Result<()> {
 
 impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonHeuristic<V, R> {
     /// Computes the set of $k$ centers by using the Gon heuristic.
-    fn centers<G: OutgoingGraph<Vertex = V> + UndirectedGraph>(&mut self, graph: &G, k: usize) -> Result<CentersSolution<V>> {
+    fn centers<G: OutgoingGraph<Vertex = V> + UndirectedGraph>(
+        &mut self,
+        graph: &G,
+        k: usize,
+    ) -> Result<CentersSolution<V>> {
         check_graph(graph)?;
         let n = graph.vertex_count();
         if n == k {
@@ -257,5 +261,4 @@ impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonH
         }
         Ok(CentersSolution::new(centers, assignment, radius))
     }
-
 }

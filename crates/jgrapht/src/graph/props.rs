@@ -14,11 +14,10 @@
 
 //! Structural predicates (JGraphT's `GraphTests`).
 
-use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use super::{DirectedExt, DirectedGraph, Graph, GraphExt, UndirectedGraph};
+use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
-
 
 /// `Ok(g)` if the graph is weighted, otherwise `InvalidGraph(GraphProperty::Weighted)`.
 pub fn require_weighted<G: Graph>(g: &G) -> Result<&G> {
@@ -181,10 +180,8 @@ pub fn is_tree<G: IncidenceGraph>(g: &G) -> bool {
 
 /// Kahn's algorithm.
 pub fn is_dag<G: DirectedGraph + IncomingGraph + OutgoingGraph>(g: &G) -> bool {
-    let mut indeg: HashMap<&G::Vertex, usize> = g
-        .vertices()
-        .map(|v| (v, g.in_degree_of(v)))
-        .collect();
+    let mut indeg: HashMap<&G::Vertex, usize> =
+        g.vertices().map(|v| (v, g.in_degree_of(v))).collect();
     let mut q: VecDeque<_> = indeg
         .iter()
         .filter(|(_, d)| **d == 0)
@@ -249,9 +246,7 @@ pub fn has_ore_property<G: IncidenceGraph>(g: &G) -> bool {
     let vs: Vec<_> = g.vertices().collect();
     for (i, v) in vs.iter().enumerate() {
         for w in &vs[i + 1..] {
-            if !g.contains_edge_between(v, w)
-                && g.degree_of(v) + g.degree_of(w) < n
-            {
+            if !g.contains_edge_between(v, w) && g.degree_of(v) + g.degree_of(w) < n {
                 return false;
             }
         }

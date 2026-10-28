@@ -12,9 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::detector::simple_cycle_to_graph_path;
 use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
 use crate::graph::UndirectedGraph;
 use crate::graph::props::has_multiple_edges;
 use crate::graph::{Graph, GraphExt};
@@ -79,7 +79,7 @@ impl<E: Clone + Eq + std::hash::Hash> CycleBasis<E> {
 /// discussion of different kinds of cycle bases in graphs see the following paper.
 ///
 /// - Christian Liebchen, and Romeo Rizzi. Classes of Cycle Bases. Discrete Applied Mathematics,
-/// 155(3), 337-355, 2007.
+///   155(3), 337-355, 2007.
 ///
 /// # Rust notes
 ///
@@ -259,7 +259,9 @@ impl<'g, G: IncidenceGraph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, 
     fn get_cycle_basis(&mut self) -> Result<CycleBasis<G::Edge>> {
         let graph = self.graph;
         if has_multiple_edges(graph) {
-            return Err(GraphError::InvalidGraph(crate::GraphProperty::NoParallelEdges));
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::NoParallelEdges,
+            ));
         }
         let weight_of = |e: &G::Edge| graph.weight_of(e);
         let mut used: HashMap<G::Vertex, IndexMap<G::Vertex, G::Edge>> = HashMap::new();

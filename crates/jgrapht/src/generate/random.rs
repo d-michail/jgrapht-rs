@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::structured::Complete;
 use super::{GeneratorResult, GraphGenerator, add_edge, invalid};
 use crate::graph::Graph;
+use crate::graph::IncidenceGraph;
 use crate::util::java::{RandomSource, java_shuffle};
 use crate::util::sampler::AliasMethodSampler;
 use crate::{GraphError, GraphMut, GraphType, Result};

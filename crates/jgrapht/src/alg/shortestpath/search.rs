@@ -14,9 +14,9 @@
 
 //! Heap-driven best-first search shared by Dijkstra, A* and Johnson.
 
-use crate::graph::OutgoingGraph;
 use super::SingleSourcePaths;
-use crate::graph::{GraphExt};
+use crate::graph::GraphExt;
+use crate::graph::OutgoingGraph;
 use crate::util::OrderedF64;
 use crate::{GraphError, Result};
 use rheaps::DecreaseKeyHeap;
@@ -59,7 +59,9 @@ where
         for (e, n) in g.outgoing_of(v) {
             let w = weight(e, v, n);
             if w.is_nan() || w < 0.0 {
-                return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+                return Err(GraphError::InvalidWeight(
+                    crate::WeightProblem::NegativeOrNaN,
+                ));
             }
             let nd = dist[i] + w;
             if nd > radius {

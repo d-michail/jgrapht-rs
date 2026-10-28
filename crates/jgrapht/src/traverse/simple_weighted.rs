@@ -152,16 +152,13 @@ impl<'g, G: OutgoingGraph, R: Rng> Iterator for RandomWalk<'g, G, R> {
             if !options.is_empty() {
                 self.steps_left -= 1;
                 let pick = if self.weighted {
-                    if options.iter().any(|(e, _)| {
-                        g.edge_weight(e)
-                            .is_some_and(|w| w.is_nan() || w < 0.0)
-                    }) {
+                    if options
+                        .iter()
+                        .any(|(e, _)| g.edge_weight(e).is_some_and(|w| w.is_nan() || w < 0.0))
+                    {
                         return Some(Err(GraphError::InvalidWeight(WeightProblem::NegativeOrNaN)));
                     }
-                    let total: f64 = options
-                        .iter()
-                        .map(|(e, _)| g.weight_of(e))
-                        .sum();
+                    let total: f64 = options.iter().map(|(e, _)| g.weight_of(e)).sum();
                     let mut x = self.rng.random::<f64>() * total;
                     options
                         .iter()

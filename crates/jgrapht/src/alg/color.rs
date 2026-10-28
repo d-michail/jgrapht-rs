@@ -14,10 +14,10 @@
 
 //! Vertex colouring heuristics.
 
-use crate::graph::{IncidenceGraph, OutgoingGraph};
 use super::cycle::{ChordalityInspector, IterationOrder};
 use super::util::Indexed;
 use crate::graph::{Graph, GraphExt, UndirectedGraph};
+use crate::graph::{IncidenceGraph, OutgoingGraph};
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
@@ -184,7 +184,6 @@ use crate::util::java::{RandomSource, java_shuffle};
 use crate::{GraphError, Result};
 use std::collections::BTreeSet;
 
-
 /// Colours the vertices in `order` with the smallest colour not used by an already coloured
 /// neighbour (`GreedyColoring.getColoring`).
 fn color_in_order<G: IncidenceGraph>(g: &G, order: &[G::Vertex]) -> Result<Coloring<G::Vertex>> {
@@ -255,7 +254,7 @@ impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for GreedyColoring<'_
 /// following paper for details.
 ///
 /// - D. J. A. Welsh and M. B. Powell. An upper bound for the chromatic number of a graph and its
-/// application to timetabling problems. The Computer Journal, 10(1):85--86, 1967.
+///   application to timetabling problems. The Computer Journal, 10(1):85--86, 1967.
 ///
 /// # Rust notes
 ///
@@ -306,7 +305,7 @@ impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for LargestDegreeFirs
 /// is minimal. See the following paper for details.
 ///
 /// - D. Matula, G. Marble, and J. Isaacson. Graph coloring algorithms in Graph Theory and
-/// Computing. Academic Press, 104--122, 1972.
+///   Computing. Academic Press, 104--122, 1972.
 ///
 /// # Rust notes
 ///
@@ -409,7 +408,7 @@ impl<G: IncidenceGraph, R: RandomSource> VertexColoringAlgorithm<G::Vertex>
 /// w.r.t. the number of used colors. See the following papers for details:
 ///
 /// - D. Brelaz. New methods to color the vertices of a graph. Communications of ACM,
-/// 22(4):251–256, 1979.
+///   22(4):251–256, 1979.
 /// - The smallest hard-to-color graph for algorithm DSATUR. Discrete Mathematics, 236:151--165,
 /// 2001.
 ///
@@ -417,7 +416,7 @@ impl<G: IncidenceGraph, R: RandomSource> VertexColoringAlgorithm<G::Vertex>
 /// possible improvements in the running time.
 ///
 /// - J. S. Turner. Almost all $k$-colorable graphs are easy to color. Journal of Algorithms.
-/// 9(1):63--82, 1988.
+///   9(1):63--82, 1988.
 ///
 /// # Rust notes
 ///

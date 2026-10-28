@@ -69,8 +69,10 @@ impl<'g, G: Graph> Indexed<'g, G> {
                 .edge_endpoints(e)
                 .expect("Graph integrity: every edge has a source and a target");
             let (s, t) = (
-                *idx.get(s).expect("Graph integrity: edge endpoints are vertices"),
-                *idx.get(t).expect("Graph integrity: edge endpoints are vertices"),
+                *idx.get(s)
+                    .expect("Graph integrity: edge endpoints are vertices"),
+                *idx.get(t)
+                    .expect("Graph integrity: edge endpoints are vertices"),
             );
             let k = es.len();
             es.push(e);

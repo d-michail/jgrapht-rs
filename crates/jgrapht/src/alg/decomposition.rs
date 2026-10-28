@@ -14,10 +14,10 @@
 
 //! Tree decompositions via elimination-ordering heuristics.
 
-use crate::graph::UndirectedGraph;
-use crate::graph::IncidenceGraph;
-use crate::graph::capability::OutgoingGraph;
 use super::util::Indexed;
+use crate::graph::IncidenceGraph;
+use crate::graph::UndirectedGraph;
+use crate::graph::capability::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use std::collections::{HashMap, HashSet};
 
@@ -241,8 +241,7 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
                 self.component[u] = Some(c);
                 self.size_subtree[u] = 1;
                 let vertex_u = self.index_list[u].clone();
-                let edges: Vec<G::Edge> =
-                    self.graph.edges_of(&vertex_u).cloned().collect();
+                let edges: Vec<G::Edge> = self.graph.edges_of(&vertex_u).cloned().collect();
                 for edge in &edges {
                     let child = self.opposite(edge, u);
                     if !explored[child] {
@@ -255,8 +254,7 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
                 let mut path_child: Option<usize> = None;
                 let mut path_edge: Option<G::Edge> = None;
                 let vertex_u = self.index_list[u].clone();
-                let edges: Vec<G::Edge> =
-                    self.graph.edges_of(&vertex_u).cloned().collect();
+                let edges: Vec<G::Edge> = self.graph.edges_of(&vertex_u).cloned().collect();
                 for edge in &edges {
                     let child = self.opposite(edge, u);
                     if Some(child) != self.parent[u] {
@@ -635,11 +633,8 @@ where
                 if matched.contains(e) {
                     h.add_vertex(e.clone());
                 } else {
-                    let find = |v: &G::Vertex| {
-                        g.edges_of(v)
-                            .find(|o| matched.contains(*o))
-                            .cloned()
-                    };
+                    let find =
+                        |v: &G::Vertex| g.edges_of(v).find(|o| matched.contains(*o)).cloned();
                     let (e1, e2) = (find(v1), find(v2));
                     if let (Some(e1), Some(e2)) = (e1, e2) {
                         h.add_vertex(e1.clone());

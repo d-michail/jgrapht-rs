@@ -12,9 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::base::{DEFAULT_EPSILON, Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::ToleranceDoubleComparator;
 use indexmap::IndexSet;
@@ -34,7 +34,7 @@ pub const DEFAULT_USE_HEURISTICS: bool = true;
 /// The algorithm is due to Drake and Hougardy, described in detail in the following paper:
 ///
 /// - D.E. Drake, S. Hougardy, A Simple Approximation Algorithm for the Weighted Matching Problem,
-/// Information Processing Letters 85, 211-213, 2003.
+///   Information Processing Letters 85, 211-213, 2003.
 ///
 /// This particular implementation uses by default two additional heuristics discussed by the authors
 /// which also take linear time but improve the quality of the matchings. These heuristics can be
@@ -45,7 +45,7 @@ pub const DEFAULT_USE_HEURISTICS: bool = true;
 /// For a discussion on engineering approximate weighted matching algorithms see the following paper:
 ///
 /// - Jens Maue and Peter Sanders. Engineering algorithms for approximate weighted matching.
-/// International Workshop on Experimental and Efficient Algorithms, Springer, 2007.
+///   International Workshop on Experimental and Efficient Algorithms, Springer, 2007.
 ///
 /// # Rust notes
 ///
@@ -230,7 +230,9 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
     }
 }
 
-impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for PathGrowingWeightedMatching<'_, G> {
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
+    for PathGrowingWeightedMatching<'_, G>
+{
     /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum weighted matching.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         if self.use_heuristics {

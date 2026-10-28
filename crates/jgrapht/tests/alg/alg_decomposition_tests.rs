@@ -117,7 +117,7 @@ mod dulmage_mendelsohn_decomposition_test {
 
     #[test]
     fn test_generated_graph() {
-        let mut random = StdRng::seed_from_u64((1) as u64);
+        let mut random = StdRng::seed_from_u64(1_u64);
         for vertices in 20..120 {
             let edges = random.random_range(0..max_edges(vertices) / 2);
             let imbalance = random_imbalance(&mut random, vertices);
@@ -125,7 +125,7 @@ mod dulmage_mendelsohn_decomposition_test {
                 (vertices - imbalance) as usize,
                 (vertices + imbalance) as usize,
                 edges as usize,
-                StdRng::seed_from_u64((0) as u64),
+                StdRng::seed_from_u64(0_u64),
             );
             let mut graph = UGraph::<i32>::simple().with_vertex_factory(|i| i as i32);
             let (a, b) = generator.generate_partitions(&mut graph).unwrap();
@@ -206,7 +206,7 @@ mod heavy_path_decomposition_test {
             let root_ref = graph.vertices().find(|v| *v == root).unwrap();
             let mut bfs = BreadthFirstIterator::from_start(graph, root_ref).unwrap();
             let mut order = Vec::new();
-            while let Some(v) = bfs.next() {
+            for v in bfs.by_ref() {
                 order.push(v);
             }
             order.reverse();
@@ -337,7 +337,7 @@ mod heavy_path_decomposition_test {
 
     #[test]
     fn test_random_trees() {
-        let mut random = StdRng::seed_from_u64((0x2882) as u64);
+        let mut random = StdRng::seed_from_u64(0x2882_u64);
         for _ in 0..100 {
             let n = 1024 + random.random_range(0..1 << 12) as usize;
             let graph = forest(1, n, random.random::<i64>());
@@ -349,7 +349,7 @@ mod heavy_path_decomposition_test {
 
     #[test]
     fn test_random_forests() {
-        let mut random = StdRng::seed_from_u64((0x1881) as u64);
+        let mut random = StdRng::seed_from_u64(0x1881_u64);
         for _ in 0..1000 {
             let trees = 1 + random.random_range(0..20) as usize;
             let n = 50 + random.random_range(0..1 << 11) as usize;
@@ -368,7 +368,7 @@ mod heavy_path_decomposition_test {
         let graph = forest(
             1,
             1 << 19,
-            StdRng::seed_from_u64((0x118811) as u64).random::<i64>(),
+            StdRng::seed_from_u64(0x118811_u64).random::<i64>(),
         );
         let roots = vec![*graph.vertices().next().unwrap()];
         let d = HeavyPathDecomposition::with_roots(&graph, roots.clone()).unwrap();

@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::ordering::GraphOrdering;
+use crate::graph::IncidenceGraph;
 use indexmap::IndexMap;
 use std::collections::BTreeMap;
 use std::fmt;

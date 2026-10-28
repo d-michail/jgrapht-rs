@@ -335,7 +335,8 @@ fn parse<R: Read>(input: R) -> Result<ParsedDocument> {
     })
 }
 
-type VertexFactory<V> = Box<dyn FnMut(&str, &AttributeMap) -> std::result::Result<V, crate::CallbackError>>;
+type VertexFactory<V> =
+    Box<dyn FnMut(&str, &AttributeMap) -> std::result::Result<V, crate::CallbackError>>;
 type EdgeFactory<E> = Box<dyn FnMut(&AttributeMap) -> E>;
 type GraphAttributeConsumer = Box<dyn FnMut(&str, &Attribute) -> Result<()>>;
 type VertexAttributeConsumer<V> = Box<dyn FnMut(&V, &str, &Attribute) -> Result<()>>;
@@ -912,8 +913,14 @@ where
                 "edge",
                 &format!(
                     "{edge_id}source=\"{}\" target=\"{}\"",
-                    escape_xml(ids.get(source).ok_or_else(crate::exporter::missing_endpoint)?),
-                    escape_xml(ids.get(target).ok_or_else(crate::exporter::missing_endpoint)?)
+                    escape_xml(
+                        ids.get(source)
+                            .ok_or_else(crate::exporter::missing_endpoint)?
+                    ),
+                    escape_xml(
+                        ids.get(target)
+                            .ok_or_else(crate::exporter::missing_endpoint)?
+                    )
                 ),
                 &data,
             )?;

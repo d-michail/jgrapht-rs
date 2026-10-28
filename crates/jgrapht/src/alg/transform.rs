@@ -15,8 +15,8 @@
 //! Graph transformations that build a new graph into a caller-provided target.
 //! (Reversal and undirected views live in [`crate::view`].)
 
-use crate::graph::IncidenceGraph;
 use crate::Result;
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt, GraphMut, GraphMutExt};
 
 /// Complement: same vertices, an edge wherever `g` has none (no loops unless `loops`).

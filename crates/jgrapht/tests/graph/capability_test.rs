@@ -122,9 +122,18 @@ mod base_graph_parity {
                     out_degree += weight;
                 }
             }
-            assert_eq!(sorted(IncidenceGraph::edges_of(g, v).cloned().collect()), sorted(all));
-            assert_eq!(sorted(IncomingGraph::in_edges_of(g, v).cloned().collect()), sorted(ins));
-            assert_eq!(sorted(OutgoingGraph::out_edges_of(g, v).cloned().collect()), sorted(outs));
+            assert_eq!(
+                sorted(IncidenceGraph::edges_of(g, v).cloned().collect()),
+                sorted(all)
+            );
+            assert_eq!(
+                sorted(IncomingGraph::in_edges_of(g, v).cloned().collect()),
+                sorted(ins)
+            );
+            assert_eq!(
+                sorted(OutgoingGraph::out_edges_of(g, v).cloned().collect()),
+                sorted(outs)
+            );
             assert_eq!(IncidenceGraph::degree_of(g, v), degree);
             assert_eq!(IncomingGraph::in_degree_of(g, v), in_degree);
             assert_eq!(OutgoingGraph::out_degree_of(g, v), out_degree);
@@ -191,8 +200,7 @@ mod sparse_type_state {
     use super::{reachable, total_degree};
     use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
     use jgrapht::graph::sparse::{
-        LazyIncoming, NoIncoming, SparseIntDirectedGraph,
-        SparseIntDirectedWeightedGraph,
+        LazyIncoming, NoIncoming, SparseIntDirectedGraph, SparseIntDirectedWeightedGraph,
     };
 
     const EDGES: [(usize, usize); 5] = [(0, 1), (1, 2), (2, 0), (2, 2), (0, 1)];
@@ -316,7 +324,8 @@ mod view_parity {
 
     #[test]
     fn subgraphs_filter_incidence() {
-        for g in [directed()] {
+        {
+            let g = directed();
             check(&AsSubgraph::induced(&g, [0, 1, 2]), 99);
             check(&AsSubgraph::all(&g), 99);
             check(&MaskSubgraph::new(&g, |v: &i32| *v == 1, |_| false), 99);

@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
 use crate::alg::connectivity::KosarajuStrongConnectivityInspector;
 use crate::alg::interfaces::StrongConnectivityAlgorithm;
 use crate::error::{GraphError, Result};
+use crate::graph::OutgoingGraph;
 use crate::graph::{DirectedGraph, Graph, GraphExt};
 use crate::traverse::{Core, CrossComponentIterator, DfsStrategy, Strategy};
 use crate::walk::GraphWalk;

@@ -28,6 +28,7 @@ use std::io::{Read, Write};
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+
 /// A compact graph encoding supported by this module.
 pub enum Graph6Format {
     /// The fixed-length encoding for simple undirected graphs.
@@ -263,6 +264,9 @@ impl EventDrivenImporter for Graph6EventDrivenImporter {
     }
 }
 
+/// A fallible vertex factory, called with the vertex number of the input.
+type VertexFactory<V, Id> = Box<dyn FnMut(Id) -> std::result::Result<V, crate::CallbackError>>;
+
 /// Imports graph6, sparse6, or digraph6 data into a mutable graph.
 ///
 /// Only the first input line is read. The destination graph must support the
@@ -271,7 +275,7 @@ impl EventDrivenImporter for Graph6EventDrivenImporter {
 /// Vertices are obtained from the graph's supplier unless a custom factory is
 /// configured.
 pub struct Graph6Importer<V> {
-    vertex_factory: Option<Box<dyn FnMut(usize) -> std::result::Result<V, crate::CallbackError>>>,
+    vertex_factory: Option<VertexFactory<V, usize>>,
 }
 
 impl<V> Graph6Importer<V> {

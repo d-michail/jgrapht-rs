@@ -40,7 +40,10 @@ fn test_path_between() {
     let (graph, [e12, e13, _, e24, _, e45]) = undirected_fixture();
     let algorithm = DijkstraShortestPath::new(&graph);
 
-    assert_eq!(algorithm.path(&"v1", &"v2").unwrap().unwrap().edge_list(), [e12]);
+    assert_eq!(
+        algorithm.path(&"v1", &"v2").unwrap().unwrap().edge_list(),
+        [e12]
+    );
     assert_eq!(
         algorithm.path(&"v1", &"v4").unwrap().unwrap().edge_list(),
         [e12, e24]
@@ -103,7 +106,10 @@ fn test_shortest_path_tree() {
         ("v4", 3.0),
         ("v5", f64::INFINITY),
     ] {
-        assert_eq!(paths.weight(&vertex), Some(weight).filter(|w: &f64| w.is_finite()));
+        assert_eq!(
+            paths.weight(&vertex),
+            Some(weight).filter(|w: &f64| w.is_finite())
+        );
     }
 
     let p11 = paths.path(&"v1").unwrap();
@@ -140,7 +146,10 @@ fn test_get_path_weight() {
         ("v4", 3.0),
         ("v5", f64::INFINITY),
     ] {
-        assert_eq!(algorithm.path_weight(&"v1", &target).unwrap(), Some(weight).filter(|w: &f64| w.is_finite()));
+        assert_eq!(
+            algorithm.path_weight(&"v1", &target).unwrap(),
+            Some(weight).filter(|w: &f64| w.is_finite())
+        );
     }
 }
 

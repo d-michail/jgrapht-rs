@@ -12,13 +12,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::graph::{IncidenceGraph, OutgoingGraph};
 use jgrapht::alg::shortestpath::{
     CHManyToManyShortestPaths, ContractionHierarchyPrecomputation, DefaultManyToManyShortestPaths,
     Dijkstra, DijkstraManyToManyShortestPaths, DijkstraShortestPath, ManyToManyPaths,
     ShortestPathAlgorithm, SingleSourcePaths,
 };
 use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
+use jgrapht::graph::{IncidenceGraph, OutgoingGraph};
 use jgrapht::util::java::JavaRandom;
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, Result, UGraph};
 use std::cell::Cell;

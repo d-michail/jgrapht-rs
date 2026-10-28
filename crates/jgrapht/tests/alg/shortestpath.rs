@@ -165,7 +165,11 @@ fn bfs_and_astar() {
         .unwrap();
     let h = |a: &usize, b: &usize| ((a / 10).abs_diff(b / 10) + (a % 10).abs_diff(b % 10)) as f64;
     assert_eq!(
-        AStar::new(&grid, h).path(&0, &99).unwrap().unwrap().weight(),
+        AStar::new(&grid, h)
+            .path(&0, &99)
+            .unwrap()
+            .unwrap()
+            .weight(),
         18.0
     );
 }
@@ -187,7 +191,13 @@ fn yen() {
     let ws: Vec<_> = ps.iter().map(|p| p.weight()).collect();
     assert_eq!(ws, [5.0, 7.0, 8.0]);
     assert!(ps.iter().all(|p| p.is_valid(&g)));
-    assert_eq!(YenKShortestPath::new(&g).get_paths(&1, &6, 100).unwrap().len(), 7);
+    assert_eq!(
+        YenKShortestPath::new(&g)
+            .get_paths(&1, &6, 100)
+            .unwrap()
+            .len(),
+        7
+    );
 }
 
 #[test]
@@ -204,7 +214,10 @@ fn algorithms_agree_on_random_graphs() {
             g.set_edge_weight(&e, rng.random_range(0..20) as f64)
                 .unwrap();
         }
-        let fw = FloydWarshallShortestPaths::new(&g).unwrap().all_pairs().clone();
+        let fw = FloydWarshallShortestPaths::new(&g)
+            .unwrap()
+            .all_pairs()
+            .clone();
         let jo = JohnsonShortestPaths::new(&g).unwrap().all_pairs().clone();
         for s in 0..25 {
             let d = Dijkstra::new(&g).single_source(&s).unwrap();
@@ -226,7 +239,10 @@ fn algorithms_agree_on_random_graphs() {
 fn bidirectional_and_delta_stepping() {
     let g = sample();
     let p = BidirectionalDijkstra(&g).path(&1, &5).unwrap().unwrap();
-    assert_eq!((p.weight(), p.vertex_list().to_vec()), (20.0, vec![1, 3, 6, 5]));
+    assert_eq!(
+        (p.weight(), p.vertex_list().to_vec()),
+        (20.0, vec![1, 3, 6, 5])
+    );
     assert!(p.is_valid(&g));
     assert_eq!(BidirectionalDijkstra(&g).path(&5, &1).unwrap(), None);
     assert_eq!(

@@ -35,8 +35,8 @@ use std::collections::{BinaryHeap, HashMap, HashSet};
 /// in detail in the following [paper](https://www.microsoft.com/en-us/research/publication/computing-the-shortest-path-a-search-meets-graph-theory) which also contains a discussion on landmark selection strategies.
 ///
 /// - Andrew Goldberg and Chris Harrelson. Computing the shortest path: A* Search Meets Graph
-/// Theory. In Proceedings of the sixteenth annual ACM-SIAM symposium on Discrete algorithms (SODA'
-/// 05), 156--165, 2005.
+///   Theory. In Proceedings of the sixteenth annual ACM-SIAM symposium on Discrete algorithms (SODA'
+///   05), 156--165, 2005.
 ///
 /// Note that using this heuristic does not require the edge weights to satisfy the
 /// triangle-inequality. The method depends on the triangle inequality with respect to the shortest
@@ -83,7 +83,9 @@ impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
             let weight = graph.weight_of(edge);
             weight.is_nan() || weight < 0.0
         }) {
-            return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+            return Err(GraphError::InvalidWeight(
+                crate::WeightProblem::NegativeOrNaN,
+            ));
         }
 
         let directed = graph.graph_type().directed;

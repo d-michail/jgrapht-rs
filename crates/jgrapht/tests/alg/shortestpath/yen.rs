@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::graph::IncidenceGraph;
 use jgrapht::alg::shortestpath::{YenKShortestPath, YenShortestPathIterator};
+use jgrapht::graph::IncidenceGraph;
 use jgrapht::util::java::JavaRandom;
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, GraphWalk, UGraph};
 use std::collections::HashSet;
@@ -311,8 +311,7 @@ mod yen_shortest_path_iterator_test {
     fn test_pseudograph_3() {
         let mut graph = UGraph::<&str>::multi();
         graph.add_vertices([
-            "19", "1e", "1c", "1b", "1d", "1f", "16", "17", "12", "14", "18", "15",
-            "21",
+            "19", "1e", "1c", "1b", "1d", "1f", "16", "17", "12", "14", "18", "15", "21",
         ]);
         let e1 = graph.add_edge(&"19", &"1e").unwrap().unwrap();
         graph.add_edge(&"19", &"1c").unwrap();
@@ -408,8 +407,9 @@ mod yen_error_reporting {
         ));
         assert!(iterator.next().is_none());
 
-        let collected: jgrapht::Result<Vec<_>> =
-            YenShortestPathIterator::new(&graph, &1, &3).unwrap().collect();
+        let collected: jgrapht::Result<Vec<_>> = YenShortestPathIterator::new(&graph, &1, &3)
+            .unwrap()
+            .collect();
         assert!(collected.is_err());
         assert!(YenKShortestPath::new(&graph).get_paths(&1, &3, 2).is_err());
     }
@@ -447,9 +447,7 @@ mod yen_k_shortest_path_test {
     #[test]
     fn test_cyclic_graph() {
         let graph = directed(CYCLIC_GRAPH_3);
-        let paths = YenKShortestPath::new(&graph)
-            .get_paths(&1, &3, 1)
-            .unwrap();
+        let paths = YenKShortestPath::new(&graph).get_paths(&1, &3, 1).unwrap();
         assert_eq!(weights(&paths), [2.0]);
     }
 
@@ -491,20 +489,24 @@ mod yen_k_shortest_path_test {
             let mut selection_random = JavaRandom::new(13);
             let mut forbidden = HashSet::new();
             while forbidden.len() < 5 {
-                forbidden.insert(edges[selection_random.next_int_bound(edges.len() as i32) as usize]);
+                forbidden
+                    .insert(edges[selection_random.next_int_bound(edges.len() as i32) as usize]);
             }
             let all = YenKShortestPath::new(&graph)
                 .get_paths(&source, &target, usize::MAX)
                 .unwrap();
-            let validator = |_: &GraphWalk<u32, DefaultEdge>, edge: &DefaultEdge| {
-                !forbidden.contains(edge)
-            };
+            let validator =
+                |_: &GraphWalk<u32, DefaultEdge>, edge: &DefaultEdge| !forbidden.contains(edge);
             let validated = YenKShortestPath::with_validator(&graph, validator)
                 .get_paths(&source, &target, usize::MAX)
                 .unwrap();
             let expected: Vec<_> = all
                 .into_iter()
-                .filter(|path| path.edge_list().iter().all(|edge| !forbidden.contains(edge)))
+                .filter(|path| {
+                    path.edge_list()
+                        .iter()
+                        .all(|edge| !forbidden.contains(edge))
+                })
                 .collect();
             assert_eq!(validated, expected);
             assert_eq!(

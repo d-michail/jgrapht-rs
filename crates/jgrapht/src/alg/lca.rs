@@ -123,7 +123,10 @@ struct Forest<V> {
 impl<V: Clone + Eq + Hash> Forest<V> {
     fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, roots: &[V]) -> Result<Self> {
         if roots.is_empty() {
-            return Err(GraphError::InvalidParameter { name: "roots", requirement: crate::ParameterRequirement::NonEmpty });
+            return Err(GraphError::InvalidParameter {
+                name: "roots",
+                requirement: crate::ParameterRequirement::NonEmpty,
+            });
         }
         let vertices: Vec<V> = g.vertices().cloned().collect();
         let index: HashMap<V, usize> = vertices
@@ -158,7 +161,13 @@ impl<V: Clone + Eq + Hash> Forest<V> {
         Ok(f)
     }
 
-    fn dfs<G: Graph<Vertex = V> + OutgoingGraph>(&mut self, g: &G, root: usize, comp: usize, clock: &mut i64) {
+    fn dfs<G: Graph<Vertex = V> + OutgoingGraph>(
+        &mut self,
+        g: &G,
+        root: usize,
+        comp: usize,
+        clock: &mut i64,
+    ) {
         let children_of = |f: &Self, u: usize| -> Vec<usize> {
             let vu = &f.vertices[u];
             g.out_edges_of(vu)
@@ -367,7 +376,10 @@ impl<V: Clone + Eq + Hash> HeavyPathLcaFinder<V> {
     ) -> Result<Self> {
         let roots: Vec<V> = roots.into_iter().collect();
         if roots.is_empty() {
-            return Err(GraphError::InvalidParameter { name: "roots", requirement: crate::ParameterRequirement::NonEmpty });
+            return Err(GraphError::InvalidParameter {
+                name: "roots",
+                requirement: crate::ParameterRequirement::NonEmpty,
+            });
         }
         let d = HeavyPathDecomposition::with_roots(g, roots)?;
         Ok(HeavyPathLcaFinder {
@@ -431,7 +443,10 @@ impl<'g, G: OutgoingGraph> TarjanLcaFinder<'g, G> {
 
     pub fn with_roots(graph: &'g G, roots: Vec<G::Vertex>) -> Result<Self> {
         if roots.is_empty() {
-            return Err(GraphError::InvalidParameter { name: "roots", requirement: crate::ParameterRequirement::NonEmpty });
+            return Err(GraphError::InvalidParameter {
+                name: "roots",
+                requirement: crate::ParameterRequirement::NonEmpty,
+            });
         }
         if roots.iter().any(|r| !graph.contains_vertex(r)) {
             return Err(GraphError::VertexNotFound);
@@ -558,7 +573,9 @@ impl<'g, G: DirectedGraph + IncidenceGraph> NaiveLcaFinder<'g, G> {
     }
 }
 
-impl<G: DirectedGraph + IncidenceGraph> LowestCommonAncestorAlgorithm<G::Vertex> for NaiveLcaFinder<'_, G> {
+impl<G: DirectedGraph + IncidenceGraph> LowestCommonAncestorAlgorithm<G::Vertex>
+    for NaiveLcaFinder<'_, G>
+{
     fn lca(&self, a: &G::Vertex, b: &G::Vertex) -> Result<Option<G::Vertex>> {
         self.check(a, b)?;
         let set = self.lca_set_ordered(a, b)?;

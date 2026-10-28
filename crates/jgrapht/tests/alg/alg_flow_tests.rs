@@ -768,7 +768,10 @@ mod gusfield {
         let mut alg = GusfieldEquivalentFlowTree::new(net).unwrap();
         let tree = alg.equivalent_flow_tree().unwrap();
         assert!(is_tree(&tree));
-        assert_eq!(StoerWagnerMinimumCut::new(net).unwrap().min_cut_weight(), min_weight(&tree));
+        assert_eq!(
+            StoerWagnerMinimumCut::new(net).unwrap().min_cut_weight(),
+            min_weight(&tree)
+        );
         let mut st = PushRelabelMFImpl::new(net).unwrap();
         for i in net.vertices() {
             for j in net.vertices() {

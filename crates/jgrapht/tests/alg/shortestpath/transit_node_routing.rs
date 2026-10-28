@@ -13,13 +13,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use jgrapht::alg::shortestpath::{
-    ContractionHierarchy, ContractionHierarchyPrecomputation, Dijkstra, ShortestPathAlgorithm,
-    TransitNodeRouting, TransitNodeRoutingPrecomputation, TransitNodeRoutingShortestPath,
-    BidirectionalDijkstraShortestPath,
+    BidirectionalDijkstraShortestPath, ContractionHierarchy, ContractionHierarchyPrecomputation,
+    Dijkstra, ShortestPathAlgorithm, TransitNodeRouting, TransitNodeRoutingPrecomputation,
+    TransitNodeRoutingShortestPath,
 };
 use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
 use jgrapht::util::java::JavaRandom;
-use jgrapht::{DiGraph, DefaultEdge, Graph, GraphError, GraphMut, GraphMutExt};
+use jgrapht::{DefaultEdge, DiGraph, Graph, GraphError, GraphMut, GraphMutExt};
 use rand::{SeedableRng, rngs::StdRng};
 use std::collections::HashSet;
 
@@ -70,7 +70,10 @@ mod precomputation {
         let h = hierarchy(&graph);
         assert!(matches!(
             TransitNodeRoutingPrecomputation::new(&h).with_transit_vertex_count(1),
-            Err(GraphError::InvalidParameter { name: "transit_vertex_count", .. })
+            Err(GraphError::InvalidParameter {
+                name: "transit_vertex_count",
+                ..
+            })
         ));
     }
 
@@ -178,7 +181,10 @@ mod precomputation {
 
     /// Checks the number and level of the transit vertices, the sets of the transit paths, the
     /// range of the Voronoi cell ids and the paths of the access vertices.
-    fn assert_correct_tnr(graph: &DiGraph<usize>, routing: &TransitNodeRouting<'_, DiGraph<usize>>) {
+    fn assert_correct_tnr(
+        graph: &DiGraph<usize>,
+        routing: &TransitNodeRouting<'_, DiGraph<usize>>,
+    ) {
         let n = graph.vertex_count();
         let h = routing.contraction_hierarchy();
         // transit vertices
@@ -253,9 +259,15 @@ mod shortest_path {
         let h = hierarchy(&graph);
         let shortest_path = routing_for(&graph, &h, 1);
         let p = shortest_path.path(&1, &2).unwrap().unwrap();
-        assert_eq!((p.vertex_list().to_vec(), p.edge_list().to_vec(), p.weight()), (vec![1, 2], vec![edge1], 1.0));
+        assert_eq!(
+            (p.vertex_list().to_vec(), p.edge_list().to_vec(), p.weight()),
+            (vec![1, 2], vec![edge1], 1.0)
+        );
         let p = shortest_path.path(&2, &1).unwrap().unwrap();
-        assert_eq!((p.vertex_list().to_vec(), p.edge_list().to_vec(), p.weight()), (vec![2, 1], vec![edge3], 1.0));
+        assert_eq!(
+            (p.vertex_list().to_vec(), p.edge_list().to_vec(), p.weight()),
+            (vec![2, 1], vec![edge3], 1.0)
+        );
     }
 
     #[test]
@@ -267,7 +279,11 @@ mod shortest_path {
         let edge3 = graph.add_weighted_edge(&3, &2, 1.0).unwrap().unwrap();
         let h = hierarchy(&graph);
         let sp = routing_for(&graph, &h, 1);
-        let walk = |s, t| sp.path(&s, &t).unwrap().map(|p| (p.vertex_list().to_vec(), p.edge_list().to_vec(), p.weight()));
+        let walk = |s, t| {
+            sp.path(&s, &t)
+                .unwrap()
+                .map(|p| (p.vertex_list().to_vec(), p.edge_list().to_vec(), p.weight()))
+        };
         assert_eq!(walk(1, 2), Some((vec![1, 2], vec![edge1], 1.0)));
         assert_eq!(walk(2, 1), None);
         assert_eq!(walk(2, 3), Some((vec![2, 3], vec![edge2], 2.0)));
@@ -320,8 +336,12 @@ mod java_golden {
     use jgrapht::UGraph;
     use std::collections::BTreeSet;
 
-    fn check<G: Graph<Vertex = usize> + Sync>(graph: &G, expected: &[&str], name: &str, tie_free: bool)
-    where
+    fn check<G: Graph<Vertex = usize> + Sync>(
+        graph: &G,
+        expected: &[&str],
+        name: &str,
+        tie_free: bool,
+    ) where
         G::Edge: Send + Sync,
     {
         let h = ContractionHierarchyPrecomputation::with_random_supplier(graph, 3, || {
@@ -340,7 +360,11 @@ mod java_golden {
         };
         let n = graph.vertex_count();
         let transit: Vec<usize> = routing.transit_vertices().iter().copied().collect();
-        assert_eq!(format!("T {}", set(transit)), expected[0], "{name}: transit");
+        assert_eq!(
+            format!("T {}", set(transit)),
+            expected[0],
+            "{name}: transit"
+        );
         for v in 0..n {
             let id = h.contraction_mapping()[&v];
             let access = |list: &[jgrapht::alg::shortestpath::AccessVertex<usize, _>]| {
@@ -367,7 +391,11 @@ mod java_golden {
         let mut filter = String::from("LF ");
         for s in 0..n {
             for t in 0..n {
-                filter.push(if routing.locality_filter().is_local(&s, &t) { '1' } else { '0' });
+                filter.push(if routing.locality_filter().is_local(&s, &t) {
+                    '1'
+                } else {
+                    '0'
+                });
             }
         }
         assert_eq!(filter, expected[1 + n], "{name}: locality filter");
@@ -393,7 +421,11 @@ mod java_golden {
             let edges: Vec<(usize, usize, f64)> = (0..m)
                 .map(|_| {
                     let t: Vec<_> = lines.next().unwrap().split(' ').collect();
-                    (t[0].parse().unwrap(), t[1].parse().unwrap(), t[2].parse().unwrap())
+                    (
+                        t[0].parse().unwrap(),
+                        t[1].parse().unwrap(),
+                        t[2].parse().unwrap(),
+                    )
                 })
                 .collect();
             let (_, expected) = blocks.iter().find(|(name, _)| *name == h[1]).unwrap();

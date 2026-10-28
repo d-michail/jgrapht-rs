@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::IncidenceGraph;
 use super::base::{DEFAULT_EPSILON, Matching, MatchingAlgorithm};
 use crate::error::Result;
+use crate::graph::IncidenceGraph;
+use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::ToleranceDoubleComparator;
 use indexmap::IndexSet;
@@ -54,7 +54,9 @@ impl<'g, G: UndirectedGraph> GreedyMaximumCardinalityMatching<'g, G> {
     }
 }
 
-impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumCardinalityMatching<'_, G> {
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
+    for GreedyMaximumCardinalityMatching<'_, G>
+{
     /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum cardinality matching.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
@@ -127,9 +129,9 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyMaximumC
 /// arbitrary graphs see:
 ///
 /// - R. Preis, Linear Time $\frac{1}{2}$-Approximation Algorithm for Maximum Weighted Matching in
-/// General Graphs. Symposium on Theoretical Aspects of Computer Science, 259-269, 1999.
+///   General Graphs. Symposium on Theoretical Aspects of Computer Science, 259-269, 1999.
 /// - D.E. Drake, S. Hougardy, A Simple Approximation Algorithm for the Weighted Matching Problem,
-/// Information Processing Letters 85, 211-213, 2003.
+///   Information Processing Letters 85, 211-213, 2003.
 ///
 /// # Rust notes
 ///

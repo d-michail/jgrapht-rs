@@ -14,10 +14,10 @@
 
 //! Layout algorithms that write vertex positions into a [`LayoutModel2D`].
 
-use crate::graph::IncidenceGraph;
 use super::model::{Box2D, LayoutModel2D, Point2D};
 use crate::alg::interfaces::PartitioningAlgorithm;
 use crate::alg::partition::BipartitePartitioning;
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::ToleranceDoubleComparator;
 use crate::util::java::{JavaRandom, RandomSource};
@@ -327,7 +327,10 @@ impl<V> TwoLayeredBipartiteLayout2D<V> {
 impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
     /// Compute the vertex partitions.
     #[allow(clippy::type_complexity)]
-    fn compute_partitions<G: Graph<Vertex = V> + IncidenceGraph>(&self, graph: &G) -> Result<(Vec<V>, Vec<V>)> {
+    fn compute_partitions<G: Graph<Vertex = V> + IncidenceGraph>(
+        &self,
+        graph: &G,
+    ) -> Result<(Vec<V>, Vec<V>)> {
         let (mut left, mut right): (Vec<V>, Vec<V>) = (Vec::new(), Vec::new());
         if let Some(partition) = &self.partition {
             for v in graph.vertices() {

@@ -12,14 +12,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::util::heap::JavaPairingHeap;
-use rheaps::{AddressableHeap, DecreaseKeyHeap};
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
+use rheaps::{AddressableHeap, DecreaseKeyHeap};
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 
@@ -156,7 +156,9 @@ pub struct BidirectionalAStarShortestPath<'g, G, F> {
     heuristic: F,
 }
 
-impl<'g, G: IncidenceGraph, F: Fn(&G::Vertex, &G::Vertex) -> f64> BidirectionalAStarShortestPath<'g, G, F> {
+impl<'g, G: IncidenceGraph, F: Fn(&G::Vertex, &G::Vertex) -> f64>
+    BidirectionalAStarShortestPath<'g, G, F>
+{
     pub fn new(graph: &'g G, heuristic: F) -> Self {
         Self { graph, heuristic }
     }
@@ -307,7 +309,9 @@ where
             }
             let edge_weight = graph.weight_of(edge);
             if edge_weight.is_nan() || edge_weight < 0.0 {
-                return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+                return Err(GraphError::InvalidWeight(
+                    crate::WeightProblem::NegativeOrNaN,
+                ));
             }
             let candidate = vertex_score + edge_weight;
             let estimate = if scan_forward {
@@ -467,7 +471,9 @@ impl<G: IncidenceGraph> BidirectionalDijkstra<'_, G> {
             for (e, u) in edges {
                 let weight = g.weight_of(e);
                 if weight.is_nan() || weight < 0.0 {
-                    return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+                    return Err(GraphError::InvalidWeight(
+                        crate::WeightProblem::NegativeOrNaN,
+                    ));
                 }
                 sides[current].update_distance(u, Some((e, v)), distance + weight);
                 // check path with u's distance from the other frontier

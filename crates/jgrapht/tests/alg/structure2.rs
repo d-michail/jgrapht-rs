@@ -117,8 +117,14 @@ fn spanner_stretch() {
         let kept = greedy_spanner(&g, k).unwrap();
         let sub = AsSubgraph::with_edges(&g, g.vertices().cloned(), kept.iter().cloned());
         let (full, sp) = (
-            FloydWarshallShortestPaths::new(&g).unwrap().all_pairs().clone(),
-            FloydWarshallShortestPaths::new(&sub).unwrap().all_pairs().clone(),
+            FloydWarshallShortestPaths::new(&g)
+                .unwrap()
+                .all_pairs()
+                .clone(),
+            FloydWarshallShortestPaths::new(&sub)
+                .unwrap()
+                .all_pairs()
+                .clone(),
         );
         for a in 0..14 {
             for b in 0..14 {
@@ -180,7 +186,10 @@ fn k_center_is_two_approximation() {
         let k = 3;
         let (centers, r) = greedy_k_center(&g, k, true).unwrap();
         assert_eq!(centers.len(), k);
-        let all = FloydWarshallShortestPaths::new(&g).unwrap().all_pairs().clone();
+        let all = FloydWarshallShortestPaths::new(&g)
+            .unwrap()
+            .all_pairs()
+            .clone();
         let radius = |cs: &[usize]| {
             (0..10)
                 .map(|v| {

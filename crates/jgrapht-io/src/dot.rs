@@ -855,9 +855,11 @@ where
     writeln!(
         output,
         "{indent}{}{}{}{};",
-        ids.get(source).ok_or_else(crate::exporter::missing_endpoint)?,
+        ids.get(source)
+            .ok_or_else(crate::exporter::missing_endpoint)?,
         connector,
-        ids.get(target).ok_or_else(crate::exporter::missing_endpoint)?,
+        ids.get(target)
+            .ok_or_else(crate::exporter::missing_endpoint)?,
         base.edge_attributes(edge)
             .map(render_attributes)
             .unwrap_or_default()

@@ -34,7 +34,7 @@ static RANDOM: Mutex<Option<StdRng>> = Mutex::new(None);
 fn random_int(bound: i32) -> i32 {
     let mut guard = RANDOM.lock().unwrap();
     guard
-        .get_or_insert_with(|| StdRng::seed_from_u64((0) as u64))
+        .get_or_insert_with(|| StdRng::seed_from_u64(0_u64))
         .random_range(0..bound)
 }
 

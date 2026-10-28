@@ -89,7 +89,10 @@ fn core_and_clustering() {
 fn metrics() {
     let path = build(UGraph::<usize>::simple(), Linear(5));
     let measurer = GraphMeasurer::new(&path).unwrap();
-    assert_eq!((measurer.diameter(), measurer.radius()), (Some(4.0), Some(2.0)));
+    assert_eq!(
+        (measurer.diameter(), measurer.radius()),
+        (Some(4.0), Some(2.0))
+    );
     assert_eq!(measurer.graph_center(), [2]);
     let mut p = measurer.graph_periphery();
     p.sort();

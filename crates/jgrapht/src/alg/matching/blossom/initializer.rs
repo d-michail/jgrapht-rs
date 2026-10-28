@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::GraphExt;
 use super::options::{BlossomVOptions, InitializationType};
 use super::state::{BlossomVState, BlossomVStatistics};
 use super::types::{BlossomArena, BlossomHeap, EdgeId, Label, NodeId};
 use crate::error::{GraphError, Result};
 use crate::graph::Graph;
+use crate::graph::GraphExt;
 use crate::util::OrderedF64;
 use std::collections::HashMap;
 
@@ -58,9 +58,9 @@ enum FractionalAction {
 /// - Minimize the $sum_{e\in E}x_e\times c_e$ subject to:
 /// - For all nodes: $\sum_{e is incident to v}x_e = 1$
 /// - For all edges: $x_e \ge 0$ </oi> **Note:** for an optimal solution in general graphs
-/// we have to require the variables $x_e$ to be $0$ or $1$. For more information on this type of
-/// initialization, see: *David Applegate and William J. Cook. \Solving Large-Scale Matching
-/// Problems". In: Network Flows And Matching. 1991.*
+///   we have to require the variables $x_e$ to be $0$ or $1$. For more information on this type of
+///   initialization, see: *David Applegate and William J. Cook. \Solving Large-Scale Matching
+///   Problems". In: Network Flows And Matching. 1991.*
 pub(crate) struct BlossomVInitializer<'g, G: Graph> {
     graph: &'g G,
     weight_scale: f64,
@@ -666,8 +666,7 @@ impl<'g, G: Graph> BlossomVInitializer<'g, G> {
             }
 
             self.update_fractional_duals(state, &mut heap, tree_root, branch_eps);
-            let edge = critical_edge
-                .ok_or(GraphError::Infeasible)?;
+            let edge = critical_edge.ok_or(GraphError::Infeasible)?;
             let from = state.arena.edges[edge].head[1 - critical_direction]
                 .expect("critical edge tree endpoint");
             let to = state.arena.edges[edge].head[critical_direction]

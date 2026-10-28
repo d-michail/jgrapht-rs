@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
-use crate::graph::{GraphExt};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 

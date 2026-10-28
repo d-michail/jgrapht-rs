@@ -42,8 +42,8 @@ pub mod walk;
 pub use error::{GraphError, GraphProperty, ParameterRequirement, Result, WeightProblem};
 pub use graph::{
     BaseGraph, DefaultEdge, DiGraph, DirectedGraph, FastutilMapGraph, FastutilMapIntVertexGraph,
-    Graph, GraphExt, GraphMut, GraphMutExt, IncidenceGraph, IncomingGraph, OutgoingGraph, UGraph, UndirectedGraph, graph_equals, graph_hash,
-    graph_to_string,
+    Graph, GraphExt, GraphMut, GraphMutExt, IncidenceGraph, IncomingGraph, OutgoingGraph, UGraph,
+    UndirectedGraph, graph_equals, graph_hash, graph_to_string,
 };
 pub use graph_type::GraphType;
 pub use view::{

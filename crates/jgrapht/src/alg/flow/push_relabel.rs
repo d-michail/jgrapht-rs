@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::DEFAULT_EPSILON;
 use super::base::{FlowNet, flow_algorithm_api};
 use crate::error::Result;
+use crate::graph::IncidenceGraph;
 use crate::util::ToleranceDoubleComparator;
 use std::collections::VecDeque;
 

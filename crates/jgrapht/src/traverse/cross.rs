@@ -15,8 +15,8 @@
 //! The cross-component traversal engine and the BFS / DFS / closest-first strategies on top of
 //! it (JGraphT's `CrossComponentIterator` family).
 
-use crate::graph::OutgoingGraph;
 use super::events::{TraversalListener, TraversalListeners};
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::{GraphError, Result};
@@ -95,7 +95,9 @@ pub struct CrossComponentIterator<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>>
     failed: bool,
 }
 
-impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>> CrossComponentIterator<'g, G, S> {
+impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>>
+    CrossComponentIterator<'g, G, S>
+{
     /// `starts == None` means "whole graph" (cross-component traversal).
     pub fn with_strategy(
         g: &'g G,
@@ -523,8 +525,9 @@ where
     ) -> Option<f64> {
         let w = c.g.weight_of(e);
         if w.is_nan() || w < 0.0 {
-            self.error
-                .get_or_insert(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+            self.error.get_or_insert(GraphError::InvalidWeight(
+                crate::WeightProblem::NegativeOrNaN,
+            ));
             return None;
         }
         let other = c.g.opposite_vertex(e, v).expect("edge touches vertex");

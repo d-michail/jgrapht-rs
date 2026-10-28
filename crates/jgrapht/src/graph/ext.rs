@@ -82,10 +82,7 @@ pub trait GraphExt: Graph {
     }
 
     /// Vertices reachable over one edge; repeats for parallel edges.
-    fn out_neighbors_of<'a>(
-        &'a self,
-        v: &'a Self::Vertex,
-    ) -> impl Iterator<Item = &'a Self::Vertex>
+    fn out_neighbors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex>
     where
         Self: OutgoingGraph,
     {
@@ -157,10 +154,7 @@ pub trait DirectedExt: DirectedGraph {
     }
 
     /// Predecessors reached by incoming edges.
-    fn predecessors_of<'a>(
-        &'a self,
-        v: &'a Self::Vertex,
-    ) -> impl Iterator<Item = &'a Self::Vertex>
+    fn predecessors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex>
     where
         Self: IncomingGraph,
     {

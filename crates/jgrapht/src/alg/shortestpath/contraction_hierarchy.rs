@@ -18,16 +18,16 @@
 //! shortcut stores the two hierarchy edges it bypasses, which makes query results unpackable into
 //! the original edge and vertex types without requiring a mutable or cloneable graph.
 
-use crate::graph::GraphExt;
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::Graph;
+use crate::graph::GraphExt;
+use crate::util::OrderedF64;
 use crate::util::heap::JavaPairingHeap;
 use crate::util::java::{JavaRandom, RandomSource};
-use crate::util::OrderedF64;
-use indexmap::IndexSet;
-use rheaps::{AddressableHeap, DecreaseKeyHeap};
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
+use indexmap::IndexSet;
+use rheaps::{AddressableHeap, DecreaseKeyHeap};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::Deref;
 use std::sync::Arc;
@@ -383,7 +383,9 @@ impl Core {
             }
             let weight = graph.weight_of(edge);
             if weight.is_nan() || weight < 0.0 {
-                return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+                return Err(GraphError::InvalidWeight(
+                    crate::WeightProblem::NegativeOrNaN,
+                ));
             }
             let index = originals.len();
             originals.push(edge.clone());
@@ -573,7 +575,8 @@ impl Core {
             let source = self.edges[first].source;
             let target = self.edges[second].target;
             let weight = self.edges[first].weight + self.edges[second].weight;
-            let original_edges = self.edges[first].original_edges + self.edges[second].original_edges;
+            let original_edges =
+                self.edges[first].original_edges + self.edges[second].original_edges;
             if let Some(&id) = self.by_endpoints.get(&(source, target)) {
                 // update the already existing edge
                 let edge = &mut self.edges[id];
@@ -706,8 +709,13 @@ impl Core {
         radius: f64,
     ) -> HashMap<usize, f64> {
         let mut heap: JavaPairingHeap<OrderedF64, usize> = JavaPairingHeap::default();
-        let mut seen: HashMap<usize, (f64, <JavaPairingHeap<OrderedF64, usize> as AddressableHeap<OrderedF64, usize>>::Handle)> =
-            HashMap::new();
+        let mut seen: HashMap<
+            usize,
+            (
+                f64,
+                <JavaPairingHeap<OrderedF64, usize> as AddressableHeap<OrderedF64, usize>>::Handle,
+            ),
+        > = HashMap::new();
         let handle = heap.insert(OrderedF64(0.0), source);
         seen.insert(source, (0.0, handle));
 
@@ -789,8 +797,16 @@ impl Core {
                 }
             })
             .collect();
-        let outgoing = self.order.iter().map(|&v| self.outgoing[v].clone()).collect();
-        let incoming = self.order.iter().map(|&v| self.incoming[v].clone()).collect();
+        let outgoing = self
+            .order
+            .iter()
+            .map(|&v| self.outgoing[v].clone())
+            .collect();
+        let incoming = self
+            .order
+            .iter()
+            .map(|&v| self.incoming[v].clone())
+            .collect();
         ContractionHierarchy {
             graph,
             data: Arc::new(HierarchyData {
@@ -977,7 +993,8 @@ impl<'h, 'g, G: Graph> ContractionHierarchyBidirectionalDijkstra<'h, 'g, G> {
                                 continue;
                             }
                             frontier.update_distance(edge.target, Some(e), distance + edge.weight);
-                            let path_distance = distance + edge.weight + other.distance(edge.target);
+                            let path_distance =
+                                distance + edge.weight + other.distance(edge.target);
                             if path_distance < best_path {
                                 best_path = path_distance;
                                 common_vertex = Some(edge.target);
@@ -990,7 +1007,8 @@ impl<'h, 'g, G: Graph> ContractionHierarchyBidirectionalDijkstra<'h, 'g, G> {
                                 continue;
                             }
                             frontier.update_distance(edge.source, Some(e), distance + edge.weight);
-                            let path_distance = distance + edge.weight + other.distance(edge.source);
+                            let path_distance =
+                                distance + edge.weight + other.distance(edge.source);
                             if path_distance < best_path {
                                 best_path = path_distance;
                                 common_vertex = Some(edge.source);
@@ -1163,7 +1181,11 @@ impl<'h, 'g, G: Graph> CHManyToManyShortestPaths<'h, 'g, G> {
         let h = self.hierarchy;
         let sources: HashSet<_> = sources.into_iter().collect();
         let targets: HashSet<_> = targets.into_iter().collect();
-        if sources.iter().chain(&targets).any(|v| !h.graph.contains_vertex(v)) {
+        if sources
+            .iter()
+            .chain(&targets)
+            .any(|v| !h.graph.contains_vertex(v))
+        {
             return Err(GraphError::VertexNotFound);
         }
         let ids = |set: &HashSet<G::Vertex>| {

@@ -14,9 +14,9 @@
 
 //! Vertex and edge scoring: centralities, PageRank, coreness, clustering coefficients.
 
-use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph, UndirectedGraph};
 use super::util::Indexed;
 use crate::graph::Graph;
+use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph, UndirectedGraph};
 use crate::util::OrderedF64;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
@@ -460,7 +460,9 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
         start_vertices: Option<Vec<G::Vertex>>,
     ) -> Result<Self, GraphError> {
         if crate::graph::props::has_multiple_edges(graph) {
-            return Err(GraphError::InvalidGraph(crate::GraphProperty::NoParallelEdges));
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::NoParallelEdges,
+            ));
         }
         Ok(EdgeBetweennessCentrality {
             graph,
@@ -695,7 +697,7 @@ fn all_distances<G: OutgoingGraph>(g: &G, incoming: bool) -> Vec<Vec<f64>> {
 /// [wikipedia](https://en.wikipedia.org/wiki/Closeness_centrality) and
 ///
 /// - Alex Bavelas. Communication patterns in task-oriented groups. J. Acoust. Soc. Am,
-/// 22(6):725–730, 1950.
+///   22(6):725–730, 1950.
 ///
 /// This implementation computes by default the closeness centrality using outgoing paths and
 /// normalizes the scores. This behavior can be adjusted by the constructor arguments.
@@ -724,7 +726,11 @@ impl<V: Eq + std::hash::Hash + Clone> ClosenessCentrality<V> {
         Self::with_options(g, false, true)
     }
 
-    pub fn with_options<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, incoming: bool, normalize: bool) -> Self {
+    pub fn with_options<G: Graph<Vertex = V> + OutgoingGraph>(
+        g: &G,
+        incoming: bool,
+        normalize: bool,
+    ) -> Self {
         let d = all_distances(g, incoming);
         let n = d.len();
         let ix_vertices: Vec<&V> = g.vertices().collect();
@@ -760,9 +766,9 @@ impl<V> VertexScoringAlgorithm<V> for ClosenessCentrality<V> {
 /// For details see the following papers:
 ///
 /// - Yannick Rochat. Closeness centrality extended to unconnected graphs: The harmonic centrality
-/// index. Applications of Social Network Analysis, 2009.
+///   index. Applications of Social Network Analysis, 2009.
 /// - Newman, Mark. 2003. The Structure and Function of Complex Networks. SIAM Review, 45(mars),
-/// 167–256.
+///   167–256.
 ///
 /// and the [wikipedia](https://en.wikipedia.org/wiki/Closeness_centrality) article.
 ///
@@ -772,7 +778,7 @@ impl<V> VertexScoringAlgorithm<V> for ClosenessCentrality<V> {
 /// Shortest paths are computed either by using Dijkstra's algorithm or Floyd-Warshall depending on
 /// whether the graph has edges with negative edge weights. Thus, the running time is either $O(n (m
 /// + n \log n))$ or $O(n^3)$ respectively, where $n$ is the number of vertices and $m$ the number of
-/// edges of the graph.
+///   edges of the graph.
 ///
 /// # Rust notes
 ///
@@ -789,7 +795,11 @@ impl<V: Eq + std::hash::Hash + Clone> HarmonicCentrality<V> {
         Self::with_options(g, false, true)
     }
 
-    pub fn with_options<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, incoming: bool, normalize: bool) -> Self {
+    pub fn with_options<G: Graph<Vertex = V> + OutgoingGraph>(
+        g: &G,
+        incoming: bool,
+        normalize: bool,
+    ) -> Self {
         let d = all_distances(g, incoming);
         let n = d.len();
         let vs: Vec<&V> = g.vertices().collect();
@@ -831,7 +841,7 @@ impl<V> VertexScoringAlgorithm<V> for HarmonicCentrality<V> {
 /// As described in the following paper
 ///
 /// - D. W. Matula and L. L. Beck. Smallest-last ordering and clustering and graph coloring
-/// algorithms. Journal of the ACM, 30(3):417--427, 1983.
+///   algorithms. Journal of the ACM, 30(3):417--427, 1983.
 ///
 /// it is possible to find a vertex ordering of a finite graph $G$ that optimizes the coloring number
 /// of the ordering, in linear time, by using a bucket queue to repeatedly find and remove the vertex
@@ -991,12 +1001,7 @@ fn incoming_lists<G: IncomingGraph>(g: &G, vs: &[&G::Vertex]) -> Vec<Vec<(usize,
     vs.iter()
         .map(|v| {
             g.in_edges_of(v)
-                .map(|e| {
-                    (
-                        idx[g.opposite_vertex(e, v).unwrap()],
-                        g.weight_of(e),
-                    )
-                })
+                .map(|e| (idx[g.opposite_vertex(e, v).unwrap()], g.weight_of(e)))
                 .collect()
         })
         .collect()
@@ -1236,10 +1241,7 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
         let vs: Vec<&V> = g.vertices().collect();
         let n = vs.len();
         let weighted = g.graph_type().weighted;
-        let out_degree: Vec<usize> = vs
-            .iter()
-            .map(|v| g.out_degree_of(v))
-            .collect();
+        let out_degree: Vec<usize> = vs.iter().map(|v| g.out_degree_of(v)).collect();
         let incoming = incoming_lists(g, &vs);
         let mut weight_sum = vec![0.0; n];
         if weighted {
@@ -1305,7 +1307,7 @@ impl<V> VertexScoringAlgorithm<V> for PageRank<V> {
 /// The algorithm is based on
 ///
 /// - Brandes, Ulrik (2001). "A faster algorithm for betweenness centrality". Journal of
-/// Mathematical Sociology. 25 (2): 163–177.
+///   Mathematical Sociology. 25 (2): 163–177.
 ///
 /// The running time is $O(nm)$ and $O(nm +n^2 \log n)$ for unweighted and weighted graph
 /// respectively, where $n$ is the number of vertices and $m$ the number of edges of the graph. The
@@ -1348,12 +1350,7 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
             .iter()
             .map(|v| {
                 Ok(g.out_edges_of(v)
-                    .map(|e| {
-                        (
-                            idx[g.opposite_vertex(e, v).unwrap()],
-                            g.weight_of(e),
-                        )
-                    })
+                    .map(|e| (idx[g.opposite_vertex(e, v).unwrap()], g.weight_of(e)))
                     .collect())
             })
             .collect::<Result<_, GraphError>>()?;
@@ -1473,7 +1470,7 @@ impl<V> VertexScoringAlgorithm<V> for BetweennessCentrality<V> {
 /// The algorithm is based on
 ///
 /// - Brandes, Ulrik (2001). "A faster algorithm for betweenness centrality". Journal of
-/// Mathematical Sociology. 25 (2): 163–177.
+///   Mathematical Sociology. 25 (2): 163–177.
 ///
 /// The running time is $O(nm)$ and $O(nm +n^2 \log n)$ for unweighted and weighted graph
 /// respectively, where $n$ is the number of vertices and $m$ the number of edges of the graph. The
@@ -1609,12 +1606,7 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
             .iter()
             .map(|v| {
                 Ok(g.out_edges_of(v)
-                    .map(|e| {
-                        (
-                            idx[g.opposite_vertex(e, v).unwrap()],
-                            g.weight_of(e),
-                        )
-                    })
+                    .map(|e| (idx[g.opposite_vertex(e, v).unwrap()], g.weight_of(e)))
                     .collect())
             })
             .collect::<Result<_, GraphError>>()?;

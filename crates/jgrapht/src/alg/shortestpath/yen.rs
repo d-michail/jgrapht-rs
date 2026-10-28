@@ -12,9 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use super::{AllowAllPaths, Dijkstra, PathValidator, ShortestPathAlgorithm};
 use crate::graph::IncidenceGraph;
 use crate::graph::OutgoingGraph;
-use super::{AllowAllPaths, Dijkstra, PathValidator, ShortestPathAlgorithm};
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::view::MaskSubgraph;
@@ -409,7 +409,7 @@ struct BoundedCandidate<V, E> {
 ///   - the banned vertex set (the parent's prefix),
 ///   - the root cost so far,
 ///   - and a *lower bound* on any candidate it could ever produce:
-///       `lowerBound = rootCost + reverseDistanceToSink[spurNode]`.
+///     `lowerBound = rootCost + reverseDistanceToSink[spurNode]`.
 ///
 /// Reverse distances are computed once on the original graph. Because removing vertices/edges can
 /// only increase shortest-path distance, those reverse distances remain valid lower bounds even
@@ -446,23 +446,23 @@ struct BoundedCandidate<V, E> {
 /// **What this class does NOT yet claim**
 ///
 ///   - No proven better worst-case complexity: Yen's $O(k\,n\,(m + n \log n))$ remains the
-///       upper bound. The bounded-pruned layer is an output-sensitive optimisation only.
+///     upper bound. The bounded-pruned layer is an output-sensitive optimisation only.
 ///
 /// **References**
 ///
 ///   - Yen, J. Y. (1971). Finding the k shortest loopless paths in a network.
-///       *Management Science*, 17(11), 712–716. The original loopless k-shortest-paths
-///       algorithm whose spur step is reused here.
+///     *Management Science*, 17(11), 712–716. The original loopless k-shortest-paths
+///     algorithm whose spur step is reused here.
 ///   - Martins, E. Q. V., & Pascoal, M. M. B. (2003). A new implementation of Yen's
-///       ranking loopless paths algorithm. *4OR — Quarterly Journal of the Belgian, French
-///       and Italian Operations Research Societies*, 1(2), 121–133. Practical
-///       implementation notes that informed JGraphT's existing `YenKShortestPath`.
+///     ranking loopless paths algorithm. *4OR — Quarterly Journal of the Belgian, French
+///     and Italian Operations Research Societies*, 1(2), 121–133. Practical
+///     implementation notes that informed JGraphT's existing `YenKShortestPath`.
 ///   - Aljazzar, H., & Leue, S. (2011). K*: A heuristic search algorithm for finding the
-///       k shortest paths. *Artificial Intelligence*, 175(18), 2129–2154. The closest
-///       prior published precedent for using admissible lower bounds (an A*-style heuristic on
-///       the reverse graph) to defer expansion of provably non-improving k-paths candidates.
-///       This class applies the same lower-bound-then-defer idea at the Yen spur-task level
-///       rather than at K*'s edge-expansion level.
+///     k shortest paths. *Artificial Intelligence*, 175(18), 2129–2154. The closest
+///     prior published precedent for using admissible lower bounds (an A*-style heuristic on
+///     the reverse graph) to defer expansion of provably non-improving k-paths candidates.
+///     This class applies the same lower-bound-then-defer idea at the Yen spur-task level
+///     rather than at K*'s edge-expansion level.
 ///
 /// # Rust notes
 ///
@@ -664,7 +664,11 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
     ) -> Result<(Option<GraphWalk<G::Vertex, G::Edge>>, usize)> {
         if source == sink {
             return Ok((
-                Some(GraphWalk::new_unchecked(vec![source.clone()], Vec::new(), 0.0)),
+                Some(GraphWalk::new_unchecked(
+                    vec![source.clone()],
+                    Vec::new(),
+                    0.0,
+                )),
                 0,
             ));
         }
@@ -732,7 +736,10 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
         }
         vertices.reverse();
         edges.reverse();
-        Ok((Some(GraphWalk::new_unchecked(vertices, edges, weight)), expanded))
+        Ok((
+            Some(GraphWalk::new_unchecked(vertices, edges, weight)),
+            expanded,
+        ))
     }
 
     fn compute_reverse_distances(&self, sink: &G::Vertex) -> Result<HashMap<G::Vertex, f64>> {
@@ -817,9 +824,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
                 }
             }
             banned_vertices.insert(path.vertices[spur_index].clone());
-            root_cost += self
-                .graph
-                .weight_of(&path.edges[spur_index]);
+            root_cost += self.graph.weight_of(&path.edges[spur_index]);
         }
         Ok(())
     }

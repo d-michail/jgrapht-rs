@@ -14,11 +14,11 @@
 
 //! Aho–Hopcroft–Ullman tree isomorphism, linear in the number of vertices.
 
-use crate::graph::IncidenceGraph;
-use crate::graph::OutgoingGraph;
 use super::IsomorphismInspector;
 use super::mapping::IsomorphicGraphMapping;
 use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
+use crate::graph::OutgoingGraph;
 use crate::graph::UndirectedGraph;
 use crate::graph::props::is_simple;
 use crate::graph::{Graph, GraphExt};
@@ -222,7 +222,9 @@ impl<'g, G: IncidenceGraph> AHURootedTreeIsomorphismInspector<'g, G> {
     }
 }
 
-impl<'g, G: IncidenceGraph> IsomorphismInspector<'g, G> for AHURootedTreeIsomorphismInspector<'g, G> {
+impl<'g, G: IncidenceGraph> IsomorphismInspector<'g, G>
+    for AHURootedTreeIsomorphismInspector<'g, G>
+{
     /// Get an iterator over all calculated (isomorphic) mappings between two graphs.
     fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_> {
         Box::new(self.mapping().into_iter())
@@ -351,7 +353,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> AHUUnrootedTreeIsomorphismInspecto
     }
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph> IsomorphismInspector<'g, G> for AHUUnrootedTreeIsomorphismInspector<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> IsomorphismInspector<'g, G>
+    for AHUUnrootedTreeIsomorphismInspector<'g, G>
+{
     /// Get an iterator over all calculated (isomorphic) mappings between two graphs.
     fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_> {
         Box::new(self.mapping().into_iter())
@@ -400,7 +404,10 @@ fn validate_forest<G: OutgoingGraph>(forest: &G, roots: &[G::Vertex]) -> Result<
         return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
     }
     if roots.is_empty() {
-        return Err(GraphError::InvalidParameter { name: "roots", requirement: crate::ParameterRequirement::NonEmpty });
+        return Err(GraphError::InvalidParameter {
+            name: "roots",
+            requirement: crate::ParameterRequirement::NonEmpty,
+        });
     }
     if !roots.iter().all(|r| forest.contains_vertex(r)) {
         return Err(GraphError::VertexNotFound);

@@ -292,7 +292,10 @@ mod named_graph_generator_test {
     }
     fn automorphisms(g: &UGraph<usize>, expected: usize) {
         assert_eq!(
-            VF2GraphIsomorphismInspector::new(g, g).unwrap().iter().count(),
+            VF2GraphIsomorphismInspector::new(g, g)
+                .unwrap()
+                .iter()
+                .count(),
             expected
         );
     }

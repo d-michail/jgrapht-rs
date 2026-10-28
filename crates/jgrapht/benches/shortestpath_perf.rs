@@ -25,9 +25,9 @@ use jgrapht::alg::shortestpath::{
     BfsShortestPath, Dijkstra, DijkstraManyToManyShortestPaths, ShortestPathAlgorithm,
 };
 use jgrapht::generate::{GnpRandomGraphGenerator, GraphGenerator};
+use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
-use jgrapht::*;
 
 fn all_pairs_dijkstra(c: &mut Criterion) {
     let n = 250;

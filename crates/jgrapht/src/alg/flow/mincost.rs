@@ -14,9 +14,9 @@
 
 //! Minimum cost flow (`org.jgrapht.alg.flow.mincost`).
 
-use crate::graph::GraphExt;
 use crate::error::{GraphError, Result};
 use crate::graph::Graph;
+use crate::graph::GraphExt;
 use crate::util::OrderedF64;
 use crate::util::heap::{JavaPairingHandle, JavaPairingHeap};
 use rheaps::{AddressableHeap, DecreaseKeyHeap};

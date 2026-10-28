@@ -12,9 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::error::{GraphError, Result};
 use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
-use crate::error::{GraphError, Result};
 use crate::util::ToleranceDoubleComparator;
 use indexmap::IndexSet;
 use std::collections::{HashMap, VecDeque};
@@ -260,7 +260,9 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
 
     /// Checks that `source` and `sink` are distinct vertices of the network.
     pub fn resolve(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<(usize, usize)> {
-        let s = self.vertex_index(source).ok_or(GraphError::VertexNotFound)?;
+        let s = self
+            .vertex_index(source)
+            .ok_or(GraphError::VertexNotFound)?;
         let t = self.vertex_index(sink).ok_or(GraphError::VertexNotFound)?;
         if s == t {
             return Err(GraphError::SourceEqualsSink);
@@ -491,7 +493,9 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
 /// `net: FlowNet` field and a `calculate(&mut self, &V, &V) -> Result<f64>` method.
 macro_rules! flow_algorithm_api {
     ($name:ident, $bound:path) => {
-        impl<'g, G: $bound> $crate::alg::flow::MaximumFlowValueAlgorithm<G::Vertex> for $name<'g, G> {
+        impl<'g, G: $bound> $crate::alg::flow::MaximumFlowValueAlgorithm<G::Vertex>
+            for $name<'g, G>
+        {
             fn maximum_flow_value(
                 &mut self,
                 source: &G::Vertex,

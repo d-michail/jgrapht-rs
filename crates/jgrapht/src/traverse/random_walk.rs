@@ -34,7 +34,9 @@ pub struct RandomWalkVertexIterator<'g, G: Graph + 'g, R> {
     rng: R,
 }
 
-impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource> RandomWalkVertexIterator<'g, G, R> {
+impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource>
+    RandomWalkVertexIterator<'g, G, R>
+{
     pub fn new(
         g: &'g G,
         start: &'g G::Vertex,
@@ -77,11 +79,10 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource> RandomWalkVerte
                 self.next_vertex = None;
                 return;
             }
-            let total = *self.out_weight.entry(cur).or_insert_with(|| {
-                g.out_edges_of(cur)
-                    .map(|e| g.weight_of(e))
-                    .sum()
-            });
+            let total = *self
+                .out_weight
+                .entry(cur)
+                .or_insert_with(|| g.out_edges_of(cur).map(|e| g.weight_of(e)).sum());
             let p = total * self.rng.next_double();
             let mut cumulative = 0.0;
             let mut picked = None;

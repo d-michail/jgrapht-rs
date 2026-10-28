@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
 use super::{BLOSSOM_V_EPSILON, KolmogorovWeightedPerfectMatching};
 use super::{BlossomVOptions, ObjectiveSense};
 use crate::GraphType;
 use crate::alg::matching::{Matching, MatchingAlgorithm};
 use crate::error::Result;
+use crate::graph::UndirectedGraph;
 use crate::graph::{BaseGraph, Graph, GraphExt, GraphMut, UGraph, Undirected};
 use indexmap::IndexSet;
 
@@ -163,7 +163,9 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     }
 }
 
-impl<G: UndirectedGraph> MatchingAlgorithm<G::Vertex, G::Edge> for KolmogorovWeightedMatching<'_, G> {
+impl<G: UndirectedGraph> MatchingAlgorithm<G::Vertex, G::Edge>
+    for KolmogorovWeightedMatching<'_, G>
+{
     /// Computes and returns a matching of maximum or minimum weight in the `initialGraph`
     /// depending on the goal of the algorithm.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {

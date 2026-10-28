@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::{IncomingGraph, OutgoingGraph};
 use crate::graph::{DirectedGraph, Graph, GraphExt};
+use crate::graph::{IncomingGraph, OutgoingGraph};
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -102,7 +102,9 @@ impl<'g, G: DirectedGraph> AllDirectedPaths<'g, G, AllowAllPaths> {
     }
 }
 
-impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>> AllDirectedPaths<'_, G, P> {
+impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>>
+    AllDirectedPaths<'_, G, P>
+{
     /// Configure whether the preprocessing step applies the forward-pruning optimisation.
     ///
     /// When forward pruning is enabled (the default), `getAllPaths` first runs a forward

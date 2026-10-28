@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
+use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt, props};
 use dashu_float::DBig;
 use indexmap::IndexSet;
@@ -294,7 +294,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
         Ok(())
     }
 }
-impl<G: UndirectedGraph + IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for MaximumWeightBipartiteMatching<'_, G> {
+impl<G: UndirectedGraph + IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
+    for MaximumWeightBipartiteMatching<'_, G>
+{
     /// Compute a matching for a given graph.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;

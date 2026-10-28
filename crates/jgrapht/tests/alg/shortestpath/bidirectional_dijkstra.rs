@@ -12,11 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::graph::IncidenceGraph;
 use jgrapht::alg::shortestpath::{
     BidirectionalDijkstraShortestPath, DijkstraShortestPath, ShortestPathAlgorithm,
 };
 use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
+use jgrapht::graph::IncidenceGraph;
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use rand::{Rng, SeedableRng, rngs::StdRng};
 
@@ -50,7 +50,10 @@ fn undirected_graph() -> UGraph<&'static str> {
     graph
 }
 
-fn assert_main_path<G: Graph<Vertex = &'static str, Edge = DefaultEdge> + IncidenceGraph>(graph: &G, radius: f64) {
+fn assert_main_path<G: Graph<Vertex = &'static str, Edge = DefaultEdge> + IncidenceGraph>(
+    graph: &G,
+    radius: f64,
+) {
     let algorithm = BidirectionalDijkstraShortestPath::with_radius(graph, radius).unwrap();
     let path = algorithm.path(&"3", &"4").unwrap().unwrap();
     assert_eq!(path.start_vertex(), Some(&"3"));

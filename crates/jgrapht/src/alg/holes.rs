@@ -18,9 +18,9 @@
 //! ([`WeakChordalityInspector`] and [`BergeGraphInspector`]), so they have the same complexity as
 //! JGraphT's.
 
-use crate::graph::IncidenceGraph;
 use super::cycle::{BergeGraphInspector, WeakChordalityInspector};
 use crate::graph::Graph;
+use crate::graph::IncidenceGraph;
 
 /// A hole or antihole (an induced cycle of length >= 5 in `g` or its complement), as a vertex list
 /// without the repeated closing vertex, if any.

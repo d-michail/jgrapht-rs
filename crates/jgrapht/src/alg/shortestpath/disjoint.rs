@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
 use crate::alg::util::Indexed;
+use crate::graph::OutgoingGraph;
 use crate::graph::{DirectedGraph, props};
 use crate::util::OrderedF64;
 use crate::walk::GraphWalk;
@@ -339,7 +339,7 @@ fn get_paths<G: DirectedGraph + OutgoingGraph>(
 /// For further reference see [Wikipedia page](https://en.wikipedia.org/wiki/Suurballe%27s_algorithm)
 ///
 /// - Suurballe, J. W.; Tarjan, R. E. (1984), A quick method for finding shortest pairs of disjoint
-/// paths.
+///   paths.
 ///
 /// # Rust notes
 ///
@@ -376,7 +376,7 @@ impl<'g, G: DirectedGraph + OutgoingGraph> SuurballeKDisjointShortestPaths<'g, G
 /// - Bhandari, Ramesh 1999. Survivable networks: algorithms for diverse routing. 477. Springer. p.
 /// 46. ISBN 0-7923-8381-8.
 /// - Iqbal, F. and Kuipers, F. A. 2015.
-/// [Disjoint Paths in Networks](https://www.nas.ewi.tudelft.nl/people/Fernando/papers/Wiley.pdf). Wiley Encyclopedia of Electrical and Electronics Engineering. 1–11.
+///   [Disjoint Paths in Networks](https://www.nas.ewi.tudelft.nl/people/Fernando/papers/Wiley.pdf). Wiley Encyclopedia of Electrical and Electronics Engineering. 1–11.
 ///
 /// # Rust notes
 ///

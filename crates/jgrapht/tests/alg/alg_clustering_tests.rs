@@ -334,7 +334,10 @@ macro_rules! with_graph {
 macro_rules! with_ugraph {
     ($case:expr, |$g:ident| $body:block) => {{
         let case: &Case = $case;
-        assert!(!case.directed, "this algorithm only accepts undirected graphs");
+        assert!(
+            !case.directed,
+            "this algorithm only accepts undirected graphs"
+        );
         let ty = GraphType {
             self_loops: case.loops,
             multiple_edges: case.multi,

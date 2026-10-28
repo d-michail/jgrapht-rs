@@ -229,7 +229,9 @@ impl<'h, 'g, G: Graph> TransitNodeRoutingPrecomputation<'h, 'g, G> {
         if count > self.hierarchy.vertices().len() {
             return Err(GraphError::InvalidParameter {
                 name: "transit_vertex_count",
-                requirement: crate::ParameterRequirement::AtMost(self.hierarchy.vertices().len() as u64),
+                requirement: crate::ParameterRequirement::AtMost(
+                    self.hierarchy.vertices().len() as u64
+                ),
             });
         }
         self.transit_vertex_count = count;
@@ -339,7 +341,9 @@ where
         let vertex = h.vertices()[v].vertex.clone();
         let many_to_many = CHManyToManyShortestPaths::new(h);
         let access = |ids: &[usize]| -> Vec<G::Vertex> {
-            ids.iter().map(|&u| h.vertices()[u].vertex.clone()).collect()
+            ids.iter()
+                .map(|&u| h.vertices()[u].vertex.clone())
+                .collect()
         };
 
         // forward access vertices
@@ -464,7 +468,8 @@ fn compute_voronoi_diagram<G: Graph>(
     h: &ContractionHierarchy<'_, G>,
     transit_vertex_ids: &[usize],
 ) -> VoronoiDiagram {
-    type Handle = <JavaPairingHeap<OrderedF64, usize> as AddressableHeap<OrderedF64, usize>>::Handle;
+    type Handle =
+        <JavaPairingHeap<OrderedF64, usize> as AddressableHeap<OrderedF64, usize>>::Handle;
     let n = h.vertices().len();
     let mut cells = vec![NO_VORONOI_CELL; n];
     let mut distance_to_center = vec![f64::INFINITY; n];
@@ -501,7 +506,14 @@ fn compute_voronoi_diagram<G: Graph>(
     };
 
     for &transit in transit_vertex_ids {
-        update_distance(&mut heap, &mut cells, &mut distance_to_center, transit, transit, 0.0);
+        update_distance(
+            &mut heap,
+            &mut cells,
+            &mut distance_to_center,
+            transit,
+            transit,
+            0.0,
+        );
     }
     while let Some((OrderedF64(distance), v)) = heap.pop() {
         // the reversed graph without shortcuts: original edges entering v

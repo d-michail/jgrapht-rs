@@ -16,7 +16,7 @@
 //! first-neighbour-first order). See the sibling modules for the JGraphT-faithful iterators.
 
 use crate::graph::IncidenceGraph;
-use crate::graph::{OutgoingGraph};
+use crate::graph::OutgoingGraph;
 use crate::graph::{DirectedGraph, Graph, GraphExt};
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -236,10 +236,7 @@ pub struct TopologicalOrder<'g, G: DirectedGraph> {
 
 impl<'g, G: DirectedGraph + IncidenceGraph> TopologicalOrder<'g, G> {
     pub fn new(g: &'g G) -> Self {
-        let indeg: HashMap<_, _> = g
-            .vertices()
-            .map(|v| (v, g.in_degree_of(v)))
-            .collect();
+        let indeg: HashMap<_, _> = g.vertices().map(|v| (v, g.in_degree_of(v))).collect();
         let queue = g.vertices().filter(|v| indeg[v] == 0).collect();
         TopologicalOrder {
             g,

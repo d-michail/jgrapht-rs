@@ -58,7 +58,10 @@ fn johnson_class_handles_negative_edges() {
     let graph = weighted_directed(&[(1, 2, 4.0), (1, 3, 5.0), (3, 2, -3.0)]);
     let paths = JohnsonShortestPaths::new(&graph).unwrap();
     assert_eq!(paths.path_weight(&1, &2).unwrap(), Some(2.0));
-    assert_eq!(paths.path(&1, &2).unwrap().unwrap().vertex_list(), [1, 3, 2]);
+    assert_eq!(
+        paths.path(&1, &2).unwrap().unwrap().vertex_list(),
+        [1, 3, 2]
+    );
 }
 
 #[test]

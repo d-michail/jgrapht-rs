@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use crate::error::{GraphError, Result};
+use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use std::collections::{HashMap, HashSet};

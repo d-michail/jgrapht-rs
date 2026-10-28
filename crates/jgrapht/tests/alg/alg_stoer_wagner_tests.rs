@@ -36,7 +36,9 @@ fn set(vs: &[&'static str]) -> IndexSet<&'static str> {
 }
 
 fn assert_one_of(cut: &IndexSet<&'static str>, a: &[&'static str], b: &[&'static str]) {
-    let same = |x: &IndexSet<&str>, y: &IndexSet<&str>| x.len() == y.len() && x.iter().all(|v| y.contains(v));
+    let same = |x: &IndexSet<&str>, y: &IndexSet<&str>| {
+        x.len() == y.len() && x.iter().all(|v| y.contains(v))
+    };
     assert!(same(cut, &set(a)) || same(cut, &set(b)), "{cut:?}");
 }
 
@@ -61,7 +63,13 @@ fn test_min_cut_disconnected() {
         &["v1", "v2", "v3", "v4"],
         &[("v1", "v2", 3.0), ("v1", "v3", 2.0), ("v2", "v3", 1.0)],
     );
-    assert!(StoerWagnerMinimumCut::new(&g).unwrap().min_cut_weight().abs() < 1e-6);
+    assert!(
+        StoerWagnerMinimumCut::new(&g)
+            .unwrap()
+            .min_cut_weight()
+            .abs()
+            < 1e-6
+    );
 }
 
 #[test]
@@ -82,7 +90,11 @@ fn test_min_cut0_weight() {
     );
     let mincut = StoerWagnerMinimumCut::new(&g).unwrap();
     assert!(mincut.min_cut_weight().abs() < 1e-6);
-    assert_one_of(mincut.min_cut(), &["v4", "v5", "v6", "v8"], &["v1", "v2", "v3", "v7"]);
+    assert_one_of(
+        mincut.min_cut(),
+        &["v4", "v5", "v6", "v8"],
+        &["v1", "v2", "v3", "v7"],
+    );
 }
 
 #[test]
@@ -142,7 +154,9 @@ fn test_min_cut_empty() {
     let g = WG::simple();
     assert!(matches!(
         StoerWagnerMinimumCut::new(&g),
-        Err(GraphError::InvalidGraph(jgrapht::GraphProperty::AtLeastTwoVertices))
+        Err(GraphError::InvalidGraph(
+            jgrapht::GraphProperty::AtLeastTwoVertices
+        ))
     ));
 }
 
@@ -152,7 +166,9 @@ fn test_min_cut_singleton() {
     g.add_vertex("v1");
     assert!(matches!(
         StoerWagnerMinimumCut::new(&g),
-        Err(GraphError::InvalidGraph(jgrapht::GraphProperty::AtLeastTwoVertices))
+        Err(GraphError::InvalidGraph(
+            jgrapht::GraphProperty::AtLeastTwoVertices
+        ))
     ));
 }
 

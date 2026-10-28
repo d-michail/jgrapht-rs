@@ -277,7 +277,10 @@ fn wikipedia(solver: Solver) {
     let paths = solve(solver, &graph, 1, 6, 3).unwrap();
     assert_eq!(paths.len(), 2);
     assert!(paths.iter().all(|path| path.weight() == 5.0));
-    let vertices: Vec<_> = paths.iter().map(|path| path.vertex_list().to_vec()).collect();
+    let vertices: Vec<_> = paths
+        .iter()
+        .map(|path| path.vertex_list().to_vec())
+        .collect();
     assert!(vertices.contains(&vec![1, 3, 4, 6]));
     assert!(vertices.contains(&vec![1, 2, 5, 6]));
 }
@@ -341,7 +344,10 @@ fn multi_hits_on_edge(solver: Solver) {
         ],
     );
     let paths = solve(solver, &graph, 1, 2, 3).unwrap();
-    let vertices: Vec<_> = paths.iter().map(|path| path.vertex_list().to_vec()).collect();
+    let vertices: Vec<_> = paths
+        .iter()
+        .map(|path| path.vertex_list().to_vec())
+        .collect();
     assert_eq!(paths.len(), 3);
     assert!(vertices.contains(&vec![1, 3, 7, 2]));
     assert!(vertices.contains(&vec![1, 4, 6, 2]));

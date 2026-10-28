@@ -12,15 +12,18 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::graph::{IncidenceGraph, OutgoingGraph};
 use jgrapht::alg::shortestpath::{
     DijkstraShortestPath, FloydWarshallShortestPaths, ShortestPathAlgorithm,
 };
 use jgrapht::generate::{GnmRandomGraphGenerator, GnpRandomGraphGenerator, GraphGenerator};
+use jgrapht::graph::{IncidenceGraph, OutgoingGraph};
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use rand::{Rng, SeedableRng, rngs::StdRng};
 
-fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph>(graph: &G, check_hops: bool) {
+fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph>(
+    graph: &G,
+    check_hops: bool,
+) {
     let floyd_warshall = FloydWarshallShortestPaths::new(graph).unwrap();
     let dijkstra = DijkstraShortestPath::new(graph);
     for source in graph.vertices() {
@@ -125,7 +128,10 @@ fn pseudograph_test_1() {
     for (source, weights) in expected {
         let paths = floyd_warshall.single_source(&source).unwrap();
         for (target, weight) in (1..=4).zip(weights) {
-            assert_eq!(paths.weight(&target), Some(weight).filter(|w: &f64| w.is_finite()));
+            assert_eq!(
+                paths.weight(&target),
+                Some(weight).filter(|w: &f64| w.is_finite())
+            );
         }
         assert!(paths.path(&source).unwrap().edge_list().is_empty());
     }
@@ -249,10 +255,13 @@ where
         let floyd_paths = floyd_warshall.single_source(source).unwrap();
         for target in graph.vertices() {
             assert!(
-                (dijkstra.weight(target).unwrap() - floyd_paths.weight(target).unwrap()).abs() < 1e-9
+                (dijkstra.weight(target).unwrap() - floyd_paths.weight(target).unwrap()).abs()
+                    < 1e-9
             );
             assert_eq!(
-                floyd_paths.path(target).map(|path| path.edge_list().to_vec()),
+                floyd_paths
+                    .path(target)
+                    .map(|path| path.edge_list().to_vec()),
                 floyd_warshall
                     .path(source, target)
                     .unwrap()

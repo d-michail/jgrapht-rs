@@ -12,11 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::IncidenceGraph;
 use super::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
 use crate::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
 use crate::alg::matching::{KuhnMunkresMinimalWeightBipartitePerfectMatching, MatchingAlgorithm};
 use crate::alg::shortestpath::{DijkstraShortestPath, ShortestPathAlgorithm};
+use crate::graph::IncidenceGraph;
 use crate::graph::{
     BaseGraph, Directed, Direction, Graph, GraphExt, GraphMut, GraphMutExt, Undirected,
 };
@@ -89,7 +89,10 @@ impl ChinesePostman {
         }
     }
 
-    fn solve_undirected<G: IncidenceGraph>(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
+    fn solve_undirected<G: IncidenceGraph>(
+        &mut self,
+        graph: &G,
+    ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         let mut odd = Vec::new();
         for vertex in graph.vertices() {
             if graph.degree_of(vertex) % 2 == 1 {
@@ -102,9 +105,11 @@ impl ChinesePostman {
         for source in 0..count.saturating_sub(1) {
             let from_source = shortest_path.single_source(&odd[source])?;
             for target in source + 1..count {
-                paths[source][target] = Some(from_source.path(&odd[target]).ok_or_else(|| {
-                    GraphError::InvalidGraph(crate::GraphProperty::Connected)
-                })?);
+                paths[source][target] = Some(
+                    from_source
+                        .path(&odd[target])
+                        .ok_or(GraphError::InvalidGraph(crate::GraphProperty::Connected))?,
+                );
             }
         }
 
@@ -134,7 +139,10 @@ impl ChinesePostman {
         self.eulerize::<G, Undirected>(graph, shortcuts)
     }
 
-    fn solve_directed<G: IncidenceGraph>(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
+    fn solve_directed<G: IncidenceGraph>(
+        &mut self,
+        graph: &G,
+    ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         let mut negative = Vec::new();
         let mut positive = Vec::new();
         for vertex in graph.vertices() {
@@ -152,10 +160,11 @@ impl ChinesePostman {
         for (source_index, (source, _)) in negative.iter().enumerate() {
             let from_source = shortest_path.single_source(source)?;
             for (target_index, (target, _)) in positive.iter().enumerate() {
-                paths[source_index][target_index] =
-                    Some(from_source.path(target).ok_or_else(|| {
-                        GraphError::InvalidGraph(crate::GraphProperty::Connected)
-                    })?);
+                paths[source_index][target_index] = Some(
+                    from_source
+                        .path(target)
+                        .ok_or(GraphError::InvalidGraph(crate::GraphProperty::Connected))?,
+                );
             }
         }
 
@@ -264,10 +273,7 @@ impl ChinesePostman {
                 }
             }
         }
-        let weight = edges
-            .iter()
-            .map(|edge| graph.weight_of(edge))
-            .sum();
+        let weight = edges.iter().map(|edge| graph.weight_of(edge)).sum();
         Ok(GraphWalk::new_unchecked(vertices, edges, weight))
     }
 }

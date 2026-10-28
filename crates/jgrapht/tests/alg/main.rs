@@ -12,14 +12,18 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+#![allow(clippy::needless_range_loop, clippy::multiple_bound_locations)]
 //! Port of the JGraphT alg tests. See ../STATUS.md.
-#![allow(clippy::bool_assert_comparison, clippy::approx_constant, clippy::useless_vec, dead_code)]
+#![allow(
+    clippy::bool_assert_comparison,
+    clippy::approx_constant,
+    clippy::useless_vec,
+    dead_code
+)]
 #[path = "../common/mod.rs"]
 mod common;
 
 mod alg_clique_tests;
-mod capability_bounds_test;
-mod flow_results_test;
 mod alg_clustering_tests;
 mod alg_color_tests;
 mod alg_connectivity_tests;
@@ -34,28 +38,30 @@ mod alg_matching_tests;
 mod alg_planar_tests;
 mod alg_scoring_tests;
 mod alg_small_tests;
-mod alg_stoer_wagner_tests;
 mod alg_spanning_tests;
+mod alg_stoer_wagner_tests;
 mod alg_tour_tests;
 mod alg_transitive_tests;
 mod alg_util_tests;
 mod alg_vertexcover_tests;
 mod blossom_data;
 mod brown_data;
-mod matching_data;
+mod capability_bounds_test;
+mod clique_cover;
 mod clustering_data;
 mod flow_data;
-mod mincost_data;
-mod planar_data;
-mod vertex_cover_data;
-mod clique_cover;
+mod flow_results_test;
 mod isomorphism;
 mod matching_color;
+mod matching_data;
+mod mincost_data;
 mod misc_algs;
 mod paths_misc;
+mod planar_data;
 mod planarity;
 mod scoring;
 mod shortestpath;
 mod spanning_flow;
 mod structure;
 mod structure2;
+mod vertex_cover_data;

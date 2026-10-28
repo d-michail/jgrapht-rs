@@ -12,13 +12,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
-use crate::graph::IncidenceGraph;
-use crate::graph::IncomingGraph;
 use super::{
     BidirectionalDijkstraShortestPath, DijkstraClosestFirstIterator, ManyToManyPaths,
     ShortestPathAlgorithm, SingleSourcePaths,
 };
+use crate::graph::IncidenceGraph;
+use crate::graph::IncomingGraph;
+use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::{GraphError, Result};
@@ -213,7 +213,9 @@ impl<'g, G: IncomingGraph + OutgoingGraph> DijkstraManyToManyShortestPaths<'g, G
     }
 }
 
-impl<G: IncomingGraph + OutgoingGraph> ShortestPathAlgorithm<G> for DijkstraManyToManyShortestPaths<'_, G> {
+impl<G: IncomingGraph + OutgoingGraph> ShortestPathAlgorithm<G>
+    for DijkstraManyToManyShortestPaths<'_, G>
+{
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         DijkstraManyToManyShortestPaths::single_source(self, source)
     }
@@ -279,7 +281,9 @@ fn reverse_tree<G: IncomingGraph>(
         for (edge, previous) in graph.incoming_of(vertices[vertex]) {
             let weight = graph.weight_of(edge);
             if weight.is_nan() || weight < 0.0 {
-                return Err(GraphError::InvalidWeight(crate::WeightProblem::NegativeOrNaN));
+                return Err(GraphError::InvalidWeight(
+                    crate::WeightProblem::NegativeOrNaN,
+                ));
             }
             let previous_index = index[previous];
             let candidate = distance + weight;

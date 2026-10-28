@@ -12,7 +12,6 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
 use super::dual::BlossomVDualUpdater;
 use super::initializer::BlossomVInitializer;
 use super::options::{BlossomVOptions, DualUpdateStrategy, ObjectiveSense};
@@ -21,6 +20,7 @@ use super::state::{BlossomVState, BlossomVStatistics};
 use super::types::{NodeId, TreeId};
 use crate::alg::matching::{DEFAULT_EPSILON, Matching, MatchingAlgorithm};
 use crate::error::{GraphError, Result};
+use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::HashableSet;
 use indexmap::{IndexMap, IndexSet};
@@ -227,8 +227,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
 
         for edge in 0..state.edge_num {
             let graph_edge = &state.graph_edges[edge];
-            let mut slack =
-                scale * state.graph.weight_of(graph_edge) - state.min_edge_weight;
+            let mut slack = scale * state.graph.weight_of(graph_edge) - state.min_edge_weight;
             let [Some(a), Some(b)] = state.arena.edges[edge].head_original else {
                 unreachable!("original edge endpoints")
             };
@@ -597,7 +596,9 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     }
 }
 
-impl<G: UndirectedGraph> MatchingAlgorithm<G::Vertex, G::Edge> for KolmogorovWeightedPerfectMatching<'_, G> {
+impl<G: UndirectedGraph> MatchingAlgorithm<G::Vertex, G::Edge>
+    for KolmogorovWeightedPerfectMatching<'_, G>
+{
     /// Computes and returns a weighted perfect matching in the `graph`. See the class
     /// description for the relative definitions and algorithm description.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {

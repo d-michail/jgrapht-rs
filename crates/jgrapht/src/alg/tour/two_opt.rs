@@ -12,14 +12,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::OutgoingGraph;
 use super::base::{
     HamiltonianCycleAlgorithm, HamiltonianCycleImprovementAlgorithm, check_graph,
     closed_vertex_list_to_tour, singleton_tour,
 };
 use super::simple::{RandomTourTSP, reverse};
 use crate::error::{GraphError, Result};
+use crate::graph::OutgoingGraph;
+use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::java::RandomSource;
 use crate::walk::GraphWalk;
@@ -212,7 +212,9 @@ impl<'a, G: UndirectedGraph + OutgoingGraph + 'a> Default for TwoOptHeuristicTSP
     }
 }
 
-impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
+    for TwoOptHeuristicTSP<'a, G>
+{
     /// Computes a 2-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -233,7 +235,9 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> f
     }
 }
 
-impl<'a, G: UndirectedGraph + OutgoingGraph + 'a> HamiltonianCycleImprovementAlgorithm<G> for TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: UndirectedGraph + OutgoingGraph + 'a> HamiltonianCycleImprovementAlgorithm<G>
+    for TwoOptHeuristicTSP<'a, G>
+{
     /// Try to improve a tour by running the 2-opt heuristic.
     fn improve_tour(
         &mut self,

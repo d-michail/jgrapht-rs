@@ -12,9 +12,15 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+#![allow(clippy::type_complexity)]
 //! Port of the JGraphT traverse tests. See ../STATUS.md.
-#![allow(clippy::bool_assert_comparison, clippy::approx_constant, clippy::useless_vec, dead_code)]
+#![allow(
+    clippy::bool_assert_comparison,
+    clippy::approx_constant,
+    clippy::useless_vec,
+    dead_code
+)]
 
-mod traverse_tests;
-mod traverse_extra;
 mod traverse_errors;
+mod traverse_extra;
+mod traverse_tests;

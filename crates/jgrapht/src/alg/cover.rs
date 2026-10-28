@@ -14,12 +14,12 @@
 
 //! Vertex cover.
 
-use crate::graph::UndirectedGraph;
-use crate::graph::IncidenceGraph;
 use super::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
 use super::partition::two_color;
 use super::util::Indexed;
 use crate::graph::Graph;
+use crate::graph::IncidenceGraph;
+use crate::graph::UndirectedGraph;
 use crate::{GraphError, Result};
 use std::collections::{HashSet, VecDeque};
 
@@ -142,10 +142,11 @@ pub fn clarkson_vertex_cover<G: Graph>(
 }
 
 /// Exact minimum vertex cover of a bipartite graph (König's theorem).
-pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(g: &G) -> Result<VertexCover<G::Vertex>> {
+pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(
+    g: &G,
+) -> Result<VertexCover<G::Vertex>> {
     let ix = Indexed::new(g);
-    let side = two_color(&ix)
-        .ok_or(GraphError::InvalidGraph(crate::GraphProperty::Bipartite))?;
+    let side = two_color(&ix).ok_or(GraphError::InvalidGraph(crate::GraphProperty::Bipartite))?;
     let adj: Vec<Vec<usize>> = (0..ix.n())
         .map(|v| {
             ix.out[v]
@@ -212,7 +213,7 @@ pub fn is_vertex_cover<G: Graph>(g: &G, vs: &[G::Vertex]) -> bool {
 // self-loops are accepted. Weights default to 1 per vertex.
 
 use super::interfaces::VertexCoverAlgorithm;
-use crate::graph::{GraphExt};
+use crate::graph::GraphExt;
 use crate::util::OrderedF64;
 use indexmap::IndexMap;
 use std::collections::{BTreeSet, HashMap};

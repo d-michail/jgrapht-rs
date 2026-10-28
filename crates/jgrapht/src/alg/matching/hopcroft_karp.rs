@@ -12,11 +12,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::IncidenceGraph;
 use super::base::{Matching, MatchingAlgorithm};
 use crate::alg::util::FixedSizeIntegerQueue;
 use crate::error::Result;
+use crate::graph::IncidenceGraph;
+use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use indexmap::IndexSet;
 use std::collections::HashMap;
@@ -64,7 +64,9 @@ struct State<'a, G: Graph> {
     queue: FixedSizeIntegerQueue,
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph> HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph>
+    HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G>
+{
     /// `partition1` and `partition2` are the two sides of the bipartition. Fails if the graph is
     /// not undirected.
     pub fn new(

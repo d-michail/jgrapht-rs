@@ -12,10 +12,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::OutgoingGraph;
 use super::DEFAULT_EPSILON;
 use super::base::{FlowNet, flow_algorithm_api};
 use crate::error::{GraphError, Result};
+use crate::graph::OutgoingGraph;
 use std::collections::VecDeque;
 
 /// Implementation of [Dinic algorithm](https://en.wikipedia.org/wiki/Dinic%27s_algorithm) with scaling for [maximum flow problem](https://en.wikipedia.org/wiki/Maximum_flow_problem).
@@ -76,8 +76,8 @@ impl<'g, G: OutgoingGraph> DinicMFImpl<'g, G> {
     /// set will lie vertices with equal distance from the source. It's obvious that level network
     /// cannot contain edges $i \to j$, where $i$ and $j$ are two vertices for which holds: $|i.level
     /// - j.level| > 1$. It follows from a property of the shortest paths. Level graph contains only
-    /// edges that lead from level $i$ to the level $i + 1$. Thus level graph does not contain
-    /// backward edges or edges that lead from $i$-th level to $i$-th.
+    ///   edges that lead from level $i$ to the level $i + 1$. Thus level graph does not contain
+    ///   backward edges or edges that lead from $i$-th level to $i$-th.
     fn bfs(&mut self) -> bool {
         let (s, t) = (self.net.source, self.net.sink);
         self.level = vec![-1; self.net.vs.len()];

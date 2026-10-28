@@ -12,12 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use crate::graph::UndirectedGraph;
-use crate::graph::GraphExt;
-use crate::graph::OutgoingGraph;
 use crate::error::{GraphError, Result};
 use crate::graph::Graph;
-use crate::graph::props::{is_complete};
+use crate::graph::GraphExt;
+use crate::graph::OutgoingGraph;
+use crate::graph::UndirectedGraph;
+use crate::graph::props::is_complete;
 use crate::traverse::DepthFirstIterator;
 use crate::walk::GraphWalk;
 use std::collections::HashSet;
