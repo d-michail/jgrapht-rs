@@ -598,7 +598,7 @@ impl<'g, G: IncidenceGraph> EsauWilliams<'g, G> {
     }
 
     fn distance(&self, a: &G::Vertex, b: &G::Vertex) -> f64 {
-        match self.problem.graph.get_edge(a, b) {
+        match self.problem.graph.edge_between(a, b) {
             None => f64::MAX,
             Some(e) => self.problem.graph.weight_of(e),
         }
@@ -1119,7 +1119,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
     }
 
     fn set_edge(graph: &mut DiGraph<Iv>, a: Iv, b: Iv, w: f64) -> Result<()> {
-        let e = match graph.get_edge(&a, &b) {
+        let e = match graph.edge_between(&a, &b) {
             Some(e) => *e,
             None => graph.add_edge(&a, &b)?.ok_or(GraphError::Internal(
                 "improvement graph edge could not be added",

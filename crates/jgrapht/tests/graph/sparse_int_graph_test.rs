@@ -98,7 +98,7 @@ const UNDIRECTED_ROWS: [Row; 6] = [
 
 fn check_unique_edges<G: Graph<Vertex = usize, Edge = usize>>(g: &G, edges: &[(usize, usize)]) {
     for (i, &(s, t)) in edges.iter().enumerate() {
-        assert_eq!(g.get_edge(&s, &t), Some(&i));
+        assert_eq!(g.edge_between(&s, &t), Some(&i));
     }
     for (j, &(s, t)) in edges.iter().enumerate() {
         assert_eq!(sorted(g.edges_between(&s, &t)), vec![j]);
@@ -205,7 +205,7 @@ fn check_directed_lookups<G: Graph<Vertex = usize, Edge = usize>>(g: &G) {
         ((7, 7), &[12]),
     ];
     for ((s, t), all) in expected {
-        assert_eq!(g.get_edge(&s, &t), Some(&all[0]));
+        assert_eq!(g.edge_between(&s, &t), Some(&all[0]));
         assert_eq!(sorted(g.edges_between(&s, &t)), all);
     }
 }
@@ -276,8 +276,8 @@ fn test_absent_elements() {
     let g = SparseIntDirectedGraph::new(8, &DIRECTED).unwrap();
     assert!(!g.contains_vertex(&8));
     assert!(!g.contains_edge(&13));
-    assert_eq!(g.get_edge(&0, &8), None);
-    assert_eq!(g.get_edge(&9, &0), None);
+    assert_eq!(g.edge_between(&0, &8), None);
+    assert_eq!(g.edge_between(&9, &0), None);
     assert_eq!(g.edges_between(&0, &8).count(), 0);
     assert_eq!(g.edges_of(&8).count(), 0);
     assert_eq!(g.edge_source(&13), None);

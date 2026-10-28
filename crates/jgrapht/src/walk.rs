@@ -232,7 +232,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
             (Some(vertices), None) => {
                 let mut edges = Vec::new();
                 for w in vertices.windows(2) {
-                    match g.get_edge(&w[0], &w[1]) {
+                    match g.edge_between(&w[0], &w[1]) {
                         Some(e) => edges.push(e.clone()),
                         None => {
                             return invalid(format!(
@@ -388,7 +388,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
             let mut w = 0.0;
             for e in self.edges.iter().rev() {
                 let (s, t) = g.edge_endpoints(e).ok_or(GraphError::EdgeNotFound)?;
-                match g.get_edge(t, s) {
+                match g.edge_between(t, s) {
                     Some(r) => {
                         w += g.weight_of(r);
                         es.push(r.clone());

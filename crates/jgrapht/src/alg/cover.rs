@@ -184,7 +184,7 @@ pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(
         .filter(|&v| side[v])
         .map(|v| ix.vertex(v))
         .collect();
-    let matching = HopcroftKarp::new(g, partition1, partition2)?.get_matching()?;
+    let matching = HopcroftKarp::new(g, partition1, partition2)?.matching()?;
     let mut mate = vec![None; ix.n()];
     for edge in matching.edges() {
         let edge = edge.borrow();

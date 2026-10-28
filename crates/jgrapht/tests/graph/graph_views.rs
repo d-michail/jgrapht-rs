@@ -123,7 +123,7 @@ mod as_undirected_graph_test {
         let f = setup();
         let u = AsUndirected(&f.directed);
         let edges: Vec<_> = u.edges_between(&V3, &V2).copied().collect();
-        assert_eq!(edges, vec![*f.directed.get_edge(&V2, &V3).unwrap()]);
+        assert_eq!(edges, vec![*f.directed.edge_between(&V2, &V3).unwrap()]);
         assert_eq!(
             u.edges_between(&V4, &V4).copied().collect::<Vec<_>>(),
             vec![f.loop_]
@@ -134,9 +134,9 @@ mod as_undirected_graph_test {
     fn test_get_edge() {
         let f = setup();
         let u = AsUndirected(&f.directed);
-        assert_eq!(f.directed.get_edge(&V1, &V2), u.get_edge(&V1, &V2));
-        assert_eq!(f.directed.get_edge(&V1, &V2), u.get_edge(&V2, &V1));
-        assert_eq!(f.directed.get_edge(&V4, &V4), u.get_edge(&V4, &V4));
+        assert_eq!(f.directed.edge_between(&V1, &V2), u.edge_between(&V1, &V2));
+        assert_eq!(f.directed.edge_between(&V1, &V2), u.edge_between(&V2, &V1));
+        assert_eq!(f.directed.edge_between(&V4, &V4), u.edge_between(&V4, &V4));
     }
 
     #[test]
@@ -696,8 +696,8 @@ mod as_graph_union_test {
             assert_eq!(u.out_degree_of(&v), u.degree_of(&v));
         }
         let _ = (e1, e2, e3, e4, e5, e6, e7, e8);
-        assert_eq!(u.get_edge(&V1, &V4), Some(&e2));
-        assert_eq!(u.get_edge(&V4, &V1), Some(&e2));
+        assert_eq!(u.edge_between(&V1, &V4), Some(&e2));
+        assert_eq!(u.edge_between(&V4, &V1), Some(&e2));
     }
 
     #[test]
@@ -728,8 +728,8 @@ mod as_graph_union_test {
         );
         assert!(!f.directed1.contains_edge_between(&V4, &V1));
         assert!(!f.directed2.contains_edge_between(&V1, &V4));
-        assert_eq!(u.get_edge(&V1, &V4), Some(&e2));
-        assert_eq!(u.get_edge(&V4, &V1), Some(&e7));
+        assert_eq!(u.edge_between(&V1, &V4), Some(&e2));
+        assert_eq!(u.edge_between(&V4, &V1), Some(&e7));
     }
 
     #[test]

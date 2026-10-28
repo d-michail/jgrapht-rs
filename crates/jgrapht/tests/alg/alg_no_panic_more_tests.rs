@@ -33,43 +33,43 @@ use jgrapht::*;
 #[test]
 fn matching_does_not_panic() {
     sweep("matching", undirected, &VALID, |g| {
-        let _ = GreedyMaximumCardinalityMatching::new(g, true).and_then(|mut m| m.get_matching());
-        let _ = GreedyMaximumCardinalityMatching::new(g, false).and_then(|mut m| m.get_matching());
-        let _ = GreedyWeightedMatching::new(g, true).and_then(|mut m| m.get_matching());
-        let _ = GreedyWeightedMatching::new(g, false).and_then(|mut m| m.get_matching());
-        let _ = PathGrowingWeightedMatching::new(g).and_then(|mut m| m.get_matching());
-        let _ = DenseEdmonds::new(g).and_then(|mut m| m.get_matching());
-        let _ = SparseEdmonds::new(g).and_then(|mut m| m.get_matching());
-        let _ = KolmogorovWeightedPerfectMatching::new(g).and_then(|mut m| m.get_matching());
-        let _ = KolmogorovWeightedMatching::new(g).and_then(|mut m| m.get_matching());
+        let _ = GreedyMaximumCardinalityMatching::new(g, true).and_then(|mut m| m.matching());
+        let _ = GreedyMaximumCardinalityMatching::new(g, false).and_then(|mut m| m.matching());
+        let _ = GreedyWeightedMatching::new(g, true).and_then(|mut m| m.matching());
+        let _ = GreedyWeightedMatching::new(g, false).and_then(|mut m| m.matching());
+        let _ = PathGrowingWeightedMatching::new(g).and_then(|mut m| m.matching());
+        let _ = DenseEdmonds::new(g).and_then(|mut m| m.matching());
+        let _ = SparseEdmonds::new(g).and_then(|mut m| m.matching());
+        let _ = KolmogorovWeightedPerfectMatching::new(g).and_then(|mut m| m.matching());
+        let _ = KolmogorovWeightedMatching::new(g).and_then(|mut m| m.matching());
         let vs: Vec<usize> = g.vertices_cloned().collect();
         let (a, b) = vs.split_at(vs.len() / 2);
         let (a, b): (IndexSet<usize>, IndexSet<usize>) =
             (a.iter().copied().collect(), b.iter().copied().collect());
-        let _ = HopcroftKarp::new(g, a.clone(), b.clone()).and_then(|mut m| m.get_matching());
+        let _ = HopcroftKarp::new(g, a.clone(), b.clone()).and_then(|mut m| m.matching());
         let _ = MaximumWeightBipartiteMatching::new(g, a.clone(), b.clone())
-            .and_then(|mut m| m.get_matching());
-        let _ = KuhnMunkres::new(g, a, b).get_matching();
+            .and_then(|mut m| m.matching());
+        let _ = KuhnMunkres::new(g, a, b).matching();
     });
     sweep("matching positive", undirected, &POSITIVE, |g| {
-        let _ = KolmogorovWeightedPerfectMatching::new(g).and_then(|mut m| m.get_matching());
-        let _ = KolmogorovWeightedMatching::new(g).and_then(|mut m| m.get_matching());
+        let _ = KolmogorovWeightedPerfectMatching::new(g).and_then(|mut m| m.matching());
+        let _ = KolmogorovWeightedMatching::new(g).and_then(|mut m| m.matching());
     });
 }
 
 #[test]
 fn tours_do_not_panic() {
     sweep("tours", undirected, &POSITIVE, |g| {
-        let _ = RandomTourTsp::new().get_tour(g);
-        let _ = NearestNeighborHeuristicTsp::new().get_tour(g);
-        let _ = NearestInsertionHeuristicTsp::new().get_tour(g);
-        let _ = FarthestInsertionHeuristicTsp::new().get_tour(g);
-        let _ = GreedyHeuristicTsp.get_tour(g);
-        let _ = TwoApproxMetricTsp.get_tour(g);
-        let _ = Christofides.get_tour(g);
-        let _ = HeldKarpTsp.get_tour(g);
-        let _ = TwoOptHeuristicTsp::new().get_tour(g);
-        let _ = PalmerHamiltonianCycle.get_tour(g);
+        let _ = RandomTourTsp::new().tour(g);
+        let _ = NearestNeighborHeuristicTsp::new().tour(g);
+        let _ = NearestInsertionHeuristicTsp::new().tour(g);
+        let _ = FarthestInsertionHeuristicTsp::new().tour(g);
+        let _ = GreedyHeuristicTsp.tour(g);
+        let _ = TwoApproxMetricTsp.tour(g);
+        let _ = Christofides.tour(g);
+        let _ = HeldKarpTsp.tour(g);
+        let _ = TwoOptHeuristicTsp::new().tour(g);
+        let _ = PalmerHamiltonianCycle.tour(g);
     });
 }
 
@@ -81,15 +81,15 @@ fn cycles_do_not_panic() {
         let _ = JohnsonSimpleCycles::new(g).and_then(|mut c| c.find_simple_cycles());
         let _ = SzwarcfiterLauerSimpleCycles::with_graph(g).find_simple_cycles();
         let _ = HawickJamesSimpleCycles::with_graph(g).find_simple_cycles();
-        let _ = HowardMinimumMeanCycle::new(g).get_cycle_mean();
-        let _ = HierholzerEulerianCycle::new().get_eulerian_cycle(g);
+        let _ = HowardMinimumMeanCycle::new(g).cycle_mean();
+        let _ = HierholzerEulerianCycle::new().eulerian_cycle(g);
     });
     sweep("undirected cycles", undirected, &VALID, |g| {
-        let _ = QueueBFSFundamentalCycleBasis::new(g).and_then(|mut c| c.get_cycle_basis());
-        let _ = StackBFSFundamentalCycleBasis::new(g).and_then(|mut c| c.get_cycle_basis());
-        let _ = PatonCycleBase::new(g).and_then(|mut c| c.get_cycle_basis());
+        let _ = QueueBFSFundamentalCycleBasis::new(g).and_then(|mut c| c.cycle_basis());
+        let _ = StackBFSFundamentalCycleBasis::new(g).and_then(|mut c| c.cycle_basis());
+        let _ = PatonCycleBase::new(g).and_then(|mut c| c.cycle_basis());
         let _ = ChinesePostman::new().cpp_solution(g);
-        let _ = HierholzerEulerianCycle::new().get_eulerian_cycle(g);
+        let _ = HierholzerEulerianCycle::new().eulerian_cycle(g);
     });
 }
 
@@ -151,10 +151,10 @@ mod regressions {
         let a: Vec<usize> = vec![0, 1];
         let b: Vec<usize> = vec![2];
         let m = HopcroftKarp::new(&g, a.clone(), b)
-            .and_then(|mut m| m.get_matching())
+            .and_then(|mut m| m.matching())
             .unwrap();
         assert_eq!(m.edges().len(), 1);
-        let r = HopcroftKarp::new(&g, a.clone(), a).and_then(|mut m| m.get_matching());
+        let r = HopcroftKarp::new(&g, a.clone(), a).and_then(|mut m| m.matching());
         assert!(r.is_err(), "overlapping partitions");
     }
 

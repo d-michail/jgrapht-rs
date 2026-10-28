@@ -142,7 +142,7 @@ impl<'a, G: Graph> State<'a, G> {
 }
 
 impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for HopcroftKarp<'_, G> {
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         // init
         let mut vertices: Vec<Option<&G::Vertex>> = vec![None];
@@ -221,7 +221,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for HopcroftKarp<'
                 if let (Some(a), Some(b)) = (a, b) {
                     edges.insert(
                         graph
-                            .get_edge(a, b)
+                            .edge_between(a, b)
                             .expect("matched vertices are adjacent")
                             .clone(),
                     );

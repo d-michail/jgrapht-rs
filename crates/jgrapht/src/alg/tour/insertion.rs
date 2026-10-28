@@ -235,7 +235,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
     for NearestInsertionHeuristicTsp<G>
 {
     /// Computes a tour using the nearest insertion heuristic.
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {
             return Ok(Some(singleton_tour(graph)));
@@ -307,7 +307,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
     for FarthestInsertionHeuristicTsp<G>
 {
     /// Computes a tour using the farthest insertion heuristic.
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {
             return Ok(Some(singleton_tour(graph)));

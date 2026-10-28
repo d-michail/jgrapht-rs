@@ -321,7 +321,7 @@ impl<G: UndirectedGraph + IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     for MaximumWeightBipartiteMatching<'_, G>
 {
     /// Compute a matching for a given graph.
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         // test input instance
         if !props::is_simple(graph) {

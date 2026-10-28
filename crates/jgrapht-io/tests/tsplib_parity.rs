@@ -56,7 +56,7 @@ fn assert_distances(input: &str, expected: [f64; 6], locations: bool, distances:
     for ((source, target), expected) in pairs.into_iter().zip(expected) {
         let source = vertex_number(&metadata, source);
         let target = vertex_number(&metadata, target);
-        let edge = graph.get_edge(&source, &target).unwrap();
+        let edge = graph.edge_between(&source, &target).unwrap();
         assert_eq!(graph.edge_weight(edge), Some(expected));
     }
     assert_eq!(metadata.has_distinct_node_locations(), locations);

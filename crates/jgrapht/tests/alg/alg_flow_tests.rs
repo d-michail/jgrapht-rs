@@ -763,7 +763,10 @@ mod gusfield {
         let mut v = j;
         while v != i {
             let p = pred[&v];
-            weights.push(tree.edge_weight(tree.get_edge(&v, &p).unwrap()).unwrap());
+            weights.push(
+                tree.edge_weight(tree.edge_between(&v, &p).unwrap())
+                    .unwrap(),
+            );
             v = p;
         }
         weights

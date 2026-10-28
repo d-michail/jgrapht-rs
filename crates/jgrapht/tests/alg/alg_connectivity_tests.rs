@@ -428,8 +428,8 @@ macro_rules! strong_connectivity_tests {
 
                 let inner: HashSet<DefaultEdge> = comps[i1].edges_cloned().collect();
                 let want: HashSet<DefaultEdge> = [
-                    *g.get_edge(&s("v1"), &s("v2")).unwrap(),
-                    *g.get_edge(&s("v2"), &s("v1")).unwrap(),
+                    *g.edge_between(&s("v1"), &s("v2")).unwrap(),
+                    *g.edge_between(&s("v2"), &s("v1")).unwrap(),
                 ]
                 .into();
                 assert_eq!(inner, want);
@@ -438,8 +438,8 @@ macro_rules! strong_connectivity_tests {
                 assert_eq!(comps[i4].edge_count(), 0);
 
                 assert_eq!(condensation.edge_count(), 2);
-                assert!(condensation.get_edge(&i2, &i3).is_some());
-                assert!(condensation.get_edge(&i4, &i3).is_some());
+                assert!(condensation.edge_between(&i2, &i3).is_some());
+                assert!(condensation.edge_between(&i4, &i3).is_some());
             }
 
             #[test]
@@ -461,19 +461,19 @@ macro_rules! strong_connectivity_tests {
                 assert_eq!(
                     edges_of(&comps[i1]),
                     HashSet::from([
-                        *g.get_edge(&s("v1"), &s("v2")).unwrap(),
-                        *g.get_edge(&s("v2"), &s("v1")).unwrap()
+                        *g.edge_between(&s("v1"), &s("v2")).unwrap(),
+                        *g.edge_between(&s("v2"), &s("v1")).unwrap()
                     ])
                 );
                 assert_eq!(
                     edges_of(&comps[i2]),
                     HashSet::from([
-                        *g.get_edge(&s("v3"), &s("v4")).unwrap(),
-                        *g.get_edge(&s("v4"), &s("v3")).unwrap()
+                        *g.edge_between(&s("v3"), &s("v4")).unwrap(),
+                        *g.edge_between(&s("v4"), &s("v3")).unwrap()
                     ])
                 );
                 assert_eq!(condensation.edge_count(), 1);
-                assert!(condensation.get_edge(&i1, &i2).is_some());
+                assert!(condensation.edge_between(&i1, &i2).is_some());
             }
         }
     };
@@ -615,7 +615,7 @@ mod biconnectivity_inspector {
         let bridges: HashSet<DefaultEdge> = inspector.bridges().iter().copied().collect();
         let want: HashSet<DefaultEdge> = expected_bridges
             .iter()
-            .map(|(a, b)| *g.get_edge(a, b).unwrap())
+            .map(|(a, b)| *g.edge_between(a, b).unwrap())
             .collect();
         assert_eq!(bridges, want);
 

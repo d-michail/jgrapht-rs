@@ -104,7 +104,7 @@ mod greedy_maximum_cardinality_matching_test {
             generator.generate_default(&mut graph).unwrap();
             let m = GreedyMaximumCardinalityMatching::new(&graph, sorted)
                 .unwrap()
-                .get_matching()
+                .matching()
                 .unwrap();
             let mut matched = HashSet::new();
             let mut weight = 0.0;
@@ -239,7 +239,7 @@ macro_rules! approximate_weighted_matching_tests {
         fn run<G: IncidenceGraph<Vertex = i32, Edge = DefaultEdge>>(graph: &G) -> M {
             let $g = graph;
             let mut alg = $alg;
-            alg.get_matching().unwrap()
+            alg.matching().unwrap()
         }
 
         #[test]
@@ -258,9 +258,9 @@ macro_rules! approximate_weighted_matching_tests {
             let m = run(&g);
             assert_eq!(3, m.edges().len());
             assert!((m.weight() - 3.0).abs() < DEFAULT_EPSILON);
-            assert!(m.edges().contains(g.get_edge(&0, &1).unwrap()));
-            assert!(m.edges().contains(g.get_edge(&2, &3).unwrap()));
-            assert!(m.edges().contains(g.get_edge(&4, &5).unwrap()));
+            assert!(m.edges().contains(g.edge_between(&0, &1).unwrap()));
+            assert!(m.edges().contains(g.edge_between(&2, &3).unwrap()));
+            assert!(m.edges().contains(g.edge_between(&4, &5).unwrap()));
             assert!(is_matching(&g, &m));
         }
 
@@ -280,8 +280,8 @@ macro_rules! approximate_weighted_matching_tests {
             let m = run(&g);
             assert_eq!(2, m.edges().len());
             assert!((m.weight() - 10.0).abs() < DEFAULT_EPSILON);
-            assert!(m.edges().contains(g.get_edge(&1, &2).unwrap()));
-            assert!(m.edges().contains(g.get_edge(&3, &4).unwrap()));
+            assert!(m.edges().contains(g.edge_between(&1, &2).unwrap()));
+            assert!(m.edges().contains(g.edge_between(&3, &4).unwrap()));
             assert!(is_matching(&g, &m));
         }
 
@@ -485,9 +485,9 @@ macro_rules! base_path_growing_tests {
             let (weight, matching) = path_solver.maximum_weight_matching(&g, &path);
             assert!((weight - 15.0).abs() < DEFAULT_EPSILON);
             assert_eq!(3, matching.len());
-            assert!(matching.contains(g.get_edge(&0, &1).unwrap()));
-            assert!(matching.contains(g.get_edge(&2, &3).unwrap()));
-            assert!(matching.contains(g.get_edge(&5, &6).unwrap()));
+            assert!(matching.contains(g.edge_between(&0, &1).unwrap()));
+            assert!(matching.contains(g.edge_between(&2, &3).unwrap()));
+            assert!(matching.contains(g.edge_between(&5, &6).unwrap()));
 
             // test 1 (empty path)
             let (weight1, matching1) = path_solver.maximum_weight_matching(&g, &[]);
@@ -500,7 +500,7 @@ macro_rules! base_path_growing_tests {
             let (weight2, matching2) = path_solver.maximum_weight_matching(&g, &path2);
             assert!((weight2 - 100.0).abs() < DEFAULT_EPSILON);
             assert_eq!(1, matching2.len());
-            assert!(matching2.contains(g.get_edge(&7, &8).unwrap()));
+            assert!(matching2.contains(g.edge_between(&7, &8).unwrap()));
 
             // test 3 (two edges)
             g.add_vertices([9, 10, 11]);
@@ -511,7 +511,7 @@ macro_rules! base_path_growing_tests {
             let (weight3, matching3) = path_solver.maximum_weight_matching(&g, &path3);
             assert!((weight3 - 15.0).abs() < DEFAULT_EPSILON);
             assert_eq!(1, matching3.len());
-            assert!(matching3.contains(g.get_edge(&10, &11).unwrap()));
+            assert!(matching3.contains(g.edge_between(&10, &11).unwrap()));
         }
 
         #[test]
@@ -529,16 +529,16 @@ macro_rules! base_path_growing_tests {
                 gg.generate_default(&mut g).unwrap();
                 let m1 = PathGrowingWeightedMatching::new(&g)
                     .unwrap()
-                    .get_matching()
+                    .matching()
                     .unwrap();
                 let m2 = PathGrowingWeightedMatching::with_heuristics(&g, false)
                     .unwrap()
-                    .get_matching()
+                    .matching()
                     .unwrap();
-                let m3 = SparseEdmonds::new(&g).unwrap().get_matching().unwrap();
+                let m3 = SparseEdmonds::new(&g).unwrap().matching().unwrap();
                 let m4 = GreedyWeightedMatching::new(&g, false)
                     .unwrap()
-                    .get_matching()
+                    .matching()
                     .unwrap();
                 assert!(is_matching(&g, &m1));
                 assert!(is_matching(&g, &m2));
@@ -613,7 +613,7 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
         let e02 = graph.add_edge(&0, &6).unwrap().unwrap();
         let e11 = graph.add_edge(&1, &5).unwrap().unwrap();
         let e20 = graph.add_edge(&2, &4).unwrap().unwrap();
-        let bm = algorithm(&graph, 0..4, 4..8).get_matching().unwrap();
+        let bm = algorithm(&graph, 0..4, 4..8).matching().unwrap();
         assert_eq!(3, bm.edges().len());
         let expected: HashSet<DefaultEdge> = [e11, e02, e20].into_iter().collect();
         assert_eq!(expected, bm.edges().iter().copied().collect());
@@ -627,7 +627,7 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
             .iter()
             .map(|(a, b)| graph.add_edge(a, b).unwrap().unwrap())
             .collect();
-        let bm = algorithm(&graph, 0..6, 6..12).get_matching().unwrap();
+        let bm = algorithm(&graph, 0..6, 6..12).matching().unwrap();
         assert_eq!(6, bm.edges().len());
         assert_eq!(
             es.into_iter().collect::<HashSet<_>>(),
@@ -639,7 +639,7 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
     fn test_empty_matching() {
         let mut graph = UG::simple();
         graph.add_vertices([0, 1]);
-        let bm = algorithm(&graph, [0], [1]).get_matching().unwrap();
+        let bm = algorithm(&graph, [0], [1]).matching().unwrap();
         assert!(bm.edges().is_empty());
     }
 
@@ -648,7 +648,7 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
         let mut graph = UG::simple();
         graph.add_vertices(0..10);
         add_edges(&mut graph, &[(5, 8), (4, 9), (2, 7), (6, 9), (1, 9)]);
-        let matching = algorithm(&graph, 0..7, 7..10).get_matching().unwrap();
+        let matching = algorithm(&graph, 0..7, 7..10).matching().unwrap();
         assert_eq!(3, matching.edges().len());
     }
 
@@ -669,7 +669,7 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
                 (1, 7),
             ],
         );
-        let matching = algorithm(&graph, 0..7, 7..10).get_matching().unwrap();
+        let matching = algorithm(&graph, 0..7, 7..10).matching().unwrap();
         verify(&graph, &matching, matching.edges().len());
     }
 
@@ -679,9 +679,9 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
         let mut g = UG::simple();
         g.add_vertices(0..4);
         add_edges(&mut g, &[(0, 2), (0, 3), (1, 2)]);
-        let m = algorithm(&g, [0, 1], [2, 3]).get_matching().unwrap();
-        assert!(m.edges().contains(g.get_edge(&1, &2).unwrap()));
-        assert!(m.edges().contains(g.get_edge(&0, &3).unwrap()));
+        let m = algorithm(&g, [0, 1], [2, 3]).matching().unwrap();
+        assert!(m.edges().contains(g.edge_between(&1, &2).unwrap()));
+        assert!(m.edges().contains(g.edge_between(&0, &3).unwrap()));
         assert_eq!(2, m.edges().len());
     }
 
@@ -690,7 +690,7 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
         let mut graph = UG::pseudo();
         graph.add_vertices(0..6);
         add_edges(&mut graph, &[(0, 3), (1, 4), (2, 5), (0, 3), (0, 0)]);
-        let matching = algorithm(&graph, 0..3, 3..6).get_matching().unwrap();
+        let matching = algorithm(&graph, 0..3, 3..6).matching().unwrap();
         verify(&graph, &matching, 3);
     }
 
@@ -708,7 +708,7 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
             );
             let mut graph = integer_graph();
             let (first, second) = generator.generate_partitions(&mut graph).unwrap();
-            let m = algorithm(&graph, first, second).get_matching().unwrap();
+            let m = algorithm(&graph, first, second).matching().unwrap();
             verify(&graph, &m, m.edges().len());
         }
     }
@@ -743,7 +743,7 @@ mod maximum_weight_bipartite_matching_test {
         let e1 = edge(&mut graph, "s1", "t1", 1.0);
         let matchings = MaximumWeightBipartiteMatching::new(&graph, p1, p2)
             .unwrap()
-            .get_matching()
+            .matching()
             .unwrap();
         assert_eq!(1, matchings.edges().len());
         assert!(matchings.edges().contains(&e1));
@@ -756,7 +756,7 @@ mod maximum_weight_bipartite_matching_test {
         let e2 = edge(&mut graph, "s2", "t1", 2.0);
         let matchings = MaximumWeightBipartiteMatching::new(&graph, p1, p2)
             .unwrap()
-            .get_matching()
+            .matching()
             .unwrap();
         assert_eq!(1, matchings.edges().len());
         assert!(matchings.edges().contains(&e2));
@@ -770,7 +770,7 @@ mod maximum_weight_bipartite_matching_test {
         let e3 = edge(&mut graph, "s2", "t1", 2.0);
         let matchings = MaximumWeightBipartiteMatching::new(&graph, p1, p2)
             .unwrap()
-            .get_matching()
+            .matching()
             .unwrap();
         assert_eq!(2, matchings.edges().len());
         assert!(matchings.edges().contains(&e2));
@@ -785,7 +785,7 @@ mod maximum_weight_bipartite_matching_test {
         let e3 = edge(&mut graph, "s2", "t2", 1.0);
         let matchings = MaximumWeightBipartiteMatching::new(&graph, p1, p2)
             .unwrap()
-            .get_matching()
+            .matching()
             .unwrap();
         assert_eq!(2, matchings.edges().len());
         assert!(matchings.edges().contains(&e1));
@@ -804,7 +804,7 @@ mod maximum_weight_bipartite_matching_test {
         let e7 = edge(&mut graph, "s4", "t4", 1.0);
         let matchings = MaximumWeightBipartiteMatching::new(&graph, p1, p2)
             .unwrap()
-            .get_matching()
+            .matching()
             .unwrap();
         assert_eq!(4, matchings.edges().len());
         assert!(matchings.edges().contains(&e1));
@@ -845,7 +845,7 @@ mod maximum_weight_bipartite_matching_test {
             // compute maximum weight matching
             let mut alg =
                 MaximumWeightBipartiteMatching::new(&g, partition_a, partition_b).unwrap();
-            let matching = alg.get_matching().unwrap();
+            let matching = alg.matching().unwrap();
             let pot = alg.potentials();
             let zero = dashu_float::DBig::ZERO.with_precision(0).value();
             let dec = |x: f64| {
@@ -932,7 +932,7 @@ mod kuhn_munkres_minimal_weight_bipartite_perfect_matching_test {
             first.into_iter().collect(),
             second.into_iter().collect(),
         )
-        .get_matching()
+        .matching()
         .unwrap()
     }
 
@@ -950,7 +950,7 @@ mod kuhn_munkres_minimal_weight_bipartite_perfect_matching_test {
     fn test_for_empty_graph() {
         let graph = UGraph::<Vertex>::simple().weighted();
         let mut algorithm = KuhnMunkres::new(&graph, IndexSet::new(), IndexSet::new());
-        assert!(algorithm.get_matching().unwrap().is_empty());
+        assert!(algorithm.matching().unwrap().is_empty());
     }
 
     #[test]
@@ -1219,7 +1219,7 @@ fn edmonds_large_graph(edges: &[(i32, i32)]) -> UG {
 
 fn dense_solution(graph: &UG, cardinality: Option<usize>) {
     let mut matcher = DenseEdmonds::new(graph).unwrap();
-    let matching = matcher.get_matching().unwrap();
+    let matching = matcher.matching().unwrap();
     if let Some(cardinality) = cardinality {
         verify_matching(graph, &matching, cardinality);
     }
@@ -1228,7 +1228,7 @@ fn dense_solution(graph: &UG, cardinality: Option<usize>) {
 
 fn sparse_solution(graph: &UG, cardinality: Option<usize>) {
     let mut matcher = SparseEdmonds::new(graph).unwrap();
-    let matching = matcher.get_matching().unwrap();
+    let matching = matcher.matching().unwrap();
     if let Some(cardinality) = cardinality {
         verify_matching(graph, &matching, cardinality);
     }
@@ -1307,8 +1307,8 @@ mod dense_edmonds_maximum_cardinality_matching_test {
         graph.add_vertices(1..=4);
         add_edges(&mut graph, &[(1, 2), (2, 3), (3, 4), (4, 1)]);
         let edges: IndexSet<_> = [
-            graph.get_edge(&1, &2).unwrap(),
-            graph.get_edge(&3, &4).unwrap(),
+            graph.edge_between(&1, &2).unwrap(),
+            graph.edge_between(&3, &4).unwrap(),
         ]
         .into_iter()
         .copied()
@@ -1330,7 +1330,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
                 .unwrap()
         );
 
-        let edges: IndexSet<_> = [*graph.get_edge(&1, &2).unwrap()].into_iter().collect();
+        let edges: IndexSet<_> = [*graph.edge_between(&1, &2).unwrap()].into_iter().collect();
         let nonmaximum = Matching::new(&graph, edges, 2.);
         assert!(
             !DenseEdmonds::new(&graph)
@@ -1372,7 +1372,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
         );
         let edges = [(0, 1), (2, 3), (4, 9), (5, 8)]
             .into_iter()
-            .map(|(u, v)| *graph.get_edge(&u, &v).unwrap())
+            .map(|(u, v)| *graph.edge_between(&u, &v).unwrap())
             .collect();
         let matching = Matching::new(&graph, edges, 4.);
         verify_matching(&graph, &matching, 4);
@@ -1409,7 +1409,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
             let mut graph = integer_graph();
             generator.generate_default(&mut graph).unwrap();
             let mut matcher = DenseEdmonds::new(&graph).unwrap();
-            let matching = matcher.get_matching().unwrap();
+            let matching = matcher.matching().unwrap();
             verify_matching(&graph, &matching, matching.len());
             assert!(matcher.is_maximum_matching(&matching).unwrap());
         }
@@ -1437,7 +1437,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
             fn $name() {
                 let graph = edmonds_large_graph(crate::matching_data::$data);
                 let mut matcher = DenseEdmonds::new(&graph).unwrap();
-                let matching = matcher.get_matching().unwrap();
+                let matching = matcher.matching().unwrap();
                 verify_matching(&graph, &matching, $cardinality);
                 assert!(matcher.is_maximum_matching(&matching).unwrap());
                 if $perfect {
@@ -1533,7 +1533,7 @@ mod sparse_edmonds_maximum_cardinality_matching_test {
         );
         let edges = [(0, 1), (2, 3), (4, 9), (5, 8)]
             .into_iter()
-            .map(|(u, v)| *graph.get_edge(&u, &v).unwrap())
+            .map(|(u, v)| *graph.edge_between(&u, &v).unwrap())
             .collect();
         verify_matching(&graph, &Matching::new(&graph, edges, 4.), 4);
     }
@@ -1673,7 +1673,7 @@ mod blossom_v_public_tests {
                     graph, options, objective,
                 )
                 .unwrap();
-                let matching = algorithm.get_matching().unwrap();
+                let matching = algorithm.matching().unwrap();
                 assert!(matching.is_perfect());
                 assert_eq!(matching.weight(), expected);
                 assert!(algorithm.test_optimality().unwrap());
@@ -1697,7 +1697,7 @@ mod blossom_v_public_tests {
                     &graph, options, objective,
                 )
                 .unwrap();
-                assert_eq!(algorithm.get_matching().unwrap().weight(), expected);
+                assert_eq!(algorithm.matching().unwrap().weight(), expected);
                 assert!(algorithm.test_optimality().unwrap());
             }
         }
@@ -1921,7 +1921,7 @@ mod blossom_v_public_tests {
         for options in BlossomVOptions::all_options() {
             let mut algorithm =
                 KolmogorovWeightedPerfectMatching::with_options(&empty, options).unwrap();
-            assert_eq!(algorithm.get_matching().unwrap().weight(), 0.0);
+            assert_eq!(algorithm.matching().unwrap().weight(), 0.0);
             assert!(algorithm.test_optimality().unwrap());
         }
     }
@@ -2038,7 +2038,7 @@ mod blossom_v_public_tests {
             graph.add_vertices(case.extra_vertices.iter().copied());
             for options in BlossomVOptions::all_options() {
                 let result = KolmogorovWeightedPerfectMatching::with_options(&graph, options)
-                    .and_then(|mut algorithm| algorithm.get_matching().map(|_| ()));
+                    .and_then(|mut algorithm| algorithm.matching().map(|_| ()));
                 assert!(
                     result.is_err(),
                     "upstream case {} unexpectedly succeeded",

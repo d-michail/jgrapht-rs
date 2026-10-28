@@ -153,7 +153,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTsp<'a, G> {
     fn create_initial_tour(&mut self, graph: &G, state: &State<G::Vertex>) -> Result<Vec<usize>> {
         let tour = self
             .initializer
-            .get_tour(graph)?
+            .tour(graph)?
             .ok_or(GraphError::InvalidTour)?;
         Self::path_to_tour(&tour, state)
     }
@@ -235,7 +235,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
     for TwoOptHeuristicTsp<'a, G>
 {
     /// Computes a 2-approximate tour.
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {
             return Ok(Some(singleton_tour(graph)));

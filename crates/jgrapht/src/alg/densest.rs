@@ -318,9 +318,9 @@ where
         let vertices: Vec<G::Vertex> = self.graph.vertices_cloned().collect();
         for v in &vertices {
             let (sw, tw) = (self.source_weight(v), self.sink_weight(v));
-            let to_sink = self.network.get_edge(v, &self.t).cloned().unwrap();
+            let to_sink = self.network.edge_between(v, &self.t).cloned().unwrap();
             self.network.set_edge_weight(&to_sink, tw)?;
-            let from_source = self.network.get_edge(&self.s, v).cloned().unwrap();
+            let from_source = self.network.edge_between(&self.s, v).cloned().unwrap();
             self.network.set_edge_weight(&from_source, sw)?;
         }
         if self.check_weights {
@@ -329,8 +329,8 @@ where
                 .iter()
                 .flat_map(|v| {
                     [
-                        self.network.get_edge(v, &self.t).cloned(),
-                        self.network.get_edge(&self.s, v).cloned(),
+                        self.network.edge_between(v, &self.t).cloned(),
+                        self.network.edge_between(&self.s, v).cloned(),
                     ]
                 })
                 .flatten()
@@ -340,8 +340,8 @@ where
             if min < 0.0 {
                 for v in &vertices {
                     for e in [
-                        self.network.get_edge(v, &self.t).cloned().unwrap(),
-                        self.network.get_edge(&self.s, v).cloned().unwrap(),
+                        self.network.edge_between(v, &self.t).cloned().unwrap(),
+                        self.network.edge_between(&self.s, v).cloned().unwrap(),
                     ] {
                         let w = self
                             .network

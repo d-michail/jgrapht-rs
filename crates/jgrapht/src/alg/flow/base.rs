@@ -388,7 +388,7 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
         let (fs, ft) = (self.arcs[forward].source, self.arcs[forward].target);
         let backward_prototype = self
             .graph
-            .get_edge(&self.vs[ft], &self.vs[fs])
+            .edge_between(&self.vs[ft], &self.vs[fs])
             .map(|e| self.eindex[e]);
         let backward = match backward_prototype {
             Some(p) if self.directed => self.create_edge(ft, fs, p),

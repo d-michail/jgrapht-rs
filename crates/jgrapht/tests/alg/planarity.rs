@@ -60,11 +60,11 @@ fn known_graphs() {
     )));
     // K5 minus an edge, K3,3 minus an edge
     let mut k5 = build(UGraph::<usize>::simple(), Complete(5));
-    let e = *k5.get_edge(&0, &1).unwrap();
+    let e = *k5.edge_between(&0, &1).unwrap();
     k5.remove_edge(&e);
     assert!(is_planar(&k5));
     let mut k33 = build(UGraph::<usize>::simple(), CompleteBipartite(3, 3));
-    let e = *k33.get_edge(&0, &3).unwrap();
+    let e = *k33.edge_between(&0, &3).unwrap();
     k33.remove_edge(&e);
     assert!(is_planar(&k33));
     // Petersen graph

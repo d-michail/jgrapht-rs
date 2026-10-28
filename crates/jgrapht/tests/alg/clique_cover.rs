@@ -103,7 +103,7 @@ fn koenig_cover_equals_matching() {
         let (partition1, partition2) = bipartite_partition(&g).unwrap();
         let matching = HopcroftKarp::new(&g, partition1, partition2)
             .unwrap()
-            .get_matching()
+            .matching()
             .unwrap();
         assert_eq!(c.vertices.len(), matching.len());
     }

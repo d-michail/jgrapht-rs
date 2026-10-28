@@ -268,7 +268,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> DenseEdmonds
     fn warm_start(&mut self) -> Result<()> {
         let graph = self.graph;
         if let Some(initializer) = self.initializer.as_mut() {
-            let initial_solution = initializer.get_matching()?;
+            let initial_solution = initializer.matching()?;
             for e in initial_solution.edges() {
                 let e = e.borrow();
                 let (u, v) = graph
@@ -502,7 +502,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> DenseEdmonds
 impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MatchingAlgorithm<G::Vertex, G::Edge>
     for DenseEdmonds<'g, G>
 {
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         self.init();
         self.warm_start()?;
@@ -519,7 +519,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MatchingAlgorithm<G::Vertex, 
             }
             let v = &self.vertices[vx];
             let w = &self.vertices[self.matching.opposite(vx)];
-            let edge = graph.get_edge(v, w).expect("matched vertices are adjacent");
+            let edge = graph
+                .edge_between(v, w)
+                .expect("matched vertices are adjacent");
             edges.insert(edge.clone());
             cost += 0.5 * graph.weight_of(edge);
         }

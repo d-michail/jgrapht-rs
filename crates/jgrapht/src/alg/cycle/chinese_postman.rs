@@ -85,7 +85,7 @@ impl ChinesePostman {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::NotMixed));
         }
         if graph.vertex_count() == 0 || graph.edge_count() == 0 {
-            return HierholzerEulerianCycle::new().get_eulerian_cycle(graph);
+            return HierholzerEulerianCycle::new().eulerian_cycle(graph);
         }
         if !crate::graph::props::is_strongly_connected(graph) {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Connected));
@@ -135,7 +135,7 @@ impl ChinesePostman {
             }
         }
         let mut matching = KolmogorovWeightedPerfectMatching::new(&auxiliary)?;
-        let matching = matching.get_matching()?;
+        let matching = matching.matching()?;
         let mut shortcuts = Vec::with_capacity(matching.len());
         for edge in matching.edges() {
             let (source, target) = auxiliary
@@ -218,7 +218,7 @@ impl ChinesePostman {
             negative_partition.clone(),
             positive_partition.clone(),
         );
-        let matching = matching.get_matching()?;
+        let matching = matching.matching()?;
         let mut shortcuts = Vec::with_capacity(matching.len());
         for edge in matching.edges() {
             let (first, second) = auxiliary
@@ -264,7 +264,7 @@ impl ChinesePostman {
             edge_map.push(AugmentedEdge::Shortcut(path));
         }
 
-        let augmented = HierholzerEulerianCycle::new().get_eulerian_cycle(&euler_graph)?;
+        let augmented = HierholzerEulerianCycle::new().eulerian_cycle(&euler_graph)?;
         let mut vertices = vec![augmented.vertices[0].clone()];
         let mut edges = Vec::new();
         for (step, synthetic) in augmented.edges.iter().enumerate() {

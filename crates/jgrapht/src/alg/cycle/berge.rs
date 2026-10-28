@@ -43,7 +43,8 @@ fn edge_between<S: Graph<Vertex = usize, Edge = DefaultEdge>>(
     a: usize,
     b: usize,
 ) -> DefaultEdge {
-    *g.get_edge(&a, &b).expect("edge between adjacent vertices")
+    *g.edge_between(&a, &b)
+        .expect("edge between adjacent vertices")
 }
 
 /// The complement graph (`ComplementGraphGenerator`): an edge for every non-adjacent pair.

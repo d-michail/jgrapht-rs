@@ -66,9 +66,9 @@ fn assert_main_path<G: Graph<Vertex = &'static str, Edge = DefaultEdge> + Incide
     assert_eq!(
         path.edge_list(),
         [
-            *graph.get_edge(&"3", &"1").unwrap(),
-            *graph.get_edge(&"1", &"2").unwrap(),
-            *graph.get_edge(&"2", &"4").unwrap(),
+            *graph.edge_between(&"3", &"1").unwrap(),
+            *graph.edge_between(&"1", &"2").unwrap(),
+            *graph.edge_between(&"2", &"4").unwrap(),
         ]
     );
 
@@ -140,7 +140,7 @@ fn test_single_edge_path() {
         .unwrap();
     assert_eq!(path.length(), 1);
     assert_eq!(path.vertex_list(), ["1", "2"]);
-    assert_eq!(path.edge_list(), [*graph.get_edge(&"1", &"2").unwrap()]);
+    assert_eq!(path.edge_list(), [*graph.edge_between(&"1", &"2").unwrap()]);
 }
 
 #[test]
@@ -157,7 +157,7 @@ fn test_simple_1() {
     assert_eq!(path.length(), 1);
     assert_eq!(path.weight(), 1.0);
     assert_eq!(path.vertex_list(), ["4", "1"]);
-    assert_eq!(path.edge_list(), [*graph.get_edge(&"4", &"1").unwrap()]);
+    assert_eq!(path.edge_list(), [*graph.edge_between(&"4", &"1").unwrap()]);
 }
 
 #[test]

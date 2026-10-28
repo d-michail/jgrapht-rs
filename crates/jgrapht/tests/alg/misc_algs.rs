@@ -35,7 +35,7 @@ fn transforms() {
     line_graph_into(&ring, &mut lg).unwrap();
     assert_eq!((lg.vertex_count(), lg.edge_count()), (5, 5));
     let mut path = build(UGraph::<usize>::simple(), Linear(4));
-    let e = *path.get_edge(&1, &2).unwrap();
+    let e = *path.edge_between(&1, &2).unwrap();
     contract_edge(&mut path, &e).unwrap();
     assert_eq!((path.vertex_count(), path.edge_count()), (3, 2));
     let mut d = build(DiGraph::<usize>::simple(), Linear(3));
@@ -112,7 +112,7 @@ fn tours() {
             g.add_weighted_edge(&i, &j, w).unwrap();
         }
     }
-    let opt = HeldKarpTsp::new().get_tour(&g).unwrap().unwrap();
+    let opt = HeldKarpTsp::new().tour(&g).unwrap().unwrap();
     assert!(opt.is_valid(&g));
     assert_eq!(
         (
@@ -124,18 +124,18 @@ fn tours() {
     );
     for t in [
         NearestNeighborHeuristicTsp::with_first(0)
-            .get_tour(&g)
+            .tour(&g)
             .unwrap()
             .unwrap(),
         NearestInsertionHeuristicTsp::new()
-            .get_tour(&g)
+            .tour(&g)
             .unwrap()
             .unwrap(),
         FarthestInsertionHeuristicTsp::new()
-            .get_tour(&g)
+            .tour(&g)
             .unwrap()
             .unwrap(),
-        TwoApproxMetricTsp::new().get_tour(&g).unwrap().unwrap(),
+        TwoApproxMetricTsp::new().tour(&g).unwrap().unwrap(),
     ] {
         assert!(t.is_valid(&g));
         assert_eq!(t.length(), 8);
@@ -145,7 +145,7 @@ fn tours() {
     }
     assert!(
         HeldKarpTsp::new()
-            .get_tour(&build(UGraph::<usize>::simple(), Linear(4)))
+            .tour(&build(UGraph::<usize>::simple(), Linear(4)))
             .unwrap()
             .is_none()
     );

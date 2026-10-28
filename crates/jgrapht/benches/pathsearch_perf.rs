@@ -341,10 +341,10 @@ fn hamiltonian_path(c: &mut Criterion) {
                 |b| {
                     b.iter(|| match &graph {
                         HamiltonianGraph::Undirected(graph) => {
-                            black_box(BacktrackingHamiltonianPath::new().get_path(graph).unwrap())
+                            black_box(BacktrackingHamiltonianPath::new().path(graph).unwrap())
                         }
                         HamiltonianGraph::Directed(graph) => {
-                            black_box(BacktrackingHamiltonianPath::new().get_path(graph).unwrap())
+                            black_box(BacktrackingHamiltonianPath::new().path(graph).unwrap())
                         }
                     })
                 },
@@ -354,10 +354,10 @@ fn hamiltonian_path(c: &mut Criterion) {
                 |b| {
                     b.iter(|| match &graph {
                         HamiltonianGraph::Undirected(graph) => {
-                            black_box(HeldKarpHamiltonianPath::new().get_path(graph).unwrap())
+                            black_box(HeldKarpHamiltonianPath::new().path(graph).unwrap())
                         }
                         HamiltonianGraph::Directed(graph) => {
-                            black_box(HeldKarpHamiltonianPath::new().get_path(graph).unwrap())
+                            black_box(HeldKarpHamiltonianPath::new().path(graph).unwrap())
                         }
                     })
                 },
@@ -385,7 +385,7 @@ fn blossom_v(c: &mut Criterion) {
             black_box(
                 KolmogorovWeightedPerfectMatching::new(&g)
                     .unwrap()
-                    .get_matching()
+                    .matching()
                     .unwrap()
                     .weight(),
             )

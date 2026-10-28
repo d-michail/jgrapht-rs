@@ -240,7 +240,7 @@ mod greedy_multiplicative_spanner {
             .unwrap();
         let want: HashSet<DefaultEdge> = correct
             .iter()
-            .map(|&(a, b)| *g.get_edge(&v(a), &v(b)).unwrap())
+            .map(|&(a, b)| *g.edge_between(&v(a), &v(b)).unwrap())
             .collect();
         assert_eq!(want.len(), result.edges.len());
         assert!(want.iter().all(|e| result.edges.contains(e)));
@@ -422,7 +422,7 @@ mod capacitated_common {
             }
         }
         for &(i, j, w) in weights {
-            let e = *g.get_edge(&i, &j).unwrap();
+            let e = *g.edge_between(&i, &j).unwrap();
             g.set_edge_weight(&e, w).unwrap();
         }
         g
@@ -447,7 +447,7 @@ mod capacitated_common {
     ) {
         let allowed: HashSet<DefaultEdge> = allowed
             .iter()
-            .map(|(a, b)| *g.get_edge(a, b).unwrap())
+            .map(|(a, b)| *g.edge_between(a, b).unwrap())
             .collect();
         for e in &c.edges {
             assert!(allowed.contains(e));
@@ -640,7 +640,7 @@ mod ahuja_orlin_sharma {
             partition: parts.iter().map(|&(l, set, w)| (l, pair(set, w))).collect(),
             edges: edges
                 .iter()
-                .map(|(a, b)| *g.get_edge(a, b).unwrap())
+                .map(|(a, b)| *g.edge_between(a, b).unwrap())
                 .collect(),
             weight,
         }

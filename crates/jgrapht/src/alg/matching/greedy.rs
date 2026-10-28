@@ -63,7 +63,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     for GreedyMaximumCardinalityMatching<'_, G>
 {
     /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum cardinality matching.
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         let mut matched: HashSet<G::Vertex> = HashSet::new();
         let mut edges: IndexSet<G::Edge> = IndexSet::new();
@@ -183,7 +183,7 @@ impl<'g, G: Graph> GreedyWeightedMatching<'g, G> {
 
 impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeightedMatching<'_, G> {
     /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum weighted matching.
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         let weight = |e: &G::Edge| graph.weight_of(e);
         // sort edges in non-increasing order of weight

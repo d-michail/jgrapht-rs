@@ -37,7 +37,7 @@ pub trait HamiltonianCycleAlgorithm<G: Graph> {
     /// # Errors
     ///
     /// Returns an `InvalidGraph` error when the graph is not complete, is directed where undirected is required, or has fewer than two vertices.
-    fn get_tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>>;
+    fn tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>>;
 }
 
 /// An algorithm improving the result of solving the
@@ -85,7 +85,7 @@ pub(crate) fn closed_vertex_list_to_tour<G: Graph>(
     let mut tour_weight = 0.0;
     for pair in tour.windows(2) {
         let e = graph
-            .get_edge(&pair[0], &pair[1])
+            .edge_between(&pair[0], &pair[1])
             .ok_or(GraphError::EdgeNotFound)?;
         tour_weight += graph.weight_of(e);
         edges.push(e.clone());
@@ -128,5 +128,5 @@ pub(crate) fn check_graph<G: UndirectedGraph + OutgoingGraph>(graph: &G) -> Resu
 
 /// The weight of the edge between `u` and `v` (the graph must be complete).
 pub(crate) fn weight_between<G: Graph>(graph: &G, u: &G::Vertex, v: &G::Vertex) -> f64 {
-    graph.weight_of(graph.get_edge(u, v).expect("complete graph"))
+    graph.weight_of(graph.edge_between(u, v).expect("complete graph"))
 }

@@ -165,7 +165,7 @@ impl<'a, G: IncidenceGraph> Algorithm<'a, G> {
         let Some(initializer) = initializer else {
             return Ok(());
         };
-        for e in initializer.get_matching()?.edges() {
+        for e in initializer.matching()?.edges() {
             let e = e.borrow();
             let (u, v) = self
                 .graph
@@ -453,7 +453,7 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmonds<'g, G> {
     /// Returns [`GraphError::Internal`](crate::GraphError::Internal) if an internal invariant of the library is broken (a bug).
     /// Errors of the graph operations it performs are propagated.
     pub fn odd_set_cover(&mut self) -> Result<&HashMap<G::Vertex, i64>> {
-        self.get_matching()?;
+        self.matching()?;
         self.odd_set_cover
             .as_ref()
             .ok_or(crate::GraphError::Internal(
@@ -515,7 +515,7 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmonds<'g, G> {
 impl<'g, G: Graph + 'g + IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     for SparseEdmonds<'g, G>
 {
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         if self.result.is_none() {
             let mut alg = Algorithm::new(self.graph);
             let matching_edges = alg.compute_matching(self.initializer.as_deref_mut())?;

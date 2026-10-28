@@ -109,7 +109,7 @@ fn matching(c: &mut Criterion) {
             black_box(
                 PathGrowingWeightedMatching::new(&g)
                     .unwrap()
-                    .get_matching()
+                    .matching()
                     .unwrap()
                     .weight(),
             )
@@ -129,7 +129,7 @@ fn matching(c: &mut Criterion) {
             black_box(
                 HopcroftKarp::new(&bip, 0..half, half..n)
                     .unwrap()
-                    .get_matching()
+                    .matching()
                     .unwrap()
                     .edges()
                     .len(),
@@ -149,7 +149,7 @@ fn dag_hamiltonian_path(c: &mut Criterion) {
         }
     }
     c.bench_function("tour/dag_hamiltonian_path", |b| {
-        b.iter(|| black_box(DagHamiltonianPath::new().get_path(&g).unwrap()))
+        b.iter(|| black_box(DagHamiltonianPath::new().path(&g).unwrap()))
     });
 }
 

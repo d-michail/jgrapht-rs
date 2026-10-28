@@ -284,7 +284,7 @@ mod dimacs_importer_test {
         for (index, (source, target)) in ORIGINAL_EDGES.into_iter().enumerate() {
             let source = source - 1;
             let target = target - 1;
-            let edge = graph.get_edge(&source, &target).unwrap();
+            let edge = graph.edge_between(&source, &target).unwrap();
             assert_eq!(graph.edge_weight(edge), Some((index + 1) as f64));
         }
     }
@@ -295,7 +295,7 @@ mod dimacs_importer_test {
         assert_eq!(graph.vertex_count(), 3);
         assert_eq!(graph.edge_count(), 3);
         for (source, target) in [(0, 1), (1, 0), (1, 2)] {
-            let edge = graph.get_edge(&source, &target).unwrap();
+            let edge = graph.edge_between(&source, &target).unwrap();
             assert_eq!(graph.edge_weight(edge), Some(1.0));
         }
     }
@@ -309,7 +309,7 @@ mod dimacs_importer_test {
         assert_eq!(graph.vertex_count(), 3);
         assert_eq!(graph.edge_count(), 3);
         for (source, target) in [(101, 102), (102, 101), (102, 103)] {
-            let edge = graph.get_edge(&source, &target).unwrap();
+            let edge = graph.edge_between(&source, &target).unwrap();
             assert_eq!(graph.edge_weight(edge), Some(1.0));
         }
     }

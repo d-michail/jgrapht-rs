@@ -445,7 +445,7 @@ mod network_generator_test {
     ) {
         for e1 in g1.edges() {
             let (u, v) = (g1.edge_source(e1).unwrap(), g1.edge_target(e1).unwrap());
-            let e2 = g2.get_edge(u, v).expect("arc missing in second graph");
+            let e2 = g2.edge_between(u, v).expect("arc missing in second graph");
             assert_eq!(f1(e1), f2(e2));
         }
     }
@@ -458,7 +458,7 @@ mod network_generator_test {
         assert_eq!(g1.edge_count(), g2.edge_count());
         for e1 in g1.edges() {
             let e2 = g2
-                .get_edge(g1.edge_source(e1).unwrap(), g1.edge_target(e1).unwrap())
+                .edge_between(g1.edge_source(e1).unwrap(), g1.edge_target(e1).unwrap())
                 .unwrap();
             assert!((g1.edge_weight(e1).unwrap() - g2.edge_weight(e2).unwrap()).abs() < EPS);
         }
@@ -581,7 +581,7 @@ mod network_generator_test {
             p1.partition2.iter().copied(),
         )
         .unwrap()
-        .get_matching()
+        .matching()
         .unwrap();
         assert!(matching.is_perfect());
         assert_graphs_equal(&g1, &g2);

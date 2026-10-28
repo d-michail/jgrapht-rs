@@ -22,7 +22,7 @@ fn path_digraph() -> DiGraph<u32> {
     let mut g = DiGraph::<u32>::simple().weighted();
     for (a, b, w) in [(1, 2, 1.0), (2, 3, 2.0), (3, 4, 3.0)] {
         g.add_edge_with_vertices(a, b).unwrap();
-        let e = *g.get_edge(&a, &b).unwrap();
+        let e = *g.edge_between(&a, &b).unwrap();
         g.set_edge_weight(&e, w).unwrap();
     }
     g

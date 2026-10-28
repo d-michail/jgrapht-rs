@@ -114,7 +114,7 @@ where
     fn walk(&self, vertices: Vec<G::Vertex>, weight: f64) -> GraphWalk<G::Vertex, G::Edge> {
         let edges = vertices
             .windows(2)
-            .filter_map(|w| self.graph.get_edge(&w[0], &w[1]).cloned())
+            .filter_map(|w| self.graph.edge_between(&w[0], &w[1]).cloned())
             .collect();
         GraphWalk::new_unchecked(vertices, edges, weight)
     }
@@ -147,7 +147,7 @@ where
                 if source == target {
                     let vertices = vec![source.clone(), target.clone()];
                     let current = weight(e);
-                    let opposite = weight(g.get_edge(target, source).unwrap());
+                    let opposite = weight(g.edge_between(target, source).unwrap());
                     if self.best_improvement {
                         if best_cycle.cost > current + opposite {
                             best_cycle = LabeledPath {
@@ -175,7 +175,7 @@ where
             for path in paths_k.values() {
                 let head = path.head();
                 let tail = path.tail();
-                if let Some(closing) = g.get_edge(tail, head) {
+                if let Some(closing) = g.edge_between(tail, head) {
                     let current_cost = path.cost + weight(closing);
                     if current_cost < best_cycle.cost {
                         let mut cycle = path.clone();

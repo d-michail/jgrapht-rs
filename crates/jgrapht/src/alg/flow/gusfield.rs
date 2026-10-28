@@ -436,7 +436,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
         let mut v = target.clone();
         while v != *source {
             let pred = predecessor[&v].clone();
-            edges.insert(*tree.get_edge(&v, &pred).unwrap());
+            edges.insert(*tree.edge_between(&v, &pred).unwrap());
             v = pred;
         }
         edges.into_iter().collect()

@@ -80,7 +80,7 @@ impl Christofides {
 
 impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for Christofides {
     /// Computes a $3/2$-approximate tour.
-    fn get_tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
+    fn tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {
             return Ok(Some(singleton_tour(graph)));
@@ -106,7 +106,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for Christ
         }
         let subgraph = AsSubgraph::induced(graph, odd_degree_vertices);
         let mut matching = KolmogorovWeightedPerfectMatching::new(&subgraph)?;
-        for edge in matching.get_matching()?.edges() {
+        for edge in matching.matching()?.edges() {
             let edge = edge.borrow();
             let (source, target) = graph
                 .edge_endpoints(edge)
@@ -114,8 +114,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for Christ
             mst_and_matching.add_edge(source, target)?;
         }
 
-        let eulerian_cycle =
-            HierholzerEulerianCycle::new().get_eulerian_cycle(&mst_and_matching)?;
+        let eulerian_cycle = HierholzerEulerianCycle::new().eulerian_cycle(&mst_and_matching)?;
         let mut visited = HashSet::with_capacity(graph.vertex_count());
         let tour_vertices = eulerian_cycle
             .vertex_list()

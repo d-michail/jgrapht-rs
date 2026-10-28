@@ -32,7 +32,7 @@ pub trait EulerianCycleAlgorithm<G: Graph> {
     /// # Errors
     ///
     /// Returns [`GraphError::InvalidGraph`](crate::GraphError::InvalidGraph) with `Eulerian` if the graph has no Eulerian cycle, and `NotMixed` for a mixed graph.
-    fn get_eulerian_cycle(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>>;
+    fn eulerian_cycle(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>>;
 }
 
 const NIL: usize = usize::MAX;
@@ -306,7 +306,7 @@ impl HierholzerEulerianCycle {
 
 impl<G: IncidenceGraph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
     /// Compute an Eulerian cycle of a graph.
-    fn get_eulerian_cycle(&mut self, g: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
+    fn eulerian_cycle(&mut self, g: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
         if !self.is_eulerian(g) {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Eulerian));
         } else if g.vertex_count() == 0 {

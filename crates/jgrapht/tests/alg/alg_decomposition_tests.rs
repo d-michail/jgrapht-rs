@@ -70,7 +70,7 @@ mod dulmage_mendelsohn_decomposition_test {
         let sub = AsSubgraph::induced(graph, all_perfect.iter().copied());
         let perfect = HopcroftKarp::new(&sub, p1_perfect, p2_perfect)
             .unwrap()
-            .get_matching()
+            .matching()
             .unwrap();
         assert!(
             perfect.is_perfect(),
@@ -161,7 +161,7 @@ mod heavy_path_decomposition_test {
             if in_path.contains(v) {
                 let (mut cnt, mut cur) = (0, v.clone());
                 while let Some(u) = d.parent_of(&cur) {
-                    let edge = graph.get_edge(u, &cur).unwrap();
+                    let edge = graph.edge_between(u, &cur).unwrap();
                     if d.light_edges().contains(edge) {
                         cnt += 1;
                     }

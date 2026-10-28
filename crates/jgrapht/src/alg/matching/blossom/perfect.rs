@@ -656,7 +656,7 @@ impl<G: UndirectedGraph> MatchingAlgorithm<G::Vertex, G::Edge>
 {
     /// Computes and returns a weighted perfect matching in the `graph`. See the class
     /// description for the relative definitions and algorithm description.
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         self.compute()?;
         self.matching.clone().ok_or(crate::GraphError::Internal(
             "the computed matching is missing",
@@ -809,7 +809,7 @@ mod tests {
         let options = BlossomVOptions::with_initialization(super::super::InitializationType::None);
         let mut algorithm =
             KolmogorovWeightedPerfectMatching::with_options(&graph, options).unwrap();
-        let matching = algorithm.get_matching().unwrap();
+        let matching = algorithm.matching().unwrap();
         assert!(matching.is_perfect());
         assert_eq!(matching.weight(), 7.0);
     }
@@ -818,7 +818,7 @@ mod tests {
     fn invalid_dual_solution_is_rejected() {
         let graph = weighted_graph(4, &[(0, 1, 7.0), (1, 2, 4.0), (2, 3, 3.0), (3, 0, 4.0)]);
         let mut algorithm = KolmogorovWeightedPerfectMatching::new(&graph).unwrap();
-        algorithm.get_matching().unwrap();
+        algorithm.matching().unwrap();
         algorithm.state.as_mut().unwrap().arena.nodes[0].dual += 1.0;
         assert!(!algorithm.test_optimality().unwrap());
     }
@@ -849,8 +849,8 @@ mod tests {
             ObjectiveSense::Maximize,
         )
         .unwrap();
-        assert_eq!(minimum.get_matching().unwrap().weight(), 5.0);
-        assert_eq!(maximum.get_matching().unwrap().weight(), 15.0);
+        assert_eq!(minimum.matching().unwrap().weight(), 5.0);
+        assert_eq!(maximum.matching().unwrap().weight(), 15.0);
     }
 
     #[test]
@@ -866,8 +866,8 @@ mod tests {
         let mut maximum =
             KolmogorovWeightedPerfectMatching::with_objective(&graph, ObjectiveSense::Maximize)
                 .unwrap();
-        assert_eq!(minimum.get_matching().unwrap().weight(), -3.0);
-        assert_eq!(maximum.get_matching().unwrap().weight(), 7.0);
+        assert_eq!(minimum.matching().unwrap().weight(), -3.0);
+        assert_eq!(maximum.matching().unwrap().weight(), 7.0);
         assert!(minimum.test_optimality().unwrap());
         assert!(maximum.test_optimality().unwrap());
     }
@@ -899,7 +899,7 @@ mod tests {
                             &graph, options, objective,
                         )
                         .unwrap();
-                    let actual = algorithm.get_matching().unwrap().weight();
+                    let actual = algorithm.matching().unwrap().weight();
                     assert_eq!(
                         actual, expected,
                         "seed={seed}, options={options}, objective={objective:?}"
@@ -915,7 +915,7 @@ mod tests {
                             .keys()
                             .all(|vertices| vertices.len() % 2 == 1)
                     );
-                    let matching = algorithm.get_matching().unwrap();
+                    let matching = algorithm.matching().unwrap();
                     assert_dual_solution(&graph, &matching, &dual, objective);
                 }
             }
@@ -952,7 +952,7 @@ mod tests {
                             &graph, options, objective,
                         )
                         .unwrap();
-                    let result = algorithm.get_matching();
+                    let result = algorithm.matching();
                     match expected {
                         Some(expected) => {
                             let matching = result.unwrap();

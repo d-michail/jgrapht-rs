@@ -734,7 +734,7 @@ where
                         )?;
                     }
                     for (column, target) in vertices.iter().enumerate() {
-                        if let Some(edge) = graph.get_edge(vertex, target) {
+                        if let Some(edge) = graph.edge_between(vertex, target) {
                             if weighted {
                                 write!(
                                     output,

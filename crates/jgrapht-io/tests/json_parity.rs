@@ -131,7 +131,7 @@ mod importer_test {
         for (source, target, weight) in [("1", "2", 2.0), ("1", "3", 3.0), ("2", "3", 1.0)] {
             let source = source.to_owned();
             let target = target.to_owned();
-            let edge = graph.get_edge(&source, &target).unwrap();
+            let edge = graph.edge_between(&source, &target).unwrap();
             assert_eq!(graph.edge_weight(edge), Some(weight));
         }
     }
@@ -140,7 +140,7 @@ mod importer_test {
     fn weights_on_unweighted() {
         let graph = import_strings(WEIGHTED, false);
         assert_eq!(
-            graph.edge_weight(graph.get_edge(&"1".into(), &"2".into()).unwrap()),
+            graph.edge_weight(graph.edge_between(&"1".into(), &"2".into()).unwrap()),
             Some(1.0)
         );
     }
@@ -229,7 +229,7 @@ mod importer_test {
         let source = "1".to_owned();
         let target = "2".to_owned();
         assert_eq!(
-            graph.edge_weight(graph.get_edge(&source, &target).unwrap()),
+            graph.edge_weight(graph.edge_between(&source, &target).unwrap()),
             Some(-2.0)
         );
     }

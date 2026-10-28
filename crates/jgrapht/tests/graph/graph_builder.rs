@@ -61,10 +61,10 @@ fn test_add_edge() {
     ] {
         assert!(g.contains_edge_between(&a, &b));
     }
-    assert_eq!(g.get_edge(&V1, &V7), Some(&e1));
-    assert_eq!(g.get_edge(&V1, &V8), Some(&e2));
-    assert_eq!(g.edge_weight(g.get_edge(&V7, &V8).unwrap()), Some(10.0));
-    assert_eq!(g.edge_weight(g.get_edge(&V1, &V8).unwrap()), Some(42.0));
+    assert_eq!(g.edge_between(&V1, &V7), Some(&e1));
+    assert_eq!(g.edge_between(&V1, &V8), Some(&e2));
+    assert_eq!(g.edge_weight(g.edge_between(&V7, &V8).unwrap()), Some(10.0));
+    assert_eq!(g.edge_weight(g.edge_between(&V1, &V8).unwrap()), Some(42.0));
 }
 
 #[test]

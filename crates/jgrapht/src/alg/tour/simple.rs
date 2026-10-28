@@ -73,7 +73,7 @@ impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgori
     for RandomTourTsp<R>
 {
     /// Computes a tour using the greedy heuristic.
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         let mut vertices: Vec<G::Vertex> = graph.vertices_cloned().collect();
         if vertices.len() == 1 {
@@ -165,7 +165,7 @@ impl<V, R> NearestNeighborHeuristicTsp<V, R> {
 impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgorithm<G>
     for NearestNeighborHeuristicTsp<G::Vertex, R>
 {
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {
             return Ok(Some(singleton_tour(graph)));
@@ -238,7 +238,7 @@ impl TwoApproxMetricTsp {
 
 impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for TwoApproxMetricTsp {
     /// Computes a 2-approximate tour.
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {
             return Ok(Some(singleton_tour(graph)));
@@ -294,7 +294,7 @@ impl GreedyHeuristicTsp {
 
 impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for GreedyHeuristicTsp {
     /// Computes a tour using the greedy heuristic.
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         let n = graph.vertex_count();
         if n == 1 {
@@ -394,7 +394,7 @@ impl HeldKarpTsp {
 
 impl<G: Graph> HamiltonianCycleAlgorithm<G> for HeldKarpTsp {
     /// Computes a minimum-cost Hamiltonian tour.
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         require_not_empty(graph)?;
         let n = graph.vertex_count();
         if n == 1 {
@@ -537,7 +537,7 @@ pub(crate) fn reverse<T>(arr: &mut [T], from: isize, to: isize) {
 
 impl<G: IncidenceGraph> HamiltonianCycleAlgorithm<G> for PalmerHamiltonianCycle {
     /// Computes a Hamiltonian tour.
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         if !has_ore_property(graph) {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::OreProperty));
         }

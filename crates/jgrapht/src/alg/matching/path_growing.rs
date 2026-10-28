@@ -252,7 +252,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     for PathGrowingWeightedMatching<'_, G>
 {
     /// Get a matching that is a $\frac{1}{2}$-approximation of the maximum weighted matching.
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         if self.use_heuristics {
             self.run_with_heuristics()
         } else {

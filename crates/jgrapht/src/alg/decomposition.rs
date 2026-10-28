@@ -530,7 +530,7 @@ where
             self.partition1.iter().cloned(),
             self.partition2.iter().cloned(),
         )?
-        .get_matching()?;
+        .matching()?;
         self.decompose(&matching, fine)
     }
 

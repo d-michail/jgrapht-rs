@@ -177,9 +177,9 @@ fn optional_endpoint_index_tracks_removal() {
     assert!(!graph.has_fast_lookups());
     graph.add_vertices([1, 2]);
     let edge = graph.add_edge(&1, &2).unwrap().unwrap();
-    assert_eq!(graph.get_edge(&1, &2), Some(&edge));
+    assert_eq!(graph.edge_between(&1, &2), Some(&edge));
     assert!(graph.remove_edge(&edge));
-    assert_eq!(graph.get_edge(&1, &2), None);
+    assert_eq!(graph.edge_between(&1, &2), None);
 
     let mut indexed =
         IntMapGraph::<DefaultEdge>::with_graph_type_and_lookup(GraphType::pseudograph(), true);
@@ -189,7 +189,7 @@ fn optional_endpoint_index_tracks_removal() {
     let second = indexed.add_edge(&2, &1).unwrap().unwrap();
     assert_eq!(indexed.edges_between(&1, &2).count(), 2);
     assert!(indexed.remove_edge(&first));
-    assert_eq!(indexed.get_edge(&1, &2), Some(&second));
+    assert_eq!(indexed.edge_between(&1, &2), Some(&second));
     assert!(indexed.remove_vertex(&2));
     assert_eq!(indexed.edges_between(&1, &2).count(), 0);
 }

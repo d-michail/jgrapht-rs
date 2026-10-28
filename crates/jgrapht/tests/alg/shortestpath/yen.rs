@@ -397,7 +397,7 @@ mod yen_error_reporting {
         graph.add_vertices([1, 2, 3]);
         for (a, b, w) in [(1, 2, 1.0), (2, 3, -1.0)] {
             graph.add_edge(&a, &b).unwrap();
-            let e = *graph.get_edge(&a, &b).unwrap();
+            let e = *graph.edge_between(&a, &b).unwrap();
             graph.set_edge_weight(&e, w).unwrap();
         }
         let mut iterator = YenShortestPathIterator::new(&graph, &1, &3).unwrap();

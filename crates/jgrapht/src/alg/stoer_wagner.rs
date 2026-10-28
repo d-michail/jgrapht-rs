@@ -56,7 +56,7 @@ impl Working {
     }
 
     /// `getEdge(u, v)`: scans the incidence list of `u`.
-    fn get_edge(&self, u: Id, v: Id) -> Option<usize> {
+    fn edge_between(&self, u: Id, v: Id) -> Option<usize> {
         if self.contains(u) && self.contains(v) {
             self.incident[u]
                 .iter()
@@ -258,7 +258,7 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
             let (s_new, t_new) = (vertex_map[s], vertex_map[t]);
             // For multigraphs, we sum the edge weights (either all are contained in a cut, or
             // none).
-            match this.working.get_edge(s_new, t_new) {
+            match this.working.edge_between(s_new, t_new) {
                 None => {
                     if s_new == t_new {
                         return Err(GraphError::InvalidGraph(crate::GraphProperty::NoSelfLoops));
@@ -292,7 +292,7 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
             if v == a {
                 continue;
             }
-            let e = self.working.get_edge(v, a);
+            let e = self.working.edge_between(v, a);
             let w = e.map_or(0.0, |e| self.working.weight[e]);
             queue.add(VertexAndWeight {
                 vertex: v,
@@ -344,8 +344,8 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
         for v in others {
             if s != v && t != v {
                 let mut neww = 0.0;
-                let etv = self.working.get_edge(t, v);
-                let esv = self.working.get_edge(s, v);
+                let etv = self.working.edge_between(t, v);
+                let esv = self.working.edge_between(s, v);
                 if let Some(e) = etv {
                     neww += self.working.weight[e];
                 }

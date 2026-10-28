@@ -616,7 +616,7 @@ mod clone_and_unmodifiable_test {
         g1.add_edge(&"2", &"3").unwrap();
         let mut g2 = g1.clone();
         assert_eq!(g2.edge_count(), 2);
-        let e = *g2.get_edge(&"1", &"2").unwrap();
+        let e = *g2.edge_between(&"1", &"2").unwrap();
         assert!(g2.remove_edge(&e));
         assert!(g2.remove_edge_between(&"2", &"3").is_some());
         assert_eq!(g2.edge_count(), 0);

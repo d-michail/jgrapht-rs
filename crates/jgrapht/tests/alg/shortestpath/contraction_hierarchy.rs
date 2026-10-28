@@ -397,7 +397,7 @@ mod bidirectional_dijkstra {
         for i in 0..size {
             let j = (i + 1) % size;
             graph.add_edge(&i, &j).unwrap();
-            let e = *graph.get_edge(&i, &j).unwrap();
+            let e = *graph.edge_between(&i, &j).unwrap();
             graph.set_edge_weight(&e, random.next_double()).unwrap();
         }
         check_against_dijkstra(&graph, 0);

@@ -135,7 +135,7 @@ pub trait HamiltonianPathAlgorithm<G: Graph> {
     /// # Errors
     ///
     /// Returns an `InvalidGraph` error when the graph is empty or does not satisfy the requirements of the implementation, and an `InvalidParameter` error when it exceeds the vertex limit.
-    fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>>;
+    fn path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>>;
 }
 
 fn require_directed_or_undirected<G: Graph>(graph: &G) -> Result<()> {
@@ -161,7 +161,7 @@ fn vertex_list_to_path<G: Graph>(
     let mut weight = 0.0;
     for pair in vertices.windows(2) {
         let e = graph
-            .get_edge(&pair[0], &pair[1])
+            .edge_between(&pair[0], &pair[1])
             .ok_or(GraphError::EdgeNotFound)?;
         weight += graph.weight_of(e);
         edges.push(e.clone());
@@ -250,7 +250,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
     ///
     /// - `HamiltonianPathSearchResult.Status#PATH_FOUND` — the algorithm produced a
     ///   Hamiltonian path; it is accessible via
-    ///   `get_path`.
+    ///   `path`.
     /// - `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` — the algorithm ran to
     ///   completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
     ///   exists.
@@ -262,7 +262,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
     /// Implementations that accept an execution budget (e.g. a maximum state count) may also
     /// return `ABORTED`; such bounded variants must never report `PROVEN_ABSENT`
     /// for a search that was stopped early.
-    fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
+    fn path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         if !graph.graph_type().directed {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Directed));
         }
@@ -447,7 +447,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath 
     ///
     /// - `HamiltonianPathSearchResult.Status#PATH_FOUND` — the algorithm produced a
     ///   Hamiltonian path; it is accessible via
-    ///   `get_path`.
+    ///   `path`.
     /// - `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` — the algorithm ran to
     ///   completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
     ///   exists.
@@ -459,7 +459,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath 
     /// Implementations that accept an execution budget (e.g. a maximum state count) may also
     /// return `ABORTED`; such bounded variants must never report `PROVEN_ABSENT`
     /// for a search that was stopped early.
-    fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
+    fn path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         require_directed_or_undirected(graph)?;
         self.states_expanded = 0;
         require_not_empty(graph)?;
@@ -626,7 +626,7 @@ impl BacktrackingHamiltonianPath {
         self.states_expanded
     }
 
-    /// Like [`get_path`](HamiltonianPathAlgorithm::get_path) but gives up after `max_states`
+    /// Like [`path`](HamiltonianPathAlgorithm::path) but gives up after `max_states`
     /// states with an `Aborted` result.
     ///
     /// # Errors
@@ -941,7 +941,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for BacktrackingHamiltonianP
     ///
     /// - `HamiltonianPathSearchResult.Status#PATH_FOUND` — the algorithm produced a
     ///   Hamiltonian path; it is accessible via
-    ///   `get_path`.
+    ///   `path`.
     /// - `HamiltonianPathSearchResult.Status#PROVEN_ABSENT` — the algorithm ran to
     ///   completion (or was rejected by a sound precheck) and proved that no Hamiltonian path
     ///   exists.
@@ -953,7 +953,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for BacktrackingHamiltonianP
     /// Implementations that accept an execution budget (e.g. a maximum state count) may also
     /// return `ABORTED`; such bounded variants must never report `PROVEN_ABSENT`
     /// for a search that was stopped early.
-    fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
+    fn path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
         self.search(graph, 0)
     }
 }

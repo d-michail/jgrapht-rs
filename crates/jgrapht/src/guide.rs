@@ -299,7 +299,7 @@
 //! assert!(g.contains_vertex(&3));
 //!
 //! // Edges between two vertices, endpoints and weights of an edge.
-//! let e = *g.get_edge(&1, &3).unwrap();
+//! let e = *g.edge_between(&1, &3).unwrap();
 //! assert_eq!(g.edge_endpoints(&e), Some((&1, &3)));
 //! assert_eq!(g.edge_weight(&e), Some(4.0));
 //! assert_eq!(g.edges_between(&1, &3).count(), 1);

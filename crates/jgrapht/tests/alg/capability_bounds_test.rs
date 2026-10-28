@@ -333,7 +333,7 @@ mod flow_matching_tours {
         let g = SparseIntUndirectedGraph::new(4, &[(0, 1), (1, 2), (2, 3)]).unwrap();
         let matching = GreedyMaximumCardinalityMatching::new(&g, false)
             .unwrap()
-            .get_matching()
+            .matching()
             .unwrap();
         assert_eq!(matching.len(), 2);
         // a directed graph is a compile error: the matchers take an `UndirectedGraph`

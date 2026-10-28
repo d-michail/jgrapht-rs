@@ -60,11 +60,11 @@ fn csv_matrix_supports_node_ids_and_zero_weights() {
     importer.import_str(&mut graph, input).unwrap();
     assert_eq!(graph.edge_count(), 2);
     assert_eq!(
-        graph.edge_weight(graph.get_edge(&"a".into(), &"b".into()).unwrap()),
+        graph.edge_weight(graph.edge_between(&"a".into(), &"b".into()).unwrap()),
         Some(2.0)
     );
     assert_eq!(
-        graph.edge_weight(graph.get_edge(&"c".into(), &"c".into()).unwrap()),
+        graph.edge_weight(graph.edge_between(&"c".into(), &"c".into()).unwrap()),
         Some(0.0)
     );
 }

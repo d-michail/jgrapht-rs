@@ -61,7 +61,7 @@ impl<'g, G: Graph> KuhnMunkres<'g, G> {
 }
 
 impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for KuhnMunkres<'_, G> {
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         if self.partition1.len() != self.partition2.len() {
             return Err(GraphError::InvalidGraph(
@@ -100,7 +100,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for KuhnMunkres<'_
         let mut weight = 0.0;
         for (i, &j) in matching.iter().enumerate() {
             let e = graph
-                .get_edge(first_partition[i], second_partition[j])
+                .edge_between(first_partition[i], second_partition[j])
                 .expect("complete bipartite graph");
             weight += graph.weight_of(e);
             edge_set.insert(e.clone());
@@ -129,7 +129,7 @@ impl KuhnMunkresMatrixImplementation {
                     continue;
                 }
                 cost_matrix[i][j] = g.weight_of(
-                    g.get_edge(source, target)
+                    g.edge_between(source, target)
                         .expect("complete bipartite graph"),
                 );
             }

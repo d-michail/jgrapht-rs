@@ -114,7 +114,7 @@ impl<'g, G: IncidenceGraph> IsomorphicGraphMapping<'g, G> {
         };
         let u = self.vertex_correspondence(from.edge_source(e)?, forward)?;
         let v = self.vertex_correspondence(from.edge_target(e)?, forward)?;
-        to.get_edge(u, v)
+        to.edge_between(u, v)
     }
 
     /// Get an unmodifiable version of the forward mapping function.

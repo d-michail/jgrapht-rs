@@ -31,7 +31,7 @@ fn network() -> DiGraph<u32> {
         (1, 2, 1.0),
     ] {
         g.add_edge_with_vertices(a, b).unwrap();
-        let e = *g.get_edge(&a, &b).unwrap();
+        let e = *g.edge_between(&a, &b).unwrap();
         g.set_edge_weight(&e, c).unwrap();
     }
     g
@@ -113,7 +113,7 @@ fn bad_terminals_and_capacities_are_typed_errors() {
 
     let mut negative = DiGraph::<u32>::simple().weighted();
     negative.add_edge_with_vertices(0, 1).unwrap();
-    let e = *negative.get_edge(&0, &1).unwrap();
+    let e = *negative.edge_between(&0, &1).unwrap();
     negative.set_edge_weight(&e, -1.0).unwrap();
     assert_eq!(
         Dinic::new(&negative).err(),
@@ -127,7 +127,7 @@ fn equivalent_flow_trees_answer_values_through_the_narrow_trait() {
     let mut g = UGraph::<u32>::simple().weighted();
     for (a, b, c) in [(0, 1, 4.0), (1, 2, 2.0)] {
         g.add_edge_with_vertices(a, b).unwrap();
-        let e = *g.get_edge(&a, &b).unwrap();
+        let e = *g.edge_between(&a, &b).unwrap();
         g.set_edge_weight(&e, c).unwrap();
     }
     fn value<A: MaximumFlowValueAlgorithm<u32>>(a: &mut A, s: u32, t: u32) -> f64 {
