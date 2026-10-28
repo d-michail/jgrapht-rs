@@ -247,6 +247,7 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
     /// if-statement)
     fn dfs_iterative(&mut self, root: usize, c: usize, length_path: &mut Vec<usize>) {
         let mut explored = vec![false; self.index_list.len()];
+        self.depth[root] = Some(0);
         let mut stack = vec![root];
         while let Some(u) = stack.pop() {
             if !explored[u] {
@@ -260,7 +261,7 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
                     let child = self.opposite(edge, u);
                     if !explored[child] {
                         self.parent[child] = Some(u);
-                        self.depth[child] = Some(self.depth[u].map_or(0, |d| d + 1));
+                        self.depth[child] = self.depth[u].map(|d| d + 1);
                         stack.push(child);
                     }
                 }
