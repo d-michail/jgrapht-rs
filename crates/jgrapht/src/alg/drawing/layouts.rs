@@ -369,7 +369,14 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
             }
             for e in graph.edges() {
                 let e = e.borrow();
-                let (v, u) = (graph.edge_source(e).unwrap(), graph.edge_target(e).unwrap());
+                let (v, u) = (
+                    graph
+                        .edge_source(e)
+                        .ok_or(crate::GraphError::EdgeNotFound)?,
+                    graph
+                        .edge_target(e)
+                        .ok_or(crate::GraphError::EdgeNotFound)?,
+                );
                 if partition.contains(v) == partition.contains(u) {
                     return Err(GraphError::InvalidParameter {
                         name: "partition",

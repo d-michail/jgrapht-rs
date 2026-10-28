@@ -569,7 +569,7 @@ where
             ));
             return None;
         }
-        let other = c.g.opposite_vertex(e, v).expect("edge touches vertex");
+        let other = c.g.opposite_vertex(e, v)?;
         Some(c.seen[other].key + w)
     }
 }

@@ -212,7 +212,9 @@ impl<'a> Parser<'a> {
                                 let scalar = 0x10000
                                     + ((u32::from(code) - 0xd800) << 10)
                                     + (u32::from(low) - 0xdc00);
-                                output.push(char::from_u32(scalar).expect("valid surrogate pair"));
+                                output.push(char::from_u32(scalar).ok_or_else(|| {
+                                    IoError::Import("invalid JSON Unicode escape".into())
+                                })?);
                             } else {
                                 output.push(char::from_u32(u32::from(code)).ok_or_else(|| {
                                     IoError::Import("invalid JSON Unicode escape".into())
@@ -227,7 +229,10 @@ impl<'a> Parser<'a> {
                     let start = self.position - 1;
                     let text = std::str::from_utf8(&self.bytes[start..])
                         .map_err(|_| IoError::Import("JSON is not valid UTF-8".into()))?;
-                    let ch = text.chars().next().expect("non-empty UTF-8");
+                    let ch = text
+                        .chars()
+                        .next()
+                        .ok_or_else(|| IoError::Import("unexpected end of JSON string".into()))?;
                     output.push(ch);
                     self.position = start + ch.len_utf8();
                 }
@@ -299,9 +304,9 @@ impl<'a> Parser<'a> {
                 return self.error("exponent requires digits");
             }
         }
-        Ok(std::str::from_utf8(&self.bytes[start..self.position])
-            .expect("number is ASCII")
-            .to_owned())
+        std::str::from_utf8(&self.bytes[start..self.position])
+            .map(str::to_owned)
+            .map_err(|_| IoError::Import("JSON number is not valid UTF-8".into()))
     }
 
     fn array(&mut self) -> Result<Value> {
@@ -687,7 +692,7 @@ where
         }
     }
 
-    /// Sets the provider used to generate optional edge identifiers.
+    /// Sets the function that supplies an identifier for each edge; without it edges are written without one.
     pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
         self.base.set_edge_id_provider(provider);
     }

@@ -127,7 +127,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
         let graph = self.graph;
         for e1 in graph.edges_of(a1) {
             if !self.matching.contains(e1) {
-                let b1 = graph.opposite_vertex(e1, a1).expect("incident edge");
+                let b1 = graph
+                    .opposite_vertex(e1, a1)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
                 let db1 = &(&(&self.dist[a1] + self.pot(a1)) + self.pot(b1)) - &self.weight(e1)?;
                 if self.pred[b1].is_none() {
                     self.dist.insert(b1.clone(), db1.clone());
@@ -214,7 +216,12 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
                 continue;
             }
             let new_pot = self.pot(&v) - &pot_change;
-            self.pot.as_mut().expect("initialized").insert(v, new_pot);
+            self.pot
+                .as_mut()
+                .ok_or(crate::GraphError::Internal(
+                    "the potentials are not initialized",
+                ))?
+                .insert(v, new_pot);
         }
         while let Some(v) = reached_b.pop() {
             self.pred.insert(v.clone(), None);
@@ -228,7 +235,12 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
                 continue;
             }
             let new_pot = self.pot(&v) + &pot_change;
-            self.pot.as_mut().expect("initialized").insert(v, new_pot);
+            self.pot
+                .as_mut()
+                .ok_or(crate::GraphError::Internal(
+                    "the potentials are not initialized",
+                ))?
+                .insert(v, new_pot);
         }
         Ok(())
     }
@@ -252,7 +264,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
         }
         for e in matched {
             let w = self.weight(&e)?;
-            let (s, t) = graph.edge_endpoints(&e).expect("edge of the graph");
+            let (s, t) = graph
+                .edge_endpoints(&e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             self.matched_edge.remove(s);
             self.matched_edge.remove(t);
             self.matching_weight = &self.matching_weight - &w;
@@ -260,7 +274,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
         }
         for e in free {
             let w = self.weight(&e)?;
-            let (s, t) = graph.edge_endpoints(&e).expect("edge of the graph");
+            let (s, t) = graph
+                .edge_endpoints(&e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             self.matched_edge.insert(s.clone(), e.clone());
             self.matched_edge.insert(t.clone(), e.clone());
             self.matching_weight = &self.matching_weight + &w;
@@ -287,7 +303,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
                 .expect("initialized")
                 .insert(v.clone(), max_weight.clone());
             if let Some(max_edge) = max_edge {
-                let u = graph.opposite_vertex(max_edge, v).expect("incident edge");
+                let u = graph
+                    .opposite_vertex(max_edge, v)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
                 if !self.matched_edge.contains_key(u) {
                     self.matching.insert(max_edge.clone());
                     self.matching_weight = &self.matching_weight + &max_weight;

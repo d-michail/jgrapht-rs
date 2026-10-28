@@ -116,7 +116,9 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
             }
             let (e, _) =
                 shortest.ok_or(GraphError::InvalidGraph(crate::GraphProperty::HasEdges))?;
-            let (s, t) = graph.edge_endpoints(&e).expect("edge of the graph");
+            let (s, t) = graph
+                .edge_endpoints(&e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             subtour_vertices.push(s.clone());
             subtour_vertices.push(t.clone());
         }

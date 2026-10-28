@@ -1137,7 +1137,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
         h.add_vertices(0..vs.len());
         for e in g.edges() {
             let e = e.borrow();
-            let (s, t) = g.edge_endpoints(e).expect("edge of the graph");
+            let (s, t) = g.edge_endpoints(e).ok_or(crate::GraphError::EdgeNotFound)?;
             let id = h
                 .add_edge(&index[s], &index[t])?
                 .expect("pseudograph accepts every edge");

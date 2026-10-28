@@ -359,7 +359,10 @@ impl Parser {
                 }
                 self.position += 1;
                 let value = self.id()?;
-                let key = left.first().expect("single endpoint").clone();
+                let key = left
+                    .first()
+                    .cloned()
+                    .ok_or_else(|| IoError::Import("invalid DOT graph attribute".into()))?;
                 self.nodes.shift_remove(&key);
                 members.shift_remove(&key);
                 scope
@@ -720,15 +723,15 @@ where
     pub fn set_graph_id_provider(&mut self, p: impl FnMut() -> String + 'static) {
         self.base.set_graph_id_provider(p);
     }
-    /// Sets the provider of graph attributes.
+    /// Sets the function that supplies the attributes of the graph.
     pub fn set_graph_attribute_provider(&mut self, p: impl Fn() -> AttributeMap + 'static) {
         self.base.set_graph_attribute_provider(p);
     }
-    /// Sets the provider of vertex attributes.
+    /// Sets the function that supplies the attributes written for each vertex.
     pub fn set_vertex_attribute_provider(&mut self, p: impl Fn(&V) -> AttributeMap + 'static) {
         self.base.set_vertex_attribute_provider(p);
     }
-    /// Sets the provider of edge attributes.
+    /// Sets the function that supplies the attributes written for each edge.
     pub fn set_edge_attribute_provider(&mut self, p: impl Fn(&E) -> AttributeMap + 'static) {
         self.base.set_edge_attribute_provider(p);
     }

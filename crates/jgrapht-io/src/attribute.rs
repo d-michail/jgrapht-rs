@@ -120,7 +120,7 @@ impl Attribute {
         &self.value
     }
 
-    /// Returns the declared attribute type.
+    /// The declared type of the attribute (`string`, `int`, ...); the value itself stays a string.
     pub const fn attribute_type(&self) -> AttributeType {
         self.attribute_type
     }

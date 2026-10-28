@@ -361,7 +361,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
         if self.p.is_none() {
             self.calculate_gomory_hu_tree()?;
         }
-        let p = self.p.as_ref().unwrap();
+        let p = self.p.as_ref().ok_or(crate::GraphError::Internal(
+            "a value computed earlier is missing",
+        ))?;
         let mut tree = UGraph::<G::Vertex>::simple().weighted();
         tree.add_vertices(self.vertex_list.iter().cloned());
         for i in 1..self.n {
@@ -383,7 +385,12 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
         if self.gomory_hu_tree.is_none() {
             self.gomory_hu_tree = Some(self.gomory_hu_tree()?);
         }
-        let tree = self.gomory_hu_tree.as_ref().unwrap();
+        let tree = self
+            .gomory_hu_tree
+            .as_ref()
+            .ok_or(crate::GraphError::Internal(
+                "a value computed earlier is missing",
+            ))?;
         let mut cheapest: Option<(&DefaultEdge, f64)> = None;
         for e in tree.edges() {
             let w = tree.weight_of(e);
@@ -392,7 +399,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
             }
         }
         let (edge, _) = cheapest.ok_or(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty))?;
-        let (u, v) = tree.edge_endpoints(edge).unwrap();
+        let (u, v) = tree
+            .edge_endpoints(edge)
+            .ok_or(crate::GraphError::EdgeNotFound)?;
         let (u, v) = (u.clone(), v.clone());
         self.minimum_cut(&u, &v)
     }
@@ -449,10 +458,20 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> GusfieldGomoryHuCutTree<'g, G
             self.gomory_hu_tree = Some(self.gomory_hu_tree().expect("tree"));
         }
         let path_edges = {
-            let tree = self.gomory_hu_tree.as_ref().unwrap();
+            let tree = self
+                .gomory_hu_tree
+                .as_ref()
+                .ok_or(crate::GraphError::Internal(
+                    "a value computed earlier is missing",
+                ))?;
             self.find_path_between(tree, source, target)
         };
-        let tree = self.gomory_hu_tree.as_mut().unwrap();
+        let tree = self
+            .gomory_hu_tree
+            .as_mut()
+            .ok_or(crate::GraphError::Internal(
+                "a value computed earlier is missing",
+            ))?;
         let mut cheapest: Option<(DefaultEdge, f64)> = None;
         for e in &path_edges {
             let w = tree.weight_of(e);
@@ -462,7 +481,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> GusfieldGomoryHuCutTree<'g, G
         }
         let (edge, weight) = cheapest.ok_or(GraphError::SourceEqualsSink)?;
         let (u, v) = {
-            let (u, v) = tree.edge_endpoints(&edge).unwrap();
+            let (u, v) = tree
+                .edge_endpoints(&edge)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             (u.clone(), v.clone())
         };
         tree.remove_edge(&edge);

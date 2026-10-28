@@ -187,7 +187,9 @@ pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(
     let mut mate = vec![None; ix.n()];
     for edge in matching.edges() {
         let edge = edge.borrow();
-        let (source, target) = g.edge_endpoints(edge).expect("matching edge of the graph");
+        let (source, target) = g
+            .edge_endpoints(edge)
+            .ok_or(crate::GraphError::EdgeNotFound)?;
         let (source, target) = (ix.idx[source], ix.idx[target]);
         mate[source] = Some(target);
         mate[target] = Some(source);
@@ -409,7 +411,10 @@ impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for BarYehudaEvenTwoAppr
         // the first remaining edge, repeatedly = a scan over the edges that skips removed vertices
         for e in g.edges() {
             let e = e.borrow();
-            let (p, q) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
+            let (p, q) = (
+                g.edge_source(e).ok_or(crate::GraphError::EdgeNotFound)?,
+                g.edge_target(e).ok_or(crate::GraphError::EdgeNotFound)?,
+            );
             if removed.contains(p) || removed.contains(q) {
                 continue;
             }
@@ -456,7 +461,10 @@ impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for EdgeBasedTwoApproxVc
         let mut cover: indexmap::IndexSet<G::Vertex> = indexmap::IndexSet::new();
         for e in g.edges() {
             let e = e.borrow();
-            let (u, v) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
+            let (u, v) = (
+                g.edge_source(e).ok_or(crate::GraphError::EdgeNotFound)?,
+                g.edge_target(e).ok_or(crate::GraphError::EdgeNotFound)?,
+            );
             if removed.contains(u) || removed.contains(v) {
                 continue;
             }

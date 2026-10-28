@@ -136,7 +136,9 @@ impl ChinesePostman {
         let matching = matching.get_matching()?;
         let mut shortcuts = Vec::with_capacity(matching.len());
         for edge in matching.edges() {
-            let (source, target) = auxiliary.edge_endpoints(edge).unwrap();
+            let (source, target) = auxiliary
+                .edge_endpoints(edge)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             let (low, high) = if source < target {
                 (*source, *target)
             } else {
@@ -217,7 +219,9 @@ impl ChinesePostman {
         let matching = matching.get_matching()?;
         let mut shortcuts = Vec::with_capacity(matching.len());
         for edge in matching.edges() {
-            let (first, second) = auxiliary.edge_endpoints(edge).unwrap();
+            let (first, second) = auxiliary
+                .edge_endpoints(edge)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             let (negative_vertex, positive_vertex) = if negative_partition.contains(first) {
                 (*first, *second)
             } else {
@@ -243,7 +247,9 @@ impl ChinesePostman {
         let mut edge_map = Vec::with_capacity(graph.edge_count() + shortcuts.len());
         for edge in graph.edges() {
             let edge = edge.borrow();
-            let (source, target) = graph.edge_endpoints(edge).unwrap();
+            let (source, target) = graph
+                .edge_endpoints(edge)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             let synthetic = euler_graph.add_edge(source, target)?.unwrap();
             assert_eq!(synthetic, edge_map.len());
             edge_map.push(AugmentedEdge::Original(edge.clone()));

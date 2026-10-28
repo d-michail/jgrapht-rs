@@ -382,7 +382,7 @@ impl Graph6Exporter {
         self.format
     }
 
-    /// Sets the output encoding.
+    /// Chooses the encoding that is written: graph6, sparse6 or digraph6.
     pub fn set_format(&mut self, format: Graph6Format) {
         self.format = format;
     }

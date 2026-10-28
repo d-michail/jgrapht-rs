@@ -557,7 +557,10 @@ where
         let (mut unmatched1, mut unmatched2) = (self.partition1.clone(), self.partition2.clone());
         for e in matching.edges() {
             let e = e.borrow();
-            let (source, target) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
+            let (source, target) = (
+                g.edge_source(e).ok_or(crate::GraphError::EdgeNotFound)?,
+                g.edge_target(e).ok_or(crate::GraphError::EdgeNotFound)?,
+            );
             if self.partition1.contains(source) {
                 unmatched1.remove(source);
                 unmatched2.remove(target);
@@ -639,7 +642,10 @@ where
         dg.add_vertices(g.vertices_cloned());
         for e in g.edges() {
             let e = e.borrow();
-            let (v1, v2) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
+            let (v1, v2) = (
+                g.edge_source(e).ok_or(crate::GraphError::EdgeNotFound)?,
+                g.edge_target(e).ok_or(crate::GraphError::EdgeNotFound)?,
+            );
             if self.partition1.contains(v1) {
                 dg.add_edge(v1, v2)?;
                 if matched.contains(e) {
@@ -670,7 +676,10 @@ where
         });
         for e in g.edges() {
             let e = e.borrow();
-            let (v1, v2) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
+            let (v1, v2) = (
+                g.edge_source(e).ok_or(crate::GraphError::EdgeNotFound)?,
+                g.edge_target(e).ok_or(crate::GraphError::EdgeNotFound)?,
+            );
             if subset.contains(v1) && subset.contains(v2) {
                 if matched.contains(e) {
                     h.add_vertex(e.clone());

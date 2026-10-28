@@ -313,7 +313,12 @@ impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
             let mut candidates: Vec<G::Vertex> = self.base.graph.vertices_cloned().collect();
             self.find_cliques(&mut Vec::new(), &mut candidates, &mut Vec::new(), deadline);
         }
-        Ok(self.base.cliques.as_deref().unwrap())
+        self.base
+            .cliques
+            .as_deref()
+            .ok_or(crate::GraphError::Internal(
+                "a value computed earlier is missing",
+            ))
     }
 }
 
@@ -441,7 +446,12 @@ impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
             let mut p: IndexSet<G::Vertex> = self.base.graph.vertices_cloned().collect();
             self.find_cliques(&mut p, &IndexSet::new(), &mut IndexSet::new(), deadline);
         }
-        Ok(self.base.cliques.as_deref().unwrap())
+        self.base
+            .cliques
+            .as_deref()
+            .ok_or(crate::GraphError::Internal(
+                "a value computed earlier is missing",
+            ))
     }
 }
 
@@ -522,7 +532,13 @@ impl<G: IncidenceGraph> MaximalCliqueEnumerationAlgorithm<G::Vertex>
                 inner.find_cliques(&mut p, &r, &mut x, deadline);
             }
         }
-        Ok(inner.base.cliques.as_deref().unwrap())
+        inner
+            .base
+            .cliques
+            .as_deref()
+            .ok_or(crate::GraphError::Internal(
+                "a value computed earlier is missing",
+            ))
     }
 }
 

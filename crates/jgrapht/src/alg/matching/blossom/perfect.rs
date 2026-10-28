@@ -244,8 +244,13 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_error(&mut self) -> Result<f64> {
         self.compute()?;
-        let state = self.state.as_ref().expect("computed state");
-        let matching = self.matching.as_ref().expect("computed matching");
+        let state = self
+            .state
+            .as_ref()
+            .ok_or(crate::GraphError::Internal("the computed state is missing"))?;
+        let matching = self.matching.as_ref().ok_or(crate::GraphError::Internal(
+            "the computed matching is missing",
+        ))?;
         let mut error = Self::nonnegativity_error(state);
         let matched: HashSet<_> = matching
             .edges()
@@ -291,7 +296,10 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_dual_solution(&mut self) -> Result<BlossomVDualSolution<'g, G>> {
         self.compute()?;
-        let state = self.state.as_ref().expect("computed state");
+        let state = self
+            .state
+            .as_ref()
+            .ok_or(crate::GraphError::Internal("the computed state is missing"))?;
         let mut blossom_members: HashMap<NodeId, HashableSet<G::Vertex>> = HashMap::new();
         for node in 0..state.node_num {
             let mut parent = state.arena.nodes[node].blossom_parent;
@@ -647,7 +655,9 @@ impl<G: UndirectedGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     /// description for the relative definitions and algorithm description.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         self.compute()?;
-        Ok(self.matching.clone().expect("computed matching"))
+        self.matching.clone().ok_or(crate::GraphError::Internal(
+            "the computed matching is missing",
+        ))
     }
 }
 

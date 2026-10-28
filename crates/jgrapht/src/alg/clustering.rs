@@ -193,7 +193,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
                 let v = v.borrow();
                 let mut sum = 0.0;
                 for e in graph.out_edges_of(v) {
-                    let u = graph.opposite_vertex(e, v).unwrap();
+                    let u = graph
+                        .opposite_vertex(e, v)
+                        .ok_or(crate::GraphError::EdgeNotFound)?;
                     let w = graph.weight_of(e);
                     sum += if u == v { 2.0 * w } else { w };
                 }
@@ -236,8 +238,12 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
         for e in self.graph.edges() {
             let e = e.borrow();
             let (v, u) = (
-                self.graph.edge_source(e).unwrap(),
-                self.graph.edge_target(e).unwrap(),
+                self.graph
+                    .edge_source(e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?,
+                self.graph
+                    .edge_target(e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?,
             );
             let pv = vertex_partition
                 .get(v)
@@ -404,7 +410,12 @@ impl<G: Graph> ClusteringAlgorithm<G::Vertex> for KSpanningTreeClustering<'_, G>
             if forest.number_of_sets() == self.k {
                 break;
             }
-            let (s, t) = (g.edge_source(&edge).unwrap(), g.edge_target(&edge).unwrap());
+            let (s, t) = (
+                g.edge_source(&edge)
+                    .ok_or(crate::GraphError::EdgeNotFound)?,
+                g.edge_target(&edge)
+                    .ok_or(crate::GraphError::EdgeNotFound)?,
+            );
             if forest.find(s)? == forest.find(t)? {
                 continue;
             }
@@ -567,8 +578,8 @@ impl<G: IncidenceGraph> ClusteringAlgorithm<G::Vertex> for GreedyModularityAlgor
         for e in g.edges() {
             let e = e.borrow();
             let (vi, vj) = (
-                index[g.edge_source(e).unwrap()],
-                index[g.edge_target(e).unwrap()],
+                index[g.edge_source(e).ok_or(crate::GraphError::EdgeNotFound)?],
+                index[g.edge_target(e).ok_or(crate::GraphError::EdgeNotFound)?],
             );
             if vi == vj {
                 continue;

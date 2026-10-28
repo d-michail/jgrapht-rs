@@ -446,8 +446,12 @@ impl<V: Clone + Eq + Hash> Complement<V> {
         for e in graph.edges() {
             let e = e.borrow();
             let (s, t) = (
-                index[graph.edge_source(e).unwrap()],
-                index[graph.edge_target(e).unwrap()],
+                index[graph
+                    .edge_source(e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?],
+                index[graph
+                    .edge_target(e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?],
             );
             present.insert((s, t));
             if !directed {

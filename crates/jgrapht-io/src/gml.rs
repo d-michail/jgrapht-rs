@@ -522,12 +522,12 @@ where
         self.parameters.contains(&parameter)
     }
 
-    /// Sets the provider used to generate optional edge identifiers.
+    /// Sets the function that supplies an identifier for each edge; without it edges are written without one.
     pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
         self.base.set_edge_id_provider(provider);
     }
 
-    /// Sets the provider of vertex attributes.
+    /// Sets the function that supplies the attributes written for each vertex.
     pub fn set_vertex_attribute_provider(
         &mut self,
         provider: impl Fn(&V) -> AttributeMap + 'static,
@@ -535,7 +535,7 @@ where
         self.base.set_vertex_attribute_provider(provider);
     }
 
-    /// Sets the provider of edge attributes.
+    /// Sets the function that supplies the attributes written for each edge.
     pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
         self.base.set_edge_attribute_provider(provider);
     }

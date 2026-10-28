@@ -111,7 +111,8 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_error(&mut self) -> Result<f64> {
         self.compute()?;
-        Ok(self.error.expect("computed error"))
+        self.error
+            .ok_or(crate::GraphError::Internal("the computed error is missing"))
     }
 
     fn compute(&mut self) -> Result<()> {
@@ -198,7 +199,9 @@ impl<G: UndirectedGraph> MatchingAlgorithm<G::Vertex, G::Edge>
     /// depending on the goal of the algorithm.
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         self.compute()?;
-        Ok(self.matching.clone().expect("computed matching"))
+        self.matching.clone().ok_or(crate::GraphError::Internal(
+            "the computed matching is missing",
+        ))
     }
 }
 

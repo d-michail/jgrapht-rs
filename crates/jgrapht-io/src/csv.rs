@@ -183,17 +183,17 @@ impl CsvEventDrivenImporter {
         }
     }
 
-    /// Returns the input format.
+    /// The layout the importer expects: edge list, adjacency list or matrix.
     pub const fn format(&self) -> CsvFormat {
         self.format
     }
 
-    /// Sets the input format.
+    /// Chooses the layout the importer expects: edge list, adjacency list or matrix.
     pub fn set_format(&mut self, format: CsvFormat) {
         self.format = format;
     }
 
-    /// Returns the field delimiter.
+    /// The character that separates the fields of a record.
     pub const fn delimiter(&self) -> char {
         self.delimiter
     }
@@ -456,17 +456,17 @@ impl<V> CsvImporter<V> {
         self.parser.set_parameter(parameter, enabled);
     }
 
-    /// Returns the input format.
+    /// The layout the importer expects: edge list, adjacency list or matrix.
     pub const fn format(&self) -> CsvFormat {
         self.parser.format()
     }
 
-    /// Sets the input format.
+    /// Chooses the layout the importer expects: edge list, adjacency list or matrix.
     pub fn set_format(&mut self, format: CsvFormat) {
         self.parser.set_format(format);
     }
 
-    /// Returns the field delimiter.
+    /// The character that separates the fields of a record.
     pub const fn delimiter(&self) -> char {
         self.parser.delimiter()
     }
@@ -617,17 +617,17 @@ where
         }
     }
 
-    /// Returns the output format.
+    /// The layout the exporter writes: edge list, adjacency list or matrix.
     pub const fn format(&self) -> CsvFormat {
         self.format
     }
 
-    /// Sets the output format.
+    /// Chooses the layout the exporter writes: edge list, adjacency list or matrix.
     pub fn set_format(&mut self, format: CsvFormat) {
         self.format = format;
     }
 
-    /// Returns the field delimiter.
+    /// The character that separates the fields of a record.
     pub const fn delimiter(&self) -> char {
         self.delimiter
     }

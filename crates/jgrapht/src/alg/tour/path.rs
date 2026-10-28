@@ -284,7 +284,9 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
         while let Some(u) = queue.pop_front() {
             topo.push(u);
             for e in graph.out_edges_of(&index_list[u]) {
-                let v = vertex_map[graph.edge_target(e).expect("edge of the graph")];
+                let v = vertex_map[graph
+                    .edge_target(e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?];
                 in_degree[v] -= 1;
                 if in_degree[v] == 0 {
                     queue.push_back(v);
@@ -305,7 +307,9 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for DagHamiltonianPath {
         for i in 0..n {
             let v = &index_list[topo[i]];
             for e in graph.in_edges_of(v) {
-                let u = position[vertex_map[graph.edge_source(e).expect("edge of the graph")]];
+                let u = position[vertex_map[graph
+                    .edge_source(e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?]];
                 if longest[u] + 1 > longest[i] {
                     longest[i] = longest[u] + 1;
                     predecessor[i] = u;

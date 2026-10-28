@@ -299,8 +299,14 @@ where
         for e in self.graph.edges() {
             let e = e.borrow();
             let (a, b) = (
-                self.graph.edge_source(e).unwrap().clone(),
-                self.graph.edge_target(e).unwrap().clone(),
+                self.graph
+                    .edge_source(e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?
+                    .clone(),
+                self.graph
+                    .edge_target(e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?
+                    .clone(),
             );
             let weight = Self::weight_of(self.graph, e);
             for (x, y) in [(&a, &b), (&b, &a)] {
@@ -341,7 +347,10 @@ where
                         self.network.get_edge(v, &self.t).cloned().unwrap(),
                         self.network.get_edge(&self.s, v).cloned().unwrap(),
                     ] {
-                        let w = self.network.edge_weight(&e).unwrap();
+                        let w = self
+                            .network
+                            .edge_weight(&e)
+                            .ok_or(crate::GraphError::EdgeNotFound)?;
                         self.network.set_edge_weight(&e, w - min)?;
                     }
                 }
@@ -377,7 +386,13 @@ where
         }
         Ok(crate::AsSubgraph::induced(
             self.graph,
-            self.densest.as_ref().unwrap().iter().cloned(),
+            self.densest
+                .as_ref()
+                .ok_or(crate::GraphError::Internal(
+                    "a value computed earlier is missing",
+                ))?
+                .iter()
+                .cloned(),
         ))
     }
 

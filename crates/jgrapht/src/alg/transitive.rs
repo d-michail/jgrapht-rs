@@ -71,9 +71,13 @@ impl TransitiveClosure {
                 new_edge_targets.clear();
 
                 for v1_out_edge in graph.out_edges_of(v1) {
-                    let v2 = graph.edge_target(v1_out_edge).expect("edge target");
+                    let v2 = graph
+                        .edge_target(v1_out_edge)
+                        .ok_or(crate::GraphError::EdgeNotFound)?;
                     for v2_out_edge in graph.out_edges_of(v2) {
-                        let v3 = graph.edge_target(v2_out_edge).expect("edge target");
+                        let v3 = graph
+                            .edge_target(v2_out_edge)
+                            .ok_or(crate::GraphError::EdgeNotFound)?;
 
                         if v1 == v3 {
                             // Its a simple graph, so no self loops.
@@ -267,7 +271,9 @@ impl TransitiveReduction {
         let mut original_matrix: Vec<BitSet> = (0..n).map(|_| BitSet::new(n)).collect();
         for edge in directed_graph.edges() {
             let edge = edge.borrow();
-            let (v1, v2) = directed_graph.edge_endpoints(edge).expect("edge endpoints");
+            let (v1, v2) = directed_graph
+                .edge_endpoints(edge)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             original_matrix[index_of(v1)].set(index_of(v2), true);
         }
 
