@@ -1,6 +1,6 @@
 [package]
 name = "jgrapht"
-description = "A Rust port of the JGraphT core library, built around graph traits"
+description = "A Rust port of JGraphT, built around graph traits"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

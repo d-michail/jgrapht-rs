@@ -5,7 +5,7 @@
 ![MSRV](https://img.shields.io/badge/rustc-1.88%2B-orange)
 
 A graph library for Rust: graph data structures, a large collection of graph algorithms, graph
-generators and import/export for common file formats. It is a port of the core of
+generators and import/export for common file formats. It is a port of
 [JGraphT](https://jgrapht.org), redesigned for Rust.
 
 - **Graphs are traits.** Algorithms ask for the narrowest capability they need (`Graph`,
@@ -28,8 +28,8 @@ Add the crates as dependencies:
 
 ```toml
 [dependencies]
-jgrapht = { git = "https://github.com/d-michail/jgrapht-rs" }
-jgrapht-io = { git = "https://github.com/d-michail/jgrapht-rs" }   # importers and exporters
+jgrapht = "1.0.0"
+jgrapht-io = "1.0.0"   # importers and exporters
 ```
 
 The optional `serde` feature of `jgrapht` serializes graphs and results. The documentation starts

@@ -21,7 +21,7 @@
     clippy::nonminimal_bool
 )]
 #![deny(missing_docs)]
-//! A Rust port of the [JGraphT](https://jgrapht.org) core library.
+//! A Rust port of [JGraphT](https://jgrapht.org).
 //!
 //! Unlike the Java original, graphs are expressed as *traits*
 //! ([`Graph`], [`DirectedGraph`], [`UndirectedGraph`], [`GraphMut`]) so that
