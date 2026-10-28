@@ -74,20 +74,6 @@ with a concrete type such as `UGraph<String>` sees plain references and needs no
 The same rule explains why traversal iterators (`Bfs`, `Dfs`, `DepthFirstIterator`, ...) and
 `topological_sort` yield owned vertices: they cannot hand out references into a graph that has none.
 
-## Edge identity
-
-An edge added with `add_edge(u, v)` gets an id minted by *its graph* (`DefaultEdge(0)`, `(1)`, ...),
-like an index in petgraph. Ids are only unique inside one graph, so two graphs built separately
-both contain an edge `e0` that are unrelated. JGraphT's `new DefaultEdge()` is unique everywhere;
-the equivalent is `DefaultEdge::new()` (ids from a separate range). Use it when one edge must belong
-to several graphs, for example in a `GraphUnion`.
-
-`GraphUnion` treats equal edges as the same edge. `GraphUnion::new` does not check that, so
-unrelated edges with equal ids would be merged; `GraphUnion::try_new` returns
-`GraphError::IntrusiveEdge` when a shared edge joins different endpoints in the two graphs. Your own
-edge types stay supported: implement `MintEdge` for `BaseGraph::new_minted`, pass a closure to
-`with_edge_factory`, or add edges with `add_edge_with`.
-
 ## Views and snapshots (differences from JGraphT's live views)
 
 JGraphT's views and helper caches register themselves as `GraphListener`s on the base graph and
@@ -133,8 +119,8 @@ let back: UGraph<String> = serde_json::from_str(&json)?;
   never a corrupt graph.
 * Edge and vertex factories are function pointers and are not written. A deserialized graph has
   none: add edges with `add_edge_with`, or call `with_default_edge_factory()` /
-  `with_vertex_factory(..)` first. Edge ids minted by a graph are stored with it, so new edges
-  continue the numbering; reading a detached `DefaultEdge::new()` id moves the global counter past it.
+  `with_vertex_factory(..)` first. Reading a `DefaultEdge` moves the global edge counter past its
+  id, so new edges never collide with the loaded ones.
 * Maps keyed by vertices (`Coloring`, flows, shortest paths) are written as lists of pairs, because
   formats such as JSON only allow string keys.
 * Views that hold closures (`MaskSubgraph`, `AsWeighted`) and `AsSubgraph` are not serializable;

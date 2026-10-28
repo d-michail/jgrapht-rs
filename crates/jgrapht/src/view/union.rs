@@ -12,9 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use crate::GraphType;
 use crate::graph::GraphExt;
 use crate::graph::{DirectedGraph, Graph, UndirectedGraph};
-use crate::{GraphError, GraphType, Result};
 
 /// How to merge the weights of an edge present in both graphs of a union.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -62,45 +62,7 @@ where
     A: Graph,
     B: Graph<Vertex = A::Vertex, Edge = A::Edge>,
 {
-    /// Union that first checks that every edge present in both graphs joins the same endpoints in
-    /// both (in either orientation if one of the two is undirected), with weights summed.
-    ///
-    /// Edges are shared by equality, as in JGraphT where the same edge object may belong to
-    /// several graphs. Edges that `add_edge` created are numbered per graph, so two independently
-    /// built graphs can both contain an edge `e0` that are unrelated; [`GraphUnion::new`] would
-    /// silently treat them as one edge. This constructor reports it instead.
-    ///
-    /// # Errors
-    ///
-    /// [`GraphError::IntrusiveEdge`] if a shared edge has different endpoints in the two graphs.
-    pub fn try_new(a: A, b: B) -> Result<Self> {
-        Self::try_with_combiner(a, b, WeightCombiner::Sum)
-    }
-
-    /// [`GraphUnion::try_new`] with the given weight combiner.
-    ///
-    /// # Errors
-    ///
-    /// [`GraphError::IntrusiveEdge`] if a shared edge has different endpoints in the two graphs.
-    pub fn try_with_combiner(a: A, b: B, combiner: WeightCombiner) -> Result<Self> {
-        for e in b.edges_cloned() {
-            let (Some((as_, at)), Some((bs, bt))) = (
-                a.edge_source(&e).zip(a.edge_target(&e)),
-                b.edge_source(&e).zip(b.edge_target(&e)),
-            ) else {
-                continue;
-            };
-            let both_directed = a.is_edge_directed(&e) && b.is_edge_directed(&e);
-            let same = (as_ == bs && at == bt) || (!both_directed && as_ == bt && at == bs);
-            if !same {
-                return Err(GraphError::IntrusiveEdge);
-            }
-        }
-        Ok(GraphUnion { a, b, combiner })
-    }
-
-    /// Union with weights of shared edges summed. Does not check that shared edges agree on their
-    /// endpoints; use [`GraphUnion::try_new`] for graphs whose edges were created with `add_edge`.
+    /// Union with weights of shared edges summed.
     pub fn new(a: A, b: B) -> Self {
         Self::with_combiner(a, b, WeightCombiner::Sum)
     }

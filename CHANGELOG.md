@@ -5,11 +5,6 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-- Breaking: `add_edge` mints `DefaultEdge` ids per graph (`0, 1, ...`) instead of from a process-wide
-  counter, so graphs no longer depend on global state and serialize cleanly. Use
-  `DefaultEdge::new()` for an edge that must be unique across graphs. New `MintEdge` trait and
-  `BaseGraph::new_minted`; `GraphUnion::try_new` rejects shared edges with different endpoints.
-
 - `jgrapht`: optional `serde` feature, the counterpart of JGraphT's `java.io.Serializable`. It covers
   `BaseGraph` (rebuilt through `add_edge_with`, so loops, parallel edges and acyclicity are
   checked on input), the four sparse graphs, `GraphType`, `DefaultEdge`, `GraphWalk` (cardinality
