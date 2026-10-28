@@ -24,22 +24,66 @@ use std::marker::PhantomData;
 mod serde_impl;
 
 /// Edge type used when the caller does not supply their own.
+///
+/// An edge added with `add_edge` gets an id minted by *its graph* (`0, 1, 2, ...`): ids are only
+/// unique inside one graph, like indices in petgraph. Where Java would write `new DefaultEdge()`
+/// to get an object that is unique everywhere (to share one edge between several graphs, or to
+/// pass to `add_edge_with`), use [`DefaultEdge::new`]; those ids live in a separate range so they
+/// never collide with minted ones.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DefaultEdge(pub u64);
 
-static NEXT_DEFAULT_EDGE: std::sync::atomic::AtomicU64 =
-    std::sync::atomic::AtomicU64::new(1_000_000);
+/// First id handed out by [`DefaultEdge::new`]; graph-minted ids stay below it.
+pub(crate) const DETACHED_EDGE_BASE: u64 = 1 << 62;
+
+static NEXT_DETACHED_EDGE: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(DETACHED_EDGE_BASE);
 
 impl DefaultEdge {
-    /// A process-wide unique edge, mirroring the identity of `new DefaultEdge()` in Java.
+    /// A process-wide unique edge, mirroring the identity of `new DefaultEdge()` in Java. Use it
+    /// when the same edge must be a member of several graphs.
     pub fn new() -> Self {
-        DefaultEdge(NEXT_DEFAULT_EDGE.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
+        DefaultEdge(NEXT_DETACHED_EDGE.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
     }
-    /// Edge factory for [`BaseGraph::with_edge_factory`]; the per-graph counter is ignored because
-    /// default edges are unique across all graphs.
-    pub fn from_id(_: u64) -> Self {
-        Self::new()
+
+    /// The edge with graph-local id `id` (an edge factory for [`BaseGraph::with_edge_factory`]).
+    pub fn from_id(id: u64) -> Self {
+        DefaultEdge(id)
+    }
+
+    /// Makes sure [`DefaultEdge::new`] never returns an id `<= id` again (used after reading
+    /// edges from a document).
+    #[cfg(feature = "serde")]
+    pub(crate) fn reserve_detached(id: u64) {
+        if id >= DETACHED_EDGE_BASE {
+            NEXT_DETACHED_EDGE.fetch_max(id.saturating_add(1), std::sync::atomic::Ordering::Relaxed);
+        }
+    }
+}
+
+/// An edge type whose values a graph can create from its own counter, so that `add_edge(u, v)`
+/// works without a stored factory function. Implement it for your own edge type to use
+/// [`BaseGraph::new_minted`]; types that cannot be minted (an edge carrying data) are added with
+/// `add_edge_with` or get a closure through [`BaseGraph::with_edge_factory`].
+pub trait MintEdge: Sized {
+    /// The edge with the given per-graph id. Distinct ids must give distinct (unequal) edges.
+    fn mint(id: u64) -> Self;
+}
+
+impl MintEdge for DefaultEdge {
+    fn mint(id: u64) -> Self {
+        DefaultEdge(id)
+    }
+}
+impl MintEdge for u64 {
+    fn mint(id: u64) -> Self {
+        id
+    }
+}
+impl MintEdge for usize {
+    fn mint(id: u64) -> Self {
+        id as usize
     }
 }
 
@@ -149,6 +193,15 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction>
         Self::build(ty, Some(factory), false)
     }
 
+    /// Creates a graph whose `add_edge` mints edges with [`MintEdge::mint`] from the graph's own
+    /// counter. No function pointer is stored, so the graph can be serialized and read back.
+    pub fn new_minted(ty: GraphType) -> Self
+    where
+        E: MintEdge,
+    {
+        Self::build(ty, Some(E::mint), false)
+    }
+
     /// Creates a graph without an edge factory: edges must be added with `add_edge_with`.
     pub fn without_edge_factory(ty: GraphType) -> Self {
         Self::build(ty, None, false)
@@ -237,7 +290,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> BaseGraph<V, E
 impl<V: Clone + Eq + Hash, D: Direction> BaseGraph<V, DefaultEdge, D> {
     /// Graph with an arbitrary [`GraphType`] (direction comes from `D`) and [`DefaultEdge`]s.
     pub fn with_graph_type(ty: GraphType) -> Self {
-        Self::with_edge_factory(ty, DefaultEdge::from_id)
+        Self::new_minted(ty)
     }
     /// Installs the [`DefaultEdge`] factory, so that `add_edge` works on a graph read with `serde`
     /// (builder style).
