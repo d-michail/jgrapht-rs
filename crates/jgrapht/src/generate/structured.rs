@@ -12,9 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use super::{
-    GeneratorResult, GraphGenerator, add_edge, invalid, put, require_directed_or_undirected,
-};
+use super::{GeneratorResult, GraphGenerator, add_edge, put, require_directed_or_undirected};
 use crate::graph::Graph;
 use crate::graph::GraphExt;
 use crate::{GraphError, GraphMut, GraphMutExt, Result};
@@ -122,9 +120,9 @@ impl GraphGenerator for Star {
 
 /// Wheel: a ring of `n - 1` rim vertices (created first) and a hub (`"Hub Vertex"`) created last.
 pub struct Wheel {
-    /// The n.
+    /// Number of vertices, hub included.
     pub n: usize,
-    /// The inward spokes.
+    /// In a directed graph, point the spokes towards the hub instead of away from it.
     pub inward_spokes: bool,
 }
 impl GraphGenerator for Wheel {
@@ -222,7 +220,10 @@ impl CompleteBipartite {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn between<G: GraphMut>(target: &mut G, a: &[G::Vertex], b: &[G::Vertex]) -> Result<()> {
         if a.is_empty() || b.is_empty() {
-            return invalid("partitions must be non-empty");
+            return Err(GraphError::InvalidParameter {
+                name: "partitions",
+                requirement: crate::ParameterRequirement::NonEmpty,
+            });
         }
         for u in a {
             for v in b {
@@ -236,9 +237,9 @@ impl CompleteBipartite {
 /// `rows x cols` grid (both at least 2); `"Corner Vertex 1..4"` in the result map. Every adjacent
 /// pair gets edges in both directions (the second is skipped in undirected graphs).
 pub struct Grid {
-    /// The rows.
+    /// Number of rows of vertices.
     pub rows: usize,
-    /// The cols.
+    /// Number of columns of vertices.
     pub cols: usize,
 }
 impl GraphGenerator for Grid {
@@ -249,14 +250,16 @@ impl GraphGenerator for Grid {
     ) -> Result<()> {
         let (rows, cols) = (self.rows, self.cols);
         if rows < 2 {
-            return invalid(format!(
-                "illegal number of rows ({rows}). there must be at least two."
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "rows",
+                requirement: crate::ParameterRequirement::AtLeast(2),
+            });
         }
         if cols < 2 {
-            return invalid(format!(
-                "illegal number of columns ({cols}). there must be at least two."
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "cols",
+                requirement: crate::ParameterRequirement::AtLeast(2),
+            });
         }
         let mut vertices = Vec::with_capacity(rows * cols);
         let mut corner = 0;
@@ -310,9 +313,9 @@ impl GraphGenerator for Hypercube {
 /// Generalized Petersen graph `GP(n, k)`; vertices alternate outer (`"regular"`) and inner
 /// (`"star"`) in the result map.
 pub struct GeneralizedPetersen {
-    /// The n.
+    /// Number of vertices of each of the two rings: the outer cycle and the inner star polygon.
     pub n: usize,
-    /// The k.
+    /// Step of the inner star polygon: inner vertex `i` is joined to inner vertex `i + k`.
     pub k: usize,
 }
 impl GraphGenerator for GeneralizedPetersen {
@@ -323,10 +326,16 @@ impl GraphGenerator for GeneralizedPetersen {
     ) -> Result<()> {
         let (n, k) = (self.n, self.k);
         if n < 3 {
-            return invalid("n must be larger or equal than 3");
+            return Err(GraphError::InvalidParameter {
+                name: "n",
+                requirement: crate::ParameterRequirement::AtLeast(3),
+            });
         }
         if k < 1 || k as f64 > ((n - 1) as f64 / 2.0).floor() {
-            return invalid("k must be in the range [1, floor((n-1)/2.0)]");
+            return Err(GraphError::InvalidParameter {
+                name: "k",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         let (mut u, mut v) = (Vec::with_capacity(n), Vec::with_capacity(n));
         for _ in 0..n {
@@ -348,7 +357,7 @@ impl GraphGenerator for GeneralizedPetersen {
 
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-/// The `WindmillMode` enum.
+/// Which kind of windmill graph to build.
 pub enum WindmillMode {
     /// `m` copies of the complete graph `K_n` sharing one vertex.
     Windmill,
@@ -358,11 +367,11 @@ pub enum WindmillMode {
 
 /// Windmill and Dutch windmill graphs; the first vertex is the shared centre.
 pub struct Windmill {
-    /// The mode.
+    /// Whether the blades are complete graphs or cycles.
     pub mode: WindmillMode,
-    /// The m.
+    /// Number of blades.
     pub m: usize,
-    /// The n.
+    /// Number of vertices of each blade (the shared vertex included).
     pub n: usize,
 }
 impl GraphGenerator for Windmill {
@@ -372,10 +381,16 @@ impl GraphGenerator for Windmill {
         _: Option<&mut GeneratorResult<G::Vertex>>,
     ) -> Result<()> {
         if self.m < 2 {
-            return invalid("m must be larger or equal than 2");
+            return Err(GraphError::InvalidParameter {
+                name: "m",
+                requirement: crate::ParameterRequirement::AtLeast(2),
+            });
         }
         if self.n < 3 {
-            return invalid("n must be larger or equal than 3");
+            return Err(GraphError::InvalidParameter {
+                name: "n",
+                requirement: crate::ParameterRequirement::AtLeast(3),
+            });
         }
         let center = target.add_new_vertex()?;
         for _ in 0..self.m {
@@ -499,16 +514,16 @@ impl<V: Clone + Eq + Hash> Default for SimpleWeightedGraphMatrixGenerator<V> {
 }
 
 impl<V: Clone + Eq + Hash> SimpleWeightedGraphMatrixGenerator<V> {
-    /// Creates a new instance.
+    /// An empty builder; set the vertices and the weights before generating.
     pub fn new() -> Self {
         Self::default()
     }
-    /// Sets the vertices and returns the builder.
+    /// The vertices of the graph, in the order of the rows of the weight matrix.
     pub fn vertices(mut self, vertices: Vec<V>) -> Self {
         self.vertices = Some(vertices);
         self
     }
-    /// Sets the weights and returns the builder.
+    /// Weight matrix: `weights[i][j]` is the weight of the edge between vertex `i` and vertex `j`.
     pub fn weights(mut self, weights: Vec<Vec<f64>>) -> Self {
         self.weights = Some(weights);
         self
@@ -519,16 +534,14 @@ impl<V: Clone + Eq + Hash> SimpleWeightedGraphMatrixGenerator<V> {
     ///
     /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn generate_into<G: GraphMut<Vertex = V>>(&self, target: &mut G) -> Result<()> {
-        let weights = self.weights.as_ref().ok_or_else(|| {
-            GraphError::InvalidArgument(
-                "Graph may not be constructed without weight-matrix specified".into(),
-            )
-        })?;
-        let vertices = self.vertices.as_ref().ok_or_else(|| {
-            GraphError::InvalidArgument(
-                "Graph may not be constructed without vertex-set specified".into(),
-            )
-        })?;
+        let weights = self
+            .weights
+            .as_ref()
+            .ok_or(GraphError::MissingParameter("weight_matrix"))?;
+        let vertices = self
+            .vertices
+            .as_ref()
+            .ok_or(GraphError::MissingParameter("vertex_set"))?;
         for v in vertices {
             target.add_vertex(v.clone());
         }
@@ -563,21 +576,22 @@ impl<V: Clone + Eq + Hash> Default for SimpleWeightedBipartiteGraphMatrixGenerat
 }
 
 impl<V: Clone + Eq + Hash> SimpleWeightedBipartiteGraphMatrixGenerator<V> {
-    /// Creates a new instance.
+    /// An empty builder; set the two vertex sets and the weights before generating.
     pub fn new() -> Self {
         Self::default()
     }
-    /// Sets the first and returns the builder.
+    /// The vertices of the first partition, in the order of the rows of the weight matrix.
     pub fn first(mut self, first: Vec<V>) -> Self {
         self.first = Some(first);
         self
     }
-    /// Sets the second and returns the builder.
+    /// The vertices of the second partition, in the order of the columns of the weight matrix.
     pub fn second(mut self, second: Vec<V>) -> Self {
         self.second = Some(second);
         self
     }
-    /// Sets the weights and returns the builder.
+    /// Weight matrix: `weights[i][j]` is the weight of the edge between the `i`-th vertex of the first
+    /// partition and the `j`-th vertex of the second.
     pub fn weights(mut self, weights: Vec<Vec<f64>>) -> Self {
         self.weights = Some(weights);
         self
@@ -588,15 +602,12 @@ impl<V: Clone + Eq + Hash> SimpleWeightedBipartiteGraphMatrixGenerator<V> {
     ///
     /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn generate_into<G: GraphMut<Vertex = V>>(&self, target: &mut G) -> Result<()> {
-        let weights = self.weights.as_ref().ok_or_else(|| {
-            GraphError::InvalidArgument(
-                "Graph may not be constructed without weight-matrix specified".into(),
-            )
-        })?;
+        let weights = self
+            .weights
+            .as_ref()
+            .ok_or(GraphError::MissingParameter("weight_matrix"))?;
         let (Some(first), Some(second)) = (&self.first, &self.second) else {
-            return invalid(
-                "Graph may not be constructed without either of vertex-set partitions specified",
-            );
+            return Err(GraphError::MissingParameter("partitions"));
         };
         for v in first.iter().chain(second) {
             target.add_vertex(v.clone());

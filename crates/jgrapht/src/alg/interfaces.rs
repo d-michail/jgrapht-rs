@@ -355,7 +355,7 @@ pub trait ClusteringAlgorithm<V: Eq + Hash + Clone> {
 /// Algorithms computing the strongly connected components of a directed graph
 /// (`StrongConnectivityAlgorithm`). Results are computed when the algorithm is constructed.
 pub trait StrongConnectivityAlgorithm {
-    /// The g type.
+    /// The directed graph type the algorithm runs on.
     type G: crate::graph::DirectedGraph;
 
     /// The graph the algorithm runs on.

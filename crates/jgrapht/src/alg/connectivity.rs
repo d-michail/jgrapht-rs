@@ -163,7 +163,7 @@ pub fn strongly_connected_components_kosaraju<G: DirectedGraph + IncidenceGraph>
     comps
 }
 
-/// Returns whether strongly connected.
+/// Whether there is a directed path between every ordered pair of vertices; `false` for the empty graph.
 pub fn is_strongly_connected<G: DirectedGraph>(g: &G) -> bool {
     g.vertex_count() > 0 && strongly_connected_components(g).len() == 1
 }
@@ -199,9 +199,9 @@ pub fn condensation<G: DirectedGraph>(g: &G) -> (DiGraph<usize>, Vec<Vec<G::Vert
 /// Result of a biconnectivity analysis of an undirected graph.
 #[derive(Debug, Clone)]
 pub struct Biconnectivity<V, E> {
-    /// The articulation points.
+    /// Vertices whose removal disconnects their component.
     pub articulation_points: Vec<V>,
-    /// The bridges.
+    /// Edges whose removal disconnects their component.
     pub bridges: Vec<E>,
     /// Each block (biconnected component) as its set of edges; isolated vertices have none.
     pub blocks: Vec<Vec<E>>,
@@ -297,7 +297,7 @@ pub fn is_biconnected<G: IncidenceGraph>(g: &G) -> bool {
 pub struct BlockCutTree<V> {
     /// Vertices of each block.
     pub blocks: Vec<Vec<V>>,
-    /// The cut vertices.
+    /// Vertices that belong to more than one block.
     pub cut_vertices: Vec<V>,
     /// `(block index, cut vertex index)` pairs.
     pub edges: Vec<(usize, usize)>,
@@ -495,7 +495,7 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
         Ok(self.connected_set_of(g, s)?.contains(t))
     }
 
-    /// Called when vertex added.
+    /// Adds `v` as a new singleton component. Call it when a vertex is added to the graph.
     pub fn vertex_added(&mut self, v: &V) {
         if let Some(sets) = &mut self.connected_sets {
             self.vertex_to_set.insert(v.clone(), sets.len());
@@ -503,7 +503,7 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
         }
     }
 
-    /// Called when vertex removed.
+    /// Invalidates the cached components. Call it when a vertex is removed from the graph.
     pub fn vertex_removed(&mut self, _v: &V) {
         self.init();
     }
@@ -539,7 +539,7 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
         }
     }
 
-    /// Called when edge removed.
+    /// Invalidates the cached components. Call it when an edge is removed from the graph.
     pub fn edge_removed(&mut self, _source: &V, _target: &V) {
         self.init();
     }
@@ -991,7 +991,7 @@ impl<'g, G: IncidenceGraph> BiconnectivityInspector<'g, G> {
         Ok(ix.iter().map(|&i| &self.blocks[i]).collect())
     }
 
-    /// Returns the block subgraphs.
+    /// The blocks as subgraph views of the graph.
     pub fn block_subgraphs(&self) -> Vec<AsSubgraph<&'g G>> {
         self.blocks
             .iter()
@@ -1113,12 +1113,12 @@ impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
         self.vertex_to_node.get(v).copied()
     }
 
-    /// Returns the block nodes.
+    /// Indices of the block nodes of the tree; the other nodes are cutpoint nodes.
     pub fn block_nodes(&self) -> std::ops::Range<usize> {
         0..self.block_count
     }
 
-    /// Returns the cutpoints of the initial graph.
+    /// The cutpoints (articulation points) of the original graph.
     pub fn cutpoints(&self) -> &IndexSet<V> {
         &self.cutpoints
     }

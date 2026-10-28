@@ -118,7 +118,7 @@ impl<'g, G: OutgoingGraph> Dfs<'g, G> {
             rest: Vec::new().into_iter(),
         })
     }
-    /// Computes the all.
+    /// Depth-first search from every vertex that is not reached yet, so the whole graph is visited.
     pub fn all(g: &'g G) -> Self {
         Dfs {
             g,
@@ -179,7 +179,7 @@ impl<'g, G: OutgoingGraph> DfsPostOrder<'g, G> {
         s.push(start.clone());
         Ok(s)
     }
-    /// Computes the all.
+    /// Depth-first post-order from every vertex that is not reached yet, so the whole graph is visited.
     pub fn all(g: &'g G) -> Self {
         DfsPostOrder {
             g,
@@ -238,7 +238,7 @@ pub struct TopologicalOrder<'g, G: DirectedGraph> {
 }
 
 impl<'g, G: DirectedGraph + IncidenceGraph> TopologicalOrder<'g, G> {
-    /// Creates a new instance.
+    /// A topological order of `g`.
     pub fn new(g: &'g G) -> Self {
         let indeg: HashMap<G::Vertex, usize> = g
             .vertices_cloned()

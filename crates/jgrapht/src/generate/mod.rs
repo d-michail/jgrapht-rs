@@ -55,10 +55,6 @@ pub(crate) fn put<V>(result: &mut Option<&mut GeneratorResult<V>>, key: impl Int
     }
 }
 
-pub(crate) fn invalid<T>(msg: impl Into<String>) -> Result<T> {
-    Err(GraphError::InvalidArgument(msg.into()))
-}
-
 /// Adds an edge the way generators do: a refused edge (`Ok(None)`) is skipped, real errors
 /// (unknown vertex, loops not allowed, ...) propagate.
 pub(crate) fn add_edge<G: GraphMut>(
@@ -69,7 +65,7 @@ pub(crate) fn add_edge<G: GraphMut>(
     g.add_edge(u, v)
 }
 
-/// The `GraphGenerator` trait.
+/// Fills a graph with the vertices and edges of a family of graphs.
 pub trait GraphGenerator {
     /// Generates into `target`, creating vertices with the target's vertex factory. Named vertices
     /// are stored in `result` when given.
@@ -176,11 +172,11 @@ impl<G: GraphMut, F: FnMut(usize) -> G::Vertex> GraphMut for WithVertexFactory<'
 /// Index-based description of a named graph (vertex count plus edges in insertion order).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Structure {
-    /// The vertex count.
+    /// Number of vertices, numbered `0..vertex_count`.
     pub vertex_count: usize,
-    /// The edges.
+    /// Edges as pairs of vertex numbers.
     pub edges: Vec<(usize, usize)>,
-    /// The groups.
+    /// Named groups of vertices (a bipartition, for example).
     pub groups: std::collections::BTreeMap<&'static str, Vec<usize>>,
 }
 

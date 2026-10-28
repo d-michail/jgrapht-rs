@@ -185,7 +185,10 @@ pub fn simple_cycle_to_graph_path<G: Graph>(
     if cycle.is_empty() {
         return Ok(None);
     }
-    let not_simple = || GraphError::InvalidArgument("Not a simple cycle".into());
+    let not_simple = || GraphError::InvalidParameter {
+        name: "cycle",
+        requirement: crate::ParameterRequirement::ValidSolution,
+    };
     let mut first_edge: HashMap<&G::Vertex, &G::Edge> = HashMap::new();
     let mut second_edge: HashMap<&G::Vertex, &G::Edge> = HashMap::new();
     for e in cycle {

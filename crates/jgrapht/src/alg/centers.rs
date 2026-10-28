@@ -201,9 +201,10 @@ impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonH
         }
         if self.initial_centers.as_ref().is_none_or(|c| c.is_empty()) {
             // no initial set of centers: choose the first center randomly
-            let rng = self.rng.as_mut().ok_or_else(|| {
-                GraphError::InvalidArgument("no random source and no initial centers".into())
-            })?;
+            let rng = self
+                .rng
+                .as_mut()
+                .ok_or(GraphError::MissingParameter("rng or initial_centers"))?;
             let v = graph.vertices_cloned().nth(rng.next_int_bound(n)).unwrap();
             self.initial_centers = Some(HashSet::from([v]));
         }

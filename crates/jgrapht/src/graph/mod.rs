@@ -56,9 +56,9 @@ use std::hash::Hash;
 /// * [`Graph::edges_between`] is empty if either vertex is absent, and incidence queries return
 ///   nothing for an absent vertex.
 pub trait Graph {
-    /// The vertex type.
+    /// The vertex type: any value that can be cloned, compared and hashed.
     type Vertex: Clone + Eq + Hash;
-    /// The edge type.
+    /// The edge type: any value that can be cloned, compared and hashed.
     type Edge: Clone + Eq + Hash;
     /// What [`Graph::vertices`] yields: `&'a Vertex` for a graph that stores its vertices, the
     /// vertex itself for a graph that computes them (for example the integers `0..n`). Call

@@ -206,9 +206,10 @@ where
         min_cut: MinCutFn<G::Vertex>,
     ) -> Result<Self> {
         if graph.contains_vertex(&s) || graph.contains_vertex(&t) {
-            return Err(crate::GraphError::InvalidArgument(
-                "Source or sink vertex already in graph".into(),
-            ));
+            return Err(crate::GraphError::InvalidParameter {
+                name: "source_and_sink",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         let mut alg = GoldbergMaximumDensitySubgraph {
             graph,

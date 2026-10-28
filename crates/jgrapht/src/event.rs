@@ -21,15 +21,15 @@ use crate::{GraphType, Result};
 /// Receives change events. All methods default to no-ops.
 #[allow(unused_variables)]
 pub trait GraphListener<V, E> {
-    /// Called when vertex added.
+    /// `v` was added to the graph.
     fn vertex_added(&mut self, v: &V) {}
-    /// Called when vertex removed.
+    /// `v` was removed from the graph.
     fn vertex_removed(&mut self, v: &V) {}
-    /// Called when edge added.
+    /// The edge `e` from `source` to `target` was added.
     fn edge_added(&mut self, e: &E, source: &V, target: &V) {}
-    /// Called when edge removed.
+    /// The edge `e` from `source` to `target` was removed.
     fn edge_removed(&mut self, e: &E, source: &V, target: &V) {}
-    /// Updates the state for `edge weight changed`.
+    /// The weight of the edge `e` changed from `old` to `new`.
     fn edge_weight_changed(&mut self, e: &E, old: f64, new: f64) {}
 }
 
@@ -41,7 +41,7 @@ pub struct Listenable<G: Graph> {
 }
 
 impl<G: Graph> Listenable<G> {
-    /// Creates a new instance.
+    /// Wraps `graph` with no listeners.
     pub fn new(graph: G) -> Self {
         Listenable {
             graph,
@@ -62,15 +62,15 @@ impl<G: Graph> Listenable<G> {
         self.listeners.retain(|(i, _)| *i != id);
         self.listeners.len() != before
     }
-    /// Updates the state for `clear listeners`.
+    /// Removes all listeners.
     pub fn clear_listeners(&mut self) {
         self.listeners.clear();
     }
-    /// Returns the inner.
+    /// The wrapped graph.
     pub fn inner(&self) -> &G {
         &self.graph
     }
-    /// Consumes the value and returns inner.
+    /// Returns the wrapped graph and drops the listeners.
     pub fn into_inner(self) -> G {
         self.graph
     }

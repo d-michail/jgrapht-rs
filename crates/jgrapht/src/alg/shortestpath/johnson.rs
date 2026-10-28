@@ -102,7 +102,7 @@ impl<'g, G: OutgoingGraph> JohnsonShortestPaths<'g, G> {
         &self.paths
     }
 
-    /// Returns the graph.
+    /// The graph the shortest paths were computed in.
     pub fn graph(&self) -> &G {
         self.graph
     }

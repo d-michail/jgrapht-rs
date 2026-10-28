@@ -20,22 +20,22 @@ use crate::graph::{DirectedGraph, Graph, UndirectedGraph};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WeightCombiner {
-    /// The sum variant.
+    /// `a + b`.
     Sum,
-    /// The mult variant.
+    /// `a * b`.
     Mult,
-    /// The min variant.
+    /// The smaller of the two.
     Min,
-    /// The max variant.
+    /// The larger of the two.
     Max,
-    /// The first variant.
+    /// The weight in the first graph.
     First,
-    /// The second variant.
+    /// The weight in the second graph.
     Second,
 }
 
 impl WeightCombiner {
-    /// Returns the combine.
+    /// The combined weight of an edge whose weight is `a` in the first graph and `b` in the second.
     pub fn combine(self, a: f64, b: f64) -> f64 {
         match self {
             WeightCombiner::Sum => a + b,

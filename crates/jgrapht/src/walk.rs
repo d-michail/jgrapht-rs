@@ -531,12 +531,12 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, V2: Clone + Eq + Hash, E2: Clon
     pub fn new() -> Self {
         Self::default()
     }
-    /// Updates the state for `map vertex`.
+    /// Records that the vertex `from` of the first graph corresponds to `to` in the second.
     pub fn map_vertex(&mut self, from: V, to: V2) {
         self.vertex_forward.insert(from.clone(), to.clone());
         self.vertex_backward.insert(to, from);
     }
-    /// Updates the state for `map edge`.
+    /// Records that the edge `from` of the first graph corresponds to `to` in the second.
     pub fn map_edge(&mut self, from: E, to: E2) {
         self.edge_forward.insert(from.clone(), to.clone());
         self.edge_backward.insert(to, from);

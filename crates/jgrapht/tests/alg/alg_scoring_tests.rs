@@ -1701,7 +1701,7 @@ mod ap_betweenness_centrality {
         ));
         assert!(matches!(
             ApBetweennessCentrality::new(&g),
-            Err(GraphError::InvalidArgument(_))
+            Err(GraphError::NonTerminatingExpansion)
         ));
     }
 

@@ -28,16 +28,16 @@ use std::vec::IntoIter;
 
 /// State shared between the engine and its strategy.
 pub struct Core<'g, G: OutgoingGraph + 'g, D> {
-    /// The g.
+    /// The graph being traversed.
     pub g: &'g G,
-    /// The seen.
+    /// Per-vertex data of every vertex the traversal has reached; the strategy decides what it is.
     pub seen: HashMap<G::Vertex, D>,
-    /// The listeners.
+    /// Listeners that are told about every traversal event.
     pub listeners: TraversalListeners<'g, G::Vertex, G::Edge>,
 }
 
 impl<'g, G: OutgoingGraph + 'g, D> Core<'g, G, D> {
-    /// Updates the state for `finish vertex`.
+    /// Reports that `v` is finished to the traversal listeners.
     pub fn finish_vertex(&mut self, v: G::Vertex) {
         self.listeners.vertex_finished(&v);
     }
@@ -45,15 +45,15 @@ impl<'g, G: OutgoingGraph + 'g, D> Core<'g, G, D> {
 
 /// How a concrete traversal orders vertices (the abstract methods of `CrossComponentIterator`).
 pub trait Strategy<'g, G: OutgoingGraph + 'g>: Sized {
-    /// The data type.
+    /// What the strategy remembers about each vertex it has seen.
     type Data;
     /// True if the current component has nothing left to visit (may fire finish events).
     fn is_exhausted(&mut self, c: &mut Core<'g, G, Self::Data>) -> bool;
-    /// Performs `encounter`.
+    /// A vertex `v` is reached for the first time, through `e` (`None` for a start vertex).
     fn encounter(&mut self, c: &mut Core<'g, G, Self::Data>, v: G::Vertex, e: Option<G::Edge>);
-    /// Performs `encounter again`.
+    /// A vertex `v` that was already seen is reached again through `e`.
     fn encounter_again(&mut self, c: &mut Core<'g, G, Self::Data>, v: G::Vertex, e: G::Edge);
-    /// Returns the provide next.
+    /// Removes and returns the vertex to visit next. Called only when the strategy is not exhausted.
     fn provide_next(&mut self, c: &mut Core<'g, G, Self::Data>) -> G::Vertex;
 
     /// What the iterator yields: the vertex itself for a strategy that cannot fail, or a
@@ -141,36 +141,36 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>>
             .get_or_insert_with(|| g.vertices_cloned().collect::<Vec<_>>().into_iter())
     }
 
-    /// Returns the graph.
+    /// The graph being traversed.
     pub fn graph(&self) -> &'g G {
         self.core.g
     }
-    /// Returns whether cross component traversal.
+    /// Whether the traversal continues with the other components once the current one is exhausted.
     pub fn is_cross_component_traversal(&self) -> bool {
         self.cross
     }
-    /// Sets the cross component traversal.
+    /// Sets whether the traversal continues with the other components of the graph.
     pub fn set_cross_component_traversal(&mut self, cross: bool) {
         self.cross = cross;
     }
-    /// Returns the strategy.
+    /// The traversal strategy (breadth-first, depth-first, ...).
     pub fn strategy(&self) -> &S {
         &self.strategy
     }
-    /// Consumes the value and returns strategy.
+    /// Consumes the iterator and returns its strategy.
     pub fn into_strategy(self) -> S {
         self.strategy
     }
 
-    /// Returns the strategy mut.
+    /// The traversal strategy, mutably.
     pub fn strategy_mut(&mut self) -> &mut S {
         &mut self.strategy
     }
-    /// Returns the seen data.
+    /// The data the strategy keeps for `v`, or `None` if the traversal has not reached `v` yet.
     pub fn seen_data(&self, v: &G::Vertex) -> Option<&S::Data> {
         self.core.seen.get(v)
     }
-    /// Adds traversal listener.
+    /// Registers a listener that is told about the traversal events from now on.
     pub fn add_traversal_listener(
         &mut self,
         l: impl TraversalListener<G::Vertex, G::Edge> + 'g,
@@ -292,9 +292,9 @@ impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> Iterator for CrossComponentI
 /// Per-vertex BFS bookkeeping: the spanning-tree edge and the depth.
 #[derive(Debug, Clone)]
 pub struct BfsData<E> {
-    /// The edge.
+    /// The edge through which the vertex was first reached; `None` for a start vertex.
     pub edge: Option<E>,
-    /// The depth.
+    /// Distance from the start vertex in edges.
     pub depth: usize,
 }
 
@@ -326,7 +326,7 @@ impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for BfsStrategy<'g, G> {
     }
 }
 
-/// The breadth first iterator type.
+/// Breadth-first traversal; see [`CrossComponentIterator`].
 pub type BreadthFirstIterator<'g, G> = CrossComponentIterator<'g, G, BfsStrategy<'g, G>>;
 
 impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
@@ -377,11 +377,11 @@ impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
         let e = self.seen_data(v)?.edge.as_ref()?;
         self.graph().opposite_vertex(e, v).cloned()
     }
-    /// Returns the spanning tree edge.
+    /// The edge through which `v` was first reached, or `None` for a start vertex or an unseen vertex.
     pub fn spanning_tree_edge(&self, v: &G::Vertex) -> Option<G::Edge> {
         self.seen_data(v)?.edge.clone()
     }
-    /// Returns the depth.
+    /// Number of edges between `v` and its start vertex, or `None` if `v` has not been reached.
     pub fn depth(&self, v: &G::Vertex) -> Option<usize> {
         self.seen_data(v).map(|d| d.depth)
     }
@@ -402,14 +402,14 @@ enum StackEntry<V> {
     Sentinel,
 }
 
-/// The `DfsStrategy` struct.
+/// Depth-first strategy: vertices wait on a stack, with a sentinel marking where a vertex is finished.
 pub struct DfsStrategy<'g, G: OutgoingGraph + 'g> {
     stack: VecDeque<StackEntry<G::Vertex>>,
     _g: std::marker::PhantomData<&'g G>,
 }
 
 impl<'g, G: OutgoingGraph + 'g> DfsStrategy<'g, G> {
-    /// Creates a new instance.
+    /// A strategy with an empty stack.
     pub fn new() -> Self {
         DfsStrategy {
             stack: VecDeque::new(),
@@ -481,7 +481,7 @@ impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for DfsStrategy<'g, G> {
     }
 }
 
-/// The depth first iterator type.
+/// Depth-first traversal; see [`CrossComponentIterator`].
 pub type DepthFirstIterator<'g, G> = CrossComponentIterator<'g, G, DfsStrategy<'g, G>>;
 
 impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
@@ -527,7 +527,7 @@ impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
             },
         )
     }
-    /// Returns the color.
+    /// The visit color of `v`: gray while it is on the stack, black once finished, `None` if unseen.
     pub fn color(&self, v: &G::Vertex) -> Option<VisitColor> {
         self.seen_data(v).copied()
     }
@@ -731,9 +731,10 @@ where
             return Err(GraphError::must_be_non_negative("radius"));
         }
         if starts.is_none() && radius != f64::INFINITY {
-            return Err(GraphError::InvalidArgument(
-                "radius may not be specified for cross-component traversal".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "radius",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         let rest: Vec<G::Vertex> = starts
             .as_ref()
@@ -762,7 +763,7 @@ where
     pub fn shortest_path_length(&self, v: &G::Vertex) -> Option<f64> {
         self.seen_data(v).map(|d| d.key)
     }
-    /// Returns the spanning tree edge.
+    /// The edge through which `v` was reached on its shortest path, or `None` for a start vertex or an unseen vertex.
     pub fn spanning_tree_edge(&self, v: &G::Vertex) -> Option<G::Edge> {
         self.seen_data(v).and_then(|d| d.edge.clone())
     }

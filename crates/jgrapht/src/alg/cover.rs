@@ -35,9 +35,9 @@ use std::collections::{HashSet, VecDeque};
 )]
 #[derive(Debug, Clone)]
 pub struct VertexCover<V> {
-    /// The vertices.
+    /// Vertices of the cover.
     pub vertices: Vec<V>,
-    /// The weight.
+    /// Total weight of the cover.
     pub weight: f64,
 }
 
@@ -258,7 +258,7 @@ fn weight_of<V: Eq + Hash>(weights: &HashMap<V, f64>, v: &V) -> Result<f64> {
     weights
         .get(v)
         .copied()
-        .ok_or_else(|| GraphError::InvalidArgument("missing vertex weight".into()))
+        .ok_or(GraphError::MissingVertexData("weight"))
 }
 
 /// Shared engine of the greedy and Clarkson covers: repeatedly take the vertex of smallest

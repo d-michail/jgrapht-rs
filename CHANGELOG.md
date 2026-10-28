@@ -5,6 +5,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+- `GraphError::InvalidArgument(String)` is no longer returned by the library. Its remaining uses
+  (about 150 call sites, most of them in the generators) are typed: `InvalidParameter` with new
+  `ParameterRequirement`s (`InRange`, `AbsAtMost`, `AtMostVertexCount`, `Consistent`, `FitsArea`,
+  `ValidPartition`, `ValidSolution`), `InvalidGraph` with new `GraphProperty`s (`OreProperty`,
+  `OneRootPerTree`, `SameDirection`), and new variants `MissingParameter`, `MissingVertexData`,
+  `TooManyVertices`, `InvalidState`, `DivisionByZero`, `NonTerminatingExpansion` and `Internal`.
+- Doc comments that only restated the item name now say what the item does.
+- `serde`: `AsSubgraph` is serializable and validated against its base graph on input.
+
 - `jgrapht`: optional `serde` feature, the counterpart of JGraphT's `java.io.Serializable`. It covers
   `BaseGraph` (rebuilt through `add_edge_with`, so loops, parallel edges and acyclicity are
   checked on input), the four sparse graphs, `GraphType`, `DefaultEdge`, `GraphWalk` (cardinality

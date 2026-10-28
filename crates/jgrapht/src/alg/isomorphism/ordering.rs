@@ -36,7 +36,7 @@ pub struct GraphOrdering<'g, G: Graph> {
 }
 
 impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
-    /// Creates a new instance.
+    /// An ordering of the vertices of `graph` that is not sorted by degree and caches the edges.
     pub fn new(graph: &'g G) -> Self {
         Self::with_options(graph, false, true)
     }
@@ -74,7 +74,7 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
         }
     }
 
-    /// Returns the vertex count.
+    /// Number of vertices of the graph.
     pub fn vertex_count(&self) -> usize {
         self.vertices.len()
     }
@@ -113,7 +113,7 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
         }
     }
 
-    /// Returns whether there is edge.
+    /// Whether the vertices with numbers `v1` and `v2` are joined by an edge.
     pub fn has_edge(&self, v1: usize, v2: usize) -> bool {
         self.edge(v1, v2).is_some()
     }
@@ -123,7 +123,7 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
         &self.vertices[v]
     }
 
-    /// Returns the edge.
+    /// The edge between the vertices with numbers `v1` and `v2`, if there is one.
     pub fn edge(&self, v1: usize, v2: usize) -> Option<G::Edge> {
         let lookup = || {
             self.graph
@@ -139,7 +139,7 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
         }
     }
 
-    /// Returns the vertex number.
+    /// The number of `v` in this ordering.
     pub fn vertex_number(&self, v: &G::Vertex) -> usize {
         self.order[v]
     }
@@ -154,7 +154,7 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
         [self.order[s.unwrap()], self.order[t.unwrap()]]
     }
 
-    /// Returns the graph.
+    /// The graph being ordered.
     pub fn graph(&self) -> &'g G {
         self.graph
     }

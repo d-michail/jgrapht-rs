@@ -57,15 +57,15 @@ impl<V: Eq + Hash + Clone> Neighbors<V> {
     pub fn iter(&self) -> impl Iterator<Item = &V> {
         self.counts.keys()
     }
-    /// Returns the len.
+    /// Number of distinct neighbours.
     pub fn len(&self) -> usize {
         self.counts.len()
     }
-    /// Returns whether empty.
+    /// Whether there are no neighbours.
     pub fn is_empty(&self) -> bool {
         self.counts.is_empty()
     }
-    /// Returns the contains.
+    /// Whether `v` is a neighbour.
     pub fn contains(&self, v: &V) -> bool {
         self.counts.contains_key(v)
     }

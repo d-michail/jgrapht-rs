@@ -26,18 +26,14 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::collections::{HashMap, HashSet};
 
-/// The max node num constant.
+/// Largest number of nodes of a generated network.
 pub const MAX_NODE_NUM: i32 = 100 * 1000 * 1000;
-/// The max supply constant.
+/// Largest total supply of a generated network.
 pub const MAX_SUPPLY: i32 = 200 * 1000 * 1000;
-/// The max arc num constant.
+/// Largest number of arcs of a generated network.
 pub const MAX_ARC_NUM: i32 = 2 * 1000 * 1000 * 1000;
-/// The capacity cost bound constant.
+/// Bound on the absolute value of arc capacities and costs.
 pub const CAPACITY_COST_BOUND: i32 = 2 * 1000 * 1000 * 1000;
-
-fn invalid<T>(msg: impl Into<String>) -> Result<T> {
-    Err(GraphError::InvalidArgument(msg.into()))
-}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum NodeType {
@@ -78,7 +74,7 @@ pub struct NetworkGenerator<V, E, R = StdRng> {
 }
 
 impl<V, E> NetworkGenerator<V, E, StdRng> {
-    /// Creates a new instance.
+    /// A generator for `config` that draws from a `StdRng` seeded with `seed`.
     pub fn new(config: NetworkGeneratorConfig, seed: u64) -> Self {
         Self::with_rng(config, StdRng::seed_from_u64(seed))
     }
@@ -122,7 +118,10 @@ where
         graph: &mut G,
     ) -> Result<BipartiteMatchingProblem<V, E>> {
         if !self.config.is_assignment_problem() {
-            return invalid("Input config doesn't specify a bipartite matching problem");
+            return Err(GraphError::InvalidParameter {
+                name: "config",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         require_directed(graph)?;
         let run = self.generate(graph)?;
@@ -149,7 +148,10 @@ where
         graph: &mut G,
     ) -> Result<MaximumFlowProblem<V, E>> {
         if !self.config.is_max_flow_problem() {
-            return invalid("Input config doesn't specify a maximum flow problem");
+            return Err(GraphError::InvalidParameter {
+                name: "config",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         require_directed(graph)?;
         let run = self.generate(graph)?;
@@ -427,7 +429,9 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
         self.generate_arcs(&tsinks, &tnodes, distribution[TS2TN])?;
         self.generate_arcs(&tsinks, &sinks, distribution[TS2S])?;
         if self.config.arc_num() as usize != self.graph.edge_count() {
-            return invalid("generated an unexpected number of arcs");
+            return Err(GraphError::Internal(
+                "generated an unexpected number of arcs",
+            ));
         }
         Ok(())
     }
@@ -467,7 +471,9 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
                 }
             }
             if tail_arc_num != 0 {
-                return invalid("could not generate the requested number of arcs");
+                return Err(GraphError::InvalidState(
+                    "could not generate the requested number of arcs",
+                ));
             }
         }
         Ok(())
@@ -502,7 +508,7 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
         );
         self.graph
             .add_edge(&t, &h)?
-            .ok_or_else(|| GraphError::InvalidArgument("arc could not be added".into()))
+            .ok_or(GraphError::Internal("arc could not be added"))
     }
 
     fn add_skeleton_arc(&mut self, chain_source: usize, tail: usize, head: usize) -> Result<()> {

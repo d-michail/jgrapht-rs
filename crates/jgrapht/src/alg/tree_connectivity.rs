@@ -88,7 +88,7 @@ impl<T: Eq + Hash + Clone> Default for TreeDynamicConnectivity<T> {
 }
 
 impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
-    /// Creates a new instance.
+    /// An empty forest.
     pub fn new() -> Self {
         TreeDynamicConnectivity {
             trees: SequenceArena::new(),
@@ -99,7 +99,7 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
         }
     }
 
-    /// Returns the contains.
+    /// Whether `element` is in the forest.
     pub fn contains(&self, element: &T) -> bool {
         self.node_map.contains_key(element)
     }

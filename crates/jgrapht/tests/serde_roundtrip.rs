@@ -239,3 +239,30 @@ fn bad_walk_and_sparse_input_are_rejected() {
     let bad = r#"{"num_vertices":2,"edges":[[0,5]]}"#;
     assert!(serde_json::from_str::<SparseIntDirectedGraph>(bad).is_err());
 }
+
+#[test]
+fn subgraph_round_trip_and_validation() {
+    use jgrapht::view::AsSubgraph;
+    let mut g = UGraph::<i32>::simple();
+    g.add_vertices(0..5);
+    for (u, v) in [(0, 1), (1, 2), (2, 3), (3, 4)] {
+        g.add_edge(&u, &v).unwrap();
+    }
+    let sub = AsSubgraph::new(g.clone(), Some(vec![1, 2, 3]), None);
+    assert_eq!((sub.vertex_count(), sub.edge_count()), (3, 2));
+    let copy: AsSubgraph<UGraph<i32>> = round_trip(&sub);
+    assert_eq!(
+        sub.vertices_cloned().collect::<Vec<_>>(),
+        copy.vertices_cloned().collect::<Vec<_>>()
+    );
+    assert_eq!(
+        sub.edges_cloned().collect::<Vec<_>>(),
+        copy.edges_cloned().collect::<Vec<_>>()
+    );
+
+    // a vertex that the base graph does not have
+    let json = serde_json::to_string(&sub).unwrap();
+    let broken = json.replacen("\"vertices\":[1,2,3]", "\"vertices\":[1,2,3,99]", 1);
+    assert_ne!(json, broken);
+    assert!(serde_json::from_str::<AsSubgraph<UGraph<i32>>>(&broken).is_err());
+}

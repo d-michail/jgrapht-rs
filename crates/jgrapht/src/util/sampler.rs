@@ -18,7 +18,7 @@ use super::ToleranceDoubleComparator;
 use super::java::RandomSource;
 use crate::{GraphError, Result};
 
-/// The `AliasMethodSampler` struct.
+/// Walker's alias method: draws from a discrete distribution in constant time after a linear setup.
 pub struct AliasMethodSampler {
     comparator: ToleranceDoubleComparator,
     prob: Vec<f64>,

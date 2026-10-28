@@ -23,11 +23,11 @@ use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
-/// The `SteinerTree` struct.
+/// A Steiner tree: its edges and their total weight.
 pub struct SteinerTree<E> {
-    /// The edges.
+    /// Edges of the tree.
     pub edges: Vec<E>,
-    /// The weight.
+    /// Total weight of the tree.
     pub weight: f64,
 }
 

@@ -21,9 +21,9 @@ use std::hash::{Hash, Hasher};
 /// Ordered pair (`Pair`). Absent elements are `Option`s.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
 pub struct Pair<A, B> {
-    /// The first.
+    /// The first element.
     pub first: A,
-    /// The second.
+    /// The second element.
     pub second: B,
 }
 
@@ -43,11 +43,11 @@ impl<A, B> Pair<A, B> {
 }
 
 impl<A: PartialEq, B: PartialEq> Pair<A, B> {
-    /// Returns whether there is first.
+    /// Whether the first element equals `a`.
     pub fn has_first(&self, a: &A) -> bool {
         self.first == *a
     }
-    /// Returns whether there is second.
+    /// Whether the second element equals `b`.
     pub fn has_second(&self, b: &B) -> bool {
         self.second == *b
     }
@@ -67,11 +67,11 @@ impl<T: PartialEq> Pair<T, T> {
 /// Ordered triple (`Triple`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default)]
 pub struct Triple<A, B, C> {
-    /// The first.
+    /// The first element.
     pub first: A,
-    /// The second.
+    /// The second element.
     pub second: B,
-    /// The third.
+    /// The third element.
     pub third: C,
 }
 
@@ -99,9 +99,9 @@ impl<A, B, C> Triple<A, B, C> {
 /// for heterogeneous elements).
 #[derive(Debug, Clone, Copy)]
 pub struct UnorderedPair<T> {
-    /// The first.
+    /// The first element.
     pub first: T,
-    /// The second.
+    /// The second element.
     pub second: T,
 }
 

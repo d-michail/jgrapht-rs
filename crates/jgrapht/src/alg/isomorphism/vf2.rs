@@ -532,8 +532,8 @@ pub(super) fn check_types<G: IncidenceGraph>(g1: &G, g2: &G) -> Result<()> {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::NotMixed));
     }
     if t1.directed != t2.directed {
-        return Err(GraphError::InvalidArgument(
-            "can not match directed with undirected graphs".into(),
+        return Err(GraphError::InvalidGraph(
+            crate::GraphProperty::SameDirection,
         ));
     }
     Ok(())

@@ -30,7 +30,8 @@ pub struct MaskSubgraph<G, FV, FE> {
 }
 
 impl<G: Graph, FV: Fn(&G::Vertex) -> bool, FE: Fn(&G::Edge) -> bool> MaskSubgraph<G, FV, FE> {
-    /// Creates a new instance.
+    /// The view of `graph` that hides the vertices for which `vertex_mask` and the edges for which
+    /// `edge_mask` return `true`.
     pub fn new(graph: G, vertex_mask: FV, edge_mask: FE) -> Self {
         MaskSubgraph {
             graph,
@@ -243,7 +244,7 @@ impl<G: Graph> AsSubgraph<G> {
             Some(edges.into_iter().collect()),
         )
     }
-    /// Returns the base.
+    /// The graph the view is on.
     pub fn base(&self) -> &G {
         &self.base
     }
@@ -359,5 +360,68 @@ impl<G: IncidenceGraph> GraphMut for AsSubgraph<G> {
     }
     fn new_vertex(&mut self) -> Result<G::Vertex> {
         Err(GraphError::NoVertexFactory)
+    }
+}
+
+/// `serde` support: the base graph plus the two element sets. Reading goes through
+/// [`AsSubgraph::new`] and fails if a stored vertex or edge is not in the base graph, or an edge
+/// misses an endpoint, so the subset invariant cannot be broken by a document.
+#[cfg(feature = "serde")]
+mod serde_impl {
+    use super::*;
+    use serde::de::Error as _;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    #[derive(Serialize)]
+    #[serde(bound(serialize = "G: Serialize, G::Vertex: Serialize, G::Edge: Serialize"))]
+    struct Out<'a, G: Graph> {
+        base: &'a G,
+        vertices: &'a IndexSet<G::Vertex>,
+        edges: &'a IndexSet<G::Edge>,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(bound(
+        deserialize = "G: Deserialize<'de>, G::Vertex: Deserialize<'de>, G::Edge: Deserialize<'de>"
+    ))]
+    struct In<G: Graph> {
+        base: G,
+        vertices: Vec<G::Vertex>,
+        edges: Vec<G::Edge>,
+    }
+
+    impl<G> Serialize for AsSubgraph<G>
+    where
+        G: Graph + Serialize,
+        G::Vertex: Serialize,
+        G::Edge: Serialize,
+    {
+        fn serialize<S: Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+            Out {
+                base: &self.base,
+                vertices: &self.vertices,
+                edges: &self.edges,
+            }
+            .serialize(s)
+        }
+    }
+
+    impl<'de, G> Deserialize<'de> for AsSubgraph<G>
+    where
+        G: Graph + Deserialize<'de>,
+        G::Vertex: Deserialize<'de>,
+        G::Edge: Deserialize<'de>,
+    {
+        fn deserialize<D: Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
+            let raw = In::<G>::deserialize(d)?;
+            let (nv, ne) = (raw.vertices.len(), raw.edges.len());
+            let sub = AsSubgraph::new(raw.base, Some(raw.vertices), Some(raw.edges));
+            if sub.vertices.len() != nv || sub.edges.len() != ne {
+                return Err(D::Error::custom(
+                    "the subgraph has a vertex or edge that is not in its base graph",
+                ));
+            }
+            Ok(sub)
+        }
     }
 }

@@ -23,18 +23,18 @@ use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-/// The `EliminationHeuristic` enum.
+/// How the elimination order of the tree decomposition is chosen.
 pub enum EliminationHeuristic {
-    /// The min degree variant.
+    /// Eliminate a vertex of smallest degree first.
     MinDegree,
-    /// The min fill variant.
+    /// Eliminate the vertex whose elimination adds the fewest fill-in edges first.
     MinFill,
 }
 
 #[derive(Debug, Clone)]
-/// The `TreeDecomposition` struct.
+/// A tree decomposition: bags of vertices and the tree that connects them.
 pub struct TreeDecomposition<V> {
-    /// The bags.
+    /// Vertices of each bag; bags are numbered by their position.
     pub bags: Vec<Vec<V>>,
     /// Edges between bag indices; together they form a tree (or a path of trees' roots).
     pub tree_edges: Vec<(usize, usize)>,
@@ -319,8 +319,8 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
                 self.dfs_iterative(u, number_component, &mut length_path);
                 number_component += 1;
             } else {
-                return Err(GraphError::InvalidArgument(
-                    "multiple roots in the same tree".into(),
+                return Err(GraphError::InvalidGraph(
+                    crate::GraphProperty::OneRootPerTree,
                 ));
             }
         }
@@ -376,15 +376,15 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
         let i = *self.vertex_map.get(v)?;
         self.parent[i].map(|p| &self.index_list[p])
     }
-    /// Returns the depth of.
+    /// Depth of `v` in its tree (the root has depth `0`), or `None` if `v` is not in the graph.
     pub fn depth_of(&self, v: &G::Vertex) -> Option<usize> {
         self.depth[*self.vertex_map.get(v)?]
     }
-    /// Returns the subtree size of.
+    /// Number of vertices in the subtree rooted at `v`, `0` if `v` is not in the graph.
     pub fn subtree_size_of(&self, v: &G::Vertex) -> usize {
         self.vertex_map.get(v).map_or(0, |&i| self.size_subtree[i])
     }
-    /// Returns the component of.
+    /// Index of the tree (component) containing `v`, or `None` if `v` is not in the graph.
     pub fn component_of(&self, v: &G::Vertex) -> Option<usize> {
         self.component[*self.vertex_map.get(v)?]
     }
@@ -459,9 +459,9 @@ use crate::view::EdgeReversed;
 /// Result of a Dulmage–Mendelsohn decomposition.
 #[derive(Debug, Clone)]
 pub struct DmDecomposition<V> {
-    /// The partition1 dominated.
+    /// Unmatched vertices of the first partition together with their neighbours.
     pub partition1_dominated: HashSet<V>,
-    /// The partition2 dominated.
+    /// Unmatched vertices of the second partition together with their neighbours.
     pub partition2_dominated: HashSet<V>,
     /// Sets of the perfectly matched core (several when `fine`).
     pub perfect_matched_sets: Vec<HashSet<V>>,

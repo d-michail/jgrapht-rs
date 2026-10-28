@@ -32,7 +32,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 /// This is the Rust counterpart of JGraphT's `PathValidator`. The validator is deliberately not
 /// called for zero-length paths.
 pub trait PathValidator<G: Graph> {
-    /// Returns whether valid path.
+    /// Whether `edge` may extend `partial_path`.
     fn is_valid_path(&self, partial_path: &GraphWalk<G::Vertex, G::Edge>, edge: &G::Edge) -> bool;
 }
 
@@ -47,7 +47,7 @@ where
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-/// The `AllowAllPaths` struct.
+/// Accepts every path.
 pub struct AllowAllPaths;
 
 impl<G: Graph> PathValidator<G> for AllowAllPaths {
@@ -167,9 +167,7 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>>
         G::Vertex: 'a,
     {
         if !simple_paths_only && max_path_length.is_none() {
-            return Err(GraphError::InvalidArgument(
-                "non-simple path searches require a maximum path length".into(),
-            ));
+            return Err(GraphError::MissingParameter("max_path_length"));
         }
         let sources: Vec<_> = source_vertices.into_iter().collect();
         let targets: HashSet<_> = target_vertices.into_iter().collect();

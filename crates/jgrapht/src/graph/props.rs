@@ -62,7 +62,7 @@ pub fn is_empty<G: Graph>(g: &G) -> bool {
     g.edge_count() == 0
 }
 
-/// Returns whether there is self loops.
+/// Whether some edge joins a vertex to itself.
 pub fn has_self_loops<G: Graph>(g: &G) -> bool {
     g.graph_type().self_loops
         && g.edges().any(|e| {
@@ -71,7 +71,7 @@ pub fn has_self_loops<G: Graph>(g: &G) -> bool {
         })
 }
 
-/// Returns whether there is multiple edges.
+/// Whether some pair of vertices is joined by more than one edge.
 pub fn has_multiple_edges<G: OutgoingGraph>(g: &G) -> bool {
     if !g.graph_type().multiple_edges {
         return false;
@@ -128,7 +128,7 @@ pub fn is_connected<G: IncidenceGraph>(g: &G) -> bool {
     seen.len() == g.vertex_count()
 }
 
-/// Returns whether weakly connected.
+/// Whether the graph is connected when edge directions are ignored.
 pub fn is_weakly_connected<G: IncidenceGraph>(g: &G) -> bool {
     is_connected(g)
 }
@@ -308,7 +308,7 @@ pub fn is_triangle_free<G: Graph>(g: &G) -> bool {
     crate::alg::scoring::count_triangles(g) == 0
 }
 
-/// Returns whether bipartite.
+/// Whether the vertices can be split into two sets so that every edge joins the two sets.
 pub fn is_bipartite<G: Graph>(g: &G) -> bool {
     crate::alg::partition::is_bipartite(g)
 }
@@ -330,17 +330,17 @@ pub fn is_bipartite_partition<G: IncidenceGraph>(
     crate::alg::partition::BipartitePartitioning::new(g).is_valid_partitioning(&p)
 }
 
-/// Returns whether biconnected.
+/// Whether the graph is connected and has no articulation point.
 pub fn is_biconnected<G: IncidenceGraph>(g: &G) -> bool {
     crate::alg::connectivity::is_biconnected(g)
 }
 
-/// Returns whether eulerian.
+/// Whether the graph has an Eulerian cycle.
 pub fn is_eulerian<G: IncidenceGraph>(g: &G) -> bool {
     crate::alg::cycle::HierholzerEulerianCycle::new().is_eulerian(g)
 }
 
-/// Returns whether chordal.
+/// Whether every cycle of four or more vertices has a chord.
 pub fn is_chordal<G: UndirectedGraph + IncidenceGraph>(g: &G) -> bool {
     crate::alg::cycle::ChordalityInspector::new(g).is_chordal()
 }
@@ -355,7 +355,7 @@ pub fn is_perfect<G: Graph>(g: &G) -> bool {
     crate::alg::holes::is_perfect(g)
 }
 
-/// Returns whether planar.
+/// Whether the graph can be drawn in the plane without crossing edges.
 pub fn is_planar<G: IncidenceGraph>(g: &G) -> bool {
     crate::alg::planar::BoyerMyrvoldPlanarityInspector::new(g).is_planar()
 }
@@ -439,7 +439,7 @@ pub fn is_k5_subdivision<G: IncidenceGraph>(g: &G) -> bool {
     })
 }
 
-/// Returns whether kuratowski subdivision.
+/// Whether the graph is a subdivision of `K5` or `K3,3`.
 pub fn is_kuratowski_subdivision<G: IncidenceGraph>(g: &G) -> bool {
     is_k33_subdivision(g) || is_k5_subdivision(g)
 }

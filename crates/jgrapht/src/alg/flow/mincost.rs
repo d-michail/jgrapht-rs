@@ -37,18 +37,18 @@ use std::collections::{HashMap, HashSet};
 /// `MinimumCostFlowProblem`: a directed network with node supplies and arc capacity bounds and
 /// costs.
 pub trait MinimumCostFlowProblem {
-    /// The graph type.
+    /// The network's graph type.
     type Graph: Graph;
 
-    /// Returns the graph.
+    /// The network.
     fn graph(&self) -> &Self::Graph;
     /// Supply of a vertex (negative for a demand).
     fn node_supply(&self, v: &<Self::Graph as Graph>::Vertex) -> i32;
-    /// Returns the arc capacity lower bound.
+    /// Smallest flow the arc `e` must carry.
     fn arc_capacity_lower_bound(&self, e: &<Self::Graph as Graph>::Edge) -> i32;
-    /// Returns the arc capacity upper bound.
+    /// Largest flow the arc `e` may carry.
     fn arc_capacity_upper_bound(&self, e: &<Self::Graph as Graph>::Edge) -> i32;
-    /// Returns the arc cost.
+    /// Cost of sending one unit of flow along the arc `e`.
     fn arc_cost(&self, e: &<Self::Graph as Graph>::Edge) -> f64;
 }
 
@@ -132,14 +132,14 @@ impl<'g, G: Graph> MinimumCostFlowProblem for MinimumCostFlowProblemImpl<'g, G> 
 /// `MinimumCostFlowAlgorithm.MinimumCostFlow`: the cost and the flow on every edge.
 #[derive(Debug, Clone)]
 pub struct MinimumCostFlow<E> {
-    /// The cost.
+    /// Total cost of the flow.
     pub cost: f64,
-    /// The flow map.
+    /// Flow on every arc of the network.
     pub flow_map: HashMap<E, f64>,
 }
 
 impl<E: Eq + std::hash::Hash> MinimumCostFlow<E> {
-    /// Returns the flow.
+    /// Flow on `edge`, or `None` if it is not an arc of the network.
     pub fn flow(&self, edge: &E) -> Option<f64> {
         self.flow_map.get(edge).copied()
     }
@@ -205,7 +205,7 @@ pub trait MinimumCostFlowAlgorithm<V, E> {
         Ok(self.minimum_cost_flow(problem)?.cost)
     }
 
-    /// The flow map of the last computation.
+    /// Flow on every edge in the last computation, or `None` before one has run.
     fn flow_map(&self) -> Option<&HashMap<E, f64>>;
     /// The head of an edge of the last problem.
     fn flow_direction(&self, edge: &E) -> Option<&V>;
@@ -215,7 +215,8 @@ pub trait MinimumCostFlowAlgorithm<V, E> {
 pub const CAP_INF: i32 = 1000 * 1000 * 1000;
 /// Cost of the artificial arcs.
 pub const COST_INF: f64 = 1e9;
-/// The default scaling factor constant.
+/// Default factor by which the capacity-scaling algorithm shrinks its capacity threshold between
+/// phases.
 pub const DEFAULT_SCALING_FACTOR: i32 = 8;
 
 struct Node {
@@ -454,7 +455,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> Default
 impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
     CapacityScalingMinimumCostFlow<V, E>
 {
-    /// Creates a new instance.
+    /// An instance with the default scaling factor ([`DEFAULT_SCALING_FACTOR`]).
     pub fn new() -> Self {
         Self::with_scaling_factor(DEFAULT_SCALING_FACTOR)
     }

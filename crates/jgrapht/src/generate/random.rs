@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use super::structured::Complete;
-use super::{GeneratorResult, GraphGenerator, add_edge, invalid};
+use super::{GeneratorResult, GraphGenerator, add_edge};
 use crate::graph::Graph;
 use crate::graph::GraphExt;
 use crate::graph::IncidenceGraph;
@@ -28,7 +28,10 @@ fn check_probability(p: f64) -> Result<f64> {
     if (0.0..=1.0).contains(&p) {
         Ok(p)
     } else {
-        invalid("not valid probability of edge existence")
+        Err(GraphError::InvalidParameter {
+            name: "p",
+            requirement: crate::ParameterRequirement::Probability,
+        })
     }
 }
 
@@ -39,8 +42,8 @@ fn new_vertices<G: GraphMut>(target: &mut G, n: usize) -> Result<Vec<G::Vertex>>
         vs.push(target.add_new_vertex()?);
     }
     if target.vertex_count() != previous + n {
-        return invalid(format!(
-            "Vertex factory did not produce {n} distinct vertices."
+        return Err(GraphError::InvalidState(
+            "the vertex factory did not produce distinct vertices",
         ));
     }
     Ok(vs)
@@ -78,7 +81,9 @@ impl<R: RandomSource> GraphGenerator for GnpRandomGraphGenerator<R> {
             return Ok(());
         }
         if self.create_loops && !target.graph_type().self_loops {
-            return invalid("Provided graph does not support self-loops");
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::AllowsSelfLoops,
+            ));
         }
         let vertices = new_vertices(target, self.n)?;
         let directed = target.graph_type().directed;
@@ -174,20 +179,22 @@ impl<R: RandomSource> GraphGenerator for GnmRandomGraphGenerator<R> {
         }
         let ty = target.graph_type();
         if self.loops && !ty.self_loops {
-            return invalid("Provided graph does not support self-loops");
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::AllowsSelfLoops,
+            ));
         }
         if self.multiple_edges && !ty.multiple_edges {
-            return invalid(
-                "Provided graph does not support multiple edges between the same vertices",
-            );
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::AllowsParallelEdges,
+            ));
         }
         if self.m
             > Self::maximum_allowed_edges(self.n, ty.directed, self.loops, self.multiple_edges)
         {
-            return invalid(format!(
-                "number of edges is not valid for the graph type; invalid number of edges={} for graph with {} vertices",
-                self.m, self.n
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "m",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         let vertices = new_vertices(target, self.n)?;
         let mut count = 0;
@@ -227,16 +234,28 @@ impl<R: RandomSource> BarabasiAlbertGraphGenerator<R> {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(m0: usize, m: usize, n: usize, rng: R) -> Result<Self> {
         if m0 < 1 {
-            return invalid(format!("invalid initial nodes ({m0} < 1)"));
+            return Err(GraphError::InvalidParameter {
+                name: "m0",
+                requirement: crate::ParameterRequirement::Positive,
+            });
         }
         if m == 0 {
-            return invalid("invalid edges per node (0 <= 0");
+            return Err(GraphError::InvalidParameter {
+                name: "m",
+                requirement: crate::ParameterRequirement::Positive,
+            });
         }
         if m > m0 {
-            return invalid(format!("invalid edges per node ({m} > {m0})"));
+            return Err(GraphError::InvalidParameter {
+                name: "m",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         if n < m0 {
-            return invalid("total number of nodes must be at least equal to the initial set");
+            return Err(GraphError::InvalidParameter {
+                name: "n",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         Ok(BarabasiAlbertGraphGenerator { m0, m, n, rng })
     }
@@ -300,10 +319,16 @@ impl<R: RandomSource> BarabasiAlbertForestGenerator<R> {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(t: usize, n: usize, rng: R) -> Result<Self> {
         if t < 1 {
-            return invalid(format!("invalid number of trees ({t} < 1)"));
+            return Err(GraphError::InvalidParameter {
+                name: "t",
+                requirement: crate::ParameterRequirement::Positive,
+            });
         }
         if n < t {
-            return invalid("total number of nodes must be at least equal to the number of trees");
+            return Err(GraphError::InvalidParameter {
+                name: "n",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         Ok(BarabasiAlbertForestGenerator { t, n, rng })
     }
@@ -316,7 +341,7 @@ impl<R: RandomSource> GraphGenerator for BarabasiAlbertForestGenerator<R> {
     ) -> Result<()> {
         crate::graph::props::require_undirected(&*target)?;
         if target.vertex_count() != 0 {
-            return invalid("target graph is not empty");
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Empty));
         }
         let mut nodes = Vec::new();
         for _ in 0..self.t {
@@ -348,7 +373,10 @@ impl<R: RandomSource> ScaleFreeGraphGenerator<R> {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(size: i64, rng: R) -> Result<Self> {
         if size < 0 {
-            return invalid(format!("invalid size: {size} (must be non-negative)"));
+            return Err(GraphError::InvalidParameter {
+                name: "size",
+                requirement: crate::ParameterRequirement::NonNegative,
+            });
         }
         Ok(ScaleFreeGraphGenerator {
             size: size as usize,
@@ -418,17 +446,19 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
         rng: R,
     ) -> Result<Self> {
         if alpha < 0.0 || gamma < 0.0 || alpha + gamma > 1.0 {
-            return invalid(format!(
-                "alpha and gamma values of ({alpha}, {gamma}) are invalid"
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "alpha_gamma",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         if delta_in < 0.0 || delta_out < 0.0 {
-            return invalid(format!(
-                "deltaIn and deltaOut values of ({delta_in}, {delta_out}) are invalid"
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "delta",
+                requirement: crate::ParameterRequirement::NonNegative,
+            });
         }
         if target_edges < 0 && target_nodes < 0 {
-            return invalid("can not have both targetEdges and targetNodes not set.");
+            return Err(GraphError::MissingParameter("target_edges or target_nodes"));
         }
         Ok(DirectedScaleFreeGraphGenerator {
             alpha,
@@ -443,15 +473,15 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
             allowing_self_loops: true,
         })
     }
-    /// Sets the allowing multiple edges.
+    /// Whether the generator may create parallel edges.
     pub fn set_allowing_multiple_edges(&mut self, allow: bool) {
         self.allowing_multiple_edges = allow;
     }
-    /// Sets the allowing self loops.
+    /// Whether the generator may create self-loops.
     pub fn set_allowing_self_loops(&mut self, allow: bool) {
         self.allowing_self_loops = allow;
     }
-    /// Sets the max failures.
+    /// Maximum number of consecutive failed attempts to add an edge before the generator gives up.
     pub fn set_max_failures(&mut self, max: usize) {
         self.max_failures = max;
     }
@@ -498,14 +528,14 @@ impl<R: RandomSource> GraphGenerator for DirectedScaleFreeGraphGenerator<R> {
     ) -> Result<()> {
         let ty = target.graph_type();
         if self.allowing_multiple_edges && !ty.multiple_edges {
-            return invalid(
-                "Generator allows Multiple Edges while graph does not. Consider changing this generator parameters or the target graph type.",
-            );
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::AllowsParallelEdges,
+            ));
         }
         if self.allowing_self_loops && !ty.self_loops {
-            return invalid(
-                "Generator allows Self loops while graph does not. Consider changing this generator parameters or the target graph type.",
-            );
+            return Err(GraphError::InvalidGraph(
+                crate::GraphProperty::AllowsSelfLoops,
+            ));
         }
         let mut new_nodes: IndexSet<G::Vertex> = IndexSet::new();
         let mut new_edge_count = 0usize;
@@ -524,10 +554,9 @@ impl<R: RandomSource> GraphGenerator for DirectedScaleFreeGraphGenerator<R> {
                 break;
             }
             if failures >= self.max_failures {
-                return Err(GraphError::InvalidArgument(format!(
-                    "{failures} consecutive failures is more than maximum allowed number ({}).",
-                    self.max_failures
-                )));
+                return Err(GraphError::InvalidState(
+                    "the maximum number of consecutive failures was reached",
+                ));
             }
             let (mut v, mut w): (Option<G::Vertex>, Option<G::Vertex>) = (None, None);
             let (mut new_v, mut new_w) = (false, false);
@@ -599,19 +628,34 @@ impl<R: RandomSource> WattsStrogatzGraphGenerator<R> {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: usize, k: usize, p: f64, add_instead_of_rewire: bool, rng: R) -> Result<Self> {
         if n < 3 {
-            return invalid("number of vertices must be at least 3");
+            return Err(GraphError::InvalidParameter {
+                name: "n",
+                requirement: crate::ParameterRequirement::AtLeast(3),
+            });
         }
         if k < 1 {
-            return invalid("number of k-nearest neighbors must be positive");
+            return Err(GraphError::InvalidParameter {
+                name: "k",
+                requirement: crate::ParameterRequirement::Positive,
+            });
         }
         if k % 2 == 1 {
-            return invalid("number of k-nearest neighbors must be even");
+            return Err(GraphError::InvalidParameter {
+                name: "k",
+                requirement: crate::ParameterRequirement::Even,
+            });
         }
         if k > n - 2 + (n % 2) {
-            return invalid("invalid k-nearest neighbors");
+            return Err(GraphError::InvalidParameter {
+                name: "k",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         if !(0.0..=1.0).contains(&p) {
-            return invalid("invalid probability");
+            return Err(GraphError::InvalidParameter {
+                name: "p",
+                requirement: crate::ParameterRequirement::Probability,
+            });
         }
         Ok(WattsStrogatzGraphGenerator {
             n,
@@ -675,7 +719,10 @@ impl<R: RandomSource> PruferTreeGenerator<R> {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: usize, rng: R) -> Result<Self> {
         if n == 0 {
-            return invalid("n must be greater than 0");
+            return Err(GraphError::InvalidParameter {
+                name: "n",
+                requirement: crate::ParameterRequirement::Positive,
+            });
         }
         Ok(PruferTreeGenerator {
             n,
@@ -693,7 +740,10 @@ impl PruferTreeGenerator<rand::rngs::StdRng> {
     pub fn from_sequence(sequence: &[usize]) -> Result<Self> {
         let n = sequence.len() + 2;
         if sequence.iter().any(|&x| x >= n) {
-            return invalid("invalid pruferSequence");
+            return Err(GraphError::InvalidParameter {
+                name: "prufer_sequence",
+                requirement: crate::ParameterRequirement::InBounds,
+            });
         }
         Ok(PruferTreeGenerator {
             n,
@@ -710,7 +760,7 @@ impl<R: RandomSource> GraphGenerator for PruferTreeGenerator<R> {
     ) -> Result<()> {
         crate::graph::props::require_undirected(&*target)?;
         if target.vertex_count() != 0 {
-            return invalid("target graph is not empty");
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Empty));
         }
         let n = self.n;
         let mut vertex_list = Vec::with_capacity(n);
@@ -778,10 +828,16 @@ impl<R: RandomSource> RandomRegularGraphGenerator<R> {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: usize, d: usize, rng: R) -> Result<Self> {
         if d > n {
-            return invalid("degree of nodes must be smaller than or equal to number of nodes");
+            return Err(GraphError::InvalidParameter {
+                name: "d",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         if (n * d) % 2 != 0 {
-            return invalid("value 'n * d' must be even");
+            return Err(GraphError::InvalidParameter {
+                name: "n_times_d",
+                requirement: crate::ParameterRequirement::Even,
+            });
         }
         Ok(RandomRegularGraphGenerator { n, d, rng })
     }
@@ -886,13 +942,13 @@ impl<R: RandomSource> GraphGenerator for RandomRegularGraphGenerator<R> {
     ) -> Result<()> {
         let ty: GraphType = target.graph_type();
         if ty.directed || ty.mixed {
-            return invalid("target graph must be undirected");
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
         }
         if ty.is_simple() {
             if self.n == 0 || self.d == 0 {
                 super::structured::Empty(self.n).generate_default(target)
             } else if self.d == self.n {
-                invalid("target graph must be simple if 'n == d'")
+                Err(GraphError::InvalidGraph(crate::GraphProperty::Simple))
             } else if self.d == self.n - 1 {
                 Complete(self.n).generate_default(target)
             } else {
@@ -922,10 +978,16 @@ impl<R: RandomSource> PlantedPartitionGraphGenerator<R> {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(l: usize, k: usize, p: f64, q: f64, rng: R, self_loops: bool) -> Result<Self> {
         if !(0.0..=1.0).contains(&p) {
-            return invalid("invalid probability p");
+            return Err(GraphError::InvalidParameter {
+                name: "p",
+                requirement: crate::ParameterRequirement::Probability,
+            });
         }
         if !(0.0..=1.0).contains(&q) {
-            return invalid("invalid probability q");
+            return Err(GraphError::InvalidParameter {
+                name: "q",
+                requirement: crate::ParameterRequirement::Probability,
+            });
         }
         Ok(PlantedPartitionGraphGenerator {
             l,
@@ -948,8 +1010,8 @@ impl<R: RandomSource> PlantedPartitionGraphGenerator<R> {
         target: &mut G,
     ) -> Result<Vec<Vec<G::Vertex>>> {
         if self.fired {
-            return Err(GraphError::InvalidArgument(
-                "generateGraph() can be only called once".into(),
+            return Err(GraphError::InvalidState(
+                "the generator can only be run once",
             ));
         }
         self.fired = true;
@@ -966,7 +1028,9 @@ impl<R: RandomSource> PlantedPartitionGraphGenerator<R> {
         }
         if self.self_loops {
             if !target.graph_type().self_loops {
-                return invalid("target graph must allow self-loops");
+                return Err(GraphError::InvalidGraph(
+                    crate::GraphProperty::AllowsSelfLoops,
+                ));
             }
             for v in &vertices {
                 if self.rng.next_double() < self.p {
@@ -1016,19 +1080,34 @@ impl<R: RandomSource> KleinbergSmallWorldGraphGenerator<R> {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: i64, p: i64, q: i64, r: i64, rng: R) -> Result<Self> {
         if n < 1 {
-            return invalid("parameter n must be positive");
+            return Err(GraphError::InvalidParameter {
+                name: "n",
+                requirement: crate::ParameterRequirement::Positive,
+            });
         }
         if p < 1 {
-            return invalid("parameter p must be positive");
+            return Err(GraphError::InvalidParameter {
+                name: "p",
+                requirement: crate::ParameterRequirement::Positive,
+            });
         }
         if p > 2 * n - 2 {
-            return invalid("lattice distance too large");
+            return Err(GraphError::InvalidParameter {
+                name: "p",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         if q < 0 {
-            return invalid("parameter q must be non-negative");
+            return Err(GraphError::InvalidParameter {
+                name: "q",
+                requirement: crate::ParameterRequirement::NonNegative,
+            });
         }
         if r < 0 {
-            return invalid("parameter r must be non-negative");
+            return Err(GraphError::InvalidParameter {
+                name: "r",
+                requirement: crate::ParameterRequirement::NonNegative,
+            });
         }
         Ok(KleinbergSmallWorldGraphGenerator {
             n: n as usize,
@@ -1121,10 +1200,16 @@ impl<R: RandomSource> LinearizedChordDiagramGraphGenerator<R> {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: usize, m: usize, rng: R) -> Result<Self> {
         if n == 0 {
-            return invalid("invalid number of nodes: must be positive");
+            return Err(GraphError::InvalidParameter {
+                name: "n",
+                requirement: crate::ParameterRequirement::Positive,
+            });
         }
         if m == 0 {
-            return invalid("invalid edges per node (0 <= 0");
+            return Err(GraphError::InvalidParameter {
+                name: "m",
+                requirement: crate::ParameterRequirement::Positive,
+            });
         }
         Ok(LinearizedChordDiagramGraphGenerator { n, m, rng })
     }
@@ -1142,7 +1227,9 @@ impl<R: RandomSource> GraphGenerator for LinearizedChordDiagramGraphGenerator<R>
                 nodes.push(vt.clone());
                 let vs = nodes[self.rng.next_int_bound(nodes.len())].clone();
                 if target.add_edge(&vt, &vs)?.is_none() {
-                    return invalid("Graph does not permit parallel-edges.");
+                    return Err(GraphError::InvalidGraph(
+                        crate::GraphProperty::AllowsParallelEdges,
+                    ));
                 }
                 nodes.push(vs);
             }
@@ -1159,7 +1246,7 @@ pub struct GnmRandomBipartiteGraphGenerator<R> {
     rng: R,
 }
 impl<R: RandomSource> GnmRandomBipartiteGraphGenerator<R> {
-    /// Creates a new instance.
+    /// A generator of bipartite graphs with `n1` and `n2` vertices and exactly `m` edges.
     pub fn new(n1: usize, n2: usize, m: usize, rng: R) -> Self {
         GnmRandomBipartiteGraphGenerator { n1, n2, m, rng }
     }
@@ -1185,9 +1272,8 @@ impl<R: RandomSource> GnmRandomBipartiteGraphGenerator<R> {
             b.push(target.add_new_vertex()?);
         }
         if target.vertex_count() != previous + self.n1 + self.n2 {
-            return invalid(format!(
-                "Vertex factory did not produce {} distinct vertices.",
-                self.n1 + self.n2
+            return Err(GraphError::InvalidState(
+                "the vertex factory did not produce distinct vertices",
             ));
         }
         let directed = target.graph_type().directed;
@@ -1197,10 +1283,10 @@ impl<R: RandomSource> GnmRandomBipartiteGraphGenerator<R> {
             self.n1.saturating_mul(self.n2)
         };
         if self.m > max {
-            return invalid(format!(
-                "number of edges not valid for bipartite graph with {} and {} vertices",
-                self.n1, self.n2
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "m",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         let mut count = 0;
         while count < self.m {
@@ -1271,9 +1357,8 @@ impl<R: RandomSource> GnpRandomBipartiteGraphGenerator<R> {
             b.push(target.add_new_vertex()?);
         }
         if target.vertex_count() != previous + self.n1 + self.n2 {
-            return invalid(format!(
-                "Vertex factory did not produce {} distinct vertices.",
-                self.n1 + self.n2
+            return Err(GraphError::InvalidState(
+                "the vertex factory did not produce distinct vertices",
             ));
         }
         let directed = target.graph_type().directed;

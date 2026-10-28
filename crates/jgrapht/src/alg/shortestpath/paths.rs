@@ -71,7 +71,7 @@ impl<V: Clone + Eq + Hash, E: Clone> ListSingleSourcePaths<V, E> {
 )]
 #[derive(Debug, Clone)]
 pub struct SingleSourcePaths<V, E> {
-    /// The source.
+    /// The vertex all paths start at.
     pub source: V,
     /// Distance for every reachable vertex (the source included, at `0.0`).
     #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::hash_pairs"))]

@@ -80,9 +80,9 @@ pub fn greedy_spanner<G: Graph>(g: &G, k: usize) -> Result<Vec<G::Edge>> {
 /// The result of a spanner algorithm (`SpannerAlgorithm.Spanner`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Spanner<E: Eq + std::hash::Hash> {
-    /// The edges.
+    /// Edges of the spanner.
     pub edges: indexmap::IndexSet<E>,
-    /// The weight.
+    /// Total weight of the spanner.
     pub weight: f64,
 }
 

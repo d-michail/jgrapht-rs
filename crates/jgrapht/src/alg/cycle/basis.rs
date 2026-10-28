@@ -41,7 +41,7 @@ pub struct CycleBasis<E> {
 }
 
 impl<E: Clone + Eq + std::hash::Hash> CycleBasis<E> {
-    /// Creates a new instance.
+    /// A cycle basis from its cycles (edge lists), their total number of edges and their total weight.
     pub fn new(cycles: IndexSet<Vec<E>>, length: usize, weight: f64) -> Self {
         CycleBasis {
             cycles,
@@ -50,12 +50,12 @@ impl<E: Clone + Eq + std::hash::Hash> CycleBasis<E> {
         }
     }
 
-    /// Computes the empty.
+    /// A basis without cycles.
     pub fn empty() -> Self {
         Self::new(IndexSet::new(), 0, 0.0)
     }
 
-    /// Returns the cycles.
+    /// The cycles of the basis, each as a list of edges.
     pub fn cycles(&self) -> &IndexSet<Vec<E>> {
         &self.cycles
     }

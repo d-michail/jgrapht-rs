@@ -16,17 +16,17 @@
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GraphType {
-    /// The directed.
+    /// Edges have a direction.
     pub directed: bool,
-    /// The self loops.
+    /// An edge may join a vertex to itself.
     pub self_loops: bool,
-    /// The multiple edges.
+    /// Several edges may join the same pair of vertices.
     pub multiple_edges: bool,
-    /// The weighted.
+    /// Edges carry weights; otherwise every weight is `1.0`.
     pub weighted: bool,
-    /// The allows cycles.
+    /// Adding an edge may close a cycle; `false` for a directed acyclic graph.
     pub allows_cycles: bool,
-    /// The modifiable.
+    /// Vertices and edges can be added and removed.
     pub modifiable: bool,
     /// Mixed graphs contain both directed and undirected edges (`directed` is then `false`).
     pub mixed: bool,
@@ -60,61 +60,61 @@ impl GraphType {
             ..Self::simple()
         }
     }
-    /// Sets the directed and returns the builder.
+    /// This type with the direction set to `d`.
     pub const fn directed(mut self, d: bool) -> Self {
         self.directed = d;
         self
     }
-    /// Sets the weighted and returns the builder.
+    /// This type with the weighted flag set to `w`.
     pub const fn weighted(mut self, w: bool) -> Self {
         self.weighted = w;
         self
     }
-    /// Returns whether undirected.
+    /// Whether all edges are undirected.
     pub const fn is_undirected(&self) -> bool {
         !self.directed && !self.mixed
     }
-    /// Returns whether mixed.
+    /// Whether the graph has both directed and undirected edges.
     pub const fn is_mixed(&self) -> bool {
         self.mixed
     }
-    /// Returns whether directed.
+    /// Whether all edges are directed.
     pub const fn is_directed(&self) -> bool {
         self.directed
     }
-    /// Views the value as mixed.
+    /// This type as a mixed graph (directed and undirected edges together).
     pub const fn as_mixed(mut self) -> Self {
         self.directed = false;
         self.mixed = true;
         self
     }
-    /// Returns whether simple.
+    /// Whether the graph has neither self-loops nor parallel edges.
     pub const fn is_simple(&self) -> bool {
         !self.multiple_edges && !self.self_loops
     }
-    /// Returns whether pseudograph.
+    /// Whether the graph allows both self-loops and parallel edges.
     pub const fn is_pseudograph(&self) -> bool {
         self.multiple_edges && self.self_loops
     }
-    /// Returns whether multigraph.
+    /// Whether the graph allows parallel edges but no self-loops.
     pub const fn is_multigraph(&self) -> bool {
         self.multiple_edges && !self.self_loops
     }
-    /// Returns whether acyclic.
+    /// Whether the graph cannot contain cycles.
     pub const fn is_acyclic(&self) -> bool {
         !self.allows_cycles
     }
-    /// Views the value as unmodifiable.
+    /// This type with modification switched off.
     pub const fn as_unmodifiable(mut self) -> Self {
         self.modifiable = false;
         self
     }
-    /// Views the value as unweighted.
+    /// This type with the weights dropped.
     pub const fn as_unweighted(mut self) -> Self {
         self.weighted = false;
         self
     }
-    /// Views the value as weighted.
+    /// This type with weights switched on.
     pub const fn as_weighted(mut self) -> Self {
         self.weighted = true;
         self

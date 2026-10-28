@@ -89,12 +89,12 @@ macro_rules! cycles_algorithm {
                 $name { graph: Some(graph) }
             }
 
-            /// Returns the graph.
+            /// The graph the cycles are searched in, if one was set.
             pub fn graph(&self) -> Option<&'g G> {
                 self.graph
             }
 
-            /// Sets the graph.
+            /// Chooses the graph in which the cycles are searched.
             pub fn set_graph(&mut self, graph: &'g G) {
                 self.graph = Some(graph);
             }

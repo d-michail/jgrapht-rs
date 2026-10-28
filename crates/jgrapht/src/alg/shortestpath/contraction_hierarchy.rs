@@ -112,7 +112,7 @@ impl<G: Graph> Deref for ContractionHierarchy<'_, G> {
 }
 
 impl<'g, G: Graph> ContractionHierarchy<'g, G> {
-    /// The input graph.
+    /// The graph the hierarchy was built from.
     pub fn graph(&self) -> &'g G {
         self.graph
     }

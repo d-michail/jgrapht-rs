@@ -310,25 +310,25 @@ impl<'g, G: OutgoingGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, 
 /// Statistics collected by [`BoundedPrunedYenKShortestPath`].
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct BoundedPrunedYenStats {
-    /// The shortest path calls.
+    /// Calls of the underlying shortest-path engine.
     pub shortest_path_calls: usize,
-    /// The spur tasks created.
+    /// Spur tasks created, each a deferred search for a candidate path that deviates at one vertex.
     pub spur_tasks_created: usize,
-    /// The spur tasks materialized.
+    /// Spur tasks that were turned into a real search, in order of their lower bound.
     pub spur_tasks_materialized: usize,
-    /// The materialized candidates.
+    /// Candidate paths that were found and pushed on the candidate heap.
     pub materialized_candidates: usize,
-    /// The deferred tasks left.
+    /// Spur tasks still deferred when the search ended, so never searched.
     pub deferred_tasks_left: usize,
-    /// The candidate heap pushes.
+    /// Pushes on the candidate heap.
     pub candidate_heap_pushes: usize,
-    /// The candidate heap pops.
+    /// Pops from the candidate heap.
     pub candidate_heap_pops: usize,
-    /// The unreachable spurs.
+    /// Spur searches that found no path.
     pub unreachable_spurs: usize,
     /// Vertices expanded by spur engines which expose their settled-vertex count.
     pub expanded_vertices: usize,
-    /// The skipped impossible spur tasks.
+    /// Spur tasks dropped without a search because no legal exit from the spur vertex exists.
     pub skipped_impossible_spur_tasks: usize,
     candidate_ordinal: u64,
 }
@@ -351,7 +351,7 @@ pub trait SpurShortestPathEngine: spur_engine_private::Sealed + Copy {
 pub struct DijkstraSpurEngine;
 
 impl DijkstraSpurEngine {
-    /// Creates a new instance.
+    /// The engine; it holds no state.
     pub fn new() -> Self {
         Self
     }
@@ -374,7 +374,7 @@ impl SpurShortestPathEngine for DijkstraSpurEngine {
 pub struct AStarSpurEngine;
 
 impl AStarSpurEngine {
-    /// Creates a new instance.
+    /// The engine; it holds no state.
     pub fn new() -> Self {
         Self
     }
@@ -539,7 +539,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
         }
     }
 
-    /// Returns the stats.
+    /// A snapshot of the statistics of the last search.
     pub fn stats(&self) -> BoundedPrunedYenStats {
         self.stats.borrow().clone()
     }

@@ -18,7 +18,7 @@ use super::{DirectedGraph, Graph, GraphMut, IncidenceGraph, IncomingGraph, Outgo
 use crate::Result;
 use std::borrow::Borrow;
 
-/// The `GraphExt` trait.
+/// Derived read operations that every [`Graph`] gets for free.
 pub trait GraphExt: Graph {
     /// The vertices as owned values. Prefer this over `vertices().cloned()`: graphs that compute
     /// their vertices have nothing to borrow.
@@ -153,14 +153,14 @@ pub trait GraphExt: Graph {
             .sum()
     }
 
-    /// Returns whether empty.
+    /// Whether the graph has no vertices.
     fn is_empty(&self) -> bool {
         self.vertex_count() == 0
     }
 }
 impl<G: Graph + ?Sized> GraphExt for G {}
 
-/// The `DirectedExt` trait.
+/// Derived read operations that every [`DirectedGraph`] gets for free.
 pub trait DirectedExt: DirectedGraph {
     /// Successors reached by outgoing edges.
     fn successors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex>
@@ -255,7 +255,7 @@ pub trait DirectedExt: DirectedGraph {
 }
 impl<G: DirectedGraph + ?Sized> DirectedExt for G {}
 
-/// The `GraphMutExt` trait.
+/// Derived write operations that every [`GraphMut`] gets for free.
 pub trait GraphMutExt: GraphMut {
     /// Adds both endpoints if missing, then the edge .
     ///

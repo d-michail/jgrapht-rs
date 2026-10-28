@@ -197,12 +197,12 @@ impl<V, E, D: Direction> GraphTypeBuilder<V, E, D> {
             _d: PhantomData,
         }
     }
-    /// Sets the allowing multiple edges and returns the builder.
+    /// Whether the graph may contain parallel edges.
     pub fn allowing_multiple_edges(mut self, allow: bool) -> Self {
         self.ty.multiple_edges = allow;
         self
     }
-    /// Sets the allowing self loops and returns the builder.
+    /// Whether the graph may contain self-loops.
     pub fn allowing_self_loops(mut self, allow: bool) -> Self {
         self.ty.self_loops = allow;
         self

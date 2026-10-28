@@ -21,19 +21,19 @@ use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, VecDeque};
 
 #[derive(Debug, Clone)]
-/// The `MultiObjectiveSingleSourcePaths` struct.
+/// Pareto-optimal paths from one source to every other vertex.
 pub struct MultiObjectiveSingleSourcePaths<V, E> {
     source: V,
     paths: HashMap<V, Vec<GraphWalk<V, E>>>,
 }
 
 impl<V: Clone + Eq + std::hash::Hash, E: Clone> MultiObjectiveSingleSourcePaths<V, E> {
-    /// Returns the source.
+    /// The vertex all paths start at.
     pub fn source(&self) -> &V {
         &self.source
     }
 
-    /// Returns the paths.
+    /// The Pareto-optimal paths from the source to `target`; empty if there are none.
     pub fn paths(&self, target: &V) -> &[GraphWalk<V, E>] {
         self.paths.get(target).map_or(&[], Vec::as_slice)
     }
@@ -73,9 +73,10 @@ fn validate_weights<G: Graph, F: Fn(&G::Edge) -> Vec<f64>>(
         if dimensions.is_some_and(|d| d != value.len())
             || value.iter().any(|x| x.is_nan() || *x < 0.0)
         {
-            return Err(GraphError::InvalidArgument(
-                "invalid multi-objective edge weight function".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "weight_function",
+                requirement: crate::ParameterRequirement::Consistent,
+            });
         }
         dimensions.get_or_insert(value.len());
     }
@@ -141,7 +142,8 @@ pub struct MartinShortestPath<'g, G: Graph, F> {
 }
 
 impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>> MartinShortestPath<'g, G, F> {
-    /// Creates a new instance.
+    /// Martin's algorithm on `graph`, where `edge_weight` gives the vector of objective values of an
+    /// edge.
     pub fn new(graph: &'g G, edge_weight: F) -> Self {
         Self { graph, edge_weight }
     }
@@ -252,7 +254,8 @@ pub struct LabelCorrectingMultiObjectiveShortestPath<'g, G: Graph, F> {
 impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
     LabelCorrectingMultiObjectiveShortestPath<'g, G, F>
 {
-    /// Creates a new instance.
+    /// The label-correcting algorithm on `graph`, where `edge_weight` gives the vector of objective
+    /// values of an edge.
     pub fn new(graph: &'g G, edge_weight: F) -> Self {
         Self {
             graph,
