@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1470 | 344 | 124 | 348 | 16 | 19 | 426 | 193 |
+| `jgrapht` | 1469 | 344 | 124 | 347 | 16 | 19 | 426 | 193 |
 | `jgrapht-io` | 159 | 84 | 9 | 13 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -112,7 +112,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/cover.rs` | `bipartite_vertex_cover` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/cover.rs` | `is_vertex_cover` | 2 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/cycle/detector.rs` | `CycleDetector::find_cycles` | 0 unwrap, 1 expect/panic/assert |
-| `jgrapht/src/alg/cycle/eulerian.rs` | `HierholzerEulerianCycle::is_eulerian` | 1 unwrap, 0 expect/panic/assert |
 | `jgrapht/src/alg/cycle/howard.rs` | `HowardMinimumMeanCycle::with_maximum_iterations` | 0 unwrap, 1 expect/panic/assert |
 | `jgrapht/src/alg/cycle/weak_chordality.rs` | `WeakChordalityInspector::new` | 0 unwrap, 2 expect/panic/assert |
 | `jgrapht/src/alg/cyclic_exchange.rs` | `AhujaOrlinSharmaCyclicExchangeLocalAugmentation::local_augmentation_cycle` | 4 unwrap, 0 expect/panic/assert |
@@ -383,7 +382,6 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/cycle/eulerian.rs` | `EulerianCycleAlgorithm::get_eulerian_cycle` | Result | `Result<GraphWalk<G::Vertex, G::Edge>>` |
 | `jgrapht/src/alg/cycle/eulerian.rs` | `HierholzerEulerianCycle::is_eulerian` | infallible | `bool` |
 | `jgrapht/src/alg/cycle/eulerian.rs` | `HierholzerEulerianCycle::new` | unchecked constructor | `Self` |
-| `jgrapht/src/alg/cycle/eulerian.rs` | `HierholzerEulerianCycle::try_is_eulerian` | Result | `Result<bool>` |
 | `jgrapht/src/alg/cycle/howard.rs` | `HowardMinimumMeanCycle::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/cycle/howard.rs` | `HowardMinimumMeanCycle::with_maximum_iterations` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/cycle/howard.rs` | `MinimumCycleMeanAlgorithm::get_cycle` | Option | `Option<GraphWalk<G::Vertex, G::Edge>>` |

@@ -18,7 +18,7 @@ Review of 2026-10-27 on `master` (e8d4f07). Build and `cargo test --workspace` a
 
 ## API and robustness
 
-**I-6. (resolved)** Caller-reachable panics are gone: incidence is a compile-time capability, fallible iterators yield `Result`, exporters and importers return `IoError`. The remaining 747 `unwrap`/`expect` sites are classified in [`PANIC_AUDIT.md`](PANIC_AUDIT.md) and every public function that can reach one has a `# Panics` section.
+**I-6. (resolved, with limits)** Caller-reachable panics found by the audit are fixed (two defects, see [`PANIC_AUDIT.md`](PANIC_AUDIT.md)); incidence is a compile-time capability, fallible iterators yield `Result`, and importers are mutation-tested. 750 `unwrap`/`expect` sites remain, each recorded in [`panic_sites.tsv`](panic_sites.tsv) with a class; indexing sites are classified by rule, not individually read.
 
 **I-7. (resolved)** Fixed: both crates have `#![deny(missing_docs)]`, public fallible functions have `# Errors` sections, and `lib.rs` has doctests for `Option`, `Result<Option<_>>`, fallible iterators and capability bounds. Many of the 686 added doc lines are short name-derived summaries; improve them as the APIs are touched.
 

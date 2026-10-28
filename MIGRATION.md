@@ -3,6 +3,11 @@
 Breaking changes made by the Rust API hardening roadmap (`docs/RUST_API_ROADMAP.md`). This file is
 folded into `CHANGELOG.md` before the first release.
 
+## Step 22: Eulerian check is infallible
+
+`HierholzerEulerianCycle::is_eulerian` no longer panics in any case and `try_is_eulerian` is removed;
+use `is_eulerian`.
+
 ## Step 21: Bellman-Ford errors
 
 `NegativeCycleDetected` is now a `thiserror` type: read the cycle with `cycle()` or `into_cycle()`

@@ -284,3 +284,19 @@ fn an_importer_error_leaves_the_elements_read_before_it_in_the_graph() {
     assert_eq!(graph.vertex_count(), 3);
     assert_eq!(graph.edge_count(), 1);
 }
+
+#[test]
+fn json_unicode_escape_cut_inside_a_multibyte_character_is_an_error() {
+    // the four bytes after `\u` end in the middle of `é`
+    for text in [
+        r#"{"nodes":[{"id":"\u00é"}],"edges":[]}"#,
+        r#"{"nodes":[{"id":"\uéé"}],"edges":[]}"#,
+    ] {
+        let mut importer = JsonImporter::<String, DefaultEdge>::new();
+        let mut graph = jgrapht::DiGraph::<String>::simple();
+        assert!(matches!(
+            importer.import_str(&mut graph, text),
+            Err(IoError::Import(_))
+        ));
+    }
+}

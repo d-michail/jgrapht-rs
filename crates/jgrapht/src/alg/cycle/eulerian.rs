@@ -244,39 +244,26 @@ impl HierholzerEulerianCycle {
 
     /// Whether the graph has an Eulerian cycle: balanced degrees and a single component with edges.
     /// The empty graph (no vertices) is not Eulerian.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn is_eulerian<G: IncidenceGraph>(&self, graph: &G) -> bool {
-        self.try_is_eulerian(graph).unwrap()
-    }
-
-    /// Fallible form of [`HierholzerEulerianCycle::is_eulerian`].
-    ///
-    /// # Errors
-    ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    pub fn try_is_eulerian<G: IncidenceGraph>(&self, graph: &G) -> Result<bool> {
         if graph.graph_type().mixed {
-            return Ok(false);
+            return false;
         }
         if graph.vertex_count() == 0 {
-            return Ok(false);
+            return false;
         } else if graph.edge_count() == 0 {
-            return Ok(true);
+            return true;
         }
         let directed = graph.graph_type().directed;
         if !directed {
             for vertex in graph.vertices() {
                 if graph.degree_of(vertex) % 2 == 1 {
-                    return Ok(false);
+                    return false;
                 }
             }
         } else {
             for vertex in graph.vertices() {
                 if graph.in_degree_of(vertex) != graph.out_degree_of(vertex) {
-                    return Ok(false);
+                    return false;
                 }
             }
         }
@@ -300,19 +287,19 @@ impl HierholzerEulerianCycle {
             }
             if component_has_edges {
                 if found_component_with_edges {
-                    return Ok(false);
+                    return false;
                 }
                 found_component_with_edges = true;
             }
         }
-        Ok(true)
+        true
     }
 }
 
 impl<G: IncidenceGraph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
     /// Compute an Eulerian cycle of a graph.
     fn get_eulerian_cycle(&mut self, g: &G) -> Result<GraphWalk<G::Vertex, G::Edge>> {
-        if !self.try_is_eulerian(g)? {
+        if !self.is_eulerian(g) {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Eulerian));
         } else if g.vertex_count() == 0 {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));

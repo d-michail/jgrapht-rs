@@ -240,7 +240,8 @@ impl<'a> Parser<'a> {
             .bytes
             .get(self.position..self.position + 4)
             .ok_or_else(|| IoError::Import("short JSON Unicode escape".into()))?;
-        let text = std::str::from_utf8(bytes).expect("ASCII hex bytes");
+        let text = std::str::from_utf8(bytes)
+            .map_err(|_| IoError::Import("invalid JSON Unicode escape".into()))?;
         let value = u16::from_str_radix(text, 16)
             .map_err(|_| IoError::Import("invalid JSON Unicode escape".into()))?;
         self.position += 4;
