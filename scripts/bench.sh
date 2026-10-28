@@ -4,8 +4,8 @@
 #   scripts/bench.sh                          # all benchmarks, 10 independent runs, mean/sd per benchmark
 #   scripts/bench.sh graph_perf               # one benchmark file (crates/jgrapht/benches/<name>.rs)
 #   scripts/bench.sh -n 20 graph_perf         # more runs
-#   scripts/bench.sh -b master graph_perf     # also run <ref>; interleaved runs, Welch t-test, fail on regression
-#   scripts/bench.sh -b master -t 1.15        # stricter slowdown threshold (default 1.30)
+#   scripts/bench.sh -b main graph_perf     # also run <ref>; interleaved runs, Welch t-test, fail on regression
+#   scripts/bench.sh -b main -t 1.15        # stricter slowdown threshold (default 1.30)
 #
 # Everything runs strictly one process at a time on this machine: no parallel jobs, no other machine.
 # One run is one separate `cargo bench` process (criterion's own 10 samples inside it). The value of

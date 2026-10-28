@@ -1,5 +1,5 @@
 # Shortcuts for the criterion benchmarks. Benchmarks never run automatically; start one on demand.
-# Extra arguments are appended, for example `cargo bench-graph -- --save-baseline master`.
+# Extra arguments are appended, for example `cargo bench-graph -- --save-baseline main`.
 [alias]
 bench-all = "bench -p jgrapht --benches"
 bench-graph = "bench -p jgrapht --bench graph_perf"

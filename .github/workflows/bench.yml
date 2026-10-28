@@ -11,7 +11,7 @@ on:
         required: false
         default: ""
       base:
-        description: "Git ref to compare against (for example master); empty only runs the benchmarks"
+        description: "Git ref to compare against (for example main); empty only runs the benchmarks"
         required: false
         default: ""
       runs:

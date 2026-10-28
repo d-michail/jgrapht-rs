@@ -146,7 +146,7 @@ Benchmarks never run automatically. Start them on demand:
 ```sh
 cargo bench-graph                        # one criterion run of one file; also bench-shortestpath, -algorithms, -structures, -pathsearch, bench-all
 scripts/bench.sh graph_perf              # 10 independent runs, mean and standard deviation per benchmark
-scripts/bench.sh -b master graph_perf    # also run master, interleaved; Welch t-test, fails on a significant >30% slowdown
+scripts/bench.sh -b main graph_perf    # also run main, interleaved; Welch t-test, fails on a significant >30% slowdown
 ```
 
 `scripts/bench.sh` (and the manual **Benchmarks** workflow on GitHub: Actions tab, Run workflow) run
