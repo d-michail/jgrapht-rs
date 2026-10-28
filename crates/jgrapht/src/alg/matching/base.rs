@@ -105,5 +105,9 @@ impl<'a, V, E> IntoIterator for &'a Matching<V, E> {
 /// `MatchingAlgorithm`.
 pub trait MatchingAlgorithm<V, E> {
     /// Computes a matching.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `InvalidGraph` error when the implementation needs a property the graph lacks (for example, being bipartite), and an `InvalidWeight` error for a non-finite weight.
     fn get_matching(&mut self) -> Result<Matching<V, E>>;
 }

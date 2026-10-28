@@ -101,8 +101,10 @@ impl<'g, G: OutgoingGraph> BoykovKolmogorovMFImpl<'g, G> {
     ///
     /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
+        let net = FlowNet::new(network, epsilon)?;
+        net.check_capacities(epsilon)?;
         Ok(BoykovKolmogorovMFImpl {
-            net: FlowNet::new(network, epsilon)?,
+            net,
             data: Vec::new(),
             current_timestamp: 0,
             active_vertices: VecDeque::new(),

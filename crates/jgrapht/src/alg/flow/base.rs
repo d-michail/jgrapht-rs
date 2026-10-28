@@ -158,6 +158,10 @@ pub trait MaximumFlowValueAlgorithm<V> {
 /// queries, so there is no call order to get wrong.
 pub trait MaximumFlowAlgorithm<V, E>: MaximumFlowValueAlgorithm<V> {
     /// Computes a maximum flow from `source` to `sink`, together with its minimum cut.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::SourceEqualsSink`](crate::GraphError::SourceEqualsSink) when both vertices coincide, [`GraphError::VertexNotFound`](crate::GraphError::VertexNotFound) when one is missing, and an `InvalidWeight` error for a negative or NaN capacity.
     fn maximum_flow(&mut self, source: &V, sink: &V) -> Result<MaximumFlow<V, E>>;
 }
 
@@ -179,6 +183,10 @@ pub trait MaximumFlowAlgorithm<V, E>: MaximumFlowValueAlgorithm<V> {
 /// `MinimumSTCutAlgorithm`: each call returns the whole [`MinimumCut`].
 pub trait MinimumSTCutAlgorithm<V, E> {
     /// Computes a minimum cut between `source` and `sink`.
+    ///
+    /// # Errors
+    ///
+    /// Fails exactly when [`MaximumFlowAlgorithm::maximum_flow`] does: equal or missing terminals, or an invalid capacity.
     fn minimum_cut(&mut self, source: &V, sink: &V) -> Result<MinimumCut<V, E>>;
 }
 
@@ -224,7 +232,7 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     pub fn new(graph: &'g G, epsilon: f64) -> Result<Self> {
         let vs: Vec<&G::Vertex> = graph.vertices().collect();
         let es: Vec<&G::Edge> = graph.edges().collect();
-        Ok(FlowNet {
+        let net = FlowNet {
             graph,
             directed: graph.graph_type().directed,
             comparator: ToleranceDoubleComparator::new(epsilon)?,
@@ -239,21 +247,25 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
             source: 0,
             sink: 0,
             max_flow_value: 0.0,
-        })
+        };
+        Ok(net)
     }
 
-    /// The validation shared by the constructors: capacities must not be negative.
+    /// The validation shared by the constructors: capacities must not be negative or NaN. Callers whose networks legitimately
+    /// carry negative arcs (Goldberg's density network) skip it.
     ///
     /// # Errors
     ///
     /// Returns a [`GraphError`] if an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
     pub fn check_capacities(&self, epsilon: f64) -> Result<()> {
-        if self
-            .es
-            .iter()
-            .any(|e| self.weight(self.eindex[*e]) < -epsilon)
-        {
-            return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
+        for e in &self.es {
+            let capacity = self.weight(self.eindex[*e]);
+            if capacity.is_nan() {
+                return Err(GraphError::InvalidWeight(crate::WeightProblem::NaN));
+            }
+            if capacity < -epsilon {
+                return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
+            }
         }
         Ok(())
     }

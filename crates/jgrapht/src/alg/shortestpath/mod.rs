@@ -93,9 +93,17 @@ use crate::walk::GraphWalk;
 /// A single-source shortest path algorithm bound to a graph.
 pub trait ShortestPathAlgorithm<G: Graph> {
     /// Shortest paths from `source` to every reachable vertex.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::VertexNotFound`](crate::GraphError::VertexNotFound) when `source` is missing, an `InvalidWeight` error for a weight the algorithm cannot handle, and [`GraphError::NegativeCycle`](crate::GraphError::NegativeCycle) where negative cycles are detected.
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>>;
 
     /// Shortest path between two vertices, `Ok(None)` if unreachable.
+    ///
+    /// # Errors
+    ///
+    /// Returns the errors of [`ShortestPathAlgorithm::single_source`] for either endpoint.
     fn path(
         &self,
         source: &G::Vertex,
@@ -105,6 +113,10 @@ pub trait ShortestPathAlgorithm<G: Graph> {
     }
 
     /// Weight of the shortest path; `Ok(None)` if `sink` is unreachable from `source`.
+    ///
+    /// # Errors
+    ///
+    /// Returns the errors of [`ShortestPathAlgorithm::path`].
     fn path_weight(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<Option<f64>> {
         Ok(self.path(source, sink)?.map(|p| p.weight))
     }

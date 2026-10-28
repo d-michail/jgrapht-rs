@@ -93,6 +93,10 @@ impl<E: Clone + Eq + std::hash::Hash> CycleBasis<E> {
 /// `CycleBasisAlgorithm`.
 pub trait CycleBasisAlgorithm<E> {
     /// Returns the cycle basis.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph is not undirected.
     fn get_cycle_basis(&mut self) -> Result<CycleBasis<E>>;
 }
 

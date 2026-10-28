@@ -71,6 +71,18 @@ impl<'g, G: IncidenceGraph> PushRelabelMFImpl<'g, G> {
     /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         let net = FlowNet::new(network, epsilon)?;
+        net.check_capacities(epsilon)?;
+        Self::from_net(net)
+    }
+
+    /// Like [`with_epsilon`](Self::with_epsilon) but accepts negative arc capacities, which
+    /// Goldberg's density network contains; the public constructors reject them because a
+    /// negative residual cycle keeps the algorithm from terminating.
+    pub(crate) fn new_allowing_negative_capacities(network: &'g G) -> Result<Self> {
+        Self::from_net(FlowNet::new(network, DEFAULT_EPSILON)?)
+    }
+
+    fn from_net(net: FlowNet<'g, G>) -> Result<Self> {
         let n = net.vs.len();
         Ok(PushRelabelMFImpl {
             net,

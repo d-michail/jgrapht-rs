@@ -130,6 +130,10 @@ impl<V, E> HamiltonianPathSearchResult<V, E> {
 /// `HamiltonianPathAlgorithm`.
 pub trait HamiltonianPathAlgorithm<G: Graph> {
     /// Returns the Hamiltonian path if the search found one.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `InvalidGraph` error when the graph is empty or does not satisfy the requirements of the implementation, and an `InvalidParameter` error when it exceeds the vertex limit.
     fn get_path(&mut self, graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>>;
 }
 

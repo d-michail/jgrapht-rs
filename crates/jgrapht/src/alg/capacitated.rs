@@ -127,6 +127,10 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> CapacitatedSpanningTree<V, E> {
 /// An algorithm computing a capacitated spanning tree (`CapacitatedSpanningTreeAlgorithm`).
 pub trait CapacitatedSpanningTreeAlgorithm<V: Eq + Hash, E: Eq + Hash> {
     /// Returns the capacitated spanning tree.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph is not undirected, an edge weight is invalid, or the capacity, demand or root arguments are inconsistent with the graph.
     fn capacitated_spanning_tree(&mut self) -> Result<CapacitatedSpanningTree<V, E>>;
 }
 

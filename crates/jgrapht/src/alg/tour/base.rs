@@ -33,6 +33,10 @@ use std::collections::HashSet;
 /// `HamiltonianCycleAlgorithm`: computes a tour (a Hamiltonian cycle) of a graph.
 pub trait HamiltonianCycleAlgorithm<G: Graph> {
     /// The tour, or `None` when the algorithm proves that there is none (Held–Karp only).
+    ///
+    /// # Errors
+    ///
+    /// Returns an `InvalidGraph` error when the graph is not complete, is directed where undirected is required, or has fewer than two vertices.
     fn get_tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>>;
 }
 
@@ -51,6 +55,10 @@ pub trait HamiltonianCycleAlgorithm<G: Graph> {
 /// `HamiltonianCycleImprovementAlgorithm`: improves an existing tour.
 pub trait HamiltonianCycleImprovementAlgorithm<G: Graph> {
     /// Performs `improve tour`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `tour` is not a valid tour of the graph.
     fn improve_tour(
         &mut self,
         graph: &G,

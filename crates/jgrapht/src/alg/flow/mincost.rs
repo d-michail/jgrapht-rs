@@ -182,12 +182,20 @@ impl<V: Eq + std::hash::Hash, E: Eq + std::hash::Hash> MinimumCostSolution<V, E>
 /// `MinimumCostFlowAlgorithm`.
 pub trait MinimumCostFlowAlgorithm<V, E> {
     /// Returns the minimum cost flow.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::Infeasible`] when supplies and capacities cannot be met, [`GraphError::Unbounded`] for an uncapacitated negative cycle, and an `InvalidGraph` error for an undirected graph.
     fn minimum_cost_flow<P>(&mut self, problem: &P) -> Result<MinimumCostFlow<E>>
     where
         P: MinimumCostFlowProblem,
         P::Graph: Graph<Vertex = V, Edge = E>;
 
     /// Returns the flow cost.
+    ///
+    /// # Errors
+    ///
+    /// Returns the same errors as [`MinimumCostFlowAlgorithm::minimum_cost_flow`].
     fn flow_cost<P>(&mut self, problem: &P) -> Result<f64>
     where
         P: MinimumCostFlowProblem,

@@ -191,7 +191,7 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; a negative-weight cycle is reachable; errors of the underlying graph operations are propagated.
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; an edge weight is NaN or infinite; a negative-weight cycle is reachable; errors of the underlying graph operations are propagated.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -204,6 +204,15 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
             .vertices()
             .find(|vertex| *vertex == source)
             .ok_or(GraphError::VertexNotFound)?;
+        for edge in self.graph.edges() {
+            let weight = self.graph.weight_of(edge);
+            if weight.is_nan() {
+                return Err(GraphError::InvalidWeight(crate::WeightProblem::NaN).into());
+            }
+            if weight.is_infinite() {
+                return Err(GraphError::InvalidWeight(crate::WeightProblem::NotFinite).into());
+            }
+        }
         let vertex_count = self.graph.vertex_count();
         let mut distance = HashMap::from([(source, 0.0)]);
         let mut predecessor = HashMap::new();

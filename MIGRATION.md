@@ -3,6 +3,12 @@
 Breaking changes made by the Rust API hardening roadmap (`docs/RUST_API_ROADMAP.md`). This file is
 folded into `CHANGELOG.md` before the first release.
 
+## Step 22: stricter flow and Bellman-Ford inputs
+
+`PushRelabelMFImpl::new/with_epsilon` and `BoykovKolmogorovMFImpl::new/with_epsilon` return
+`InvalidWeight` for a negative or NaN capacity (they used to hang or give nonsense), and
+`BellmanFord::get_paths` returns `InvalidWeight` for NaN or infinite weights.
+
 ## Step 22: Eulerian check is infallible
 
 `HierholzerEulerianCycle::is_eulerian` no longer panics in any case and `try_is_eulerian` is removed;

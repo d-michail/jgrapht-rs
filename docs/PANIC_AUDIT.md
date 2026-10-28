@@ -1,24 +1,24 @@
 # Panic audit (roadmap R9)
 
 Every production `unwrap`, `expect`, `panic!` and slice or array index in the two library crates is
-listed in [`panic_sites.tsv`](panic_sites.tsv): 5419 clippy hits (`unwrap_used`, `expect_used`,
-`panic`, `indexing_slicing` on `--lib`), of which 750 are `unwrap`/`expect` and none is `panic!`.
-Indexing hits are grouped per function; each `unwrap`/`expect` has its own row. Regenerate with
+listed in [`panic_sites.tsv`](panic_sites.tsv): 5420 clippy hits (`unwrap_used`, `expect_used`,
+`panic`, `indexing_slicing` on `--lib`), of which 751 are `unwrap`/`expect` and none is `panic!`.
+Each hit, indexing included, has its own row. Regenerate with
 `cargo clippy -p <crate> --lib -- -W clippy::unwrap_used -W clippy::expect_used -W clippy::panic -W clippy::indexing_slicing`.
 
 | Class | Rows | Meaning |
 |---|---|---|
-| indexing contract | 4668 (grouped) | Dense array indexed by an `Indexed` position, vertex number or loop bound produced by the same routine. |
+| indexing contract | 4669 | Dense array indexed by an `Indexed` position, vertex number or loop bound produced by the same routine. |
 | internal invariant | 555 | The value was inserted, linked or computed earlier in the same routine, or a constructor was called with constant valid arguments. |
 | third-party trait invariant | 196 | A `Graph` implementation yields edges that have vertex endpoints and a weight (documented on the trait), or a mutex was poisoned because another thread already panicked. |
-| defect | 0 open | Two were found and fixed, see below. |
+| defect | 0 open | Five were found and fixed, see below. |
 
 How the classes were assigned: the `unwrap`/`expect` sites were first sorted by rules on the
 surrounding code, then the 258 that no rule covered were read one by one; the lazy-compute `Option`
 fields, the list and tree node links in `tree_connectivity`, the Gusfield/Padberg-Rao tree and the
 Eppstein path graph were checked against the code that fills them. Indexing sites were classified by
-rule only. Reading all 4668 was not done; instead the claim that valid input cannot reach them is
-tested (below).
+rule only: reading all 4669 was not done. The claim that valid input cannot reach them is tested
+instead (below), and the sweep found three panics or hangs that rule-based reading had missed.
 
 ## Defects found by the audit
 
@@ -27,6 +27,15 @@ tested (below).
 - `JsonImporter`: a `\u` escape followed by a multibyte character cut the four-byte window in the
   middle of the character and `hex4` panicked (`expect("ASCII hex bytes")`). It now returns
   `IoError::Import`.
+
+- `WeakChordalityInspector` indexed past its label buckets on graphs with parallel edges or
+  self-loops (duplicate neighbours); neighbours are now listed once and without self-loops.
+- `PushRelabelMFImpl` and `BoykovKolmogorovMFImpl` never returned for a negative capacity on a
+  residual cycle (and BK accepted NaN). Their public constructors now reject negative and NaN
+  capacities like Dinic and Edmonds-Karp; Goldberg's density network, which needs negative arcs,
+  uses a `pub(crate)` constructor.
+- `BellmanFord::get_paths` never returned for infinite or NaN weights; it now returns
+  `InvalidWeight`.
 
 ## Evidence for "valid public input cannot trigger an undocumented panic"
 
@@ -44,7 +53,15 @@ tested (below).
   precondition checks on the caller's argument and stay as `assert!` with a `# Panics` section;
   there is no expensive consistency check left to turn into `debug_assert!`.
 
+- `crates/jgrapht/tests/alg/alg_no_panic_tests.rs` runs about 60 algorithms (cliques, colorings,
+  connectivity, covers, spanning trees, scoring, graph properties, topological order, five
+  shortest-path algorithms, four max-flow algorithms) on 300 random pseudographs each for several
+  weight sets (including zero and negative, and NaN and infinite for the fallible entry points). It
+  found the three defects above.
+
 ## Not covered
 
-No algorithm-level mutation test exists comparable to the importer one; the algorithms rely on the
-fixture tests above.
+The sweep covers the algorithms listed, not all of them (matching, tours, drawing, planarity,
+isomorphism, generators and the remaining flow and cut algorithms are exercised only by the
+fixture and parity tests), so the acceptance statement is tested for a large part of the surface,
+not proven for all of it.

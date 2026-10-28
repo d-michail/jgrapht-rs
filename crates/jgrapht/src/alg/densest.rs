@@ -83,7 +83,7 @@ pub type MinCutFn<V> = Box<dyn Fn(&DensityNetwork<V>, &V, &V) -> Result<HashSet<
 /// The default min-cut used by the Goldberg algorithms (max-flow based).
 pub fn default_min_cut<V: Clone + Eq + std::hash::Hash + 'static>() -> MinCutFn<V> {
     Box::new(|net, s, t| {
-        let mut push_relabel = PushRelabelMFImpl::new(net)?;
+        let mut push_relabel = PushRelabelMFImpl::new_allowing_negative_capacities(net)?;
         let cut = push_relabel.minimum_cut(s, t)?;
         Ok(cut.source_partition().iter().cloned().collect())
     })

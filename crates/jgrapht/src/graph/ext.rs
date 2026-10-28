@@ -234,7 +234,11 @@ impl<G: DirectedGraph + ?Sized> DirectedExt for G {}
 
 /// The `GraphMutExt` trait.
 pub trait GraphMutExt: GraphMut {
-    /// Adds both endpoints if missing, then the edge (`Graphs.addEdgeWithVertices`).
+    /// Adds both endpoints if missing, then the edge .
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph rejects the vertices or the edge (for example, a forbidden self-loop or parallel edge is reported as `Ok(None)`, not an error; an unsupported weight is an error).
     fn add_edge_with_vertices(
         &mut self,
         u: Self::Vertex,
@@ -246,6 +250,10 @@ pub trait GraphMutExt: GraphMut {
     }
 
     /// Adds an edge and sets its weight.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph refuses the endpoints or the weight.
     fn add_weighted_edge(
         &mut self,
         u: &Self::Vertex,
@@ -265,6 +273,10 @@ pub trait GraphMutExt: GraphMut {
     }
 
     /// Copies vertices, edges and weights of `src` into `self`, reusing edge objects.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `self` rejects a vertex, an edge or a weight of `src`.
     fn add_graph<G>(&mut self, src: &G) -> Result<bool>
     where
         G: Graph<Vertex = Self::Vertex, Edge = Self::Edge>,
@@ -285,6 +297,10 @@ pub trait GraphMutExt: GraphMut {
     }
 
     /// Adds edges `source -> t` for every target, adding missing vertices first.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph rejects a vertex or an edge.
     fn add_outgoing_edges(
         &mut self,
         source: &Self::Vertex,
@@ -299,6 +315,10 @@ pub trait GraphMutExt: GraphMut {
     }
 
     /// Adds edges `s -> target` for every source, adding missing vertices first.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph rejects a vertex or an edge.
     fn add_incoming_edges(
         &mut self,
         target: &Self::Vertex,
@@ -313,6 +333,10 @@ pub trait GraphMutExt: GraphMut {
     }
 
     /// Adds a reversed copy of `src` (vertices and edges `v -> u` for every `u -> v`).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph rejects a vertex or an edge.
     fn add_graph_reversed<G>(&mut self, src: &G) -> Result<bool>
     where
         G: Graph<Vertex = Self::Vertex, Edge = Self::Edge>,

@@ -28,9 +28,17 @@ use std::collections::HashSet;
 pub trait DirectedSimpleCycles<V> {
     /// Calls `consumer` with every simple cycle (its vertices in order, without repeating the
     /// first one).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph violates the requirements of the implementation (for example, being directed).
     fn find_simple_cycles_with(&mut self, consumer: &mut dyn FnMut(Vec<V>)) -> Result<()>;
 
     /// Returns the find simple cycles.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the graph violates the requirements of the implementation (for example, being directed).
     fn find_simple_cycles(&mut self) -> Result<Vec<Vec<V>>> {
         let mut result = Vec::new();
         self.find_simple_cycles_with(&mut |c| result.push(c))?;

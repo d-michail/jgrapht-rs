@@ -73,6 +73,10 @@ pub(crate) fn add_edge<G: GraphMut>(
 pub trait GraphGenerator {
     /// Generates into `target`, creating vertices with the target's vertex factory. Named vertices
     /// are stored in `result` when given.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the target is not empty or lacks the capability the generator needs, if a generator parameter is invalid, or if adding a vertex or edge fails.
     fn generate_graph<G: GraphMut + IncidenceGraph>(
         &mut self,
         target: &mut G,
@@ -80,11 +84,19 @@ pub trait GraphGenerator {
     ) -> Result<()>;
 
     /// [`GraphGenerator::generate_graph`] without a result map.
+    ///
+    /// # Errors
+    ///
+    /// Returns the errors of [`GraphGenerator::generate_graph`].
     fn generate_default<G: GraphMut + IncidenceGraph>(&mut self, target: &mut G) -> Result<()> {
         self.generate_graph(target, None)
     }
 
     /// Generates with vertices produced by `vertex(0)`, `vertex(1)`, ... instead of the target's factory.
+    ///
+    /// # Errors
+    ///
+    /// Returns the errors of [`GraphGenerator::generate_graph`].
     fn generate<G: GraphMut + IncidenceGraph>(
         &mut self,
         target: &mut G,
@@ -99,6 +111,10 @@ pub trait GraphGenerator {
     }
 
     /// Generates into a graph whose vertices are `usize` indices `0, 1, ...`.
+    ///
+    /// # Errors
+    ///
+    /// Returns the errors of [`GraphGenerator::generate_graph`].
     fn generate_indexed<G: GraphMut<Vertex = usize> + IncidenceGraph>(
         &mut self,
         target: &mut G,

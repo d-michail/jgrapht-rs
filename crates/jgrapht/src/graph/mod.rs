@@ -121,17 +121,37 @@ pub trait GraphMut: Graph {
     fn remove_vertex(&mut self, v: &Self::Vertex) -> bool;
     /// Adds the given edge object. `Ok(false)` if the edge already exists, or if a parallel edge
     /// would be created in a graph without multiple edges.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::VertexNotFound`](crate::GraphError::VertexNotFound) when an endpoint is not in the graph, and [`GraphError::IntrusiveEdge`](crate::GraphError::IntrusiveEdge) when the edge object already belongs to other endpoints.
     fn add_edge_with(&mut self, u: &Self::Vertex, v: &Self::Vertex, e: Self::Edge) -> Result<bool>;
     /// Removes an edge, returning `false` if it was absent.
     fn remove_edge(&mut self, e: &Self::Edge) -> bool;
     /// Sets the edge weight.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::EdgeNotFound`](crate::GraphError::EdgeNotFound) when the edge is not in the graph, and an error when the graph is unweighted.
     fn set_edge_weight(&mut self, e: &Self::Edge, w: f64) -> Result<()>;
     /// Produces a fresh edge object from the graph's edge factory.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the graph has no edge factory.
     fn new_edge(&mut self) -> Result<Self::Edge>;
     /// Produces a fresh vertex object from the graph's vertex factory.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::NoVertexFactory`](crate::GraphError::NoVertexFactory) when the graph has no vertex factory.
     fn new_vertex(&mut self) -> Result<Self::Vertex>;
 
     /// Creates a vertex with the graph's factory and adds it (`addVertex()` in JGraphT).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::NoVertexFactory`](crate::GraphError::NoVertexFactory) when the graph has no vertex factory.
     fn add_new_vertex(&mut self) -> Result<Self::Vertex> {
         let v = self.new_vertex()?;
         self.add_vertex(v.clone());
@@ -139,6 +159,10 @@ pub trait GraphMut: Graph {
     }
 
     /// Creates an edge with the graph's factory. `Ok(None)` means the factory could not produce an edge.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::VertexNotFound`](crate::GraphError::VertexNotFound) when an endpoint is not in the graph, and an error when the graph has no edge factory.
     fn add_edge(&mut self, u: &Self::Vertex, v: &Self::Vertex) -> Result<Option<Self::Edge>> {
         let e = self.new_edge()?;
         Ok(self.add_edge_with(u, v, e.clone())?.then_some(e))

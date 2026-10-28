@@ -675,6 +675,10 @@ pub trait VertexScoringAlgorithm<V, S: Clone = f64> {
     fn scores(&self) -> &HashMap<V, S>;
 
     /// Returns the vertex score.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::VertexNotFound`] for a vertex outside the graph, or the error of the underlying computation.
     fn vertex_score(&self, v: &V) -> Result<S, GraphError>
     where
         V: Eq + std::hash::Hash,

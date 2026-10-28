@@ -159,10 +159,14 @@ impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
         }
         let mut neighbors = vec![Vec::new(); n];
         let mut adjacent = vec![HashSet::new(); n];
+        let mut listed = vec![HashSet::new(); n];
         for (i, v) in vertices.iter().enumerate() {
             for e in graph.edges_of(v) {
                 let o = index[graph.opposite_vertex(e, v).expect("edge of the graph")];
-                neighbors[i].push(o);
+                // self-loops and parallel edges do not change the neighbourhood
+                if o != i && listed[i].insert(o) {
+                    neighbors[i].push(o);
+                }
                 adjacent[i].insert(o);
                 // directed edges count in both directions
                 adjacent[o].insert(i);

@@ -37,6 +37,10 @@ use std::hash::Hash;
 /// A layout algorithm (`LayoutAlgorithm2D`).
 pub trait LayoutAlgorithm2D<G: Graph> {
     /// Returns the layout.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if a layout parameter is invalid or the model lacks a position the algorithm needs.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()>;
 }
 

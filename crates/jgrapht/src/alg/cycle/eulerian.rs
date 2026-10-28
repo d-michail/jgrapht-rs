@@ -27,6 +27,10 @@ use std::collections::{HashMap, HashSet};
 /// `EulerianCycleAlgorithm`.
 pub trait EulerianCycleAlgorithm<G: Graph> {
     /// Returns the eulerian cycle.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::InvalidGraph`](crate::GraphError::InvalidGraph) with `Eulerian` if the graph has no Eulerian cycle, and `NotMixed` for a mixed graph.
     fn get_eulerian_cycle(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>>;
 }
 

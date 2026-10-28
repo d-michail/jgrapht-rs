@@ -82,6 +82,10 @@ where
 pub trait CentersLocationAlgorithm<V: Eq + Hash + Clone> {
     /// Chooses `k` centers and returns them together with the assignment of every client to its
     /// closest center and the covering radius, as one [`CentersSolution`].
+    ///
+    /// # Errors
+    ///
+    /// Returns an `InvalidParameter` error when `k` is zero or larger than the number of vertices, and an `InvalidGraph` error when the graph is directed, empty or disconnected.
     fn centers<G: UndirectedGraph<Vertex = V> + OutgoingGraph>(
         &mut self,
         graph: &G,
@@ -162,9 +166,17 @@ impl<V, E> PathDecomposition<V, E> {
 pub trait LowestCommonAncestorAlgorithm<V: Eq + Hash + Clone> {
     /// The lowest common ancestor of `a` and `b`; `Ok(None)` when they have none (for example
     /// they lie in different trees). An error if a vertex is not in the graph.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::VertexNotFound`](crate::GraphError::VertexNotFound) when `a` or `b` is not in the graph, and an `InvalidGraph` error when the graph is not a forest (or not a DAG, for the DAG variant).
     fn lca(&self, a: &V, b: &V) -> Result<Option<V>>;
 
     /// Returns the batch lca.
+    ///
+    /// # Errors
+    ///
+    /// Returns the errors of [`LowestCommonAncestorAlgorithm::lca`] for the first failing query.
     fn batch_lca(&self, queries: &[(V, V)]) -> Result<Vec<Option<V>>> {
         queries.iter().map(|(a, b)| self.lca(a, b)).collect()
     }
@@ -188,6 +200,10 @@ pub trait LowestCommonAncestorAlgorithm<V: Eq + Hash + Clone> {
 /// ```
 pub trait AllLowestCommonAncestors<V: Eq + Hash + Clone>: LowestCommonAncestorAlgorithm<V> {
     /// All lowest common ancestors of `a` and `b`; empty when they have none.
+    ///
+    /// # Errors
+    ///
+    /// Returns the errors of [`LowestCommonAncestorAlgorithm::lca`].
     fn lca_set(&self, a: &V, b: &V) -> Result<HashSet<V>>;
 }
 
@@ -208,9 +224,17 @@ pub trait AllLowestCommonAncestors<V: Eq + Hash + Clone>: LowestCommonAncestorAl
 pub trait LinkPredictionAlgorithm<V: Clone> {
     /// The score of the pair; [`GraphError::IndexNotWellDefined`](crate::GraphError) when the index is
     /// undefined for it.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::IndexNotWellDefined`](crate::GraphError::IndexNotWellDefined) when the index is undefined for the pair, and `VertexNotFound` for a vertex outside the graph.
     fn predict(&self, u: &V, v: &V) -> Result<f64>;
 
     /// Returns the predict all.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GraphError::VertexNotFound`](crate::GraphError::VertexNotFound) for a vertex outside the graph.
     fn predict_all(&self, queries: &[(V, V)]) -> Result<Vec<(V, V, f64)>> {
         queries
             .iter()
@@ -226,9 +250,17 @@ pub trait LinkPredictionAlgorithm<V: Clone> {
 /// Enumerates the maximal cliques of a graph (`MaximalCliqueEnumerationAlgorithm`).
 pub trait MaximalCliqueEnumerationAlgorithm<V: Eq + Hash + Clone> {
     /// All maximal cliques (computed on first use); an error for graphs that are not simple.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `InvalidGraph` error when the graph does not satisfy the requirements of the implementation (for example, being undirected or chordal).
     fn cliques(&mut self) -> Result<&[HashSet<V>]>;
 
     /// The cliques of maximum size.
+    ///
+    /// # Errors
+    ///
+    /// Returns the errors of [`MaximalCliqueEnumerationAlgorithm::cliques`].
     fn maximum_cliques(&mut self) -> Result<Vec<&HashSet<V>>> {
         let all = self.cliques()?;
         let max = all.iter().map(HashSet::len).max().unwrap_or(0);
@@ -251,6 +283,10 @@ pub trait MaximalCliqueEnumerationAlgorithm<V: Eq + Hash + Clone> {
 /// Computes a vertex cover (`VertexCoverAlgorithm`).
 pub trait VertexCoverAlgorithm<V: Clone> {
     /// Returns the vertex cover.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `InvalidWeight` error for a negative or NaN vertex weight, and an `InvalidGraph` error when the implementation needs a property the graph lacks.
     fn vertex_cover(&self) -> Result<VertexCover<V>>;
 }
 
@@ -261,6 +297,10 @@ pub trait VertexCoverAlgorithm<V: Clone> {
 /// Computes a proper vertex coloring (`VertexColoringAlgorithm`).
 pub trait VertexColoringAlgorithm<V: Clone + Eq + Hash> {
     /// Returns the coloring.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `InvalidGraph` error when the implementation needs a property the graph lacks (for example, being chordal or bipartite).
     fn coloring(&self) -> Result<Coloring<V>>;
 }
 
@@ -296,6 +336,10 @@ impl<V: Eq + Hash> Clustering<V> {
 /// An algorithm that clusters the vertices of a graph (`ClusteringAlgorithm`).
 pub trait ClusteringAlgorithm<V: Eq + Hash + Clone> {
     /// Returns the clustering.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `InvalidParameter` error for an invalid cluster count or threshold, and an `InvalidGraph` error for a directed graph.
     fn clustering(&self) -> Result<Clustering<V>>;
 }
 
