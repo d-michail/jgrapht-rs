@@ -71,26 +71,30 @@ pub trait Graph {
     where
         Self: 'a;
 
-    /// Returns the graph type.
+    /// The kind of graph this is: directed or undirected, and whether it allows loops, parallel edges and weights.
     fn graph_type(&self) -> GraphType;
 
-    /// Returns the vertices.
+    /// Iterates over all vertices, in the order the graph keeps them.
+    ///
+    /// Each item is a [`Graph::VertexRef`]: call `borrow()` to get a `&Vertex`, or use [`GraphExt::vertices_cloned`](crate::GraphExt::vertices_cloned) for owned values.
     fn vertices(&self) -> impl Iterator<Item = Self::VertexRef<'_>>;
-    /// Returns the edges.
+    /// Iterates over all edges, in the order the graph keeps them.
+    ///
+    /// See [`Graph::vertices`] for how to turn an item into a `&Edge`.
     fn edges(&self) -> impl Iterator<Item = Self::EdgeRef<'_>>;
-    /// Returns the vertex count.
+    /// Number of vertices.
     fn vertex_count(&self) -> usize;
-    /// Returns the edge count.
+    /// Number of edges; parallel edges and loops count once each.
     fn edge_count(&self) -> usize;
 
-    /// Returns the contains vertex.
+    /// Whether `v` is a vertex of the graph.
     fn contains_vertex(&self, v: &Self::Vertex) -> bool;
-    /// Returns the contains edge.
+    /// Whether `e` is an edge of the graph (by edge value, not by endpoints; see [`Graph::contains_edge_between`]).
     fn contains_edge(&self, e: &Self::Edge) -> bool;
 
-    /// Returns the edge source.
+    /// The source of `e` (for undirected graphs the endpoint it was inserted with first), or `None` if `e` is not an edge of the graph.
     fn edge_source(&self, e: &Self::Edge) -> Option<&Self::Vertex>;
-    /// Returns the edge target.
+    /// The target of `e` (the second endpoint for undirected graphs), or `None` if `e` is not an edge of the graph.
     fn edge_target(&self, e: &Self::Edge) -> Option<&Self::Vertex>;
     /// Weight of the edge; `1.0` for unweighted graphs. `None` if the edge does not exist.
     fn edge_weight(&self, e: &Self::Edge) -> Option<f64>;
@@ -107,11 +111,11 @@ pub trait Graph {
     fn is_edge_directed(&self, _e: &Self::Edge) -> bool {
         self.graph_type().directed
     }
-    /// Returns the edge.
+    /// Some edge from `u` to `v` (either direction for undirected graphs), or `None` if there is none or either vertex is absent. With parallel edges the first one in graph order is returned.
     fn get_edge<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> Option<&'a Self::Edge> {
         self.edges_between(u, v).next()
     }
-    /// Returns the contains edge between.
+    /// Whether at least one edge joins `u` and `v` (direction matters only for directed graphs).
     fn contains_edge_between<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> bool {
         self.get_edge(u, v).is_some()
     }
@@ -139,7 +143,7 @@ pub trait GraphMut: Graph {
     fn add_edge_with(&mut self, u: &Self::Vertex, v: &Self::Vertex, e: Self::Edge) -> Result<bool>;
     /// Removes an edge, returning `false` if it was absent.
     fn remove_edge(&mut self, e: &Self::Edge) -> bool;
-    /// Sets the edge weight.
+    /// Sets the weight of `e`.
     ///
     /// # Errors
     ///

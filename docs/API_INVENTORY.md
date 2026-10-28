@@ -12,7 +12,7 @@ Classes: `infallible`, `Option`, `Result`, `Result<Option>`, `iterator`, `state 
 
 | Crate | Public fns | infallible | Option | Result | Result<Option> | iterator | state query | unchecked constructor |
 |---|---|---|---|---|---|---|---|---|
-| `jgrapht` | 1459 | 343 | 124 | 347 | 16 | 19 | 419 | 191 |
+| `jgrapht` | 1461 | 343 | 124 | 347 | 16 | 21 | 419 | 191 |
 | `jgrapht-io` | 159 | 84 | 9 | 13 | 1 | 0 | 20 | 32 |
 
 ## Numeric sentinels
@@ -34,7 +34,6 @@ Each needs an owner in R3/R5/R6.
 | `jgrapht/src/alg/drawing/model.rs` | `negate` | `-1` |
 | `jgrapht/src/alg/flow/base.rs` | `FlowNet::init` | `usize::MAX` |
 | `jgrapht/src/alg/flow/mincost.rs` | `CapacityScalingMinimumCostFlow::solve` | `INFINITY` |
-| `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::has_edge` | `-1` |
 | `jgrapht/src/alg/lca.rs` | `BinaryLiftingLcaFinder::with_roots` | `usize::MAX` |
 | `jgrapht/src/alg/lca.rs` | `EulerTourRmqLcaFinder::with_roots` | `usize::MAX` |
 | `jgrapht/src/alg/matching/blossom/perfect.rs` | `KolmogorovWeightedPerfectMatching::get_dual_solution` | `-1` |
@@ -645,14 +644,14 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/alg/isomorphism/mapping.rs` | `IsomorphicGraphMapping::vertex_correspondence` | Option | `Option<&G::Vertex>` |
 | `jgrapht/src/alg/isomorphism/mod.rs` | `IsomorphismInspector::isomorphism_exists` | state query | `bool` |
 | `jgrapht/src/alg/isomorphism/mod.rs` | `IsomorphismInspector::mappings` | iterator | `Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_>` |
-| `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::edge` | Option | `Option<&'g G::Edge>` |
+| `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::edge` | Option | `Option<G::Edge>` |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::edge_numbers` | state query | `[usize; 2]` |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::graph` | state query | `&'g G` |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::has_edge` | infallible | `bool` |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::in_edges` | state query | `Cow<'_, [usize]>` |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::new` | unchecked constructor | `Self` |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::out_edges` | state query | `Cow<'_, [usize]>` |
-| `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::vertex` | state query | `&'g G::Vertex` |
+| `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::vertex` | state query | `&G::Vertex` |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::vertex_count` | state query | `usize` |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::vertex_number` | state query | `usize` |
 | `jgrapht/src/alg/isomorphism/ordering.rs` | `GraphOrdering::with_options` | unchecked constructor | `Self` |
@@ -1388,6 +1387,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/graph/ext.rs` | `DirectedExt::vertex_has_predecessors` | state query | `bool` |
 | `jgrapht/src/graph/ext.rs` | `DirectedExt::vertex_has_successors` | state query | `bool` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::edge_endpoints` | Option | `Option<(&Self::Vertex, &Self::Vertex)>` |
+| `jgrapht/src/graph/ext.rs` | `GraphExt::edges_cloned` | iterator | `impl Iterator<Item = Self::Edge>` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::incoming_of` | iterator | `impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::is_empty` | infallible | `bool` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::neighbor_list_of` | state query | `Vec<Self::Vertex>` |
@@ -1398,6 +1398,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/graph/ext.rs` | `GraphExt::outgoing_of` | iterator | `impl Iterator<Item = (&'a Self::Edge, &'a Self::Vertex)>` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::test_incidence` | state query | `bool` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::total_weight` | state query | `f64` |
+| `jgrapht/src/graph/ext.rs` | `GraphExt::vertices_cloned` | iterator | `impl Iterator<Item = Self::Vertex>` |
 | `jgrapht/src/graph/ext.rs` | `GraphExt::weight_of` | state query | `f64` |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_edge_with_vertices` | Result<Option> | `Result<Option<Self::Edge>>` |
 | `jgrapht/src/graph/ext.rs` | `GraphMutExt::add_graph` | Result | `Result<bool>` |
@@ -1425,13 +1426,13 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/graph/mod.rs` | `Graph::edge_source` | Option | `Option<&Self::Vertex>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::edge_target` | Option | `Option<&Self::Vertex>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::edge_weight` | Option | `Option<f64>` |
-| `jgrapht/src/graph/mod.rs` | `Graph::edges` | iterator | `impl Iterator<Item = &Self::Edge>` |
+| `jgrapht/src/graph/mod.rs` | `Graph::edges` | iterator | `impl Iterator<Item = Self::EdgeRef<'_>>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::edges_between` | iterator | `impl Iterator<Item = &'a Self::Edge>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::get_edge` | Option | `Option<&'a Self::Edge>` |
 | `jgrapht/src/graph/mod.rs` | `Graph::graph_type` | state query | `GraphType` |
 | `jgrapht/src/graph/mod.rs` | `Graph::is_edge_directed` | infallible | `bool` |
 | `jgrapht/src/graph/mod.rs` | `Graph::vertex_count` | state query | `usize` |
-| `jgrapht/src/graph/mod.rs` | `Graph::vertices` | iterator | `impl Iterator<Item = &Self::Vertex>` |
+| `jgrapht/src/graph/mod.rs` | `Graph::vertices` | iterator | `impl Iterator<Item = Self::VertexRef<'_>>` |
 | `jgrapht/src/graph/mod.rs` | `GraphMut::add_edge` | Result<Option> | `Result<Option<Self::Edge>>` |
 | `jgrapht/src/graph/mod.rs` | `GraphMut::add_edge_with` | Result | `Result<bool>` |
 | `jgrapht/src/graph/mod.rs` | `GraphMut::add_new_vertex` | Result | `Result<Self::Vertex>` |
@@ -1508,8 +1509,8 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/cross.rs` | `BreadthFirstIterator::from_start` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/cross.rs` | `BreadthFirstIterator::from_starts` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/cross.rs` | `BreadthFirstIterator::new` | unchecked constructor | `Self` |
-| `jgrapht/src/traverse/cross.rs` | `BreadthFirstIterator::parent` | Option | `Option<&'g G::Vertex>` |
-| `jgrapht/src/traverse/cross.rs` | `BreadthFirstIterator::spanning_tree_edge` | Option | `Option<&'g G::Edge>` |
+| `jgrapht/src/traverse/cross.rs` | `BreadthFirstIterator::parent` | Option | `Option<G::Vertex>` |
+| `jgrapht/src/traverse/cross.rs` | `BreadthFirstIterator::spanning_tree_edge` | Option | `Option<G::Edge>` |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::build` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::from_start` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::from_start_with_radius` | Result | `Result<Self>` |
@@ -1517,7 +1518,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::from_starts_with_radius` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::new` | unchecked constructor | `Self` |
 | `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::shortest_path_length` | Option | `Option<f64>` |
-| `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::spanning_tree_edge` | Option | `Option<&'g G::Edge>` |
+| `jgrapht/src/traverse/cross.rs` | `ClosestFirstIterator::spanning_tree_edge` | Option | `Option<G::Edge>` |
 | `jgrapht/src/traverse/cross.rs` | `Core::finish_vertex` | infallible | `()` |
 | `jgrapht/src/traverse/cross.rs` | `DepthFirstIterator::color` | Option | `Option<VisitColor>` |
 | `jgrapht/src/traverse/cross.rs` | `DepthFirstIterator::from_start` | Result | `Result<Self>` |
@@ -1533,7 +1534,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/cross.rs` | `Strategy::is_cross_component_traversal` | infallible | `bool` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::is_exhausted` | infallible | `bool` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::output` | infallible | `Self::Output` |
-| `jgrapht/src/traverse/cross.rs` | `Strategy::provide_next` | state query | `&'g G::Vertex` |
+| `jgrapht/src/traverse/cross.rs` | `Strategy::provide_next` | state query | `G::Vertex` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::remove_traversal_listener` | state query | `bool` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::seen_data` | Option | `Option<&S::Data>` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::set_cross_component_traversal` | infallible | `()` |
@@ -1541,7 +1542,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/cross.rs` | `Strategy::strategy` | state query | `&S` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::strategy_mut` | state query | `&mut S` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::take_error` | Option | `Option<GraphError>` |
-| `jgrapht/src/traverse/cross.rs` | `Strategy::try_next` | Result<Option> | `Result<Option<&'g G::Vertex>>` |
+| `jgrapht/src/traverse/cross.rs` | `Strategy::try_next` | Result<Option> | `Result<Option<G::Vertex>>` |
 | `jgrapht/src/traverse/cross.rs` | `Strategy::with_strategy` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/events.rs` | `TraversalListener::connected_component_finished` | infallible | `()` |
 | `jgrapht/src/traverse/events.rs` | `TraversalListener::connected_component_started` | infallible | `()` |
@@ -1552,7 +1553,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/events.rs` | `TraversalListeners::is_empty` | infallible | `bool` |
 | `jgrapht/src/traverse/events.rs` | `TraversalListeners::remove` | state query | `bool` |
 | `jgrapht/src/traverse/ordered.rs` | `Advance::add_traversal_listener` | state query | `usize` |
-| `jgrapht/src/traverse/ordered.rs` | `Advance::advance` | Option | `Option<&'g V>` |
+| `jgrapht/src/traverse/ordered.rs` | `Advance::advance` | Option | `Option<V>` |
 | `jgrapht/src/traverse/ordered.rs` | `Advance::has_next` | infallible | `bool` |
 | `jgrapht/src/traverse/ordered.rs` | `Advance::inner` | state query | `&A` |
 | `jgrapht/src/traverse/ordered.rs` | `Advance::output` | infallible | `Self::Output` |
@@ -1565,7 +1566,7 @@ invariant, documented indexing contract, third-party trait invariant or defect (
 | `jgrapht/src/traverse/ordered.rs` | `TopologicalOrderIterator::new` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/ordered.rs` | `TopologicalOrderIterator::with_comparator` | Result | `Result<Self>` |
 | `jgrapht/src/traverse/random_walk.rs` | `RandomWalkVertexIterator::new` | Result | `Result<Self>` |
-| `jgrapht/src/traverse/simple.rs` | `topological_sort` | Option | `Option<Vec<&G::Vertex>>` |
+| `jgrapht/src/traverse/simple.rs` | `topological_sort` | Option | `Option<Vec<G::Vertex>>` |
 | `jgrapht/src/traverse/simple.rs` | `Bfs::all` | infallible | `Self` |
 | `jgrapht/src/traverse/simple.rs` | `Bfs::depth` | Option | `Option<usize>` |
 | `jgrapht/src/traverse/simple.rs` | `Bfs::new` | Result | `Result<Self>` |

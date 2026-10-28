@@ -30,7 +30,7 @@ pub struct Lca<V> {
 }
 
 impl<V: Clone + Eq + Hash> Lca<V> {
-    /// Creates a new instance.
+    /// Builds the binary-lifting table for the tree below `root` (`O(n log n)`); `None` if `root` is not a vertex.
     pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, root: &V) -> Option<Self> {
         if !g.contains_vertex(root) {
             return None;
@@ -89,7 +89,7 @@ impl<V: Clone + Eq + Hash> Lca<V> {
         Some(&self.vertices[a])
     }
 
-    /// Returns the depth.
+    /// Depth of `v` below the root (the root has depth 0), or `None` if `v` was not reached.
     pub fn depth(&self, v: &V) -> Option<usize> {
         self.index.get(v).map(|&i| self.depth[i])
     }
@@ -233,7 +233,7 @@ pub struct BinaryLiftingLcaFinder<V> {
 }
 
 impl<V: Clone + Eq + Hash> BinaryLiftingLcaFinder<V> {
-    /// Creates a new instance.
+    /// Builds the binary-lifting table for the tree below `root` (`O(n log n)` time and space).
     ///
     /// # Errors
     ///
@@ -242,7 +242,7 @@ impl<V: Clone + Eq + Hash> BinaryLiftingLcaFinder<V> {
         Self::with_roots(g, &[root])
     }
 
-    /// Creates an instance with the given roots.
+    /// Like [`new`](Self::new) for a forest: one tree per root, and vertices of different trees have no common ancestor.
     ///
     /// # Errors
     ///
@@ -306,7 +306,7 @@ pub struct EulerTourRmqLcaFinder<V> {
 }
 
 impl<V: Clone + Eq + Hash> EulerTourRmqLcaFinder<V> {
-    /// Creates a new instance.
+    /// Builds the Euler tour of the tree below `root` and a range-minimum structure over it.
     ///
     /// # Errors
     ///
@@ -315,7 +315,7 @@ impl<V: Clone + Eq + Hash> EulerTourRmqLcaFinder<V> {
         Self::with_roots(g, &[root])
     }
 
-    /// Creates an instance with the given roots.
+    /// Like [`new`](Self::new) for a forest: one tree per root, and vertices of different trees have no common ancestor.
     ///
     /// # Errors
     ///
@@ -390,7 +390,7 @@ pub struct HeavyPathLcaFinder<V: Eq + Hash + Clone> {
 }
 
 impl<V: Clone + Eq + Hash> HeavyPathLcaFinder<V> {
-    /// Creates a new instance.
+    /// Builds the heavy-path decomposition of the tree below `root`.
     ///
     /// # Errors
     ///
@@ -399,7 +399,7 @@ impl<V: Clone + Eq + Hash> HeavyPathLcaFinder<V> {
         Self::with_roots(g, [root])
     }
 
-    /// Creates an instance with the given roots.
+    /// Like [`new`](Self::new) for a forest: one tree per root, and vertices of different trees have no common ancestor.
     ///
     /// # Errors
     ///
@@ -471,7 +471,7 @@ pub struct TarjanLcaFinder<'g, G: Graph> {
 }
 
 impl<'g, G: OutgoingGraph> TarjanLcaFinder<'g, G> {
-    /// Creates a new instance.
+    /// Prepares Tarjan's offline algorithm on the tree below `root`.
     ///
     /// # Errors
     ///
@@ -480,7 +480,7 @@ impl<'g, G: OutgoingGraph> TarjanLcaFinder<'g, G> {
         Self::with_roots(graph, vec![root])
     }
 
-    /// Creates an instance with the given roots.
+    /// Like [`new`](Self::new) for a forest: one tree per root, and vertices of different trees have no common ancestor.
     ///
     /// # Errors
     ///
@@ -586,7 +586,7 @@ pub struct NaiveLcaFinder<'g, G: DirectedGraph> {
 }
 
 impl<'g, G: DirectedGraph + IncidenceGraph> NaiveLcaFinder<'g, G> {
-    /// Creates a new instance.
+    /// Prepares the naive finder (it walks up from both vertices) on a directed acyclic graph.
     ///
     /// # Errors
     ///

@@ -92,27 +92,27 @@ impl<V, E> GraphWalk<V, E> {
             weight,
         }
     }
-    /// Returns the start vertex.
+    /// The first vertex of the walk, or `None` for an empty walk.
     pub fn start_vertex(&self) -> Option<&V> {
         self.vertices.first()
     }
-    /// Returns the end vertex.
+    /// The last vertex of the walk, or `None` for an empty walk.
     pub fn end_vertex(&self) -> Option<&V> {
         self.vertices.last()
     }
-    /// Returns the vertex list.
+    /// All vertices of the walk in order; one more than the number of edges for a non-empty walk.
     pub fn vertex_list(&self) -> &[V] {
         &self.vertices
     }
-    /// Returns the edge list.
+    /// The edges of the walk in order.
     pub fn edge_list(&self) -> &[E] {
         &self.edges
     }
-    /// Returns the weight.
+    /// Total weight of the walk, as recorded when it was built.
     pub fn weight(&self) -> f64 {
         self.weight
     }
-    /// Sets the weight.
+    /// Replaces the recorded weight.
     pub fn set_weight(&mut self, weight: f64) {
         self.weight = weight;
     }
@@ -120,7 +120,7 @@ impl<V, E> GraphWalk<V, E> {
     pub fn length(&self) -> usize {
         self.edges.len()
     }
-    /// Returns whether empty.
+    /// Whether the walk has no vertices at all.
     pub fn is_empty(&self) -> bool {
         self.vertices.is_empty()
     }
@@ -525,7 +525,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, V2: Clone + Eq + Hash, E2: Clon
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, V2: Clone + Eq + Hash, E2: Clone + Eq + Hash>
     GraphMapping<V, E, V2, E2>
 {
-    /// Creates a new instance.
+    /// An empty mapping.
     pub fn new() -> Self {
         Self::default()
     }
@@ -539,19 +539,19 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, V2: Clone + Eq + Hash, E2: Clon
         self.edge_forward.insert(from.clone(), to.clone());
         self.edge_backward.insert(to, from);
     }
-    /// Returns the vertex.
+    /// The vertex that `from` is mapped to, or `None` if it has no image.
     pub fn vertex(&self, from: &V) -> Option<&V2> {
         self.vertex_forward.get(from)
     }
-    /// Returns the vertex inverse.
+    /// The vertex that maps to `to`, or `None` if nothing does.
     pub fn vertex_inverse(&self, to: &V2) -> Option<&V> {
         self.vertex_backward.get(to)
     }
-    /// Returns the edge.
+    /// The edge that `from` is mapped to, or `None` if it has no image.
     pub fn edge(&self, from: &E) -> Option<&E2> {
         self.edge_forward.get(from)
     }
-    /// Returns the edge inverse.
+    /// The edge that maps to `to`, or `None` if nothing does.
     pub fn edge_inverse(&self, to: &E2) -> Option<&E> {
         self.edge_backward.get(to)
     }

@@ -1,7 +1,8 @@
 # Plan: reference-or-value items in `Graph::vertices()` and `Graph::edges()`
 
-Status: proposed. Nothing in this plan is implemented yet. Closes ISSUES I-9 and opens the door to
-implicit graphs.
+Status: phases 1 to 5 implemented (see `MIGRATION.md`). The sparse graphs yield `usize` by value and
+keep no identity array (`tests/sparse_memory.rs` measures it). Implicit graphs (grids, hypercubes)
+are possible but not yet shipped; incidence queries on them would still need `&Edge`.
 
 ## Problem
 

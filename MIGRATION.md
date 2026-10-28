@@ -3,6 +3,32 @@
 Breaking changes made by the Rust API hardening roadmap (`docs/RUST_API_ROADMAP.md`). This file is
 folded into `CHANGELOG.md` before the first release.
 
+## Reference-or-value items (REF_OR_VALUE_PLAN)
+
+`Graph` has two new associated types, `VertexRef<'a>` and `EdgeRef<'a>`, both `Borrow` of the
+vertex or edge type. `vertices()` and `edges()` yield them. For `BaseGraph`, the map graphs and
+every view over them they are `&V` / `&E`, so code on a concrete graph is unchanged. The sparse
+integer graphs yield plain `usize` values and no longer keep an identity array.
+
+* Implementors of `Graph` must define the two types (`type VertexRef<'a> = &'a V where Self: 'a;` for a graph that stores its vertices).
+* Generic code that used a vertex from `g.vertices()` as `&G::Vertex` calls `.borrow()` (`use std::borrow::Borrow`) or uses `g.vertices_cloned()` / `g.edges_cloned()` from `GraphExt`.
+* Iterators and results that used to hold `&'g G::Vertex` now own the vertex:
+  `Bfs`, `Dfs`, `DfsPostOrder`, `TopologicalOrder`, `LexBfs`, `MaximumCardinality`,
+  `DegeneracyOrdering` and `topological_sort` yield `G::Vertex`; the cross-component iterators
+  (`BreadthFirstIterator`, `DepthFirstIterator`, `ClosestFirstIterator`, the ordered iterators)
+  yield `G::Vertex` (the closest-first one `Result<G::Vertex>`); `BfsData<E>` owns its edge;
+  `GraphOrdering::vertex` borrows from the ordering and `GraphOrdering::edge` returns an owned
+  edge; `set_edge_selector` takes `Fn(&G, &G::Vertex) -> Vec<G::Edge>`.
+* The `from_start` / `from_starts` constructors accept `&V` or `V` items.
+* `GraphUnion` yields owned items (its two inputs may have different item types).
+
+### New error variants
+
+`ElementNotFound`, `DuplicateElement`, `InvalidTour`, `InvalidFlowProblem(FlowProblem)`, plus
+`ParameterRequirement::{ProbabilityDistribution, InBounds, Exactly}` and
+`GraphProperty::HasEdges`, replace `InvalidArgument(String)` in the union-find, list, sampler, tour,
+min-cost-flow and sparse-graph constructors. Walk construction errors are `InvalidGraphWalk`.
+
 ## Step 22: stricter flow and Bellman-Ford inputs
 
 `PushRelabelMFImpl::new/with_epsilon` and `BoykovKolmogorovMFImpl::new/with_epsilon` return

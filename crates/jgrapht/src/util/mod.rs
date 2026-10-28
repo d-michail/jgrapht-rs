@@ -52,7 +52,7 @@ pub struct UnionFind {
 }
 
 impl UnionFind {
-    /// Creates a new instance.
+    /// A union-find structure over the elements `0..n`, each in a set of its own.
     pub fn new(n: usize) -> Self {
         UnionFind {
             parent: (0..n).collect(),
@@ -60,7 +60,7 @@ impl UnionFind {
             sets: n,
         }
     }
-    /// Returns the find.
+    /// The representative of the set containing `x`, compressing the path.
     pub fn find(&mut self, mut x: usize) -> usize {
         while self.parent[x] != x {
             self.parent[x] = self.parent[self.parent[x]];
@@ -82,11 +82,11 @@ impl UnionFind {
         self.sets -= 1;
         true
     }
-    /// Returns the connected.
+    /// Whether `a` and `b` are in the same set.
     pub fn connected(&mut self, a: usize, b: usize) -> bool {
         self.find(a) == self.find(b)
     }
-    /// Sets the count.
+    /// Number of disjoint sets.
     pub fn set_count(&self) -> usize {
         self.sets
     }
@@ -119,11 +119,11 @@ impl<V: Clone + Eq + std::hash::Hash> VertexToIntegerMapping<V> {
             index_list,
         })
     }
-    /// Returns the vertex map.
+    /// Position of each vertex in [`index_list`](Self::index_list).
     pub fn vertex_map(&self) -> &std::collections::HashMap<V, usize> {
         &self.vertex_map
     }
-    /// Returns the index list.
+    /// The vertices in the order they were numbered.
     pub fn index_list(&self) -> &[V] {
         &self.index_list
     }
@@ -203,7 +203,7 @@ pub struct ToleranceDoubleComparator {
 impl ToleranceDoubleComparator {
     /// The default epsilon constant.
     pub const DEFAULT_EPSILON: f64 = 1e-9;
-    /// Creates a new instance.
+    /// A comparator that treats values closer than `epsilon` as equal; `epsilon` must be positive.
     ///
     /// # Errors
     ///
@@ -244,19 +244,19 @@ pub struct ElementsSequenceGenerator<T> {
 }
 
 impl<T> ElementsSequenceGenerator<T> {
-    /// Creates a new instance.
+    /// A generator over the given elements, each of which is returned exactly once.
     pub fn new(elements: impl IntoIterator<Item = T>) -> Self {
         ElementsSequenceGenerator {
             elements: elements.into_iter().collect(),
         }
     }
 
-    /// Returns whether there is next.
+    /// Whether elements remain.
     pub fn has_next(&self) -> bool {
         !self.elements.is_empty()
     }
 
-    /// Returns the next.
+    /// A uniformly random element among those not returned yet.
     pub fn next(&mut self, rng: &mut impl java::RandomSource) -> Option<T> {
         if self.elements.is_empty() {
             return None;
@@ -272,7 +272,7 @@ impl<T> ElementsSequenceGenerator<T> {
 pub struct HashableSet<T: Eq + std::hash::Hash>(pub std::collections::HashSet<T>);
 
 impl<T: Eq + std::hash::Hash> HashableSet<T> {
-    /// Creates a new instance.
+    /// An empty set.
     pub fn new() -> Self {
         HashableSet(std::collections::HashSet::new())
     }

@@ -29,12 +29,12 @@ pub struct ListSingleSourcePaths<V, E> {
 }
 
 impl<V: Clone + Eq + Hash, E: Clone> ListSingleSourcePaths<V, E> {
-    /// Creates a new instance.
+    /// Builds the result from the source and one walk per reachable target.
     pub fn new(source: V, paths: HashMap<V, GraphWalk<V, E>>) -> Self {
         Self { source, paths }
     }
 
-    /// Returns the source.
+    /// The vertex all paths start at.
     pub fn source(&self) -> &V {
         &self.source
     }
@@ -47,14 +47,14 @@ impl<V: Clone + Eq + Hash, E: Clone> ListSingleSourcePaths<V, E> {
             .or_else(|| (target == &self.source).then_some(0.0))
     }
 
-    /// Returns the path.
+    /// The shortest path from the source to `target`, or `None` if `target` is unreachable.
     pub fn path(&self, target: &V) -> Option<GraphWalk<V, E>> {
         self.paths.get(target).cloned().or_else(|| {
             (target == &self.source).then(|| GraphWalk::singleton(self.source.clone(), 0.0))
         })
     }
 
-    /// Returns the paths.
+    /// All shortest paths found, keyed by target.
     pub fn paths(&self) -> &HashMap<V, GraphWalk<V, E>> {
         &self.paths
     }
@@ -76,12 +76,12 @@ pub struct SingleSourcePaths<V, E> {
 pub type TreeSingleSourcePaths<V, E> = SingleSourcePaths<V, E>;
 
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> SingleSourcePaths<V, E> {
-    /// Returns the source.
+    /// The vertex all paths start at.
     pub fn source(&self) -> &V {
         &self.source
     }
 
-    /// Returns the distance and predecessor map.
+    /// Distance of every reachable vertex from the source, and for each vertex the edge and the vertex it was reached from.
     pub fn distance_and_predecessor_map(&self) -> (&HashMap<V, f64>, &HashMap<V, (E, V)>) {
         (&self.dist, &self.pred)
     }
@@ -90,12 +90,12 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> SingleSourcePaths<V, E> {
         self.dist.get(v).copied()
     }
 
-    /// Returns whether reachable.
+    /// Whether `v` can be reached from the source.
     pub fn is_reachable(&self, v: &V) -> bool {
         self.dist.contains_key(v)
     }
 
-    /// Returns the path.
+    /// The shortest path from the source to `v`, rebuilt from the predecessor map, or `None` if `v` is unreachable.
     pub fn path(&self, v: &V) -> Option<GraphWalk<V, E>> {
         let weight = *self.dist.get(v)?;
         let mut vertices = vec![v.clone()];
@@ -123,7 +123,7 @@ pub struct AllPairsPaths<V, E> {
 }
 
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> AllPairsPaths<V, E> {
-    /// Returns the from source.
+    /// The single-source result for `s`, or `None` if `s` was not a source.
     pub fn from_source(&self, s: &V) -> Option<&SingleSourcePaths<V, E>> {
         self.by_source.get(s)
     }
@@ -132,7 +132,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> AllPairsPaths<V, E> {
     pub fn weight(&self, s: &V, t: &V) -> Option<f64> {
         self.by_source.get(s)?.weight(t)
     }
-    /// Returns the path.
+    /// The shortest path from `s` to `t`, or `None` if `t` is unreachable from `s`.
     pub fn path(&self, s: &V, t: &V) -> Option<GraphWalk<V, E>> {
         self.by_source.get(s)?.path(t)
     }
