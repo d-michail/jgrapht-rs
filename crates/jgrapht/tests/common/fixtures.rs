@@ -12,8 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Adversarial `Graph` implementations for the Rust API hardening work (`docs/RUST_API_ROADMAP.md`,
-//! R0). They exist only in tests and are shared by the graph, algorithm and I/O suites.
+//! Adversarial `Graph` implementations for the Rust API hardening work. They exist only in tests and are shared by the graph, algorithm and I/O suites.
 //!
 //! * [`OutgoingFixture`]: a well-formed graph that is only an `OutgoingGraph`.
 //! * [`FullFixture`]: a well-formed reference with every incidence capability.
