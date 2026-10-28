@@ -133,7 +133,7 @@ cargo test -p jgrapht-io
 Benchmarks never run automatically. Start them on demand:
 
 ```sh
-scripts/bench.sh graph_perf              # one benchmark file (no name runs all of them)
+cargo bench-graph                        # one benchmark file; also bench-shortestpath, -algorithms, -structures, -pathsearch, bench-all
 scripts/bench.sh -b master graph_perf    # also run master and fail on a >30% slowdown
 ```
 
