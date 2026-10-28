@@ -30,6 +30,8 @@ use std::hash::Hash;
 /// build walks with [`GraphWalk::from_parts`], [`GraphWalk::from_vertex_list`],
 /// [`GraphWalk::from_edge_list`] or [`GraphWalk::try_new`].
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(try_from = "serde_walk::RawWalk<V, E>"))]
 pub struct GraphWalk<V, E> {
     pub(crate) vertices: Vec<V>,
     pub(crate) edges: Vec<E>,
@@ -554,5 +556,29 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, V2: Clone + Eq + Hash, E2: Clon
     /// The edge that maps to `to`, or `None` if nothing does.
     pub fn edge_inverse(&self, to: &E2) -> Option<&E> {
         self.edge_backward.get(to)
+    }
+}
+
+/// Deserialization checks the cardinality invariant through [`GraphWalk::from_parts`], so corrupt
+/// data cannot produce a walk that breaks it.
+#[cfg(feature = "serde")]
+mod serde_walk {
+    use super::GraphWalk;
+    use crate::GraphError;
+    use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    pub struct RawWalk<V, E> {
+        vertices: Vec<V>,
+        edges: Vec<E>,
+        weight: f64,
+    }
+
+    impl<V, E> TryFrom<RawWalk<V, E>> for GraphWalk<V, E> {
+        type Error = GraphError;
+
+        fn try_from(raw: RawWalk<V, E>) -> Result<Self, GraphError> {
+            GraphWalk::from_parts(raw.vertices, raw.edges, raw.weight)
+        }
     }
 }

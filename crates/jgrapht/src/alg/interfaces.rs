@@ -28,6 +28,7 @@ use std::collections::HashSet;
 use std::hash::Hash;
 
 /// A partition of the vertices into disjoint sets (`PartitioningAlgorithm.Partitioning`).
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Partitioning<V: Eq + Hash> {
     partitions: Vec<IndexSet<V>>,
@@ -96,9 +97,11 @@ pub trait CentersLocationAlgorithm<V: Eq + Hash + Clone> {
 
 /// A solution of the vertex $k$-center problem: the centers, the assignment of the other vertices
 /// to them and the covering radius.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct CentersSolution<V: Eq + Hash> {
     centers: IndexSet<V>,
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::index_pairs"))]
     assignment: IndexMap<V, V>,
     covering_radius: f64,
 }
@@ -306,6 +309,7 @@ pub trait VertexColoringAlgorithm<V: Clone + Eq + Hash> {
 }
 
 /// A partition of the vertices into clusters (`ClusteringAlgorithm.Clustering`).
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Clustering<V: Eq + Hash> {
     clusters: Vec<IndexSet<V>>,

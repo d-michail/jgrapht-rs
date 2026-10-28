@@ -1100,10 +1100,19 @@ impl<G: Graph> ShortestPathAlgorithm<G> for ContractionHierarchyBidirectionalDij
 }
 
 /// Materialized shortest paths for a source/target subset.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "V: serde::Serialize, E: serde::Serialize",
+        deserialize = "V: serde::Deserialize<'de> + Eq + std::hash::Hash, E: serde::Deserialize<'de> + Eq + std::hash::Hash"
+    ))
+)]
 #[derive(Debug, Clone)]
 pub struct ManyToManyPaths<V, E> {
     sources: HashSet<V>,
     targets: HashSet<V>,
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::hash_pairs"))]
     paths: HashMap<(V, V), GraphWalk<V, E>>,
 }
 

@@ -21,6 +21,14 @@ use crate::{GraphError, Result};
 use rheaps::AddressableHeap;
 use rheaps::tree::PairingHeap;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "E: serde::Serialize",
+        deserialize = "E: serde::Deserialize<'de>"
+    ))
+)]
 #[derive(Debug, Clone, PartialEq)]
 /// The `SpanningTree` struct.
 pub struct SpanningTree<E> {

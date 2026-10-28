@@ -24,6 +24,14 @@ pub const DEFAULT_EPSILON: f64 = 1e-9;
 /// `MatchingAlgorithm.Matching` / `MatchingImpl`: a set of edges, no two sharing an endpoint, with
 /// its total weight. It remembers which vertices are matched and how many vertices the graph has,
 /// so [`is_matched`](Self::is_matched) and [`is_perfect`](Self::is_perfect) need no graph.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "V: serde::Serialize, E: serde::Serialize",
+        deserialize = "V: serde::Deserialize<'de> + Eq + std::hash::Hash, E: serde::Deserialize<'de> + Eq + std::hash::Hash"
+    ))
+)]
 #[derive(Debug, Clone)]
 pub struct Matching<V, E> {
     edges: IndexSet<E>,

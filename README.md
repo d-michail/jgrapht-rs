@@ -69,6 +69,8 @@ cargo run --example quickstart
 | generators                             | `generate` (`GraphGenerator` trait)                                |
 | `*Algorithm` interfaces                | small traits (e.g. `ShortestPathAlgorithm`) plus plain functions   |
 
+Enable the `serde` feature to serialize graphs and result objects in any serde format (the counterpart of `java.io.Serializable`; see the user guide).
+
 Edges are values too: use the built-in `DefaultEdge`, or your own type via
 `BaseGraph::with_edge_factory`. Weights live on edges as `f64` (`1.0` for unweighted graphs).
 

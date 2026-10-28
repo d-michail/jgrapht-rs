@@ -32,7 +32,8 @@ mechanism that has no Rust counterpart (serialization, JVM collections, thread-s
 | `graph/MaskSubgraphTest` | `graph_views::mask_subgraph_test` | done |
 | `graph/AsGraphUnionTest` | `graph_views::as_graph_union_test` | done (shared edge weights are per graph, see note in file) |
 | `graph/MaskVertexSetTest`, `graph/MaskEdgeSetTest` | - | n/a: Java `Set` classes |
-| `graph/SerializationTest`, `graph/concurrent/AsSynchronizedGraphTest` | - | n/a |
+| `graph/SerializationTest` | `serde_roundtrip.rs` (feature `serde`) | ported as serde round trips |
+| `graph/concurrent/AsSynchronizedGraphTest` | - | n/a |
 | `graph/builder/GraphBuilderTest`, `graph/builder/GraphTypeBuilderTest` | `graph_builder` | done (`vertexClass` reflection n/a) |
 | `traverse/*` (AbstractGraphIteratorTest, CrossComponentIteratorTest, Breadth/Depth/ClosestFirst, IgnoreDirection, EdgeSelection, TopologicalOrder, LexBreadthFirst, MaximumCardinality, DegeneracyOrdering, RandomWalkVertexIterator) | `traverse_tests` | done (iteration-time failures are `Result` items instead of Java exceptions, so those tests assert `Err` items; `testTryToDisableCrossComponent` has no counterpart because the setter no longer exists on always-cross iterators; Rust-native cases are in `traverse_errors`) (`GraphDelegator` call-counting check of `testNonCrossComponentTraversal` n/a) |
 

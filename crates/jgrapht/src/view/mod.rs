@@ -143,6 +143,7 @@ impl<G: GraphMut + ?Sized> GraphMut for &mut G {
 
 /// Read-only view: same graph, but not modifiable (`GraphMut` is simply not implemented).
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Unmodifiable<G>(pub G);
 
 impl<G: Graph> Graph for Unmodifiable<G> {
@@ -180,6 +181,7 @@ impl<G: UndirectedGraph> UndirectedGraph for Unmodifiable<G> {}
 /// needs_outgoing(&EdgeReversed(&g));
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EdgeReversed<G>(pub G);
 
 impl<G: DirectedGraph> Graph for EdgeReversed<G> {
@@ -220,6 +222,7 @@ impl<G: DirectedGraph + GraphMut> GraphMut for EdgeReversed<G> {
 /// Undirected view of a directed graph: edge direction is ignored. Edges cannot be added through
 /// the view; everything else writes through.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AsUndirected<G>(pub G);
 
 impl<G: DirectedGraph> Graph for AsUndirected<G> {

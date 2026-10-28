@@ -162,6 +162,7 @@ impl<G: GraphMut> GraphMut for AsWeighted<'_, G> {
 
 /// Treats every edge weight as `1.0`; setting weights is unsupported.
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AsUnweighted<G>(pub G);
 
 impl<G: Graph> Graph for AsUnweighted<G> {

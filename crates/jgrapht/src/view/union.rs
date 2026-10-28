@@ -17,6 +17,7 @@ use crate::graph::GraphExt;
 use crate::graph::{DirectedGraph, Graph, UndirectedGraph};
 
 /// How to merge the weights of an edge present in both graphs of a union.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WeightCombiner {
     /// The sum variant.
@@ -49,6 +50,7 @@ impl WeightCombiner {
 
 /// Read-only union of two graphs over the same vertex and edge types (`AsGraphUnion`). Shared
 /// vertices/edges are merged. Uniting a directed with an undirected graph gives a *mixed* graph.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GraphUnion<A, B> {
     pub(super) a: A,
     pub(super) b: B,

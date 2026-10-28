@@ -22,10 +22,19 @@ use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "V: serde::Serialize",
+        deserialize = "V: serde::Deserialize<'de> + Eq + std::hash::Hash"
+    ))
+)]
 #[derive(Debug, Clone)]
 /// The `Coloring` struct.
 pub struct Coloring<V> {
     /// The colors.
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::hash_pairs"))]
     pub colors: HashMap<V, usize>,
     /// The count.
     pub count: usize,

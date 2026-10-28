@@ -89,6 +89,9 @@
 //! in_degree_sum(&g); // `NoIncoming` has no incoming-edge index
 //! ```
 
+#[cfg(feature = "serde")]
+pub(crate) mod serde_support;
+
 pub mod alg;
 pub mod error;
 pub mod event;

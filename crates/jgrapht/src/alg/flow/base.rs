@@ -26,10 +26,20 @@ use std::collections::{HashMap, VecDeque};
 ///
 /// By the max-flow min-cut theorem the flow value is the capacity of the cut between
 /// [`MaximumFlow::source_partition`] and [`MaximumFlow::sink_partition`].
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "V: serde::Serialize, E: serde::Serialize",
+        deserialize = "V: serde::Deserialize<'de> + Eq + std::hash::Hash, E: serde::Deserialize<'de> + Eq + std::hash::Hash"
+    ))
+)]
 #[derive(Debug, Clone)]
 pub struct MaximumFlow<V, E> {
     value: f64,
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::hash_pairs"))]
     flow_map: HashMap<E, f64>,
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::hash_pairs"))]
     direction: HashMap<E, V>,
     source_partition: IndexSet<V>,
     sink_partition: IndexSet<V>,
@@ -91,6 +101,14 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> MaximumFl
 
 /// A minimum $s$-$t$ cut: a partition of the vertices into a source side and a sink side, the edges
 /// crossing it and its capacity.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "V: serde::Serialize, E: serde::Serialize",
+        deserialize = "V: serde::Deserialize<'de> + Eq + std::hash::Hash, E: serde::Deserialize<'de> + Eq + std::hash::Hash"
+    ))
+)]
 #[derive(Debug, Clone)]
 pub struct MinimumCut<V, E> {
     capacity: f64,

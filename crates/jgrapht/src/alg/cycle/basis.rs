@@ -25,6 +25,14 @@ use std::collections::{HashMap, HashSet, VecDeque};
 
 /// `CycleBasisAlgorithm.CycleBasis`: a set of cycles (as edge lists) with their total length and
 /// weight.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "E: serde::Serialize",
+        deserialize = "E: serde::Deserialize<'de> + Eq + std::hash::Hash"
+    ))
+)]
 #[derive(Debug, Clone)]
 pub struct CycleBasis<E> {
     cycles: IndexSet<Vec<E>>,

@@ -76,7 +76,7 @@ pub trait Graph {
 
     /// Iterates over all vertices, in the order the graph keeps them.
     ///
-    /// Each item is a [`Graph::VertexRef`]: call `borrow()` to get a `&Vertex`, or use [`GraphExt::vertices_cloned`](crate::GraphExt::vertices_cloned) for owned values.
+    /// Each item is a [`Graph::VertexRef`]: call `borrow()` to get a `&Vertex`, or use [`GraphExt::vertices_cloned`] for owned values.
     fn vertices(&self) -> impl Iterator<Item = Self::VertexRef<'_>>;
     /// Iterates over all edges, in the order the graph keeps them.
     ///
