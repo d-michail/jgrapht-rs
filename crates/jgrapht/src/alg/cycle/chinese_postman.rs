@@ -84,7 +84,9 @@ impl ChinesePostman {
         if graph.vertex_count() == 0 || graph.edge_count() == 0 {
             return HierholzerEulerianCycle::new().get_eulerian_cycle(graph);
         }
-        debug_assert!(crate::graph::props::is_strongly_connected(graph));
+        if !crate::graph::props::is_strongly_connected(graph) {
+            return Err(GraphError::InvalidGraph(crate::GraphProperty::Connected));
+        }
 
         if graph.graph_type().directed {
             self.solve_directed(graph)

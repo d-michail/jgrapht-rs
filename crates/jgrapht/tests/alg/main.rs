@@ -35,6 +35,7 @@ mod alg_isomorphism_tests;
 mod alg_lca_tests;
 mod alg_linkprediction_tests;
 mod alg_matching_tests;
+mod alg_no_panic_more_tests;
 mod alg_no_panic_tests;
 mod alg_planar_tests;
 mod alg_scoring_tests;

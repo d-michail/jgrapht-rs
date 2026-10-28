@@ -291,6 +291,10 @@ enum Finish {
 /// [`BoyerMyrvoldPlanarityInspector::planarity`] returns whichever certificate applies as one
 /// [`PlanarityResult`], so there is no embedding to ask for on a non-planar graph or subdivision to
 /// ask for on a planar one.
+///
+/// Self-loops and parallel edges do not affect planarity. The test uses only the first edge between
+/// two vertices and ignores self-loops, so the embedding and the Kuratowski subdivision contain at
+/// most one edge per vertex pair.
 pub struct BoyerMyrvoldPlanarityInspector<'g, G: IncidenceGraph> {
     graph: &'g G,
     n: usize,
@@ -507,8 +511,15 @@ impl<'g, G: IncidenceGraph> BoyerMyrvoldPlanarityInspector<'g, G> {
                     current_dfs_index,
                 );
                 current_dfs_index += 1;
+                let mut seen_neighbors: HashSet<&G::Vertex> = HashSet::new();
                 for e in graph.edges_of(&info.current) {
                     let opposite = graph.opposite_vertex(e, &info.current).unwrap();
+                    // Self-loops and parallel edges never affect planarity. The algorithm
+                    // assumes a simple graph (a loop would be a back edge from a node to itself),
+                    // so only the first edge to each neighbour is used.
+                    if opposite == &info.current || !seen_neighbors.insert(opposite) {
+                        continue;
+                    }
                     if let Some(&opposite_node) = vertex_map.get(opposite) {
                         if info.parent.as_ref() == Some(opposite) {
                             continue;

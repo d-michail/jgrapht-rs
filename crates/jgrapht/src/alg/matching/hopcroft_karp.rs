@@ -14,7 +14,7 @@
 
 use super::base::{Matching, MatchingAlgorithm};
 use crate::alg::util::FixedSizeIntegerQueue;
-use crate::error::Result;
+use crate::error::{GraphError, Result};
 use crate::graph::IncidenceGraph;
 use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
@@ -157,13 +157,31 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
             .enumerate()
             .filter_map(|(i, v)| v.map(|v| (v, i)))
             .collect();
-        let neighbors: Vec<Vec<usize>> = vertices
-            .iter()
-            .map(|v| match v {
-                None => Vec::new(),
-                Some(v) => graph.neighbor_list_of(v).iter().map(|w| index[w]).collect(),
-            })
-            .collect();
+        if index.len() != vertices.len() - 1 {
+            return Err(GraphError::InvalidParameter {
+                name: "partitions",
+                requirement: crate::ParameterRequirement::Disjoint,
+            });
+        }
+        let p1_size = self.partition1.len();
+        let mut neighbors: Vec<Vec<usize>> = Vec::with_capacity(vertices.len());
+        for (i, v) in vertices.iter().enumerate() {
+            let Some(v) = v else {
+                neighbors.push(Vec::new());
+                continue;
+            };
+            let mut list = Vec::new();
+            for w in graph.neighbor_list_of(v) {
+                // only edges between the two partitions can be matched; self-loops, edges inside
+                // a partition and edges to other vertices are ignored
+                if let Some(&j) = index.get(&w) {
+                    if (i <= p1_size) != (j <= p1_size) {
+                        list.push(j);
+                    }
+                }
+            }
+            neighbors.push(list);
+        }
         let n = vertices.len();
         let mut state = State {
             graph,

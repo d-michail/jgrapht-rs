@@ -128,6 +128,9 @@ pub enum ParameterRequirement {
     /// A probability in `[0, 1]`.
     #[error("a probability in [0, 1]")]
     Probability,
+    /// A collection of collections that overlap neither each other nor themselves.
+    #[error("disjoint, without duplicates")]
+    Disjoint,
 }
 
 /// Why an edge weight is unusable; see [`GraphError::InvalidWeight`].

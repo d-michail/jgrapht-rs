@@ -37,6 +37,22 @@ instead (below), and the sweep found three panics or hangs that rule-based readi
 - `BellmanFord::get_paths` never returned for infinite or NaN weights; it now returns
   `InvalidWeight`.
 
+## Second sweep
+
+`alg_no_panic_more_tests.rs` extends the random-pseudograph sweep to matching (nine classes),
+tours (ten), simple cycles and cycle bases, Eulerian and Chinese-postman cycles, planarity, VF2,
+colour refinement, AHU, Stoer-Wagner, Gusfield and Padberg-Rao. It found four more defects, all fixed:
+
+- `BoyerMyrvoldPlanarityInspector` reported a planar graph with a self-loop or parallel edges as
+  non-planar and then panicked extracting the Kuratowski subdivision. Self-loops and repeated
+  edges are now skipped while building the DFS structure.
+- `ChinesePostman::get_cpp_solution` guarded connectivity with a `debug_assert!`; a disconnected
+  graph now returns `InvalidGraph(Connected)`.
+- `HopcroftKarpMaximumCardinalityBipartiteMatching` indexed out of bounds on an edge to a vertex
+  outside both partitions. Edges that do not join the partitions are ignored, and overlapping
+  partitions return `InvalidParameter { requirement: Disjoint }`.
+- `AHU*` inspectors guarded simplicity with `debug_assert!`; they now return `InvalidGraph(Simple)`.
+
 ## Evidence for "valid public input cannot trigger an undocumented panic"
 
 - `crates/jgrapht-io/tests/malformed_input.rs` truncates, deletes and overwrites bytes of a seed
@@ -61,7 +77,7 @@ instead (below), and the sweep found three panics or hangs that rule-based readi
 
 ## Not covered
 
-The sweep covers the algorithms listed, not all of them (matching, tours, drawing, planarity,
-isomorphism, generators and the remaining flow and cut algorithms are exercised only by the
-fixture and parity tests), so the acceptance statement is tested for a large part of the surface,
+The two sweeps cover the algorithms listed, not all of them (drawing, generators, scoring variants,
+decomposition, LCA, steiner, similarity and the remaining flow and cut algorithms are exercised
+only by the fixture and parity tests), so the acceptance statement is tested for a large part of the surface,
 not proven for all of it.

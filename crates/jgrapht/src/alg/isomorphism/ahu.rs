@@ -175,7 +175,9 @@ pub struct AHURootedTreeIsomorphismInspector<'g, G: Graph> {
 }
 
 fn validate_tree<G: OutgoingGraph>(tree: &G, root: &G::Vertex) -> Result<()> {
-    debug_assert!(is_simple(tree));
+    if !is_simple(tree) {
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::Simple));
+    }
     if tree.vertex_count() == 0 {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
     }
@@ -272,7 +274,9 @@ pub struct AHUUnrootedTreeIsomorphismInspector<'g, G: Graph> {
 }
 
 fn validate_unrooted<G: UndirectedGraph + OutgoingGraph>(tree: &G) -> Result<()> {
-    debug_assert!(is_simple(tree));
+    if !is_simple(tree) {
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::Simple));
+    }
     if tree.vertex_count() == 0 {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
     }
@@ -411,7 +415,9 @@ pub struct AHUForestIsomorphismInspector<'g, G: IncidenceGraph> {
 }
 
 fn validate_forest<G: OutgoingGraph>(forest: &G, roots: &[G::Vertex]) -> Result<()> {
-    debug_assert!(is_simple(forest));
+    if !is_simple(forest) {
+        return Err(GraphError::InvalidGraph(crate::GraphProperty::Simple));
+    }
     if forest.vertex_count() == 0 {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::NonEmpty));
     }
