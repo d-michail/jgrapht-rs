@@ -379,3 +379,6 @@ directed_graph_impl!(
     true,
     |g: &Self, e: usize| { g.weights.get(e).copied() }
 );
+
+#[cfg(feature = "serde")]
+mod serde_impl;

@@ -61,13 +61,23 @@ impl<V: Clone + Eq + Hash, E: Clone> ListSingleSourcePaths<V, E> {
 }
 
 /// Shortest paths from one source to everything reachable from it.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "V: serde::Serialize, E: serde::Serialize",
+        deserialize = "V: serde::Deserialize<'de> + Eq + std::hash::Hash, E: serde::Deserialize<'de> + Eq + std::hash::Hash"
+    ))
+)]
 #[derive(Debug, Clone)]
 pub struct SingleSourcePaths<V, E> {
     /// The source.
     pub source: V,
     /// Distance for every reachable vertex (the source included, at `0.0`).
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::hash_pairs"))]
     pub dist: HashMap<V, f64>,
     /// For each reached vertex except the source: the last edge and its tail on the path.
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::hash_pairs"))]
     pub pred: HashMap<V, (E, V)>,
 }
 
@@ -117,8 +127,17 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> SingleSourcePaths<V, E> {
 }
 
 /// Shortest paths between all pairs of vertices.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "V: serde::Serialize, E: serde::Serialize",
+        deserialize = "V: serde::Deserialize<'de> + Eq + std::hash::Hash, E: serde::Deserialize<'de> + Eq + std::hash::Hash"
+    ))
+)]
 #[derive(Debug, Clone)]
 pub struct AllPairsPaths<V, E> {
+    #[cfg_attr(feature = "serde", serde(with = "crate::serde_support::hash_pairs"))]
     pub(crate) by_source: HashMap<V, SingleSourcePaths<V, E>>,
 }
 

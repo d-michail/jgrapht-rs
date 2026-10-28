@@ -5,6 +5,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+- `jgrapht`: optional `serde` feature, the counterpart of JGraphT's `java.io.Serializable`. It covers
+  `BaseGraph` (rebuilt through `add_edge_with`, so loops, parallel edges and acyclicity are
+  checked on input), the four sparse graphs, `GraphType`, `DefaultEdge`, `GraphWalk` (cardinality
+  checked on input), the plain views (`Unmodifiable`, `EdgeReversed`, `AsUndirected`,
+  `AsUnweighted`, `GraphUnion`) and the result types (`Coloring`, `SpanningTree`, `Matching`,
+  `MaximumFlow`, `MinimumCut`, `CycleBasis`, `SingleSourcePaths`, ...). Maps keyed by vertices are
+  written as sequences of pairs, so every serde format works. Factories are function pointers and
+  are not serialized: use `with_default_edge_factory` or `add_edge_with` after reading.
+
 ### 0.1.0 (first release, pending tag)
 
 - `jgrapht`: Rust port of the JGraphT core library: graph traits with capability bounds

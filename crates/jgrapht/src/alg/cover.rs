@@ -25,6 +25,14 @@ use std::borrow::Borrow;
 use std::collections::{HashSet, VecDeque};
 
 /// A vertex cover with its total vertex weight.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "V: serde::Serialize",
+        deserialize = "V: serde::Deserialize<'de>"
+    ))
+)]
 #[derive(Debug, Clone)]
 pub struct VertexCover<V> {
     /// The vertices.

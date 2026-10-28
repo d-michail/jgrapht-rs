@@ -20,7 +20,11 @@ use std::fmt;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
+#[cfg(feature = "serde")]
+mod serde_impl;
+
 /// Edge type used when the caller does not supply their own.
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct DefaultEdge(pub u64);
 
@@ -189,6 +193,13 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> BaseGraph<V, E
         self
     }
 
+    /// Installs the edge factory used by `add_edge` (builder style). Graphs read with `serde` come
+    /// back without one, because function pointers cannot be serialized.
+    pub fn with_edge_factory_fn(mut self, factory: fn(u64) -> E) -> Self {
+        self.factory = Some(factory);
+        self
+    }
+
     /// Marks the graph as weighted (builder style).
     pub fn weighted(mut self) -> Self {
         self.ty.weighted = true;
@@ -227,6 +238,11 @@ impl<V: Clone + Eq + Hash, D: Direction> BaseGraph<V, DefaultEdge, D> {
     /// Graph with an arbitrary [`GraphType`] (direction comes from `D`) and [`DefaultEdge`]s.
     pub fn with_graph_type(ty: GraphType) -> Self {
         Self::with_edge_factory(ty, DefaultEdge::from_id)
+    }
+    /// Installs the [`DefaultEdge`] factory, so that `add_edge` works on a graph read with `serde`
+    /// (builder style).
+    pub fn with_default_edge_factory(self) -> Self {
+        self.with_edge_factory_fn(DefaultEdge::from_id)
     }
     /// No loops, no parallel edges.
     pub fn simple() -> Self {

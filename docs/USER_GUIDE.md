@@ -103,6 +103,31 @@ in others, so the design differs on purpose:
 
 Rule of thumb: if you need to see a mutation, ask for the data again.
 
+## Serialization (`serde` feature)
+
+JGraphT graphs and result objects are `java.io.Serializable`; here the same types implement
+`serde::Serialize` and `Deserialize` when the `serde` feature is on, in any serde format:
+
+```rust,ignore
+let json = serde_json::to_string(&g)?;
+let back: UGraph<String> = serde_json::from_str(&json)?;
+```
+
+* A graph is written as its `GraphType`, vertices, edges (edge object, endpoints, weight) and
+  counters. Reading goes through `add_edge_with`, so a document that breaks the graph type (a loop
+  in a simple graph, a cycle in a DAG, the wrong direction for the requested type) is an error,
+  never a corrupt graph.
+* Edge and vertex factories are function pointers and are not written. A deserialized graph has
+  none: add edges with `add_edge_with`, or call `with_default_edge_factory()` /
+  `with_vertex_factory(..)` first. Reading a `DefaultEdge` moves the global edge counter past its
+  id, so new edges never collide with the loaded ones.
+* Maps keyed by vertices (`Coloring`, flows, shortest paths) are written as lists of pairs, because
+  formats such as JSON only allow string keys.
+* Views that hold closures (`MaskSubgraph`, `AsWeighted`) and `AsSubgraph` are not serializable;
+  materialize them into a `BaseGraph` first.
+* Sparse graphs are written as the vertex count and the edge list; the incoming-edge mode is the
+  type you read into.
+
 ## Randomness
 
 Randomised algorithms take any `rand::RngCore` (`StdRng::seed_from_u64(7)` for reproducible runs).
@@ -118,5 +143,6 @@ random number generators differ.
 | `getX()` valid only after `compute()` | the computation returns the result object |
 | `UnsupportedOperationException` on some graphs | the trait is not implemented |
 | live views and listener-driven caches | borrowing views; explicit snapshots (see above) |
+| `Serializable` | `serde` feature, any format; factories are not serialized |
 | `Random` with a fixed seed reproduces output | any `RngCore`; same seed gives a valid but different result |
 | `HashSet` iteration order in ties | insertion order |
