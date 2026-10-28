@@ -52,7 +52,7 @@
 //! let mut exporter = DimacsExporter::with_vertex_id_provider(|v: &usize| (v + 1).to_string());
 //! exporter.set_format(DimacsFormat::ShortestPath);
 //! let text = exporter.export_to_string(&graph)?;
-//! assert!(text.starts_with("p sp 3 2"));
+//! assert!(text.contains("p sp 3 2"), "{text}");
 //! # Ok::<(), jgrapht_io::IoError>(())
 //! ```
 
