@@ -2,7 +2,12 @@
 
 Every production `unwrap`, `expect`, `panic!` and slice or array index in the two library crates is
 listed in [`panic_sites.tsv`](panic_sites.tsv): 5420 clippy hits (`unwrap_used`, `expect_used`,
-`panic`, `indexing_slicing` on `--lib`), of which 751 are `unwrap`/`expect` and none is `panic!`.
+`panic`, `indexing_slicing` on `--lib`), of which 751 were `unwrap`/`expect` and none is `panic!`. Since then 118 of the `unwrap`/`expect`
+sites were removed (633 remain on 2026-10-28): graph-query unwraps in functions that return
+`Result` or `Option` now return `EdgeNotFound` or propagate `None`, lazily computed state returns
+`GraphError::Internal`, and the JSON and DOT importers return `IoError`. The rows of
+`panic_sites.tsv` were not regenerated and their line numbers are out of date; regenerate it with the
+command above when it is needed.
 Each hit, indexing included, has its own row. Regenerate with
 `cargo clippy -p <crate> --lib -- -W clippy::unwrap_used -W clippy::expect_used -W clippy::panic -W clippy::indexing_slicing`.
 

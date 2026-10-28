@@ -16,7 +16,7 @@ Review of 2026-10-28 on `master`. Targeted test runs are green (`alg` 1593, `gen
 
 ## API and robustness
 
-**I-6. (resolved, with limits)** Caller-reachable panics found by the audit are fixed (five defects, see [`PANIC_AUDIT.md`](PANIC_AUDIT.md)); incidence is a compile-time capability, fallible iterators yield `Result`, and importers are mutation-tested and about 60 algorithms are swept on random pseudographs. 751 `unwrap`/`expect` sites remain, each recorded in [`panic_sites.tsv`](panic_sites.tsv) with a class; indexing sites are classified by rule, not individually read.
+**I-6. (resolved, with limits)** Caller-reachable panics found by the audit are fixed (five defects, see [`PANIC_AUDIT.md`](PANIC_AUDIT.md)); incidence is a compile-time capability, fallible iterators yield `Result`, and importers are mutation-tested and about 60 algorithms are swept on random pseudographs. 633 `unwrap`/`expect` sites remain, each recorded in [`panic_sites.tsv`](panic_sites.tsv) with a class; indexing sites are classified by rule, not individually read.
 
 **I-7. (resolved)** Fixed: both crates have `#![deny(missing_docs)]`, public fallible functions have `# Errors` sections, and `lib.rs` has doctests for `Option`, `Result<Option<_>>`, fallible iterators and capability bounds. The summaries that only restated the item name ("Creates a new instance.", "Returns the len.", "Sets the node num.") were rewritten from the code, about 300 of them; a heuristic scan finds no weak ones left outside a few accurate setter/getter docs in `jgrapht-io`.
 
