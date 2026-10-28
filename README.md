@@ -168,6 +168,27 @@ Criterion's HTML reports are in `target/criterion/report/index.html`.
 The benchmark files are in `crates/jgrapht/benches/` (`graph_perf`, `shortestpath_perf`,
 `algorithms_perf`, `structures_perf`, `pathsearch_perf`).
 
+## Cite
+
+If you use this library please cite the following paper:
+
+* D. Michail, J. Kinable, B. Naveh, J. V. Sichi. **JGraphT—A Java Library for Graph Data Structures and Algorithms.** ACM Journal of Experimental Algorithmics, 25, 2020. [web](https://doi.org/10.1145/3381449)
+
+```
+@article{michail2020jgrapht,
+      title={JGraphT---A Java Library for Graph Data Structures and Algorithms},
+      author={Michail, Dimitrios and Kinable, Joris and Naveh, Barak and Sichi, John V.},
+      journal={ACM Journal of Experimental Algorithmics},
+      volume={25},
+      year={2020},
+      publisher={ACM},
+      doi={10.1145/3381449},
+      url={https://doi.org/10.1145/3381449},
+}
+```
+
+Citing software is just as important as citing any other important sources in your research. If you're not sure whether or not to cite something, [Shouldacite](https://mr-c.github.io/shouldacite/index.html) can help you decide if you should.
+
 ## License
 
 This project is a port of [JGraphT](https://github.com/jgrapht/jgrapht) and, like upstream, is
