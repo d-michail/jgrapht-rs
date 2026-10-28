@@ -307,7 +307,9 @@ pub trait GraphMutExt: GraphMut {
         let mut changed = self.add_vertices(src.vertices_cloned());
         for e in src.edges() {
             let e = e.borrow();
-            let (s, t) = src.edge_endpoints(e).expect("edge of source graph");
+            let (s, t) = src
+                .edge_endpoints(e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             if self.add_edge_with(s, t, e.clone())? {
                 changed = true;
                 if self.graph_type().weighted
@@ -368,7 +370,9 @@ pub trait GraphMutExt: GraphMut {
         let mut changed = self.add_vertices(src.vertices_cloned());
         for e in src.edges() {
             let e = e.borrow();
-            let (s, t) = src.edge_endpoints(e).expect("edge of source graph");
+            let (s, t) = src
+                .edge_endpoints(e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             if self.add_edge_with(t, s, e.clone())? {
                 changed = true;
                 if self.graph_type().weighted {

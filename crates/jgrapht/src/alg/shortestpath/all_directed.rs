@@ -245,7 +245,10 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>>
         while let Some(vertex) = queue.pop_front() {
             let child_distance = vertex_distance[vertex] + 1;
             for edge in self.graph.in_edges_of(vertex) {
-                let source = self.graph.edge_source(edge).expect("edge in graph");
+                let source = self
+                    .graph
+                    .edge_source(edge)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
                 if let Some(forward) = forward {
                     let Some(&source_distance) = forward.get(source) else {
                         continue;

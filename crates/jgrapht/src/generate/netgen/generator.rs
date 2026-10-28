@@ -125,7 +125,9 @@ where
         }
         require_directed(graph)?;
         let run = self.generate(graph)?;
-        let info = self.info.as_ref().unwrap();
+        let info = self.info.as_ref().ok_or(crate::GraphError::Internal(
+            "a value computed earlier is missing",
+        ))?;
         Ok(BipartiteMatchingProblem {
             partition1: info.sources().iter().cloned().collect(),
             partition2: info.sinks().iter().cloned().collect(),
@@ -155,7 +157,9 @@ where
         }
         require_directed(graph)?;
         let run = self.generate(graph)?;
-        let info = self.info.as_ref().unwrap();
+        let info = self.info.as_ref().ok_or(crate::GraphError::Internal(
+            "a value computed earlier is missing",
+        ))?;
         Ok(MaximumFlowProblem {
             sources: info.sources().iter().cloned().collect(),
             sinks: info.sinks().iter().cloned().collect(),
@@ -486,7 +490,10 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
         }
         let v = &self.nodes[node].vertex;
         for arc in self.graph.out_edges_of(v) {
-            let head = self.graph.edge_target(arc).unwrap();
+            let head = self
+                .graph
+                .edge_target(arc)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             if nodes.contains(&self.index[head]) {
                 possible -= 1;
             }

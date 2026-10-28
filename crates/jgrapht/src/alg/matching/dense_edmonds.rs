@@ -273,7 +273,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
             let initial_solution = initializer.get_matching()?;
             for e in initial_solution.edges() {
                 let e = e.borrow();
-                let (u, v) = graph.edge_endpoints(e).expect("edge of the graph");
+                let (u, v) = graph
+                    .edge_endpoints(e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
                 self.matching
                     .match_(self.vertex_index_map[u], self.vertex_index_map[v]);
             }
@@ -462,7 +464,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
         self.init(); // reset data structures and use the provided matching as a starting point
         for e in matching.edges() {
             let e = e.borrow();
-            let (u, v) = graph.edge_endpoints(e).expect("edge of the graph");
+            let (u, v) = graph
+                .edge_endpoints(e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             self.matching
                 .match_(self.vertex_index_map[u], self.vertex_index_map[v]);
         }

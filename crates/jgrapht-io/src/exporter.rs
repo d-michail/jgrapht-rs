@@ -88,7 +88,7 @@ impl<V, E> BaseExporter<V, E> {
         }
     }
 
-    /// Sets the provider used to identify the graph itself.
+    /// Sets the function that supplies the identifier of the graph itself, for formats that name the graph.
     pub fn set_graph_id_provider(&mut self, provider: impl FnMut() -> String + 'static) {
         self.graph_id_provider = Some(Box::new(provider));
     }
@@ -141,7 +141,7 @@ impl<V, E> BaseExporter<V, E> {
         self.vertex_attribute_provider = None;
     }
 
-    /// Sets the optional edge identifier provider.
+    /// Sets the function that supplies an identifier for each edge; without it edges are written without one.
     pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
         self.edge_id_provider = Some(Box::new(provider));
     }

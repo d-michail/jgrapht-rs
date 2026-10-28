@@ -347,7 +347,7 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
                 let vertex = self.vs[u].clone();
                 for e in g.out_edges_of(&vertex) {
                     let ei = self.eindex[e];
-                    let v = self.vindex[g.edge_target(e).unwrap()];
+                    let v = self.vindex[g.edge_target(e).ok_or(crate::GraphError::EdgeNotFound)?];
                     let forward = self.create_edge(u, v, ei);
                     let backward = self.create_backward_edge(forward);
                     self.outgoing[u].push(forward);
@@ -359,8 +359,8 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
         } else {
             for ei in 0..self.es.len() {
                 let e = &self.es[ei];
-                let u = self.vindex[g.edge_source(e).unwrap()];
-                let v = self.vindex[g.edge_target(e).unwrap()];
+                let u = self.vindex[g.edge_source(e).ok_or(crate::GraphError::EdgeNotFound)?];
+                let v = self.vindex[g.edge_target(e).ok_or(crate::GraphError::EdgeNotFound)?];
                 let forward = self.create_edge(u, v, ei);
                 let backward = self.create_backward_edge(forward);
                 self.outgoing[u].push(forward);

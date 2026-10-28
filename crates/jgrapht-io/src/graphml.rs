@@ -409,7 +409,7 @@ impl<V, E> GraphMlImporter<V, E> {
     ) {
         self.vertex_factory = Some(Box::new(move |id, attributes| Ok(factory(id, attributes))));
     }
-    /// Sets the GraphML attribute name from which edge weights are read.
+    /// Sets the name of the GraphML `key` whose values are read as edge weights.
     pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) {
         self.edge_weight_attribute = name.into();
     }
@@ -656,22 +656,22 @@ where
         result.base.set_vertex_id_provider(provider);
         result
     }
-    /// Sets the provider used to generate optional edge identifiers.
+    /// Sets the function that supplies an identifier for each edge; without it edges are written without one.
     pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
         self.base.set_edge_id_provider(provider);
     }
-    /// Sets the provider of graph attributes.
+    /// Sets the function that supplies the attributes of the graph.
     pub fn set_graph_attribute_provider(&mut self, provider: impl Fn() -> AttributeMap + 'static) {
         self.base.set_graph_attribute_provider(provider);
     }
-    /// Sets the provider of vertex attributes.
+    /// Sets the function that supplies the attributes written for each vertex.
     pub fn set_vertex_attribute_provider(
         &mut self,
         provider: impl Fn(&V) -> AttributeMap + 'static,
     ) {
         self.base.set_vertex_attribute_provider(provider);
     }
-    /// Sets the provider of edge attributes.
+    /// Sets the function that supplies the attributes written for each edge.
     pub fn set_edge_attribute_provider(&mut self, provider: impl Fn(&E) -> AttributeMap + 'static) {
         self.base.set_edge_attribute_provider(provider);
     }
@@ -1057,7 +1057,7 @@ impl GraphMlEventDrivenImporter {
             schema_validation: true,
         }
     }
-    /// Sets the GraphML attribute name from which edge weights are read.
+    /// Sets the name of the GraphML `key` whose values are read as edge weights.
     pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) {
         self.edge_weight_attribute = name.into();
     }
@@ -1146,7 +1146,7 @@ impl SimpleGraphMlEdgeListImporter {
             schema_validation: true,
         }
     }
-    /// Sets the GraphML attribute name from which edge weights are read.
+    /// Sets the name of the GraphML `key` whose values are read as edge weights.
     pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) {
         self.edge_weight_attribute = name.into();
     }

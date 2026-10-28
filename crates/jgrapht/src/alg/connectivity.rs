@@ -1284,7 +1284,9 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
             let b = self.connectivity_from_neighbors(&m);
             self.vertex_connectivity = Some(a.min(b));
         }
-        Ok(self.vertex_connectivity.unwrap())
+        self.vertex_connectivity.ok_or(crate::GraphError::Internal(
+            "a value computed earlier is missing",
+        ))
     }
 
     /// Return if the graph is `k` edge connected

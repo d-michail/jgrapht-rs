@@ -76,12 +76,12 @@ where
         }
     }
 
-    /// Sets the output matrix representation.
+    /// Chooses the matrix that is written: adjacency, Laplacian or normalized Laplacian.
     pub fn set_format(&mut self, format: MatrixFormat) {
         self.format = format;
     }
 
-    /// Returns the output matrix representation.
+    /// The matrix that is written.
     pub fn format(&self) -> MatrixFormat {
         self.format
     }

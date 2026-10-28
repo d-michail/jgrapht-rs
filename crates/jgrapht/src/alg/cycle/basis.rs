@@ -332,7 +332,10 @@ impl<'g, G: IncidenceGraph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, 
                         while !used[neighbor].contains_key(&v) {
                             let p = parent[&v].clone().expect("vertex below the root");
                             weight += weight_of(&p);
-                            v = graph.opposite_vertex(&p, &v).expect("tree edge").clone();
+                            v = graph
+                                .opposite_vertex(&p, &v)
+                                .ok_or(crate::GraphError::EdgeNotFound)?
+                                .clone();
                             cycle.push(p);
                         }
                         let a = used[neighbor][&v].clone();

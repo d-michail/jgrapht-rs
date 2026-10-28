@@ -167,7 +167,10 @@ impl<'a, G: IncidenceGraph> Algorithm<'a, G> {
         };
         for e in initializer.get_matching()?.edges() {
             let e = e.borrow();
-            let (u, v) = self.graph.edge_endpoints(e).expect("edge of the graph");
+            let (u, v) = self
+                .graph
+                .edge_endpoints(e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             let (u_index, v_index) = (self.vertex_index_map[u], self.vertex_index_map[v]);
             self.mate[u_index] = v_index as i64;
             self.label[u_index] = Label::Unlabeled;
@@ -296,7 +299,9 @@ impl<'a, G: IncidenceGraph> Algorithm<'a, G> {
         let mut matching: IndexSet<G::Edge> = IndexSet::new();
         for e in graph.edges() {
             let e = e.borrow();
-            let (u, v) = graph.edge_endpoints(e).expect("edge of the graph");
+            let (u, v) = graph
+                .edge_endpoints(e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             if u == v {
                 continue;
             }
@@ -452,7 +457,11 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinali
     /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_odd_set_cover(&mut self) -> Result<&HashMap<G::Vertex, i64>> {
         self.get_matching()?;
-        Ok(self.odd_set_cover.as_ref().expect("computed"))
+        self.odd_set_cover
+            .as_ref()
+            .ok_or(crate::GraphError::Internal(
+                "the computed result is missing",
+            ))
     }
 
     /// Checks that `matching` is a matching and that `odd_set_cover` proves it maximum.
@@ -521,6 +530,8 @@ impl<'g, G: Graph + 'g + IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
             ));
             self.odd_set_cover = Some(alg.compute_odd_set_cover());
         }
-        Ok(self.result.clone().expect("computed"))
+        self.result.clone().ok_or(crate::GraphError::Internal(
+            "the computed result is missing",
+        ))
     }
 }

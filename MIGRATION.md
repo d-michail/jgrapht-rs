@@ -340,6 +340,5 @@ code. `Unsupported(String)` is kept for operations a representation cannot offer
 | `org.jgrapht.opt.graph.sparse` | `jgrapht::graph::sparse` | done |
 | `org.jgrapht.opt.graph.fastutil` | `jgrapht::graph::map` | done with Rust map backends |
 
-The Java integration modules (`ext`, `guava`, `unimi-dsi`, `osm`, and demos) are out of scope. The
-status registers (`crates/*/tests/STATUS.md`) are the source of truth for individual upstream test
+The status registers (`crates/*/tests/STATUS.md`) are the source of truth for individual upstream test
 classes. The Java sources used as the oracle live in a separate JGraphT checkout.

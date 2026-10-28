@@ -505,7 +505,9 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
         if self.scores.is_none() {
             self.scores = Some(self.compute()?);
         }
-        Ok(self.scores.as_ref().unwrap())
+        self.scores.as_ref().ok_or(crate::GraphError::Internal(
+            "a value computed earlier is missing",
+        ))
     }
 
     /// Get an edge score
@@ -553,7 +555,10 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
             while let Some(w) = stack.pop() {
                 if let Some(w_pred) = pred.get(&w) {
                     for e in w_pred {
-                        let v = g.opposite_vertex(e, &w).unwrap().clone();
+                        let v = g
+                            .opposite_vertex(e, &w)
+                            .ok_or(crate::GraphError::EdgeNotFound)?
+                            .clone();
                         let c = (sigma[&v] as f64 / sigma[&w] as f64) * (1.0 + delta[&w]);
                         *scores.get_mut(e).unwrap() += c;
                         *delta.get_mut(&v).unwrap() += c;
@@ -606,7 +611,9 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
             stack.push(v.clone());
             let v_distance = dist[&v];
             for e in g.out_edges_of(&v) {
-                let w = g.opposite_vertex(e, &v).unwrap();
+                let w = g
+                    .opposite_vertex(e, &v)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
                 if *w == v {
                     continue;
                 }
@@ -647,7 +654,9 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
             final_dist.insert(v.clone(), v_distance);
             stack.push(v.clone());
             for e in g.out_edges_of(&v) {
-                let w = g.opposite_vertex(e, &v).unwrap();
+                let w = g
+                    .opposite_vertex(e, &v)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
                 if *w == v {
                     continue;
                 }

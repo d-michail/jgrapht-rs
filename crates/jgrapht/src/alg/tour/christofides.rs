@@ -93,7 +93,9 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
 
         let spanning_tree = KruskalMinimumSpanningTree::new(graph).spanning_tree();
         for edge in spanning_tree.edges {
-            let (source, target) = graph.edge_endpoints(&edge).expect("edge of the graph");
+            let (source, target) = graph
+                .edge_endpoints(&edge)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             mst_and_matching.add_edge(source, target)?;
         }
 
@@ -108,7 +110,9 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
         let mut matching = KolmogorovWeightedPerfectMatching::new(&subgraph)?;
         for edge in matching.get_matching()?.edges() {
             let edge = edge.borrow();
-            let (source, target) = graph.edge_endpoints(edge).expect("edge of the graph");
+            let (source, target) = graph
+                .edge_endpoints(edge)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             mst_and_matching.add_edge(source, target)?;
         }
 

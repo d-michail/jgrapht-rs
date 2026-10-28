@@ -773,7 +773,10 @@ impl<R: RandomSource> GraphGenerator for PruferTreeGenerator<R> {
         let mut degree = vec![1usize; n];
         let prufer: Vec<usize> = match &self.sequence {
             None => {
-                let rng = self.rng.as_mut().expect("random generator");
+                let rng = self
+                    .rng
+                    .as_mut()
+                    .ok_or(crate::GraphError::Internal("no random generator"))?;
                 let mut seq = vec![0; n - 2];
                 for s in seq.iter_mut() {
                     *s = rng.next_int_bound(n);

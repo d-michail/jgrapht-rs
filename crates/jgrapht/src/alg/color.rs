@@ -222,7 +222,9 @@ fn color_in_order<G: IncidenceGraph>(g: &G, order: &[G::Vertex]) -> Result<Color
     let mut used: HashSet<usize> = HashSet::new();
     for v in order {
         for e in g.edges_of(v) {
-            let u = g.opposite_vertex(e, v).unwrap();
+            let u = g
+                .opposite_vertex(e, v)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             if v == u {
                 return Err(GraphError::InvalidGraph(crate::GraphProperty::NoSelfLoops));
             }
@@ -372,7 +374,9 @@ impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for SmallestDegreeLas
                 order.push_front(vs[v].clone());
                 degree.remove(&v);
                 for e in g.edges_of(&vs[v]) {
-                    let u = g.opposite_vertex(e, &vs[v]).unwrap();
+                    let u = g
+                        .opposite_vertex(e, &vs[v])
+                        .ok_or(crate::GraphError::EdgeNotFound)?;
                     if &vs[v] == u {
                         return Err(GraphError::InvalidGraph(crate::GraphProperty::NoSelfLoops));
                     }
@@ -580,7 +584,9 @@ impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for SaturationDegreeC
             colors.insert(vs[v].clone(), c);
             colored[v] = true;
             for e in g.edges_of(&vs[v]) {
-                let u = index[g.opposite_vertex(e, &vs[v]).unwrap()];
+                let u = index[g
+                    .opposite_vertex(e, &vs[v])
+                    .ok_or(crate::GraphError::EdgeNotFound)?];
                 if !colored[u] {
                     if adj_colors[u].contains(&c) {
                         heap.delete(u, &saturation, &degree);

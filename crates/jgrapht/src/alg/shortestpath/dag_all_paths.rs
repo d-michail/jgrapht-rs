@@ -76,7 +76,9 @@ impl DagAllPathsCounter {
         let mut vertices: Vec<G::Vertex> = Vec::with_capacity(graph.vertex_count());
         while let Some(vertex) = queue.pop_front() {
             for edge in graph.out_edges_of(&vertex) {
-                let target = graph.edge_target(edge).expect("edge in graph");
+                let target = graph
+                    .edge_target(edge)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
                 let degree = in_degree.get_mut(target).expect("vertex in graph");
                 *degree -= 1;
                 if *degree == 0 {
@@ -106,7 +108,9 @@ impl DagAllPathsCounter {
                 continue;
             }
             for edge in graph.out_edges_of(&vertices[index]) {
-                let child = graph.edge_target(edge).expect("edge in graph");
+                let child = graph
+                    .edge_target(edge)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
                 ways[positions[child]] += &count;
             }
         }

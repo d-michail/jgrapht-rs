@@ -126,7 +126,9 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
         let graph = self.graph;
         let mut best: Option<(G::Edge, f64, G::Vertex)> = None;
         for e in graph.edges_of(x) {
-            let other = graph.opposite_vertex(e, x).expect("incident edge");
+            let other = graph
+                .opposite_vertex(e, x)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             if visible_vertex.contains(other) && other != x {
                 let cur_weight = graph.weight_of(e);
                 if self.comparator.compare(cur_weight, 0.0) > 0
@@ -214,7 +216,9 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
             // add it to result while keeping track of matched vertices
             matching_weight += path_weight;
             for e in path_matching {
-                let (s, t) = graph.edge_endpoints(&e).expect("edge of the graph");
+                let (s, t) = graph
+                    .edge_endpoints(&e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
                 if !matched_vertices.insert(s.clone()) || !matched_vertices.insert(t.clone()) {
                     return Err(GraphError::Internal("edges of a matching share a vertex"));
                 }
@@ -230,7 +234,9 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
                 // ignore zero or negative weight
                 continue;
             }
-            let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
+            let (s, t) = graph
+                .edge_endpoints(e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             if matched_vertices.contains(s) || matched_vertices.contains(t) {
                 continue;
             }

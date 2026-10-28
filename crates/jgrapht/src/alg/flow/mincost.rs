@@ -528,7 +528,11 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         }
         self.n = graph.vertex_count();
         self.calculate_minimum_cost_flow(problem)?;
-        Ok(self.minimum_cost_flow.clone().unwrap())
+        self.minimum_cost_flow
+            .clone()
+            .ok_or(crate::GraphError::Internal(
+                "a value computed earlier is missing",
+            ))
     }
 
     fn calculate_minimum_cost_flow<P>(&mut self, problem: &P) -> Result<()>
@@ -597,8 +601,12 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         for edge in graph.edges() {
             let edge = edge.borrow();
             graph_edges.push(edge.clone());
-            let mut node = node_map[graph.edge_source(edge).unwrap()];
-            let mut opposite = node_map[graph.edge_target(edge).unwrap()];
+            let mut node = node_map[graph
+                .edge_source(edge)
+                .ok_or(crate::GraphError::EdgeNotFound)?];
+            let mut opposite = node_map[graph
+                .edge_target(edge)
+                .ok_or(crate::GraphError::EdgeNotFound)?];
             let upper_cap = problem.arc_capacity_upper_bound(edge);
             let lower_cap = problem.arc_capacity_lower_bound(edge);
             let mut cost = problem.arc_cost(edge);
@@ -635,8 +643,13 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
                 .net
                 .add_arc_to(node, opposite, upper_cap - lower_cap, cost);
             self.arcs.push(arc);
-            self.edge_target
-                .insert(edge.clone(), graph.edge_target(edge).unwrap().clone());
+            self.edge_target.insert(
+                edge.clone(),
+                graph
+                    .edge_target(edge)
+                    .ok_or(crate::GraphError::EdgeNotFound)?
+                    .clone(),
+            );
         }
         Ok(graph_edges)
     }

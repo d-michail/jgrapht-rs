@@ -249,7 +249,9 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
             if w < 0.0 {
                 return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));
             }
-            let (s, t) = graph.edge_endpoints(e).expect("edge endpoints");
+            let (s, t) = graph
+                .edge_endpoints(e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             let (s_new, t_new) = (vertex_map[s], vertex_map[t]);
             // For multigraphs, we sum the edge weights (either all are contained in a cut, or
             // none).

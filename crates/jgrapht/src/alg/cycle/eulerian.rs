@@ -346,8 +346,8 @@ impl<G: IncidenceGraph> EulerianCycleAlgorithm<G> for HierholzerEulerianCycle {
             }
         }
         for (i, e) in es.iter().enumerate() {
-            let s_node = vertices[g.edge_source(e).expect("edge of the graph")];
-            let t_node = vertices[g.edge_target(e).expect("edge of the graph")];
+            let s_node = vertices[g.edge_source(e).ok_or(crate::GraphError::EdgeNotFound)?];
+            let t_node = vertices[g.edge_target(e).ok_or(crate::GraphError::EdgeNotFound)?];
             run.add_edge(s_node, t_node, i);
         }
         while run.vertices_head != NIL {

@@ -371,7 +371,7 @@ where
         self.format
     }
 
-    /// Sets the output DIMACS dialect.
+    /// Chooses the DIMACS dialect that is written: shortest path, maximum clique or coloring.
     pub fn set_format(&mut self, format: DimacsFormat) {
         self.format = format;
     }

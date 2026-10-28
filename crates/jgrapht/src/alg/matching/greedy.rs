@@ -84,7 +84,9 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
             let mut all_edges: Vec<G::Edge> = graph.edges_cloned().collect();
             all_edges.sort_by_key(|e| degree(e));
             for e in &all_edges {
-                let (v, w) = graph.edge_endpoints(e).expect("edge of the graph");
+                let (v, w) = graph
+                    .edge_endpoints(e)
+                    .ok_or(crate::GraphError::EdgeNotFound)?;
                 if v != w && !matched.contains(v) && !matched.contains(w) {
                     edges.insert(e.clone());
                     matched.insert(v.clone());
@@ -99,7 +101,9 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
                     continue;
                 }
                 for e in graph.edges_of(v) {
-                    let w = graph.opposite_vertex(e, v).expect("incident edge");
+                    let w = graph
+                        .opposite_vertex(e, v)
+                        .ok_or(crate::GraphError::EdgeNotFound)?;
                     if v != w && !matched.contains(w) {
                         edges.insert(e.clone());
                         matched.insert(v.clone());
@@ -212,7 +216,9 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for GreedyWeighted
         // find maximal matching
         for e in &all_edges {
             let edge_weight = weight(e);
-            let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
+            let (s, t) = graph
+                .edge_endpoints(e)
+                .ok_or(crate::GraphError::EdgeNotFound)?;
             if s != t
                 && self.comparator.compare(edge_weight, 0.0) > 0
                 && !matched_vertices.contains(s)

@@ -124,7 +124,7 @@ impl<G: IncidenceGraph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G
             let v = queue.pop_front().unwrap();
             unknown.shift_remove(&v);
             for e in g.edges_of(&v) {
-                let n = g.opposite_vertex(e, &v).unwrap().clone();
+                let n = g.opposite_vertex(e, &v)?.clone();
                 if unknown.contains(&n) {
                     queue.push_back(n.clone());
                     if !odd.contains(&v) {

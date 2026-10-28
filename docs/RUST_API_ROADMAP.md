@@ -1,13 +1,13 @@
 # Rust API hardening roadmap
 
 Status: proposed on 2026-10-27. This roadmap must be completed before the public API is declared
-stable. It expands `ISSUES.md` I-6 and I-8 into concrete work packages.
+stable. It lists the concrete work packages.
 
 ## Progress
 
 | Execution step | Status |
 |---|---|
-| 1. R0 inventory, audit script, fixtures | done (`scripts/api_audit.py`, `docs/API_INVENTORY.md`, `tests/common/fixtures.rs`) |
+| 1. R0 inventory, audit script, fixtures | done (`tests/common/fixtures.rs`; the audit script and the generated inventory were removed later) |
 | 2. Capability traits | done (`graph::capability`; `OutgoingGraph` is a separate trait from `Graph`) |
 | 3. `BaseGraph` and map graphs | done |
 | 4. Sparse directed type-state | done (`NoIncoming`/`LazyIncoming`/`FullIncoming`) |
@@ -28,7 +28,7 @@ stable. It expands `ISSUES.md` I-6 and I-8 into concrete work packages.
 | 19. Public sentinels | done: unreachable is `None`, never infinity, in `ShortestPathAlgorithm::path_weight` (`Result<Option<f64>>`), `SingleSourcePaths`/`ListSingleSourcePaths`/`AllPairsPaths`/`ManyToManyPaths::weight` (`Option<f64>`), `GraphMeasurer::diameter`/`radius` (`Option<f64>`, `None` when disconnected) and `MinimumCycleMeanAlgorithm::get_cycle_mean` (`Option<f64>`); the error-hiding free functions `metrics::{diameter, radius, eccentricities, center, periphery}` are removed. Infinity remains only inside internal distance arrays |
 | 20. I/O propagation and shape validation | done: every exporter takes edge endpoints through one helper that returns `IoError::Export` for a missing endpoint, an endpoint that is not a vertex, or a missing weight (the Matrix/JSON/CSV unwraps are gone, and a foreign endpoint no longer gets a fresh dangling id); TSPLIB `compute_2d_geographical_distance` returns `Result<i32>`; each importer's vertex factory has a fallible `try_set_vertex_factory` whose error surfaces as `IoError::Callback` with the original error as its source; `GraphImporter` documents that an error may leave earlier elements in the graph. Tests run all ten exporters on graphs that break the integrity contract |
 | 21. Typed errors and Rust-only docs | done: `NegativeCycleDetected`/`BellmanFordError` derive `thiserror` (the former keeps its cycle behind an accessor); `GraphError::NegativeCycle` stays payload-free in the shared `ShortestPathAlgorithm` interface and says so; Java exception, `null` and `Double#` wording is gone from the Rust docs; `InvalidArgument(String)` is documented as the fallback for preconditions with no matchable category (about 95 sites left, none of them matched on by text) |
-| 22. Final audit | done: `cargo fmt`, Clippy `-D warnings`, rustdoc `-D warnings`, packaging and tests pass, and CI checks fmt and Clippy; `missing_docs` is denied in both crates; `# Errors`/`# Panics` sections are on the public API; lib.rs doctests show `Option`, `Result<Option<_>>`, fallible iterators and capability bounds; every `unwrap`/`expect`/index site has its own row in `panic_sites.tsv` (unwrap/expect read individually, indexing classified by rule); five panics or hangs found and fixed (`is_eulerian`, JSON unicode escape, weak chordality on multigraphs, push-relabel/BK negative capacity, Bellman-Ford non-finite weights); importer mutation test and an algorithm sweep added; `# Errors` on every public trait method |
+| 22. Final audit | done: `cargo fmt`, Clippy `-D warnings`, rustdoc `-D warnings`, packaging and tests pass, and CI checks fmt and Clippy; `missing_docs` is denied in both crates; `# Errors`/`# Panics` sections are on the public API; lib.rs doctests show `Option`, `Result<Option<_>>`, fallible iterators and capability bounds; every `unwrap`/`expect` site was read individually; five panics or hangs found and fixed (`is_eulerian`, JSON unicode escape, weak chordality on multigraphs, push-relabel/BK negative capacity, Bellman-Ford non-finite weights); importer mutation test and an algorithm sweep added; `# Errors` on every public trait method |
 
 ## Goal
 
@@ -564,7 +564,7 @@ large algorithm-family item by module, but do not combine unrelated stages.
 20. Fix I/O propagation and shape validation, format by format; document importer mutation behavior.
 21. Complete the typed-error migration and remove Java exception language from Rust docs.
 22. Run the final panic classification, documentation, Clippy, formatting, test, doc and package
-    gates; close I-6 and I-8 only after all acceptance criteria pass.
+    gates; close the roadmap only after all acceptance criteria pass.
 
 At steps 6, 10, 17, 18 and 19, update a temporary `MIGRATION.md` or the eventual `CHANGELOG.md` with
 old and new call examples. Do not postpone all migration notes until the release commit.
@@ -635,7 +635,6 @@ Each work package is complete only when:
 - migration notes describe every breaking rename or return-type change;
 - Rust-native regression tests and existing Java parity tests pass;
 - `STATUS.md` changes only if algorithm fidelity or coverage changed;
-- `ISSUES.md` is updated in the same commit;
 - `cargo test --workspace` passes;
 - `cargo clippy --workspace --all-targets` introduces no new warnings;
 - `cargo doc --workspace --no-deps` passes with the configured rustdoc warnings;

@@ -49,8 +49,7 @@ digits):
 The micro-benchmarks show what the hash-based storage of `BaseGraph` costs: reading the endpoints
 and weight of an edge takes about 100 ns on `BaseGraph` (hash lookups) against about 1.6 ns on the
 sparse graph (array reads), roughly 65 times slower. `edges_between` is a large cost in this run
-too, 14 us per lookup on the dense graph without fast lookups. Whether a dense-id storage strategy
-for `BaseGraph` is worth adding is a decision for after the port is finished.
+too, 14 us per lookup on the dense graph without fast lookups.
 
 ## Where the results are
 
