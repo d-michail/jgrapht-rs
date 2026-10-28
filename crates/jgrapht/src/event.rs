@@ -13,6 +13,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Graph change notification (JGraphT's `ListenableGraph`).
+//!
+//! [`Listenable`] wraps a graph and tells every registered [`GraphListener`] about each successful
+//! change (vertex added or removed, edge added or removed, weight changed). Views in this crate borrow
+//! their base graph and cannot go stale, so listeners are for caches and logs that you maintain yourself.
 
 use crate::graph::IncidenceGraph;
 use crate::graph::{DirectedGraph, Graph, GraphExt, GraphMut, UndirectedGraph};

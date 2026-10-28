@@ -67,7 +67,10 @@ impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; a vertex argument is not in the graph; an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range;
+    /// [`GraphError::VertexNotFound`] if a vertex argument is not in the graph;
+    /// [`GraphError::InvalidWeight`] if an edge weight is negative, NaN or not finite. Errors of
+    /// the graph operations it performs are propagated.
     pub fn new<I>(graph: &'g G, landmarks: I) -> Result<Self>
     where
         I: IntoIterator<Item = G::Vertex>,

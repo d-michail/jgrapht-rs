@@ -418,7 +418,7 @@ impl<G: GraphMut + ?Sized> GraphMutExt for G {}
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+/// Errors of the graph operations it performs are propagated.
 pub fn remove_vertex_and_preserve_connectivity<G: GraphMut + DirectedGraph + IncidenceGraph>(
     g: &mut G,
     v: &G::Vertex,
@@ -440,7 +440,7 @@ pub fn remove_vertex_and_preserve_connectivity<G: GraphMut + DirectedGraph + Inc
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+/// Errors of the graph operations it performs are propagated.
 pub fn remove_vertices_and_preserve_connectivity<G: GraphMut + DirectedGraph + IncidenceGraph>(
     g: &mut G,
     vs: impl IntoIterator<Item = G::Vertex>,

@@ -105,7 +105,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
@@ -114,7 +114,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         Self::with_algorithm(
             network,
@@ -126,7 +126,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_algorithm(
         network: &'g G,
         minimum_st_cut_algorithm: CutAlgorithm<'g, G>,
@@ -182,7 +182,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn equivalent_flow_tree(&mut self) -> Result<UGraph<G::Vertex>> {
         if self.p.is_none() {
             self.calculate_equivalent_flow_tree()?;
@@ -267,7 +267,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
@@ -276,7 +276,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         Self::with_algorithm(
             network,
@@ -288,7 +288,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_algorithm(
         network: &'g G,
         minimum_st_cut_algorithm: CutAlgorithm<'g, G>,
@@ -352,11 +352,8 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::Internal`] if an internal invariant of the library is broken (a bug).
+    /// Errors of the graph operations it performs are propagated.
     pub fn gomory_hu_tree(&mut self) -> Result<UGraph<G::Vertex>> {
         if self.p.is_none() {
             self.calculate_gomory_hu_tree()?;
@@ -376,7 +373,10 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::Internal`] if an internal invariant of the library is broken (a bug);
+    /// [`GraphError::InvalidGraph`] if the graph is not non empty; [`GraphError::EdgeNotFound`] if
+    /// an edge argument is not in the graph. Errors of the graph operations it performs are
+    /// propagated.
     ///
     /// # Panics
     ///

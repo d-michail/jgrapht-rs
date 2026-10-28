@@ -53,7 +53,8 @@ impl<'g, G: Graph> ParallelDeltaSteppingShortestPath<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_delta(g: &'g G, delta: f64, parallelism: usize) -> Result<Self> {
         if delta.is_nan() || delta < 0.0 {
             return Err(GraphError::must_be_non_negative("delta"));

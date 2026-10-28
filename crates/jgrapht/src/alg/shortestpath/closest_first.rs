@@ -44,7 +44,7 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G, source: &G::Vertex) -> Result<Self> {
         Self::with_radius(graph, source, f64::INFINITY)
     }
@@ -53,7 +53,10 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; an edge weight is negative, NaN or otherwise unusable; a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph;
+    /// [`GraphError::InvalidWeight`] if an edge weight is negative, NaN or not finite;
+    /// [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_radius(graph: &'g G, source: &G::Vertex, radius: f64) -> Result<Self> {
         if radius.is_nan() || radius < 0.0 {
             return Err(GraphError::must_be_non_negative("radius"));

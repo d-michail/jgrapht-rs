@@ -136,7 +136,7 @@ impl<G: GraphMut> GraphBuilder<G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn build(self) -> Result<G> {
         match self.error {
             Some(e) => Err(e),
@@ -147,7 +147,7 @@ impl<G: GraphMut> GraphBuilder<G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn build_as_unmodifiable(self) -> Result<Unmodifiable<G>> {
         self.build().map(Unmodifiable)
     }

@@ -74,7 +74,9 @@ impl ChinesePostman {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidGraph`] if the graph is not not mixed;
+    /// [`GraphError::InvalidGraph`] if the graph is not connected. Errors of the graph operations
+    /// it performs are propagated.
     pub fn get_cpp_solution<G: IncidenceGraph>(
         &mut self,
         graph: &G,

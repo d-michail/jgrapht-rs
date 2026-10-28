@@ -12,7 +12,25 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Graph traits and the default implementation.
+//! The graph traits and the graph implementations.
+//!
+//! * [`Graph`] is the read interface; [`GraphMut`] adds mutation; [`DirectedGraph`] and
+//!   [`UndirectedGraph`] mark the direction; [`OutgoingGraph`], [`IncomingGraph`] and
+//!   [`IncidenceGraph`] (in [`capability`]) add incident-edge queries.
+//! * [`GraphExt`], [`DirectedExt`] and [`GraphMutExt`] give every graph convenience methods.
+//! * [`BaseGraph`] is the default graph: an insertion-ordered adjacency map for any vertex and edge
+//!   types, configured by a [`GraphType`]. [`UGraph`] and [`DiGraph`] are its aliases.
+//! * [`sparse`] has immutable compressed-sparse-row graphs on integer vertices; [`map`] has map-backed
+//!   graphs on integer vertices.
+//! * [`builder`] chains graph construction; [`props`] tests structural properties (bipartite, planar,
+//!   Eulerian, ...).
+//!
+//! # Contract
+//!
+//! Every edge yielded by [`Graph::edges`] or an incident-edge iterator has both endpoints among
+//! [`Graph::vertices`] and has a weight. Queries about an unknown vertex or edge answer `None` or an
+//! empty iterator. Mutations distinguish "refused" (an `Err`) from "no change" (`Ok(false)` or
+//! `Ok(None)`).
 
 mod base;
 pub mod builder;

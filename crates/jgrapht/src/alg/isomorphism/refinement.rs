@@ -83,7 +83,7 @@ impl<'g, G: IncidenceGraph> ColorRefinementIsomorphismInspector<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph1: &'g G, graph2: &'g G) -> Result<Self> {
         check_types(graph1, graph2)?;
         Ok(ColorRefinementIsomorphismInspector {
@@ -161,11 +161,7 @@ impl<'g, G: IncidenceGraph> ColorRefinementIsomorphismInspector<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Errors of the graph operations it performs are propagated.
     pub fn isomorphism_exists(&mut self) -> std::result::Result<bool, IsomorphismUndecidable> {
         if self.outcome.is_none() {
             self.execute();

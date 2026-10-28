@@ -82,7 +82,9 @@ impl<K: std::fmt::Debug> Distributor<'_, K> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::Infeasible`] if the problem has no feasible solution;
+    /// [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn get_distribution(
         &self,
         rng: &mut impl RandomSource,

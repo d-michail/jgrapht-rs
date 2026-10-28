@@ -113,7 +113,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> BipartiteMatchingProblem<V, E> 
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn dump_costs<G: GraphMut<Vertex = V, Edge = E>>(&self, graph: &mut G) -> Result<()> {
         let edges: Vec<E> = graph.edges_cloned().collect();
         for e in edges {
@@ -140,18 +140,10 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> MaximumFlowProblem<V, E> {
         self.capacities[e]
     }
     /// Returns the source.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn source(&self) -> &V {
         self.sources.iter().next().expect("no source")
     }
     /// Returns the sink.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn sink(&self) -> &V {
         self.sinks.iter().next().expect("no sink")
     }
@@ -164,7 +156,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> MaximumFlowProblem<V, E> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn dump_capacities<G: GraphMut<Vertex = V, Edge = E>>(&self, graph: &mut G) -> Result<()> {
         let edges: Vec<E> = graph.edges_cloned().collect();
         for e in edges {
@@ -178,7 +170,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> MaximumFlowProblem<V, E> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn to_single_source_single_sink_problem<G: GraphMut<Vertex = V, Edge = E>>(
         &self,
         graph: &mut G,

@@ -66,7 +66,7 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
         Self::with_options(graph, DEFAULT_USE_HEURISTICS, DEFAULT_EPSILON)
     }
@@ -75,7 +75,7 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_heuristics(graph: &'g G, use_heuristics: bool) -> Result<Self> {
         Self::with_options(graph, use_heuristics, DEFAULT_EPSILON)
     }
@@ -84,7 +84,7 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_options(graph: &'g G, use_heuristics: bool, epsilon: f64) -> Result<Self> {
         Ok(PathGrowingWeightedMatching {
             graph,

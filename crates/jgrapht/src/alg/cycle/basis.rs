@@ -74,7 +74,7 @@ impl<E: Clone + Eq + std::hash::Hash> CycleBasis<E> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn cycles_as_graph_paths<G: Graph<Edge = E>>(
         &self,
         graph: &G,
@@ -199,7 +199,7 @@ macro_rules! fundamental_basis {
             ///
             /// # Errors
             ///
-            /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+            /// Errors of the graph operations it performs are propagated.
             pub fn new(graph: &'g G) -> Result<Self> {
                 require_directed_or_undirected(graph)?;
                 Ok($name { graph })
@@ -278,7 +278,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> PatonCycleBase<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(PatonCycleBase { graph })
     }

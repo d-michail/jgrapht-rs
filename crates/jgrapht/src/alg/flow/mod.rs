@@ -12,7 +12,18 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Maximum flow, minimum cuts, Gomory–Hu trees and minimum cost flow.
+//! Maximum flow, minimum cut and minimum-cost flow.
+//!
+//! The maximum-flow classes ([`EdmondsKarpMFImpl`], [`DinicMFImpl`], [`PushRelabelMFImpl`],
+//! [`BoykovKolmogorovMFImpl`]) take the network (edge weights are capacities) and answer
+//! `calculate_maximum_flow(source, sink)`; a computation that also needs the flow on each edge or the
+//! cut returns a [`MaximumFlow`] result object. [`GusfieldEquivalentFlowTree`] and
+//! [`GusfieldGomoryHuCutTree`] answer all-pairs minimum cuts, and [`PadbergRaoOddMinimumCutset`] finds
+//! minimum odd cuts. [`CapacityScalingMinimumCostFlow`] solves minimum-cost flow problems described by
+//! a [`MinimumCostFlowProblem`].
+//!
+//! Constructors reject negative and NaN capacities, and a source equal to the sink is
+//! [`GraphError::SourceEqualsSink`](crate::GraphError::SourceEqualsSink).
 
 mod base;
 mod boykov_kolmogorov;

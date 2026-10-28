@@ -89,7 +89,8 @@ impl<V> CircularLayoutAlgorithm2D<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(radius: f64) -> Result<Self> {
         if tolerance().compare(radius, 0.0) <= 0 {
             return Err(GraphError::must_be_positive("radius"));
@@ -207,7 +208,8 @@ impl RescaleLayoutAlgorithm2D {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(scale: f64) -> Result<Self> {
         if scale <= 0.0 {
             return Err(GraphError::must_be_positive("scale"));

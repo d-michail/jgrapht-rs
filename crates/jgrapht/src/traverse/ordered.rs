@@ -202,7 +202,7 @@ impl<'g, G: DirectedGraph + 'g + IncomingGraph + OutgoingGraph + IncidenceGraph>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_comparator(
         g: &'g G,
         cmp: impl Fn(&G::Vertex, &G::Vertex) -> i32 + 'g,

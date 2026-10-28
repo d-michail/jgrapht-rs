@@ -229,7 +229,8 @@ impl<'h, 'g, G: Graph> TransitNodeRoutingPrecomputation<'h, 'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_transit_vertex_count(mut self, count: usize) -> Result<Self> {
         if count > self.hierarchy.vertices().len() {
             return Err(GraphError::InvalidParameter {
@@ -269,7 +270,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn compute_transit_node_routing(&self) -> Result<TransitNodeRouting<'g, G>> {
         let h = self.hierarchy;
         let n = h.vertices().len();
@@ -629,7 +630,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn perform_precomputation(&self) -> Result<()> {
         self.routing().map(|_| ())
     }
@@ -662,11 +663,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Errors of the graph operations it performs are propagated.
     pub fn path(
         &self,
         source: &G::Vertex,
@@ -698,7 +695,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn path_weight(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<Option<f64>> {
         let routing = self.routing()?;
         let h = routing.contraction_hierarchy();

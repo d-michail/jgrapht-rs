@@ -271,7 +271,7 @@ impl SparseIntDirectedGraph {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(num_vertices: usize, edges: &[(usize, usize)]) -> Result<Self> {
         Self::from_edges(num_vertices, edges)
     }
@@ -282,7 +282,7 @@ impl<I: IncomingMode> SparseIntDirectedGraph<I> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_edges(num_vertices: usize, edges: &[(usize, usize)]) -> Result<Self> {
         Self::from_iter(num_vertices, edges.len(), edges.iter().copied())
     }
@@ -291,7 +291,7 @@ impl<I: IncomingMode> SparseIntDirectedGraph<I> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_iter(
         num_vertices: usize,
         num_edges: usize,
@@ -321,7 +321,7 @@ impl SparseIntDirectedWeightedGraph {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(num_vertices: usize, edges: &[(usize, usize, f64)]) -> Result<Self> {
         Self::from_edges(num_vertices, edges)
     }
@@ -332,7 +332,7 @@ impl<I: IncomingMode> SparseIntDirectedWeightedGraph<I> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_edges(num_vertices: usize, edges: &[(usize, usize, f64)]) -> Result<Self> {
         Self::from_iter(num_vertices, edges.len(), edges.iter().copied())
     }
@@ -341,7 +341,7 @@ impl<I: IncomingMode> SparseIntDirectedWeightedGraph<I> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_iter(
         num_vertices: usize,
         num_edges: usize,
@@ -367,7 +367,8 @@ impl<I: IncomingMode> SparseIntDirectedWeightedGraph<I> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an edge argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::EdgeNotFound`] if an edge argument is not in the graph. Errors of the
+    /// graph operations it performs are propagated.
     pub fn set_edge_weight(&mut self, e: usize, weight: f64) -> Result<()> {
         *self.weights.get_mut(e).ok_or(GraphError::EdgeNotFound)? = weight;
         Ok(())

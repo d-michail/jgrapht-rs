@@ -12,7 +12,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Vertex and edge scoring: centralities, PageRank, coreness, clustering coefficients.
+//! Centrality scores and clustering coefficients.
+//!
+//! Functions return a map from vertex to score: [`degree_centrality`], [`closeness_centrality`],
+//! [`harmonic_centrality`], [`pagerank`], [`eigenvector_centrality`], [`katz_centrality`],
+//! [`coreness`] and [`local_clustering_coefficients`] (with [`average_clustering_coefficient`] and
+//! [`global_clustering_coefficient`]). [`betweenness_centrality`] returns a [`Betweenness`] result for
+//! vertices and edges. The classes ([`PageRank`], [`BetweennessCentrality`],
+//! [`ApBetweennessCentrality`] with exact arithmetic, ...) implement [`VertexScoringAlgorithm`].
 
 use super::util::Indexed;
 use crate::graph::Graph;
@@ -298,10 +305,6 @@ pub fn katz_centrality<G: Graph>(
 
 /// Coreness (k-core number) of each vertex, ignoring direction, loops and parallel edges.
 /// The graph's degeneracy is the maximum value.
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn coreness<G: Graph>(g: &G) -> HashMap<G::Vertex, usize> {
     let ix = Indexed::new(g);
     let n = ix.n();
@@ -463,7 +466,7 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self, GraphError> {
         Self::with_options(graph, OverflowStrategy::IgnoreOverflow, None)
     }
@@ -473,7 +476,7 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_options(
         graph: &'g G,
         overflow: OverflowStrategy,
@@ -496,11 +499,8 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::Internal`] if an internal invariant of the library is broken (a bug).
+    /// Errors of the graph operations it performs are propagated.
     pub fn scores(&mut self) -> Result<&IndexMap<G::Edge, f64>, GraphError> {
         if self.scores.is_none() {
             self.scores = Some(self.compute()?);
@@ -514,7 +514,8 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an edge argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::EdgeNotFound`] if an edge argument is not in the graph. Errors of the
+    /// graph operations it performs are propagated.
     pub fn edge_score(&mut self, e: &G::Edge) -> Result<f64, GraphError> {
         if !self.graph.contains_edge(e) {
             return Err(GraphError::EdgeNotFound);
@@ -931,7 +932,8 @@ impl<V: Eq + std::hash::Hash + Clone> Coreness<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidGraph`] if the graph is not simple. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new<G: UndirectedGraph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
         if !crate::graph::props::is_simple(g) {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Simple));
@@ -1109,10 +1111,6 @@ pub struct EigenvectorCentrality<V> {
 
 impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
     /// Create and execute an instance of EigenvectorCentrality
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new<G: Graph<Vertex = V> + IncomingGraph>(g: &G) -> Self {
         Self::with_options(g, MAX_ITERATIONS_DEFAULT, TOLERANCE_DEFAULT).expect("default options")
     }
@@ -1121,7 +1119,8 @@ impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_options<G: Graph<Vertex = V> + IncomingGraph>(
         g: &G,
         max_iterations: usize,
@@ -1205,10 +1204,6 @@ pub struct KatzCentrality<V> {
 
 impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
     /// Create and execute an instance of KatzCentrality.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new<G: Graph<Vertex = V> + IncomingGraph>(g: &G) -> Self {
         Self::with_damping(g, 0.01).expect("default options")
     }
@@ -1217,7 +1212,7 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_damping<G: Graph<Vertex = V> + IncomingGraph>(
         g: &G,
         damping_factor: f64,
@@ -1235,7 +1230,8 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_options<G: Graph<Vertex = V> + IncomingGraph>(
         g: &G,
         damping_factor: f64,
@@ -1316,10 +1312,6 @@ pub struct PageRank<V> {
 
 impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
     /// Create and execute an instance of PageRank.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new<G: Graph<Vertex = V> + OutgoingGraph + IncomingGraph>(g: &G) -> Self {
         Self::with_options(g, 0.85, MAX_ITERATIONS_DEFAULT, TOLERANCE_DEFAULT)
             .expect("default options")
@@ -1329,7 +1321,8 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_options<G: Graph<Vertex = V> + OutgoingGraph + IncomingGraph>(
         g: &G,
         damping_factor: f64,
@@ -1440,7 +1433,7 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
         Self::with_options(g, false, OverflowStrategy::IgnoreOverflow)
     }
@@ -1449,7 +1442,7 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn normalized<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
         Self::with_options(g, true, OverflowStrategy::IgnoreOverflow)
     }
@@ -1458,7 +1451,7 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     ///
     /// # Panics
     ///
@@ -1706,7 +1699,7 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> Result<Self, GraphError> {
         Self::with_normalize(g, false)
     }
@@ -1715,7 +1708,7 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_normalize<G: Graph<Vertex = V> + OutgoingGraph>(
         g: &G,
         normalize: bool,
@@ -1727,7 +1720,8 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidWeight`] if an edge weight is negative, NaN or not finite.
+    /// Errors of the graph operations it performs are propagated.
     ///
     /// # Panics
     ///

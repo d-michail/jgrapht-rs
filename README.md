@@ -1,5 +1,9 @@
 # jgrapht-rs
 
+[![CI](https://github.com/d-michail/jgrapht-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/d-michail/jgrapht-rs/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-EPL--2.0%20OR%20LGPL--2.1--or--later-blue)](#license)
+![MSRV](https://img.shields.io/badge/rustc-1.88%2B-orange)
+
 A graph library for Rust: graph data structures, a large collection of graph algorithms, graph
 generators and import/export for common file formats. It is a port of the core of
 [JGraphT](https://jgrapht.org), redesigned for Rust.
@@ -23,6 +27,19 @@ generators and import/export for common file formats. It is a port of the core o
 > I/O are complete, and most algorithm packages are too. Coverage against the upstream test suite
 > is tracked in the [core status register](crates/jgrapht/tests/STATUS.md) and the
 > [I/O status register](crates/jgrapht-io/tests/STATUS.md).
+
+## Installation
+
+The crates are not on crates.io yet. Until the first release, depend on the repository:
+
+```toml
+[dependencies]
+jgrapht = { git = "https://github.com/d-michail/jgrapht-rs" }
+jgrapht-io = { git = "https://github.com/d-michail/jgrapht-rs" }   # importers and exporters
+```
+
+The optional `serde` feature of `jgrapht` serializes graphs and results. The documentation starts
+with the [user guide](crates/jgrapht/src/guide.rs) (`cargo doc --open`).
 
 ## Crates
 

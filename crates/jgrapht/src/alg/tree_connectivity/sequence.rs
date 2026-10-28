@@ -183,10 +183,6 @@ impl<T> SequenceArena<T> {
     }
 
     /// Leaves `node` in `tree` and returns a tree containing everything after it.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn split_after(&mut self, tree: SequenceId, node: SequenceNode) -> SequenceId {
         debug_assert_eq!(self.tree_of(node), Some(tree));
         let right_tree = self.create_tree();
@@ -200,10 +196,6 @@ impl<T> SequenceArena<T> {
     }
 
     /// Returns a tree containing `node` and everything after it.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn split_before(&mut self, tree: SequenceId, node: SequenceNode) -> SequenceId {
         debug_assert_eq!(self.tree_of(node), Some(tree));
         let right_tree = self.create_tree();

@@ -41,7 +41,8 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn new(
         g: &'g G,
         start: &'g G::Vertex,

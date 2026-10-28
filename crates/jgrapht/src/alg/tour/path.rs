@@ -401,7 +401,8 @@ impl HeldKarpHamiltonianPath {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_max_vertices(max_vertices: usize) -> Result<Self> {
         if max_vertices < 1 {
             return Err(GraphError::InvalidParameter {
@@ -630,7 +631,8 @@ impl BacktrackingHamiltonianPath {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn search_with_state_limit<G: IncidenceGraph>(
         &mut self,
         graph: &G,

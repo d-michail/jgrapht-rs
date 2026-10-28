@@ -29,6 +29,9 @@
 //! graphs, ...) are plain wrapper types. Vertices and edges are user supplied
 //! values (`Clone + Eq + Hash`).
 //!
+//! New to the library? Start with the [`guide`] (concepts, graph types, views, traversals,
+//! algorithms, generators, performance and a table for readers who know JGraphT).
+//!
 //! # Error handling at a glance
 //!
 //! Unreachable is `None`, a failure is `Err`, and algorithms say which graph capabilities they
@@ -99,6 +102,7 @@ pub mod generate;
 pub mod graph;
 /// Capability descriptor of a graph (`GraphType`).
 pub mod graph_type;
+pub mod guide;
 pub mod traverse;
 pub mod util;
 pub mod view;
@@ -108,9 +112,10 @@ pub use error::{
     FlowProblem, GraphError, GraphProperty, ParameterRequirement, Result, WeightProblem,
 };
 pub use graph::{
-    BaseGraph, DefaultEdge, DiGraph, DirectedGraph, FastutilMapGraph, FastutilMapIntVertexGraph,
-    Graph, GraphExt, GraphMut, GraphMutExt, IncidenceGraph, IncomingGraph, OutgoingGraph, UGraph,
-    UndirectedGraph, graph_equals, graph_hash, graph_to_string,
+    BaseGraph, DefaultEdge, DiGraph, DirectedExt, DirectedGraph, FastutilMapGraph,
+    FastutilMapIntVertexGraph, Graph, GraphExt, GraphMut, GraphMutExt, IncidenceGraph,
+    IncomingGraph, OutgoingGraph, UGraph, UndirectedGraph, graph_equals, graph_hash,
+    graph_to_string,
 };
 pub use graph_type::GraphType;
 pub use view::{

@@ -12,7 +12,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Small shared helpers.
+//! Small shared helpers: a tolerant floating-point comparator, the Java-compatible pairing heap and
+//! priority queue used where the port needs JGraphT's exact tie-breaking, and a sampler for discrete
+//! distributions.
 
 pub mod heap;
 pub mod java;
@@ -104,7 +106,8 @@ impl<V: Clone + Eq + std::hash::Hash> VertexToIntegerMapping<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::DuplicateElement`](crate::GraphError::DuplicateElement) if an element is already present. Errors of the
+    /// graph operations it performs are propagated.
     pub fn new(vertices: impl IntoIterator<Item = V>) -> crate::Result<Self> {
         let mut vertex_map = std::collections::HashMap::new();
         let mut index_list = Vec::new();
@@ -207,7 +210,8 @@ impl ToleranceDoubleComparator {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`](crate::GraphError::InvalidParameter) if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(epsilon: f64) -> crate::Result<Self> {
         if epsilon <= 0.0 {
             return Err(crate::GraphError::must_be_positive("tolerance"));

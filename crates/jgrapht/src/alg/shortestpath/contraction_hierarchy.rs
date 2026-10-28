@@ -274,7 +274,7 @@ impl<'g, G: Graph> ContractionHierarchyPrecomputation<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn compute_contraction_hierarchy(&self) -> Result<ContractionHierarchy<'g, G>> {
         let (mut core, originals) = Core::fill(self.graph)?;
         let mut randoms: Vec<_> = (0..self.parallelism)
@@ -952,11 +952,8 @@ impl<'h, 'g, G: Graph> ContractionHierarchyBidirectionalDijkstra<'h, 'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn path(
         &self,
         source: &G::Vertex,
@@ -1197,7 +1194,8 @@ impl<'h, 'g, G: Graph> CHManyToManyShortestPaths<'h, 'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn many_to_many<I, J>(
         &self,
         sources: I,

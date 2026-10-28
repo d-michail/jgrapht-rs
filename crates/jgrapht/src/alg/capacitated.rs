@@ -50,10 +50,6 @@ pub struct CapacitatedSpanningTree<V: Eq + Hash, E: Eq + Hash> {
 
 impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> CapacitatedSpanningTree<V, E> {
     /// Checks the tree against the problem data (`isCapacitatedSpanningTree`).
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn is_capacitated_spanning_tree<G: IncidenceGraph<Vertex = V, Edge = E>>(
         &self,
         graph: &G,
@@ -307,10 +303,6 @@ impl<V: Eq + Hash + Clone> Solution<V> {
 
     /// Splits the vertices of `vertex_subset` (a subset of the partition set `label`) into one
     /// part per subtree below the root of their minimum spanning tree; returns the new labels.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn partition_subtrees_of_subset<G: IncidenceGraph<Vertex = V>>(
         &mut self,
         problem: &Problem<'_, G>,
@@ -427,7 +419,7 @@ impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(
         graph: &'g G,
         root: G::Vertex,
@@ -726,7 +718,7 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(
         graph: &'g G,
         root: G::Vertex,
@@ -752,7 +744,8 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_options(
         graph: &'g G,
         root: G::Vertex,
@@ -782,7 +775,8 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_initial_solution(
         initial_solution: CapacitatedSpanningTree<G::Vertex, G::Edge>,
         graph: &'g G,

@@ -156,7 +156,9 @@ pub fn clarkson_vertex_cover<G: Graph>(
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+/// Returns [`GraphError::InvalidGraph`] if the graph is not bipartite; [`GraphError::EdgeNotFound`]
+/// if an edge argument is not in the graph. Errors of the graph operations it performs are
+/// propagated.
 ///
 /// # Panics
 ///
@@ -352,7 +354,7 @@ macro_rules! weighted_cover_class {
             ///
             /// # Errors
             ///
-            /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+            /// Errors of the graph operations it performs are propagated.
             pub fn new(graph: &'g G) -> Result<Self> {
                 Ok($name { graph, weights: unit_weights(graph) })
             }
@@ -360,7 +362,7 @@ macro_rules! weighted_cover_class {
             ///
             /// # Errors
             ///
-            /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+            /// Errors of the graph operations it performs are propagated.
             pub fn with_weights(graph: &'g G, weights: HashMap<G::Vertex, f64>) -> Result<Self> {
                 Ok($name { graph, weights })
             }
@@ -448,7 +450,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> EdgeBasedTwoApproxVcImpl<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(EdgeBasedTwoApproxVcImpl { graph })
     }

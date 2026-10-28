@@ -211,7 +211,10 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidWeight`] if an edge weight is negative, NaN or not finite;
+    /// [`GraphError::EdgeNotFound`] if an edge argument is not in the graph;
+    /// [`GraphError::InvalidGraph`] if the graph is not no self loops. Errors of the graph
+    /// operations it performs are propagated.
     ///
     /// # Panics
     ///
@@ -373,10 +376,6 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
     }
 
     /// The vertices on one side of the minimum cut.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn min_cut(&self) -> &IndexSet<V> {
         &self.members[self.best_cut.expect("cut computed")]
     }

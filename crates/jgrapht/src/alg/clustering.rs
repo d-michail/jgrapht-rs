@@ -85,11 +85,8 @@ pub fn label_propagation<G: Graph>(
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
+/// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+/// operations it performs are propagated.
 pub fn k_spanning_tree_clustering<G: Graph>(g: &G, k: usize) -> Result<Vec<Vec<G::Vertex>>> {
     let ix = Indexed::new(g);
     if k == 0 || k > ix.n() {
@@ -173,7 +170,8 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::EdgeNotFound`] if an edge argument is not in the graph. Errors of the
+    /// graph operations it performs are propagated.
     ///
     /// # Panics
     ///
@@ -215,7 +213,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::MissingVertexData`] if a map or function does not cover every vertex;
+    /// [`GraphError::EdgeNotFound`] if an edge argument is not in the graph. Errors of the graph
+    /// operations it performs are propagated.
     ///
     /// # Panics
     ///
@@ -288,7 +288,7 @@ impl<'g, G: Graph> GirvanNewmanClustering<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         Self::with_options(graph, k, OverflowStrategy::ThrowExceptionOnOverflow, None)
     }
@@ -297,7 +297,8 @@ impl<'g, G: Graph> GirvanNewmanClustering<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_options(
         graph: &'g G,
         k: usize,
@@ -383,7 +384,8 @@ impl<'g, G: UndirectedGraph> KSpanningTreeClustering<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         if k < 1 || k > graph.vertex_count() {
             return Err(GraphError::InvalidParameter {
@@ -456,7 +458,7 @@ impl<'g, G: UndirectedGraph> NaiveGreedyModularityAlgorithm<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(NaiveGreedyModularityAlgorithm { graph })
     }
@@ -783,7 +785,7 @@ impl<'g, G: UndirectedGraph, R: RandomSource> LabelPropagationClustering<'g, G, 
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G, max_iterations: usize, rng: R) -> Result<Self> {
         Ok(LabelPropagationClustering {
             graph,

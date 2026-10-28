@@ -12,10 +12,16 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Cycle detection, enumeration and bases.
+//! Cycles: detection, enumeration, bases, Eulerian cycles and chordality.
 //!
-//! The JGraphT classes: cycle detector, simple cycle enumeration, cycle bases, chordality and
-//! Eulerian cycles.
+//! * [`CycleDetector`] finds cycles in directed graphs; the simple-cycle enumerators (Tiernan, Tarjan,
+//!   Johnson, Szwarcfiter-Lauer, Hawick-James) list every elementary cycle.
+//! * Cycle bases: fundamental, Paton and others, as a [`CycleBasis`].
+//! * [`HierholzerEulerianCycle`] tests for and finds Eulerian cycles; [`ChinesePostman`] solves the
+//!   route-inspection problem.
+//! * [`ChordalityInspector`], [`WeakChordalityInspector`] and [`BergeGraphInspector`] test chordality,
+//!   weak chordality and the Berge property and return certificates (a hole, an antihole).
+//! * [`HowardMinimumMeanCycle`] finds minimum mean cycles.
 
 mod basis;
 mod berge;

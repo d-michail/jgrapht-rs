@@ -357,7 +357,7 @@ impl<'g, G: DirectedGraph + OutgoingGraph> JohnsonSimpleCycles<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
         if has_multiple_edges(graph) {
             return Err(GraphError::InvalidGraph(
@@ -743,7 +743,7 @@ impl<'g, G: DirectedGraph + OutgoingGraph> HawickJamesSimpleCycles<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn count_simple_cycles(&self) -> Result<u64> {
         let Some(graph) = self.graph else {
             return no_graph();

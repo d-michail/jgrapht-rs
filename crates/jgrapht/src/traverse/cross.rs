@@ -100,7 +100,8 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn with_strategy(g: &'g G, starts: Option<Vec<G::Vertex>>, strategy: S) -> Result<Self> {
         let mut it = CrossComponentIterator {
             core: Core {
@@ -249,7 +250,7 @@ impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn try_next(&mut self) -> Result<Option<G::Vertex>> {
         if self.failed {
             return Ok(None);
@@ -331,10 +332,6 @@ pub type BreadthFirstIterator<'g, G> = CrossComponentIterator<'g, G, BfsStrategy
 
 impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
     /// Visits the whole graph, component by component.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(g: &'g G) -> Self {
         Self::with_strategy(
             g,
@@ -350,7 +347,7 @@ impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_start(g: &'g G, start: &G::Vertex) -> Result<Self> {
         Self::from_starts(g, [start])
     }
@@ -358,7 +355,7 @@ impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_starts(
         g: &'g G,
         starts: impl IntoIterator<Item = impl Borrow<G::Vertex>>,
@@ -486,10 +483,6 @@ pub type DepthFirstIterator<'g, G> = CrossComponentIterator<'g, G, DfsStrategy<'
 
 impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
     /// Creates a new instance.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(g: &'g G) -> Self {
         Self::with_strategy(
             g,
@@ -505,7 +498,7 @@ impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_start(g: &'g G, start: &G::Vertex) -> Result<Self> {
         Self::from_starts(g, [start])
     }
@@ -513,7 +506,7 @@ impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_starts(
         g: &'g G,
         starts: impl IntoIterator<Item = impl Borrow<G::Vertex>>,
@@ -651,10 +644,6 @@ pub type ClosestFirstIterator<'g, G, H = PairingHeap<OrderedF64, <G as Graph>::V
 
 impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
     /// Creates a new instance.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(g: &'g G) -> Self {
         Self::build(g, None, f64::INFINITY, PairingHeap::new())
             .expect("no radius with cross-component traversal")
@@ -663,7 +652,7 @@ impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_start(g: &'g G, start: &G::Vertex) -> Result<Self> {
         Self::build(
             g,
@@ -676,7 +665,7 @@ impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_start_with_radius(g: &'g G, start: &G::Vertex, radius: f64) -> Result<Self> {
         Self::build(g, Some(vec![start.clone()]), radius, PairingHeap::new())
     }
@@ -684,7 +673,7 @@ impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_starts(
         g: &'g G,
         starts: impl IntoIterator<Item = impl Borrow<G::Vertex>>,
@@ -700,7 +689,7 @@ impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_starts_with_radius(
         g: &'g G,
         starts: impl IntoIterator<Item = impl Borrow<G::Vertex>>,
@@ -725,7 +714,8 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn build(g: &'g G, starts: Option<Vec<G::Vertex>>, radius: f64, heap: H) -> Result<Self> {
         if radius.is_nan() || radius < 0.0 {
             return Err(GraphError::must_be_non_negative("radius"));

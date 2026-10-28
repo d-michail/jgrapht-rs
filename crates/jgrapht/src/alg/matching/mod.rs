@@ -12,7 +12,19 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Matching algorithms (JGraphT `org.jgrapht.alg.matching`).
+//! Matchings.
+//!
+//! A [`Matching`] holds the matched edges, their total weight and which vertices are matched.
+//! [`MatchingAlgorithm`] is the common trait.
+//!
+//! | Algorithm | Graphs | Optimal for |
+//! |---|---|---|
+//! | [`GreedyMaximumCardinalityMatching`], [`GreedyWeightedMatching`] | any undirected | no (heuristic) |
+//! | [`PathGrowingWeightedMatching`] | any undirected | no (1/2-approximation of maximum weight) |
+//! | [`HopcroftKarpMaximumCardinalityBipartiteMatching`] | bipartite, given the two sides | maximum cardinality |
+//! | [`MaximumWeightBipartiteMatching`], [`KuhnMunkresMinimalWeightBipartitePerfectMatching`] | bipartite | maximum weight / minimum-weight perfect |
+//! | [`DenseEdmondsMaximumCardinalityMatching`], [`SparseEdmondsMaximumCardinalityMatching`] | any undirected | maximum cardinality |
+//! | the Blossom V module | any undirected | minimum-weight perfect matching |
 
 mod base;
 pub mod blossom;

@@ -12,7 +12,12 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Minimum spanning trees/forests and minimum arborescences.
+//! Minimum spanning trees and arborescences.
+//!
+//! [`kruskal`], [`prim`] and [`boruvka`] return a [`SpanningTree`] (its edges and total weight) of an
+//! undirected graph, or a spanning forest if the graph is disconnected. [`minimum_arborescence`] and
+//! [`maximum_arborescence`] compute the Chu-Liu/Edmonds optimum branching of a directed graph.
+//! [`SpanningTreeAlgorithm`] is the trait shared by the class versions.
 
 use super::util::Indexed;
 use crate::graph::{DirectedGraph, Graph};
@@ -59,10 +64,6 @@ pub fn kruskal<G: Graph>(g: &G) -> SpanningTree<G::Edge> {
 }
 
 /// Prim's algorithm with a decrease-key heap. Returns a minimum spanning forest.
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn prim<G: Graph>(g: &G) -> SpanningTree<G::Edge> {
     let ix = Indexed::new(g);
     let n = ix.n();
@@ -211,7 +212,7 @@ fn chu_liu(n: usize, root: usize, edges: &[(usize, usize, f64)]) -> Option<Vec<u
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+/// Errors of the graph operations it performs are propagated.
 pub fn minimum_arborescence<G: DirectedGraph>(
     g: &G,
     root: &G::Vertex,
@@ -223,7 +224,7 @@ pub fn minimum_arborescence<G: DirectedGraph>(
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+/// Errors of the graph operations it performs are propagated.
 pub fn maximum_arborescence<G: DirectedGraph>(
     g: &G,
     root: &G::Vertex,

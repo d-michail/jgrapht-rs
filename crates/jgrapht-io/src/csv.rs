@@ -575,10 +575,6 @@ where
     V: Clone + Eq + Hash + 'static,
 {
     /// Creates an exporter for `format` with integer vertex identifiers and a comma delimiter.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(format: CsvFormat) -> Self {
         let mut ids = IntegerIdProvider::new();
         Self::with_vertex_id_provider(move |vertex| ids.id(vertex), format, ',')

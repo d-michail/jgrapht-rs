@@ -89,7 +89,8 @@ impl<
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn path(
         &self,
         s: &G::Vertex,

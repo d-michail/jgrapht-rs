@@ -235,7 +235,7 @@ impl<V: Clone + Eq + Hash> BinaryLiftingLcaFinder<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, root: V) -> Result<Self> {
         Self::with_roots(g, &[root])
     }
@@ -244,7 +244,7 @@ impl<V: Clone + Eq + Hash> BinaryLiftingLcaFinder<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_roots<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, roots: &[V]) -> Result<Self> {
         let forest = Forest::new(g, roots)?;
         let n = forest.vertices.len();
@@ -308,7 +308,7 @@ impl<V: Clone + Eq + Hash> EulerTourRmqLcaFinder<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, root: V) -> Result<Self> {
         Self::with_roots(g, &[root])
     }
@@ -317,7 +317,7 @@ impl<V: Clone + Eq + Hash> EulerTourRmqLcaFinder<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_roots<G: Graph<Vertex = V> + OutgoingGraph>(g: &G, roots: &[V]) -> Result<Self> {
         let forest = Forest::new(g, roots)?;
         let size = forest.tour.len();
@@ -392,7 +392,7 @@ impl<V: Clone + Eq + Hash> HeavyPathLcaFinder<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new<G: Graph<Vertex = V> + IncidenceGraph>(g: &G, root: V) -> Result<Self> {
         Self::with_roots(g, [root])
     }
@@ -401,7 +401,8 @@ impl<V: Clone + Eq + Hash> HeavyPathLcaFinder<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_roots<G: Graph<Vertex = V> + IncidenceGraph>(
         g: &G,
         roots: impl IntoIterator<Item = V>,
@@ -473,7 +474,7 @@ impl<'g, G: OutgoingGraph> TarjanLcaFinder<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G, root: G::Vertex) -> Result<Self> {
         Self::with_roots(graph, vec![root])
     }
@@ -482,7 +483,9 @@ impl<'g, G: OutgoingGraph> TarjanLcaFinder<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range;
+    /// [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_roots(graph: &'g G, roots: Vec<G::Vertex>) -> Result<Self> {
         if roots.is_empty() {
             return Err(GraphError::InvalidParameter {
@@ -590,7 +593,7 @@ impl<'g, G: DirectedGraph + IncidenceGraph> NaiveLcaFinder<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(NaiveLcaFinder { graph })
     }

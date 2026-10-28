@@ -12,7 +12,14 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-//! Vertex colouring heuristics.
+//! Vertex colouring.
+//!
+//! Every function and class returns a [`Coloring`]: the colour of each vertex (numbered from `0`) and
+//! the number of colours used. Heuristics: [`greedy_coloring`] (insertion order),
+//! [`largest_degree_first_coloring`], [`smallest_degree_last_coloring`], [`saturation_degree_coloring`]
+//! (DSATUR), [`RandomGreedyColoring`] (takes any random generator), [`ChordalGraphColoring`] (optimal on
+//! chordal graphs) and [`BrownBacktrackColoring`] (exact, exponential). [`is_proper_coloring`] checks a
+//! colouring, and [`color_refinement`] computes the stable colouring used for isomorphism tests.
 
 use super::cycle::{ChordalityInspector, IterationOrder};
 use super::util::Indexed;
@@ -94,10 +101,6 @@ pub fn largest_degree_first_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
 }
 
 /// Matula–Beck: greedy in reverse of the repeated-minimum-degree removal order.
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn smallest_degree_last_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
     let ix = Indexed::new(g);
     let nb = neighbor_lists(&ix);
@@ -120,10 +123,6 @@ pub fn smallest_degree_last_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
 }
 
 /// Brélaz' DSATUR heuristic: colour the vertex with most distinct neighbour colours next.
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn saturation_degree_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
     let ix = Indexed::new(g);
     let nb = neighbor_lists(&ix);
@@ -1052,7 +1051,8 @@ impl<'g, G: Graph> ColorRefinementAlgorithm<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_alpha(graph: &'g G, alpha: Coloring<G::Vertex>) -> Result<Self> {
         let used: HashSet<usize> = alpha.colors.values().copied().collect();
         let consistent = alpha.colors.len() == graph.vertex_count()

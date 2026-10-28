@@ -53,7 +53,7 @@ impl<'g, G: UndirectedGraph> GreedyMaximumCardinalityMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G, sort: bool) -> Result<Self> {
         Ok(GreedyMaximumCardinalityMatching { graph, sort })
     }
@@ -162,7 +162,7 @@ impl<'g, G: Graph> GreedyWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G, normalize_edge_costs: bool) -> Result<Self> {
         Self::with_epsilon(graph, normalize_edge_costs, DEFAULT_EPSILON)
     }
@@ -171,7 +171,7 @@ impl<'g, G: Graph> GreedyWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_epsilon(graph: &'g G, normalize_edge_costs: bool, epsilon: f64) -> Result<Self> {
         Ok(GreedyWeightedMatching {
             graph,

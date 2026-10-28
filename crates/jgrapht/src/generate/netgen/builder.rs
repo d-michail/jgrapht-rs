@@ -76,7 +76,8 @@ impl NetworkGeneratorConfigBuilder {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn build(&self) -> Result<NetworkGeneratorConfig> {
         if let Some(e) = &self.error {
             return Err(e.clone());

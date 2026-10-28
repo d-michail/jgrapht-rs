@@ -106,11 +106,9 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range;
+    /// [`GraphError::Internal`] if an internal invariant of the library is broken (a bug). Errors
+    /// of the graph operations it performs are propagated.
     pub fn generate_bipartite_matching_problem<
         G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph,
     >(
@@ -140,11 +138,9 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range;
+    /// [`GraphError::Internal`] if an internal invariant of the library is broken (a bug). Errors
+    /// of the graph operations it performs are propagated.
     pub fn generate_max_flow_problem<G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph>(
         &mut self,
         graph: &mut G,
@@ -175,7 +171,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn generate_minimum_cost_flow_problem<
         'g,
         G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph,

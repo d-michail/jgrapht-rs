@@ -24,7 +24,7 @@ use std::borrow::Borrow;
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+/// Errors of the graph operations it performs are propagated.
 pub fn complement_into<G, T>(g: &G, target: &mut T, loops: bool) -> Result<()>
 where
     G: Graph,
@@ -53,7 +53,7 @@ where
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+/// Errors of the graph operations it performs are propagated.
 pub fn line_graph_into<G, T>(g: &G, target: &mut T) -> Result<()>
 where
     G: IncidenceGraph,
@@ -66,7 +66,7 @@ where
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+/// Errors of the graph operations it performs are propagated.
 pub fn line_graph_weighted_into<G, T>(
     g: &G,
     target: &mut T,
@@ -123,7 +123,8 @@ where
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`](crate::GraphError) if an edge argument is not in the graph; errors of the underlying graph operations are propagated.
+/// Returns [`GraphError::EdgeNotFound`](crate::GraphError::EdgeNotFound) if an edge argument is not in the graph. Errors of the
+/// graph operations it performs are propagated.
 ///
 /// # Panics
 ///
