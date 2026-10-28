@@ -200,7 +200,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
         let initializer = GreedyMaximumCardinalityMatching::new(graph, false)?;
         Self::with_initializer(graph, Some(Box::new(initializer)))
@@ -210,7 +210,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_initializer(
         graph: &'g G,
         initializer: Option<Box<dyn MatchingAlgorithm<G::Vertex, G::Edge> + 'g>>,
@@ -451,7 +451,8 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::EdgeNotFound`](crate::GraphError::EdgeNotFound) if an edge argument is not in the graph. Errors of the
+    /// graph operations it performs are propagated.
     ///
     /// # Panics
     ///

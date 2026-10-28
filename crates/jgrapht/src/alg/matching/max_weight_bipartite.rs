@@ -82,7 +82,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(
         graph: &'g G,
         partition1: IndexSet<G::Vertex>,

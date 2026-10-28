@@ -82,11 +82,8 @@ impl FRQuadTree {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::Internal`] if an internal invariant of the library is broken (a bug).
+    /// Errors of the graph operations it performs are propagated.
     pub fn insert(&mut self, p: Point2D) -> Result<()> {
         let mut cur = 0;
         loop {
@@ -183,11 +180,8 @@ impl FRQuadTree {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn centroid(&self, n: NodeId) -> Result<Point2D> {
         match &self.nodes[n].points {
             Some(p) => {
@@ -263,10 +257,6 @@ pub const DEFAULT_THETA_FACTOR: f64 = 0.5;
 
 impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
     /// Create a new layout algorithm
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(iterations: usize, normalization_factor: f64, rng: R) -> Self {
         Self::with_tolerance(
             iterations,
@@ -281,7 +271,7 @@ impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_tolerance(
         iterations: usize,
         normalization_factor: f64,
@@ -308,7 +298,8 @@ impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn indexed(
         iterations: usize,
         theta: f64,

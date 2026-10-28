@@ -87,10 +87,6 @@ pub mod points {
         Point2D::of(a.x * scalar, a.y * scalar)
     }
     /// Equal up to a tolerance of `1e-9` in each coordinate.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn equals(p1: Point2D, p2: Point2D) -> bool {
         let c = ToleranceDoubleComparator::new(1e-9).expect("positive tolerance");
         c.compare(p1.x, p2.x) == 0 && c.compare(p1.y, p2.y) == 0

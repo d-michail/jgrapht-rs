@@ -280,11 +280,9 @@ impl<T> ArcRingArena<T> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::DuplicateElement`] if an element is already present;
+    /// [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn move_from(&mut self, list: RingId, index: usize, moved: RingId) -> Result<()> {
         if list == moved {
             return Err(GraphError::DuplicateElement);

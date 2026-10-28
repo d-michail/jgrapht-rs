@@ -61,7 +61,7 @@ impl<R: RandomSource> GnpRandomGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(n: usize, p: f64, rng: R, create_loops: bool) -> Result<Self> {
         Ok(GnpRandomGraphGenerator {
             n,
@@ -120,7 +120,7 @@ impl<R: RandomSource> GnmRandomGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(n: usize, m: usize, rng: R, loops: bool, multiple_edges: bool) -> Result<Self> {
         Ok(GnmRandomGraphGenerator {
             n,
@@ -231,7 +231,8 @@ impl<R: RandomSource> BarabasiAlbertGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(m0: usize, m: usize, n: usize, rng: R) -> Result<Self> {
         if m0 < 1 {
             return Err(GraphError::InvalidParameter {
@@ -316,7 +317,8 @@ impl<R: RandomSource> BarabasiAlbertForestGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(t: usize, n: usize, rng: R) -> Result<Self> {
         if t < 1 {
             return Err(GraphError::InvalidParameter {
@@ -370,7 +372,8 @@ impl<R: RandomSource> ScaleFreeGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(size: i64, rng: R) -> Result<Self> {
         if size < 0 {
             return Err(GraphError::InvalidParameter {
@@ -435,7 +438,9 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range;
+    /// [`GraphError::MissingParameter`] if a required parameter was not supplied. Errors of the
+    /// graph operations it performs are propagated.
     pub fn new(
         alpha: f32,
         gamma: f32,
@@ -625,7 +630,8 @@ impl<R: RandomSource> WattsStrogatzGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(n: usize, k: usize, p: f64, add_instead_of_rewire: bool, rng: R) -> Result<Self> {
         if n < 3 {
             return Err(GraphError::InvalidParameter {
@@ -716,7 +722,8 @@ impl<R: RandomSource> PruferTreeGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(n: usize, rng: R) -> Result<Self> {
         if n == 0 {
             return Err(GraphError::InvalidParameter {
@@ -736,7 +743,8 @@ impl PruferTreeGenerator<rand::rngs::StdRng> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn from_sequence(sequence: &[usize]) -> Result<Self> {
         let n = sequence.len() + 2;
         if sequence.iter().any(|&x| x >= n) {
@@ -828,7 +836,8 @@ impl<R: RandomSource> RandomRegularGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(n: usize, d: usize, rng: R) -> Result<Self> {
         if d > n {
             return Err(GraphError::InvalidParameter {
@@ -978,7 +987,8 @@ impl<R: RandomSource> PlantedPartitionGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(l: usize, k: usize, p: f64, q: f64, rng: R, self_loops: bool) -> Result<Self> {
         if !(0.0..=1.0).contains(&p) {
             return Err(GraphError::InvalidParameter {
@@ -1007,7 +1017,8 @@ impl<R: RandomSource> PlantedPartitionGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidState`] if the operation is called in a state that does not
+    /// allow it. Errors of the graph operations it performs are propagated.
     pub fn generate_communities<G: GraphMut>(
         &mut self,
         target: &mut G,
@@ -1080,7 +1091,8 @@ impl<R: RandomSource> KleinbergSmallWorldGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(n: i64, p: i64, q: i64, r: i64, rng: R) -> Result<Self> {
         if n < 1 {
             return Err(GraphError::InvalidParameter {
@@ -1200,7 +1212,8 @@ impl<R: RandomSource> LinearizedChordDiagramGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(n: usize, m: usize, rng: R) -> Result<Self> {
         if n == 0 {
             return Err(GraphError::InvalidParameter {
@@ -1257,7 +1270,9 @@ impl<R: RandomSource> GnmRandomBipartiteGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidState`] if the operation is called in a state that does not
+    /// allow it; [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the
+    /// graph operations it performs are propagated.
     pub fn generate_partitions<G: GraphMut>(
         &mut self,
         target: &mut G,
@@ -1329,7 +1344,7 @@ impl<R: RandomSource> GnpRandomBipartiteGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(n1: usize, n2: usize, p: f64, rng: R) -> Result<Self> {
         Ok(GnpRandomBipartiteGraphGenerator {
             n1,
@@ -1342,7 +1357,8 @@ impl<R: RandomSource> GnpRandomBipartiteGraphGenerator<R> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidState`] if the operation is called in a state that does not
+    /// allow it. Errors of the graph operations it performs are propagated.
     pub fn generate_partitions<G: GraphMut>(
         &mut self,
         target: &mut G,

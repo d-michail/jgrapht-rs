@@ -27,7 +27,9 @@ use std::collections::BinaryHeap;
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+/// Returns [`GraphError::InvalidGraph`] if the graph is not undirected;
+/// [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph operations
+/// it performs are propagated.
 pub fn greedy_spanner<G: Graph>(g: &G, k: usize) -> Result<Vec<G::Edge>> {
     if g.graph_type().directed {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
@@ -122,7 +124,9 @@ impl<'g, G: Graph> GreedyMultiplicativeSpanner<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidGraph`] if the graph is not undirected;
+    /// [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         if graph.graph_type().directed {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
@@ -140,7 +144,8 @@ impl<'g, G: Graph> GreedyMultiplicativeSpanner<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidWeight`] if an edge weight is negative, NaN or not finite.
+    /// Errors of the graph operations it performs are propagated.
     pub fn spanner(&self) -> Result<Spanner<G::Edge>> {
         let weighted = self.graph.graph_type().weighted;
         let ix = Indexed::new(self.graph);

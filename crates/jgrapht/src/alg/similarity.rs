@@ -221,7 +221,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(tree1: &'a G, root1: G::Vertex, tree2: &'a G, root2: G::Vertex) -> Result<Self> {
         Self::with_costs(
             tree1,
@@ -238,7 +238,8 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidGraph`] if the graph is not tree. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_costs(
         tree1: &'a G,
         root1: G::Vertex,

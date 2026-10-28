@@ -29,7 +29,8 @@ impl CsrBooleanMatrix {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn new(rows: usize, columns: usize, entries: &[(usize, usize)]) -> Result<Self> {
         let mut sorted = entries.to_vec();
         sorted.sort_unstable();

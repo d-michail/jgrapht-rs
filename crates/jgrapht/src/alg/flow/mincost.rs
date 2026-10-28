@@ -483,7 +483,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn solve<P>(&mut self, problem: &P) -> Result<MinimumCostSolution<V, E>>
     where
         P: MinimumCostFlowProblem,
@@ -512,11 +512,9 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::InvalidGraph`] if the graph is not directed; [`GraphError::Internal`]
+    /// if an internal invariant of the library is broken (a bug). Errors of the graph operations it
+    /// performs are propagated.
     pub fn get_minimum_cost_flow<P>(&mut self, problem: &P) -> Result<MinimumCostFlow<E>>
     where
         P: MinimumCostFlowProblem,

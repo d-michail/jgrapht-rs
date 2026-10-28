@@ -180,7 +180,7 @@ pub trait MaximumFlowAlgorithm<V, E>: MaximumFlowValueAlgorithm<V> {
     ///
     /// # Errors
     ///
-    /// Returns [`GraphError::SourceEqualsSink`](crate::GraphError::SourceEqualsSink) when both vertices coincide, [`GraphError::VertexNotFound`](crate::GraphError::VertexNotFound) when one is missing, and an `InvalidWeight` error for a negative or NaN capacity.
+    /// Returns [`GraphError::SourceEqualsSink`] when both vertices coincide, [`GraphError::VertexNotFound`] when one is missing, and an `InvalidWeight` error for a negative or NaN capacity.
     fn maximum_flow(&mut self, source: &V, sink: &V) -> Result<MaximumFlow<V, E>>;
 }
 
@@ -275,7 +275,8 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidWeight`] if an edge weight is negative, NaN or not finite.
+    /// Errors of the graph operations it performs are propagated.
     pub fn check_capacities(&self, epsilon: f64) -> Result<()> {
         for e in &self.es {
             let capacity = self.weight(self.eindex[e]);
@@ -297,7 +298,9 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; source and sink coincide; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph;
+    /// [`GraphError::SourceEqualsSink`] if the source and the sink are the same vertex. Errors of
+    /// the graph operations it performs are propagated.
     pub fn resolve(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<(usize, usize)> {
         let s = self
             .vertex_index(source)
@@ -317,7 +320,7 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn init(&mut self, source: usize, sink: usize) -> Result<()> {
         let n = self.vs.len();
         self.arcs = (0..self.es.len())

@@ -51,7 +51,7 @@ impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> crate::Result<Self> {
         Self::with_algorithm(g, &FloydWarshallShortestPaths::new(g)?)
     }
@@ -61,7 +61,7 @@ impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_algorithm<G: Graph<Vertex = V>, A: ShortestPathAlgorithm<G>>(
         g: &G,
         algorithm: &A,

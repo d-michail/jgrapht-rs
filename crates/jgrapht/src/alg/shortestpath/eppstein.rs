@@ -118,7 +118,8 @@ impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinShortestPathIterator<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn new(graph: &'g G, source: &G::Vertex, sink: &G::Vertex) -> Result<Self> {
         let graph_type = graph.graph_type();
         if !graph_type.directed || !graph_type.is_simple() {
@@ -551,7 +552,7 @@ impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinKShortestPath<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn get_paths(
         &self,
         source: &G::Vertex,

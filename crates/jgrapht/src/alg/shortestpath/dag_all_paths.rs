@@ -49,7 +49,10 @@ impl DagAllPathsCounter {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph;
+    /// [`GraphError::EdgeNotFound`] if an edge argument is not in the graph;
+    /// [`GraphError::InvalidGraph`] if the graph is not acyclic. Errors of the graph operations it
+    /// performs are propagated.
     ///
     /// # Panics
     ///

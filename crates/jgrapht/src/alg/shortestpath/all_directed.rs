@@ -135,7 +135,7 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn get_all_paths(
         &self,
         source: &G::Vertex,
@@ -155,7 +155,9 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::MissingParameter`] if a required parameter was not supplied;
+    /// [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of the graph
+    /// operations it performs are propagated.
     pub fn get_all_paths_between<'a>(
         &self,
         source_vertices: impl IntoIterator<Item = &'a G::Vertex>,

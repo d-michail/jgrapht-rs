@@ -45,7 +45,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
         Self::with_options_and_objective(
             graph,
@@ -58,7 +58,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_objective(graph: &'g G, objective_sense: ObjectiveSense) -> Result<Self> {
         Self::with_options_and_objective(graph, BlossomVOptions::default(), objective_sense)
     }
@@ -67,7 +67,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_options(graph: &'g G, options: BlossomVOptions) -> Result<Self> {
         Self::with_options_and_objective(graph, options, ObjectiveSense::Maximize)
     }
@@ -76,7 +76,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_options_and_objective(
         graph: &'g G,
         options: BlossomVOptions,
@@ -95,7 +95,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn test_optimality(&mut self) -> Result<bool> {
         Ok(self.get_error()? < BLOSSOM_V_EPSILON)
     }
@@ -104,11 +104,8 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::Internal`](crate::GraphError::Internal) if an internal invariant of the library is broken (a bug).
+    /// Errors of the graph operations it performs are propagated.
     pub fn get_error(&mut self) -> Result<f64> {
         self.compute()?;
         self.error

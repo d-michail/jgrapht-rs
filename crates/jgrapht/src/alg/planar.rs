@@ -347,10 +347,6 @@ impl<'g, G: IncidenceGraph> BoyerMyrvoldPlanarityInspector<'g, G> {
 
     /// Tests the planarity of the graph and returns the certificate of the answer: a combinatorial
     /// embedding if it is planar, a subdivision of K5 or K3,3 if it is not.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn planarity(&mut self) -> PlanarityResult<'g, G> {
         if self.is_planar() {
             self.lazy_compute_embedding();

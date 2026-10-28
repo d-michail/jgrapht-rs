@@ -53,11 +53,8 @@ fn check<G: Graph>(g: &G, terminals: &[G::Vertex]) -> Result<()> {
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
+/// Returns [`GraphError::InvalidGraph`] if the graph is not connected. Errors of the graph
+/// operations it performs are propagated.
 pub fn kmb_steiner_tree<G: OutgoingGraph>(
     g: &G,
     terminals: &[G::Vertex],
@@ -133,7 +130,9 @@ pub fn kmb_steiner_tree<G: OutgoingGraph>(
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] if a numeric or collection parameter is out of range; the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+/// Returns [`GraphError::InvalidParameter`] if a parameter is out of range;
+/// [`GraphError::InvalidGraph`] if the graph is not connected. Errors of the graph operations it
+/// performs are propagated.
 pub fn dreyfus_wagner_weight<G: Graph>(g: &G, terminals: &[G::Vertex]) -> Result<f64> {
     check(g, terminals)?;
     let ix = Indexed::new(g);

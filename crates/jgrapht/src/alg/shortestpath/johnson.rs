@@ -88,7 +88,7 @@ impl<'g, G: OutgoingGraph> JohnsonShortestPaths<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(Self {
             graph,

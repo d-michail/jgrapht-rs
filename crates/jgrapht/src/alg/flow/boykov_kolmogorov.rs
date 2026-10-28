@@ -90,7 +90,7 @@ impl<'g, G: OutgoingGraph> BoykovKolmogorovMFImpl<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
@@ -99,7 +99,7 @@ impl<'g, G: OutgoingGraph> BoykovKolmogorovMFImpl<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         let net = FlowNet::new(network, epsilon)?;
         net.check_capacities(epsilon)?;

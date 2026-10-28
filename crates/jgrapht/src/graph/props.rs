@@ -24,7 +24,8 @@ use std::collections::{HashMap, HashSet, VecDeque};
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+/// Returns [`GraphError::InvalidGraph`] if the graph is not weighted. Errors of the graph
+/// operations it performs are propagated.
 pub fn require_weighted<G: Graph>(g: &G) -> Result<&G> {
     if g.graph_type().weighted {
         Ok(g)
@@ -36,7 +37,8 @@ pub fn require_weighted<G: Graph>(g: &G) -> Result<&G> {
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+/// Returns [`GraphError::InvalidGraph`] if the graph is not directed. Errors of the graph
+/// operations it performs are propagated.
 pub fn require_directed<G: Graph>(g: &G) -> Result<&G> {
     if g.graph_type().directed {
         Ok(g)
@@ -48,7 +50,8 @@ pub fn require_directed<G: Graph>(g: &G) -> Result<&G> {
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+/// Returns [`GraphError::InvalidGraph`] if the graph is not undirected. Errors of the graph
+/// operations it performs are propagated.
 pub fn require_undirected<G: Graph>(g: &G) -> Result<&G> {
     if !g.graph_type().directed {
         Ok(g)

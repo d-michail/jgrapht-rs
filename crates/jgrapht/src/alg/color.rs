@@ -94,10 +94,6 @@ pub fn largest_degree_first_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
 }
 
 /// Matula–Beck: greedy in reverse of the repeated-minimum-degree removal order.
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn smallest_degree_last_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
     let ix = Indexed::new(g);
     let nb = neighbor_lists(&ix);
@@ -120,10 +116,6 @@ pub fn smallest_degree_last_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
 }
 
 /// Brélaz' DSATUR heuristic: colour the vertex with most distinct neighbour colours next.
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn saturation_degree_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
     let ix = Indexed::new(g);
     let nb = neighbor_lists(&ix);
@@ -1052,7 +1044,8 @@ impl<'g, G: Graph> ColorRefinementAlgorithm<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_alpha(graph: &'g G, alpha: Coloring<G::Vertex>) -> Result<Self> {
         let used: HashSet<usize> = alpha.colors.values().copied().collect();
         let consistent = alpha.colors.len() == graph.vertex_count()

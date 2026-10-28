@@ -70,10 +70,6 @@ pub fn connected_component_of<G: Graph>(g: &G, v: &G::Vertex) -> Option<Vec<G::V
 
 /// Strongly connected components (Tarjan, iterative). Components come out in reverse
 /// topological order of the condensation.
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn strongly_connected_components<G: DirectedGraph>(g: &G) -> Vec<Vec<G::Vertex>> {
     let ix = Indexed::new(g);
     let n = ix.n();
@@ -445,11 +441,8 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn connected_set_of<G: Graph<Vertex = V> + IncidenceGraph>(
         &mut self,
         g: &G,
@@ -485,7 +478,7 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn path_exists<G: Graph<Vertex = V> + IncidenceGraph>(
         &mut self,
         g: &G,
@@ -509,10 +502,6 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
     }
 
     /// Called when edge added.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn edge_added(&mut self, source: &V, target: &V) {
         let Some(sets) = &mut self.connected_sets else {
             self.partial.clear();
@@ -597,10 +586,6 @@ pub struct GabowStrongConnectivityInspector<'g, G: DirectedGraph> {
 
 impl<'g, G: DirectedGraph> GabowStrongConnectivityInspector<'g, G> {
     /// Constructor
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(graph: &'g G) -> Self {
         let ix = Indexed::new(graph);
         let n = ix.n();
@@ -982,7 +967,8 @@ impl<'g, G: IncidenceGraph> BiconnectivityInspector<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn blocks_of(&self, v: &G::Vertex) -> Result<Vec<&HashSet<G::Vertex>>> {
         let ix = self
             .vertex_to_blocks
@@ -1008,7 +994,8 @@ impl<'g, G: IncidenceGraph> BiconnectivityInspector<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn connected_component_of(&self, v: &G::Vertex) -> Result<&HashSet<G::Vertex>> {
         let i = self
             .vertex_to_component
@@ -1250,10 +1237,6 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
     }
 
     /// Computes the edge connectivity of the graph.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn edge_connectivity(&mut self) -> usize {
         if self.edge_connectivity.is_none() {
             self.edge_connectivity = Some(if self.graph.graph_type().directed {
@@ -1269,11 +1252,9 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::InvalidGraph`] if the graph is not non empty; [`GraphError::Internal`]
+    /// if an internal invariant of the library is broken (a bug). Errors of the graph operations it
+    /// performs are propagated.
     pub fn vertex_connectivity(&mut self) -> Result<usize> {
         if self.vertex_connectivity.is_none() {
             let m = self
@@ -1298,7 +1279,7 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn is_k_vertex_connected(&mut self, k: usize) -> Result<bool> {
         Ok(k <= self.vertex_connectivity()?)
     }

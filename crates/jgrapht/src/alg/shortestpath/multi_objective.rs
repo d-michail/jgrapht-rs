@@ -152,7 +152,8 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>> MartinShortestPath<'g, G, F> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -205,7 +206,8 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>> MartinShortestPath<'g, G, F> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn get_paths_between(
         &self,
         source: &G::Vertex,
@@ -268,7 +270,8 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_epsilon(graph: &'g G, edge_weight: F, epsilon: f64) -> Result<Self> {
         if epsilon.is_nan() || epsilon < 0.0 {
             return Err(GraphError::must_be_non_negative("epsilon"));
@@ -284,7 +287,8 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -336,7 +340,8 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn get_paths_between(
         &self,
         source: &G::Vertex,

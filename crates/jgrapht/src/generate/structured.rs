@@ -217,7 +217,8 @@ impl CompleteBipartite {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn between<G: GraphMut>(target: &mut G, a: &[G::Vertex], b: &[G::Vertex]) -> Result<()> {
         if a.is_empty() || b.is_empty() {
             return Err(GraphError::InvalidParameter {
@@ -431,7 +432,8 @@ impl<V: Clone + Eq + Hash> Complement<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::EdgeNotFound`] if an edge argument is not in the graph. Errors of the
+    /// graph operations it performs are propagated.
     ///
     /// # Panics
     ///
@@ -470,7 +472,7 @@ impl<V: Clone + Eq + Hash> Complement<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn generate_into<G: GraphMut<Vertex = V>>(&self, target: &mut G) -> Result<()> {
         target.add_vertices(self.vertices.iter().cloned());
         let n = self.vertices.len();
@@ -536,7 +538,8 @@ impl<V: Clone + Eq + Hash> SimpleWeightedGraphMatrixGenerator<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::MissingParameter`] if a required parameter was not supplied. Errors of
+    /// the graph operations it performs are propagated.
     pub fn generate_into<G: GraphMut<Vertex = V>>(&self, target: &mut G) -> Result<()> {
         let weights = self
             .weights
@@ -604,7 +607,8 @@ impl<V: Clone + Eq + Hash> SimpleWeightedBipartiteGraphMatrixGenerator<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::MissingParameter`] if a required parameter was not supplied. Errors of
+    /// the graph operations it performs are propagated.
     pub fn generate_into<G: GraphMut<Vertex = V>>(&self, target: &mut G) -> Result<()> {
         let weights = self
             .weights

@@ -78,10 +78,6 @@ impl<'g, G: DirectedGraph> HowardMinimumMeanCycle<'g, G> {
     }
 
     /// Creates an instance with the given maximum iterations.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn with_maximum_iterations(graph: &'g G, maximum_iterations: usize) -> Self {
         Self::with_strong_connectivity(
             graph,
@@ -98,7 +94,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_strong_connectivity(
         graph: &'g G,
         maximum_iterations: usize,

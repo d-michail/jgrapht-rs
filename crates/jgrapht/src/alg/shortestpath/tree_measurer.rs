@@ -39,7 +39,8 @@ impl<'g, G: OutgoingGraph> TreeMeasurer<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidGraph`] if the graph is not undirected. Errors of the graph
+    /// operations it performs are propagated.
     pub fn graph_center(&self) -> Result<Vec<G::Vertex>> {
         if self.graph.graph_type().directed {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));

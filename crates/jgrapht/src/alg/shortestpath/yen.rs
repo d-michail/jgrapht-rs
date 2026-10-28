@@ -78,7 +78,7 @@ impl<'g, G: OutgoingGraph> YenShortestPathIterator<'g, G, AllowAllPaths> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G, source: &G::Vertex, sink: &G::Vertex) -> Result<Self> {
         Self::with_validator(graph, source, sink, AllowAllPaths)
     }
@@ -89,7 +89,8 @@ impl<'g, G: OutgoingGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, P
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn with_validator(
         graph: &'g G,
         source: &G::Vertex,
@@ -283,7 +284,7 @@ impl<'g, G: OutgoingGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, 
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -549,11 +550,8 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn get_paths(
         &self,
         source: &G::Vertex,

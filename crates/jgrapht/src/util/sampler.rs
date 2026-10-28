@@ -30,7 +30,7 @@ impl AliasMethodSampler {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(p: &[f64]) -> Result<Self> {
         Self::with_epsilon(p, ToleranceDoubleComparator::DEFAULT_EPSILON)
     }
@@ -39,11 +39,8 @@ impl AliasMethodSampler {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_epsilon(p: &[f64], epsilon: f64) -> Result<Self> {
         let comparator = ToleranceDoubleComparator::new(epsilon)?;
         let bad = || GraphError::InvalidParameter {

@@ -56,7 +56,8 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::DuplicateElement`] if an element is already present. Errors of the
+    /// graph operations it performs are propagated.
     pub fn add_element(&mut self, element: T) -> Result<()> {
         if self.contains(&element) {
             return Err(GraphError::DuplicateElement);
@@ -76,7 +77,8 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::ElementNotFound`] if an element is not present. Errors of the graph
+    /// operations it performs are propagated.
     pub fn find(&mut self, element: &T) -> Result<T> {
         if !self.contains(element) {
             return Err(GraphError::ElementNotFound);
@@ -105,7 +107,8 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::ElementNotFound`] if an element is not present. Errors of the graph
+    /// operations it performs are propagated.
     pub fn union(&mut self, element1: &T, element2: &T) -> Result<()> {
         if !self.contains(element1) || !self.contains(element2) {
             return Err(GraphError::ElementNotFound);
@@ -132,7 +135,7 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn in_same_set(&mut self, element1: &T, element2: &T) -> Result<bool> {
         Ok(self.find(element1)? == self.find(element2)?)
     }
@@ -188,10 +191,6 @@ impl<T: Eq + Hash + Clone + Display> Display for UnionFind<T> {
 
 impl<T: Eq + Hash + Clone + Debug> UnionFind<T> {
     /// The current partition, sets in order of first appearance.
-    ///
-    /// # Panics
-    ///
-    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn sets(&mut self) -> Vec<Vec<T>> {
         let keys: Vec<T> = self.parent.keys().cloned().collect();
         let mut sets: IndexMap<T, Vec<T>> = IndexMap::new();

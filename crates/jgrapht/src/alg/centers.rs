@@ -36,11 +36,8 @@ use std::hash::Hash;
 ///
 /// # Errors
 ///
-/// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
+/// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+/// operations it performs are propagated.
 pub fn greedy_k_center<G: Graph>(g: &G, k: usize, weighted: bool) -> Result<(Vec<G::Vertex>, f64)> {
     let ix = Indexed::new(g);
     let n = ix.n();

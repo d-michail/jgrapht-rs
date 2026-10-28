@@ -70,7 +70,7 @@ impl<'g, G: OutgoingGraph> EdmondsKarpMFImpl<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
@@ -79,7 +79,8 @@ impl<'g, G: OutgoingGraph> EdmondsKarpMFImpl<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         if epsilon <= 0.0 {
             return Err(GraphError::must_be_positive("epsilon"));
@@ -97,7 +98,7 @@ impl<'g, G: OutgoingGraph> EdmondsKarpMFImpl<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn calculate_maximum_flow(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
         self.calculate(source, sink)
     }

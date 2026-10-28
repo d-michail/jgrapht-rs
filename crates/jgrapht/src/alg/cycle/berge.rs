@@ -1162,7 +1162,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn contains_pyramid<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
@@ -1175,7 +1175,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn contains_jewel<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
@@ -1188,7 +1188,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn contains_clean_shortest_odd_hole<G: Graph<Vertex = V>>(
         &mut self,
         g: &G,
@@ -1204,7 +1204,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn has_configuration_type1<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
@@ -1217,7 +1217,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn has_configuration_type2<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
@@ -1230,7 +1230,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn has_configuration_type3<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
@@ -1253,7 +1253,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn routine3<G: Graph<Vertex = V>>(&self, g: &G) -> Result<Vec<Vec<V>>> {
         let (h, vs) = Self::convert(g)?;
         Ok(Core::routine3(&h)
@@ -1279,7 +1279,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn is_berge<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         self.is_berge_with_certificate(g, false)
     }
@@ -1289,7 +1289,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn is_berge_with_certificate<G: Graph<Vertex = V>>(
         &mut self,
         g: &G,

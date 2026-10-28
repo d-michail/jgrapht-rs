@@ -554,7 +554,7 @@ macro_rules! vf2_inspector {
             ///
             /// # Errors
             ///
-            /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+            /// Errors of the graph operations it performs are propagated.
             pub fn new(graph1: &'g G, graph2: &'g G) -> Result<Self> {
                 Self::with_options(graph1, graph2, None, None, true)
             }
@@ -563,7 +563,7 @@ macro_rules! vf2_inspector {
             ///
             /// # Errors
             ///
-            /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+            /// Errors of the graph operations it performs are propagated.
             pub fn with_options(
                 graph1: &'g G,
                 graph2: &'g G,

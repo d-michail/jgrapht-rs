@@ -182,7 +182,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Errors of the graph operations it performs are propagated.
     ///
     /// # Panics
     ///
@@ -296,7 +296,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_vertex_list<G>(g: &G, vertices: Vec<V>, weight: f64) -> Result<Self>
     where
         G: Graph<Vertex = V, Edge = E>,
@@ -309,7 +309,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn from_edge_list<G>(g: &G, start: V, end: V, edges: Vec<E>, weight: f64) -> Result<Self>
     where
         G: Graph<Vertex = V, Edge = E>,
@@ -321,7 +321,8 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an edge argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::EdgeNotFound`] if an edge argument is not in the graph. Errors of the
+    /// graph operations it performs are propagated.
     pub fn verify<G>(&self, g: &G) -> Result<()>
     where
         G: Graph<Vertex = V, Edge = E>,
@@ -373,7 +374,8 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an edge argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::EdgeNotFound`] if an edge argument is not in the graph. Errors of the
+    /// graph operations it performs are propagated.
     pub fn reverse<G>(&self, g: &G, weight: Option<&dyn Fn(&Self) -> f64>) -> Result<Self>
     where
         G: Graph<Vertex = V, Edge = E>,
@@ -425,7 +427,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Errors of the graph operations it performs are propagated.
     pub fn concat(&self, extension: &Self, weight: &dyn Fn(&Self) -> f64) -> Result<Self> {
         if self.is_empty() {
             return Err(GraphError::InvalidGraphWalk(

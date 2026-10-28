@@ -116,7 +116,7 @@ impl<'g, G> BellmanFord<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_epsilon(graph: &'g G, epsilon: f64) -> Result<Self> {
         Self::with_options(graph, epsilon, usize::MAX)
     }
@@ -125,7 +125,8 @@ impl<'g, G> BellmanFord<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
+    /// operations it performs are propagated.
     pub fn with_options(graph: &'g G, epsilon: f64, max_hops: usize) -> Result<Self> {
         if epsilon <= 0.0 {
             return Err(GraphError::must_be_positive("tolerance"));
@@ -196,7 +197,9 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; an edge weight is NaN or infinite; a negative-weight cycle is reachable; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph;
+    /// [`GraphError::InvalidWeight`] if an edge weight is negative, NaN or not finite. Errors of
+    /// the graph operations it performs are propagated.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -275,7 +278,8 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
+    /// the graph operations it performs are propagated.
     pub fn get_path(
         &self,
         source: &G::Vertex,

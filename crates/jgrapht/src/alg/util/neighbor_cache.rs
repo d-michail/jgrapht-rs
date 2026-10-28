@@ -135,7 +135,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn predecessors_of<G: Graph<Vertex = V> + IncomingGraph>(
         &mut self,
         g: &G,
@@ -157,7 +157,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn successors_of<G: Graph<Vertex = V> + OutgoingGraph>(
         &mut self,
         g: &G,
@@ -179,7 +179,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn neighbors_of<G: Graph<Vertex = V> + IncidenceGraph>(
         &mut self,
         g: &G,
@@ -200,7 +200,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn neighbor_list_of<G: Graph<Vertex = V> + IncidenceGraph>(
         &mut self,
         g: &G,
@@ -229,7 +229,7 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn edge_removed(&mut self, source: &V, target: &V) -> Result<()> {
         if let Some(n) = self.successors.get_mut(source) {
             n.remove(target)?;

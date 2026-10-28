@@ -53,10 +53,6 @@ impl<V> TreeDecomposition<V> {
 }
 
 /// Tree decomposition from a greedy elimination ordering (direction ignored).
-///
-/// # Panics
-///
-/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn tree_decomposition<G: Graph>(
     g: &G,
     heuristic: EliminationHeuristic,
@@ -203,7 +199,7 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(tree: &'g G, root: G::Vertex) -> Result<Self> {
         Self::with_roots(tree, [root])
     }
@@ -212,7 +208,7 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn with_roots(forest: &'g G, roots: impl IntoIterator<Item = G::Vertex>) -> Result<Self> {
         let mapping = VertexToIntegerMapping::new(forest.vertices_cloned())?;
         let n = forest.vertex_count();
@@ -361,7 +357,7 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn path_decomposition(&self) -> Result<PathDecomposition<G::Vertex, G::Edge>> {
         let walks = self
             .paths
@@ -528,7 +524,7 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Errors of the graph operations it performs are propagated.
     pub fn decomposition(&self, fine: bool) -> Result<DmDecomposition<G::Vertex>> {
         let matching = HopcroftKarpMaximumCardinalityBipartiteMatching::new(
             self.graph,
@@ -543,7 +539,8 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    /// Returns [`GraphError::EdgeNotFound`] if an edge argument is not in the graph. Errors of the
+    /// graph operations it performs are propagated.
     ///
     /// # Panics
     ///

@@ -89,7 +89,8 @@ where
     ///
     /// # Errors
     ///
-    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    /// Returns [`GraphError::MissingVertexData`] if a map or function does not cover every vertex.
+    /// Errors of the graph operations it performs are propagated.
     pub fn new(
         graph: &'g G,
         length_bound: usize,
