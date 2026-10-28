@@ -145,7 +145,7 @@ fn direction_name(directed: bool) -> &'static str {
 impl<'de> Deserialize<'de> for DefaultEdge {
     fn deserialize<D: Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
         let id = u64::deserialize(d)?;
-        DefaultEdge::reserve_detached(id);
+        NEXT_DEFAULT_EDGE.fetch_max(id.saturating_add(1), std::sync::atomic::Ordering::Relaxed);
         Ok(DefaultEdge(id))
     }
 }
