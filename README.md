@@ -172,19 +172,18 @@ The benchmark files are in `crates/jgrapht/benches/` (`graph_perf`, `shortestpat
 
 If you use this library please cite the following paper:
 
-* D. Michail, J. Kinable, B. Naveh, J. V. Sichi. **JGraphT—A Java Library for Graph Data Structures and Algorithms.** ACM Journal of Experimental Algorithmics, 24(1), 2019. [web](https://doi.org/10.1145/3350513)
+* D. Michail, J. Kinable, B. Naveh, J. V. Sichi. **JGraphT—A Java Library for Graph Data Structures and Algorithms.** ACM Journal of Experimental Algorithmics, 25, 2020. [web](https://doi.org/10.1145/3381449)
 
 ```
-@article{michail2019jgrapht,
+@article{michail2020jgrapht,
       title={JGraphT---A Java Library for Graph Data Structures and Algorithms},
       author={Michail, Dimitrios and Kinable, Joris and Naveh, Barak and Sichi, John V.},
       journal={ACM Journal of Experimental Algorithmics},
-      volume={24},
-      number={1},
-      year={2019},
+      volume={25},
+      year={2020},
       publisher={ACM},
-      doi={10.1145/3350513},
-      url={https://doi.org/10.1145/3350513},
+      doi={10.1145/3381449},
+      url={https://doi.org/10.1145/3381449},
 }
 ```
 
