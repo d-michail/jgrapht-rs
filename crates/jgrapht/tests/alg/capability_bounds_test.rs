@@ -361,8 +361,8 @@ mod path_enumeration {
     fn yen_runs_without_an_incoming_index() {
         let no = SparseIntDirectedWeightedGraph::<NoIncoming>::from_edges(4, &EDGES).unwrap();
         let full = SparseIntDirectedWeightedGraph::<FullIncoming>::from_edges(4, &EDGES).unwrap();
-        let on_no = YenKShortestPath::new(&no).get_paths(&0, &3, 5).unwrap();
-        let on_full = YenKShortestPath::new(&full).get_paths(&0, &3, 5).unwrap();
+        let on_no = YenKShortestPath::new(&no).paths(&0, &3, 5).unwrap();
+        let on_full = YenKShortestPath::new(&full).paths(&0, &3, 5).unwrap();
         assert_eq!(lengths(&on_no), [3.0, 4.0, 6.0]);
         assert_eq!(lengths(&on_no), lengths(&on_full));
     }

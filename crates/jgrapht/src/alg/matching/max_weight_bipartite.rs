@@ -104,12 +104,12 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g,
     }
 
     /// The vertex potentials of the last computation (empty before the first one).
-    pub fn get_potentials(&self) -> HashMap<G::Vertex, DBig> {
+    pub fn potentials(&self) -> HashMap<G::Vertex, DBig> {
         self.pot.clone().unwrap_or_default()
     }
 
     /// The exact weight of the last matching.
-    pub fn get_matching_weight(&self) -> &DBig {
+    pub fn matching_weight(&self) -> &DBig {
         &self.matching_weight
     }
 

@@ -109,8 +109,8 @@ fn get_first_last_and_indexed_nodes() {
     let list = strings(&mut arena, &["a", "b", "c", "d"]);
     assert_eq!(arena.value(arena.first(list).unwrap()), "a");
     assert_eq!(arena.value(arena.last(list).unwrap()), "d");
-    assert_eq!(arena.value(arena.get_node(list, 2).unwrap()), "c");
-    assert_eq!(arena.get_node(list, 4), None);
+    assert_eq!(arena.value(arena.node(list, 2).unwrap()), "c");
+    assert_eq!(arena.node(list, 4), None);
 }
 
 #[test]
@@ -238,7 +238,7 @@ fn forward_reverse_and_circular_traversal() {
 fn node_value_can_be_replaced_like_list_iterator_set() {
     let mut arena = ArcRingArena::new();
     let list = strings(&mut arena, &["a", "b", "c"]);
-    let middle: RingNode = arena.get_node(list, 1).unwrap();
+    let middle: RingNode = arena.node(list, 1).unwrap();
     *arena.value_mut(middle) = "x".to_owned();
     assert_eq!(values(&arena, list), ["a", "x", "c"]);
 }

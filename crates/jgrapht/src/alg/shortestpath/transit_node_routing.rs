@@ -271,7 +271,7 @@ where
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
-    pub fn compute_transit_node_routing(&self) -> Result<TransitNodeRouting<'g, G>> {
+    pub fn transit_node_routing(&self) -> Result<TransitNodeRouting<'g, G>> {
         let h = self.hierarchy;
         let n = h.vertices().len();
 
@@ -650,10 +650,10 @@ where
                     *graph,
                     *parallelism,
                 )
-                .compute_contraction_hierarchy()?;
+                .contraction_hierarchy()?;
                 let computed = TransitNodeRoutingPrecomputation::new(&hierarchy)
                     .with_parallelism(*parallelism)
-                    .compute_transit_node_routing()?;
+                    .transit_node_routing()?;
                 Ok(routing.get_or_init(|| computed))
             }
         }

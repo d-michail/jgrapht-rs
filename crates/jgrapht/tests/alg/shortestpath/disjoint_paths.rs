@@ -28,12 +28,8 @@ fn solve(
     k: usize,
 ) -> Result<Vec<GraphWalk<i32, DefaultEdge>>> {
     match solver {
-        Solver::Suurballe => {
-            SuurballeKDisjointShortestPaths::new(graph).get_paths(&source, &target, k)
-        }
-        Solver::Bhandari => {
-            BhandariKDisjointShortestPaths::new(graph).get_paths(&source, &target, k)
-        }
+        Solver::Suurballe => SuurballeKDisjointShortestPaths::new(graph).paths(&source, &target, k),
+        Solver::Bhandari => BhandariKDisjointShortestPaths::new(graph).paths(&source, &target, k),
     }
 }
 

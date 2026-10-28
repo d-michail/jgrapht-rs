@@ -55,7 +55,7 @@ mod chinese_postman_test {
     where
         G::Vertex: std::fmt::Debug,
     {
-        let path = ChinesePostman::new().get_cpp_solution(graph).unwrap();
+        let path = ChinesePostman::new().cpp_solution(graph).unwrap();
         assert_eq!(path.length(), expected_length);
         assert_eq!(path.edge_list().len(), expected_length);
         assert!((path.weight() - expected_weight).abs() < 1e-8);
@@ -91,7 +91,7 @@ mod chinese_postman_test {
     #[test]
     fn empty_single_loop_and_parallel_edge_graphs() {
         let empty = DiGraph::<i32>::simple();
-        assert!(ChinesePostman::new().get_cpp_solution(&empty).is_err());
+        assert!(ChinesePostman::new().cpp_solution(&empty).is_err());
 
         verify(
             &undirected(GraphType::simple(), &[0, 1], &[(0, 1, 10.)]),
@@ -3775,7 +3775,7 @@ mod chordality_inspector_test {
         }
         graph.add_edge(&0, &upper_bound).unwrap();
         let mut inspector = ChordalityInspector::new(&graph);
-        let path = inspector.get_hole().expect("a hole").clone();
+        let path = inspector.hole().expect("a hole").clone();
         assert_is_hole(&graph, &path);
     }
 
@@ -3785,17 +3785,17 @@ mod chordality_inspector_test {
             let graph = undirected(&[&[1, 2], &[1, 3], &[2, 3], &[2, 4], &[3, 4]]);
             let mut inspector = ChordalityInspector::with_order(&graph, order);
             let order1 = inspector
-                .get_perfect_elimination_order()
+                .perfect_elimination_order()
                 .expect("chordal")
                 .to_vec();
-            assert!(inspector.get_hole().is_none());
+            assert!(inspector.hole().is_none());
             // the result is cached, so asking again gives the same order
             let order2 = inspector
-                .get_perfect_elimination_order()
+                .perfect_elimination_order()
                 .expect("chordal")
                 .to_vec();
             assert_eq!(order1, order2);
-            assert!(inspector.get_hole().is_none());
+            assert!(inspector.hole().is_none());
         }
     }
 
@@ -3804,14 +3804,14 @@ mod chordality_inspector_test {
         let graph = UGraph::<i32>::with_loops();
         let mut inspector = ChordalityInspector::new(&graph);
         assert!(inspector.is_chordal());
-        assert!(inspector.get_perfect_elimination_order().is_some());
+        assert!(inspector.perfect_elimination_order().is_some());
     }
 
     fn chordal(graph: &UGraph<i32>) {
         let mut inspector = ChordalityInspector::new(graph);
         assert!(inspector.is_chordal());
-        assert!(inspector.get_hole().is_none());
-        assert!(inspector.get_perfect_elimination_order().is_some());
+        assert!(inspector.hole().is_none());
+        assert!(inspector.perfect_elimination_order().is_some());
     }
 
     fn not_chordal<G: IncidenceGraph>(graph: &G)
@@ -3820,9 +3820,9 @@ mod chordality_inspector_test {
     {
         let mut inspector = ChordalityInspector::new(graph);
         assert!(!inspector.is_chordal());
-        let path = inspector.get_hole().expect("a hole").clone();
+        let path = inspector.hole().expect("a hole").clone();
         assert_is_hole(graph, &path);
-        assert!(inspector.get_perfect_elimination_order().is_none());
+        assert!(inspector.perfect_elimination_order().is_none());
     }
     #[test]
     fn is_chordal2() {
@@ -4102,7 +4102,7 @@ mod chordal_graph_minimal_vertex_separator_finder_test {
 
     fn separators(graph: &UGraph<i32>) -> Option<(HashSet<Vec<i32>>, Separators)> {
         let mut finder = ChordalGraphMinimalVertexSeparatorFinder::new(graph);
-        let keys: Option<HashSet<Vec<i32>>> = finder.get_minimal_separators().map(|s| {
+        let keys: Option<HashSet<Vec<i32>>> = finder.minimal_separators().map(|s| {
             s.into_iter()
                 .map(|v| {
                     let mut v = v.clone();
@@ -4111,14 +4111,11 @@ mod chordal_graph_minimal_vertex_separator_finder_test {
                 })
                 .collect()
         });
-        let with: Option<Separators> =
-            finder
-                .get_minimal_separators_with_multiplicities()
-                .map(|m| {
-                    m.iter()
-                        .map(|(k, c)| (k.iter().copied().collect(), *c))
-                        .collect()
-                });
+        let with: Option<Separators> = finder.minimal_separators_with_multiplicities().map(|m| {
+            m.iter()
+                .map(|(k, c)| (k.iter().copied().collect(), *c))
+                .collect()
+        });
         keys.zip(with)
     }
 
@@ -4298,7 +4295,7 @@ mod weak_chordality_inspector_test {
     fn check<G: IncidenceGraph>(graph: &G, weakly_chordal: bool) {
         let mut inspector = WeakChordalityInspector::new(graph);
         assert_eq!(weakly_chordal, inspector.is_weakly_chordal());
-        let certificate = inspector.get_certificate();
+        let certificate = inspector.certificate();
         if weakly_chordal {
             assert!(certificate.is_none());
         } else {
@@ -4543,7 +4540,7 @@ mod berge_graph_inspector_test {
     /// `verifyCertificate`: the certificate spans an odd cycle without chords, in the graph or in
     /// its complement.
     fn verify_certificate<G: IncidenceGraph>(g: &G, dut: &BergeGraphInspector<G::Vertex>) -> bool {
-        let Some(certificate) = dut.get_certificate() else {
+        let Some(certificate) = dut.certificate() else {
             return false;
         };
         let set: Vec<G::Vertex> = certificate.vertex_list().to_vec();
@@ -4952,7 +4949,7 @@ mod weak_chordality_certificate {
             c5.add_edge_with_vertices(i, (i + 1) % 5).unwrap();
         }
         let mut inspector = WeakChordalityInspector::new(&c5);
-        let certificate = inspector.get_certificate().cloned();
+        let certificate = inspector.certificate().cloned();
         match certificate {
             Some(WeakChordalityCertificate::Hole(v))
             | Some(WeakChordalityCertificate::Antihole(v)) => {
@@ -4961,7 +4958,7 @@ mod weak_chordality_certificate {
             }
             None => panic!("C5 is not weakly chordal"),
         }
-        let certificate = inspector.get_certificate().unwrap();
+        let certificate = inspector.certificate().unwrap();
         assert_eq!(certificate.vertex_list().len(), 6);
     }
 }
@@ -5000,7 +4997,7 @@ mod berge_certificate {
         let hole = cycle(7);
         let mut inspector = BergeGraphInspector::new();
         assert!(!inspector.is_berge_with_certificate(&hole, true).unwrap());
-        let certificate = inspector.get_certificate().unwrap();
+        let certificate = inspector.certificate().unwrap();
         assert!(matches!(certificate, BergeCertificate::OddHole(_)));
         assert!(certificate.is_hole());
         assert_eq!(certificate.vertex_list().len(), 8);
@@ -5012,7 +5009,7 @@ mod berge_certificate {
                 .is_berge_with_certificate(&antihole, true)
                 .unwrap()
         );
-        let certificate = inspector.get_certificate().unwrap();
+        let certificate = inspector.certificate().unwrap();
         assert!(matches!(certificate, BergeCertificate::OddAntihole(_)));
         assert!(!certificate.is_hole());
         assert_eq!(
@@ -5029,6 +5026,6 @@ mod berge_certificate {
                 .is_berge_with_certificate(&cycle(6), true)
                 .unwrap()
         );
-        assert!(inspector.get_certificate().is_none());
+        assert!(inspector.certificate().is_none());
     }
 }

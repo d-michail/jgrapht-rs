@@ -56,7 +56,7 @@ fn toy_graph() -> DiGraph<&'static str> {
 fn small_example_graph() {
     let graph = toy_graph();
     let paths = AllDirectedPaths::new(&graph)
-        .get_all_paths_between([&I1, &I2], [&O1, &O2], true, None)
+        .all_paths_between([&I1, &I2], [&O1, &O2], true, None)
         .unwrap();
     assert_eq!(paths.len(), 7);
 }
@@ -68,7 +68,7 @@ fn small_example_graph_with_path_validator() {
         graph.edge_target(edge).copied() != Some(B)
     };
     let paths = AllDirectedPaths::with_validator(&graph, validator)
-        .get_all_paths_between([&I1, &I2], [&O1, &O2], true, None)
+        .all_paths_between([&I1, &I2], [&O1, &O2], true, None)
         .unwrap();
     assert_eq!(paths.len(), 3);
 }
@@ -77,7 +77,7 @@ fn small_example_graph_with_path_validator() {
 fn trivial_paths() {
     let graph = toy_graph();
     let paths = AllDirectedPaths::new(&graph)
-        .get_all_paths_between([&I1], [&I1, &A], true, Some(1))
+        .all_paths_between([&I1], [&I1, &A], true, Some(1))
         .unwrap();
     assert_eq!(paths.len(), 2);
     assert_eq!(paths[0].vertex_list(), [I1]);
@@ -90,7 +90,7 @@ fn length_one_paths() {
     graph.add_vertices([A, B]);
     graph.add_edge(&B, &A).unwrap();
     let paths = AllDirectedPaths::new(&graph)
-        .get_all_paths_between(
+        .all_paths_between(
             graph.vertices(),
             graph.vertices(),
             true,
@@ -113,7 +113,7 @@ fn length_one_paths_with_path_validator() {
         graph.edge_target(edge).copied() != Some(B)
     };
     let paths = AllDirectedPaths::with_validator(&graph, validator)
-        .get_all_paths_between(
+        .all_paths_between(
             graph.vertices(),
             graph.vertices(),
             true,
@@ -142,7 +142,7 @@ fn path_weights() {
         graph.add_weighted_edge(&source, &target, weight).unwrap();
     }
     let mut paths = AllDirectedPaths::new(&graph)
-        .get_all_paths(&A, &D, true, Some(2))
+        .all_paths(&A, &D, true, Some(2))
         .unwrap();
     paths.sort_by(|left, right| left.weight().total_cmp(&right.weight()));
     assert_eq!(paths.len(), 3);
@@ -160,10 +160,10 @@ fn cycle_behavior() {
     graph.add_edge(&D, &A).unwrap();
     let algorithm = AllDirectedPaths::new(&graph);
     let simple = algorithm
-        .get_all_paths_between([&I1, &I2], [&O1, &O2], true, Some(8))
+        .all_paths_between([&I1, &I2], [&O1, &O2], true, Some(8))
         .unwrap();
     let with_cycles = algorithm
-        .get_all_paths_between([&I1, &I2], [&O1, &O2], false, Some(8))
+        .all_paths_between([&I1, &I2], [&O1, &O2], false, Some(8))
         .unwrap();
     assert_eq!(with_cycles.len(), 13);
     assert_eq!(simple.len(), 7);
@@ -174,7 +174,7 @@ fn must_bound_if_non_simple_paths() {
     let graph = toy_graph();
     assert!(
         AllDirectedPaths::new(&graph)
-            .get_all_paths(&I1, &O1, false, None)
+            .all_paths(&I1, &O1, false, None)
             .is_err()
     );
 }
@@ -190,9 +190,7 @@ fn target_reachable_but_source_unreachable_branch_is_ignored() {
         let mut algorithm = AllDirectedPaths::new(&graph);
         algorithm.set_forward_pruning(forward_pruning);
         for simple in [false, true] {
-            let paths = algorithm
-                .get_all_paths(&"S", &"T", simple, Some(5))
-                .unwrap();
+            let paths = algorithm.all_paths(&"S", &"T", simple, Some(5)).unwrap();
             assert_eq!(paths.len(), 1);
             assert_eq!(paths[0].vertex_list(), ["S", A, "T"]);
         }
@@ -205,7 +203,7 @@ fn zero_length_paths() {
     graph.add_vertices(["a", "b"]);
     graph.add_edge(&"a", &"b").unwrap();
     let paths = AllDirectedPaths::new(&graph)
-        .get_all_paths_between(graph.vertices(), graph.vertices(), false, Some(0))
+        .all_paths_between(graph.vertices(), graph.vertices(), false, Some(0))
         .unwrap();
     assert!(!paths.is_empty());
     assert!(paths.iter().all(|path| path.length() == 0));
@@ -219,7 +217,7 @@ fn non_simple_mode_adjacent_vertices_with_self_loops() {
     graph.add_edge(&1, &1).unwrap();
     graph.add_edge(&0, &1).unwrap();
     let paths = AllDirectedPaths::new(&graph)
-        .get_all_paths(&0, &1, false, Some(3))
+        .all_paths(&0, &1, false, Some(3))
         .unwrap();
     assert_eq!(paths.len(), 6);
 }
@@ -232,7 +230,7 @@ fn non_simple_mode_cycle_without_self_loops() {
     graph.add_edge(&1, &2).unwrap();
     graph.add_edge(&2, &0).unwrap();
     let paths = AllDirectedPaths::new(&graph)
-        .get_all_paths(&0, &1, false, Some(4))
+        .all_paths(&0, &1, false, Some(4))
         .unwrap();
     assert_eq!(paths.len(), 2);
 }
@@ -249,7 +247,7 @@ fn non_simple_mode_path_validator_still_respected() {
         graph.edge_target(edge).copied() != Some(1)
     };
     let paths = AllDirectedPaths::with_validator(&graph, validator)
-        .get_all_paths(&0, &2, false, Some(3))
+        .all_paths(&0, &2, false, Some(3))
         .unwrap();
     assert!(paths.is_empty());
 }
@@ -262,12 +260,12 @@ fn non_simple_mode_max_length_boundary() {
     graph.add_edge(&0, &1).unwrap();
     let algorithm = AllDirectedPaths::new(&graph);
     let zero = algorithm
-        .get_all_paths_between([&0], [&0], false, Some(0))
+        .all_paths_between([&0], [&0], false, Some(0))
         .unwrap();
     assert_eq!(zero.len(), 1);
     assert_eq!(zero[0].length(), 0);
     let one = algorithm
-        .get_all_paths_between([&0], [&0, &1], false, Some(1))
+        .all_paths_between([&0], [&0, &1], false, Some(1))
         .unwrap();
     assert_eq!(one.len(), 3);
 }
@@ -389,7 +387,7 @@ fn non_simple_mode_matches_brute_force() {
         let graph = random_cyclic_graph(seed, 5, 0.4, 0.2);
         let expected: HashSet<_> = brute_force_walks(&graph, 0, 4, 4).into_iter().collect();
         let actual = AllDirectedPaths::new(&graph)
-            .get_all_paths(&0, &4, false, Some(4))
+            .all_paths(&0, &4, false, Some(4))
             .unwrap();
         assert_eq!(actual.len(), expected.len(), "seed={seed}");
         assert_eq!(path_set(&actual), expected, "seed={seed}");
@@ -407,7 +405,7 @@ fn multiple_sources_partial_garden() {
         let mut algorithm = AllDirectedPaths::new(&graph);
         algorithm.set_forward_pruning(forward_pruning);
         let paths = algorithm
-            .get_all_paths_between([&"S1", &"S2"], [&"T"], true, Some(5))
+            .all_paths_between([&"S1", &"S2"], [&"T"], true, Some(5))
             .unwrap();
         assert_eq!(paths.len(), 1, "forward_pruning={forward_pruning}");
         assert_eq!(paths[0].vertex_list(), ["S1", A, "T"]);
@@ -424,7 +422,7 @@ fn unbounded_simple_paths_with_unreachable_garden() {
     for forward_pruning in [false, true] {
         let mut algorithm = AllDirectedPaths::new(&graph);
         algorithm.set_forward_pruning(forward_pruning);
-        let paths = algorithm.get_all_paths(&"S", &"T", true, None).unwrap();
+        let paths = algorithm.all_paths(&"S", &"T", true, None).unwrap();
         assert_eq!(paths.len(), 1, "forward_pruning={forward_pruning}");
         assert_eq!(paths[0].vertex_list(), ["S", A, "T"]);
     }
@@ -438,7 +436,7 @@ fn source_equals_target_in_disconnected_graph() {
     for forward_pruning in [false, true] {
         let mut algorithm = AllDirectedPaths::new(&graph);
         algorithm.set_forward_pruning(forward_pruning);
-        let paths = algorithm.get_all_paths(&"S", &"S", true, Some(5)).unwrap();
+        let paths = algorithm.all_paths(&"S", &"S", true, Some(5)).unwrap();
         assert_eq!(paths.len(), 1, "forward_pruning={forward_pruning}");
         assert_eq!(paths[0].length(), 0);
     }
@@ -462,9 +460,7 @@ fn dense_strongly_connected_loss_case() {
     for forward_pruning in [false, true] {
         let mut algorithm = AllDirectedPaths::new(&graph);
         algorithm.set_forward_pruning(forward_pruning);
-        let actual = algorithm
-            .get_all_paths(&0, &(n - 1), true, Some(3))
-            .unwrap();
+        let actual = algorithm.all_paths(&0, &(n - 1), true, Some(3)).unwrap();
         assert_eq!(
             path_set(&actual),
             expected,
@@ -519,13 +515,13 @@ fn fuzz_against_brute_force() {
         for forward_pruning in [false, true] {
             let mut algorithm = AllDirectedPaths::new(&graph);
             algorithm.set_forward_pruning(forward_pruning);
-            let simple = algorithm.get_all_paths(&0, &3, true, Some(4)).unwrap();
+            let simple = algorithm.all_paths(&0, &3, true, Some(4)).unwrap();
             assert_eq!(
                 path_set(&simple),
                 expected_simple,
                 "simple seed={seed} forward_pruning={forward_pruning}"
             );
-            let non_simple = algorithm.get_all_paths(&0, &3, false, Some(4)).unwrap();
+            let non_simple = algorithm.all_paths(&0, &3, false, Some(4)).unwrap();
             assert_eq!(
                 path_set(&non_simple),
                 expected_non_simple,

@@ -114,7 +114,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalityInspector<'g, G> {
     }
 
     /// A perfect elimination order, or `None` if the graph is not chordal.
-    pub fn get_perfect_elimination_order(&mut self) -> Option<&[G::Vertex]> {
+    pub fn perfect_elimination_order(&mut self) -> Option<&[G::Vertex]> {
         self.is_chordal();
         if self.chordal {
             self.order.as_deref()
@@ -124,7 +124,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalityInspector<'g, G> {
     }
 
     /// An induced cycle of length at least four, if the graph is not chordal.
-    pub fn get_hole(&mut self) -> Option<&GraphWalk<G::Vertex, G::Edge>> {
+    pub fn hole(&mut self) -> Option<&GraphWalk<G::Vertex, G::Edge>> {
         self.is_chordal();
         self.hole.as_ref()
     }

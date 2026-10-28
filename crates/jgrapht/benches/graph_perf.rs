@@ -43,7 +43,7 @@ fn graph_performance(c: &mut Criterion) {
             black_box(
                 EdmondsKarp::new(&g)
                     .unwrap()
-                    .calculate_maximum_flow(&0, &(N - 1))
+                    .maximum_flow_value(&0, &(N - 1))
                     .unwrap(),
             )
         })

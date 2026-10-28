@@ -77,7 +77,7 @@ impl ChinesePostman {
     /// Returns [`GraphError::InvalidGraph`] if the graph is not not mixed;
     /// [`GraphError::InvalidGraph`] if the graph is not connected. Errors of the graph operations
     /// it performs are propagated.
-    pub fn get_cpp_solution<G: IncidenceGraph>(
+    pub fn cpp_solution<G: IncidenceGraph>(
         &mut self,
         graph: &G,
     ) -> Result<GraphWalk<G::Vertex, G::Edge>> {

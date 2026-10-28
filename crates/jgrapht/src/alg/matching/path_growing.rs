@@ -211,8 +211,7 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
             }
 
             // find maximum weight matching of path using dynamic programming
-            let (path_weight, path_matching) =
-                path_solver.get_maximum_weight_matching(graph, &path);
+            let (path_weight, path_matching) = path_solver.maximum_weight_matching(graph, &path);
             // add it to result while keeping track of matched vertices
             matching_weight += path_weight;
             for e in path_matching {
@@ -278,7 +277,7 @@ impl DynamicProgrammingPathSolver {
     /// # Panics
     ///
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
-    pub fn get_maximum_weight_matching<G: Graph>(
+    pub fn maximum_weight_matching<G: Graph>(
         &mut self,
         g: &G,
         path: &[G::Edge],

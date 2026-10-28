@@ -25,7 +25,7 @@ fn yen_iterator_and_class_are_stably_sorted() {
         (3, 4, 1.0),
         (1, 4, 10.0),
     ]);
-    let paths = YenKShortestPath::new(&graph).get_paths(&1, &4, 10).unwrap();
+    let paths = YenKShortestPath::new(&graph).paths(&1, &4, 10).unwrap();
     assert_eq!(
         paths.iter().map(|path| path.weight()).collect::<Vec<_>>(),
         [3.0, 3.0, 10.0]
@@ -43,7 +43,7 @@ fn yen_iterator_and_class_are_stably_sorted() {
 fn dijkstra_many_to_many_handles_reverse_search() {
     let graph = weighted_di(&[(0, 2, 1.0), (1, 2, 2.0), (2, 3, 4.0)]);
     let paths = DijkstraManyToManyShortestPaths::new(&graph)
-        .get_many_to_many_paths([0, 1], [3])
+        .many_to_many_paths([0, 1], [3])
         .unwrap();
     assert_eq!(paths.weight(&0, &3), Some(5.0));
     assert_eq!(paths.weight(&1, &3), Some(6.0));
@@ -65,11 +65,11 @@ fn multi_objective_algorithms_return_the_pareto_front() {
         (second, vec![1.0, 4.0]),
     ]);
     let martin = MartinShortestPath::new(&graph, |edge| values[edge].clone())
-        .get_paths(&1)
+        .paths_from(&1)
         .unwrap();
     let correcting =
         LabelCorrectingMultiObjectiveShortestPath::new(&graph, |edge| values[edge].clone())
-            .get_paths(&1)
+            .paths_from(&1)
             .unwrap();
     assert_eq!(martin.paths(&2).len(), 2);
     assert_eq!(correcting.paths(&2).len(), 2);

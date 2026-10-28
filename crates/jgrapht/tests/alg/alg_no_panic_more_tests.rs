@@ -89,7 +89,7 @@ fn cycles_do_not_panic() {
         let _ = QueueBFSFundamentalCycleBasis::new(g).and_then(|mut c| c.get_cycle_basis());
         let _ = StackBFSFundamentalCycleBasis::new(g).and_then(|mut c| c.get_cycle_basis());
         let _ = PatonCycleBase::new(g).and_then(|mut c| c.get_cycle_basis());
-        let _ = ChinesePostman::new().get_cpp_solution(g);
+        let _ = ChinesePostman::new().cpp_solution(g);
         let _ = HierholzerEulerianCycle::new().get_eulerian_cycle(g);
     });
 }
@@ -166,7 +166,7 @@ mod regressions {
         g.add_vertices(0..4);
         g.add_edge(&0, &1).unwrap();
         g.add_edge(&2, &3).unwrap();
-        assert!(ChinesePostman::new().get_cpp_solution(&g).is_err());
+        assert!(ChinesePostman::new().cpp_solution(&g).is_err());
     }
 
     #[test]

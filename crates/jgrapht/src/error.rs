@@ -39,7 +39,7 @@ pub enum GraphError {
     /// A negative-weight cycle was found while computing shortest paths.
     ///
     /// This variant carries no payload so that every shortest-path algorithm can share one error
-    /// type. [`BellmanFord::get_paths`](crate::alg::shortestpath::BellmanFord::get_paths) returns a
+    /// type. [`BellmanFord::paths_from`](crate::alg::shortestpath::BellmanFord::paths_from) returns a
     /// richer `BellmanFordError` that includes the cycle.
     #[error("graph contains a negative-weight cycle")]
     NegativeCycle,

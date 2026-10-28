@@ -16,7 +16,7 @@
 //!
 //! The maximum-flow classes ([`EdmondsKarp`], [`Dinic`], [`PushRelabel`],
 //! [`BoykovKolmogorov`]) take the network (edge weights are capacities) and answer
-//! `calculate_maximum_flow(source, sink)`; a computation that also needs the flow on each edge or the
+//! `maximum_flow_value(source, sink)`; a computation that also needs the flow on each edge or the
 //! cut returns a [`MaximumFlow`] result object. [`GusfieldEquivalentFlowTree`] and
 //! [`GusfieldGomoryHuCutTree`] answer all-pairs minimum cuts, and [`PadbergRaoOddMinimumCutset`] finds
 //! minimum odd cuts. [`CapacityScalingMinimumCostFlow`] solves minimum-cost flow problems described by

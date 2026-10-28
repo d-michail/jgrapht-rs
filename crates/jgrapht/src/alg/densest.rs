@@ -361,7 +361,7 @@ where
     ///
     /// Returns [`GraphError::Internal`](crate::GraphError::Internal) if an internal invariant of the library is broken (a bug).
     /// Errors of the graph operations it performs are propagated.
-    pub fn calculate_densest(&mut self) -> Result<crate::AsSubgraph<&'g G>> {
+    pub fn densest_subgraph(&mut self) -> Result<crate::AsSubgraph<&'g G>> {
         if self.densest.is_none() {
             while self.upper - self.lower >= self.epsilon {
                 self.guess = self.lower + (self.upper - self.lower) / 2.0;
@@ -395,7 +395,7 @@ where
     ///
     /// Errors of the graph operations it performs are propagated.
     pub fn density(&mut self) -> Result<f64> {
-        let sub = self.calculate_densest()?;
+        let sub = self.densest_subgraph()?;
         let denominator = self.denominator(&sub);
         Ok(if denominator != 0.0 {
             self.numerator(&sub) / denominator

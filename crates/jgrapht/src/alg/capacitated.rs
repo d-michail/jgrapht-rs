@@ -237,7 +237,7 @@ impl<V: Eq + Hash + Clone> Solution<V> {
         s
     }
 
-    pub fn calculate_resulting_spanning_tree<G: IncidenceGraph<Vertex = V>>(
+    pub fn resulting_spanning_tree<G: IncidenceGraph<Vertex = V>>(
         &self,
         problem: &Problem<'_, G>,
     ) -> CapacitatedSpanningTree<V, G::Edge> {
@@ -611,10 +611,10 @@ impl<'g, G: IncidenceGraph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
     /// Computes a capacitated spanning tree.
     fn capacitated_spanning_tree(&mut self) -> Result<CapacitatedSpanningTree<G::Vertex, G::Edge>> {
         if self.executed {
-            return Ok(self.best.calculate_resulting_spanning_tree(&self.problem));
+            return Ok(self.best.resulting_spanning_tree(&self.problem));
         }
         self.best = self.solution();
-        let cmst = self.best.calculate_resulting_spanning_tree(&self.problem);
+        let cmst = self.best.resulting_spanning_tree(&self.problem);
         self.executed = true;
         let p = &self.problem;
         if !cmst.is_capacitated_spanning_tree(p.graph, &p.root, p.capacity, &p.demands) {
@@ -1044,7 +1044,7 @@ impl<'g, G: IncidenceGraph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
             self.best = self.run()?;
             self.executed = true;
         }
-        Ok(self.best.calculate_resulting_spanning_tree(&self.problem))
+        Ok(self.best.resulting_spanning_tree(&self.problem))
     }
 }
 

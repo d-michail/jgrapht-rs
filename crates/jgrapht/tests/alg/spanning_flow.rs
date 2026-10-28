@@ -243,7 +243,7 @@ fn min_cost_flow_works() {
         cost,
     );
     let flow = CapacityScalingMinimumCostFlow::new()
-        .get_minimum_cost_flow(&problem)
+        .solve_flow(&problem)
         .unwrap();
     assert_eq!(
         g.out_edges_of(&0)
@@ -265,7 +265,7 @@ fn min_cost_flow_works() {
         cost,
     );
     let flow = CapacityScalingMinimumCostFlow::new()
-        .get_minimum_cost_flow(&problem)
+        .solve_flow(&problem)
         .unwrap();
     assert_eq!(flow.cost, 6.0);
 }

@@ -765,7 +765,7 @@ mod goldberg_maximum_density_subgraph_tests {
     ) where
         G::Vertex: 'static,
     {
-        let computed = solver.calculate_densest().unwrap();
+        let computed = solver.densest_subgraph().unwrap();
         assert!(
             (solver.density().unwrap() - expected_density).abs() < EPS,
             "density {} vs {expected_density}",

@@ -1271,7 +1271,7 @@ mod capacity_scaling_minimum_cost_flow_test {
         let problem = MinimumCostFlowNetwork::new(&g, |_| 0, |_| 1);
         assert!(
             CapacityScalingMinimumCostFlow::new()
-                .get_minimum_cost_flow(&problem)
+                .solve_flow(&problem)
                 .is_err()
         );
         // supplies that do not sum to zero
@@ -1281,14 +1281,14 @@ mod capacity_scaling_minimum_cost_flow_test {
         let problem = MinimumCostFlowNetwork::new(&g, |v| if *v == 0 { 1 } else { 0 }, |_| 1);
         assert!(
             CapacityScalingMinimumCostFlow::new()
-                .get_minimum_cost_flow(&problem)
+                .solve_flow(&problem)
                 .is_err()
         );
         // no feasible solution: supply 1 at an isolated vertex
         let problem = MinimumCostFlowNetwork::new(&g, |v| if *v == 0 { 1 } else { -1 }, |_| 1);
         assert!(
             CapacityScalingMinimumCostFlow::new()
-                .get_minimum_cost_flow(&problem)
+                .solve_flow(&problem)
                 .is_err()
         );
     }

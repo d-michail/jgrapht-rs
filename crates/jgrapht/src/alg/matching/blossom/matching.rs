@@ -97,7 +97,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     ///
     /// Errors of the graph operations it performs are propagated.
     pub fn test_optimality(&mut self) -> Result<bool> {
-        Ok(self.get_error()? < BLOSSOM_V_EPSILON)
+        Ok(self.error()? < BLOSSOM_V_EPSILON)
     }
 
     /// Returns the numerical optimality error of the reduced perfect matching.
@@ -106,7 +106,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     ///
     /// Returns [`GraphError::Internal`](crate::GraphError::Internal) if an internal invariant of the library is broken (a bug).
     /// Errors of the graph operations it performs are propagated.
-    pub fn get_error(&mut self) -> Result<f64> {
+    pub fn error(&mut self) -> Result<f64> {
         self.compute()?;
         self.error
             .ok_or(crate::GraphError::Internal("the computed error is missing"))
@@ -175,7 +175,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
             self.objective_sense,
         )?;
         let reduced = perfect.get_matching()?;
-        let error = perfect.get_error()?;
+        let error = perfect.error()?;
         let mut edges = IndexSet::new();
         for internal in reduced.edges() {
             if *internal >= original_start {
@@ -334,7 +334,7 @@ mod tests {
                         exact_weight(&weights, maximize),
                         "seed={seed}, options={options}, objective={objective:?}"
                     );
-                    let error = algorithm.get_error().unwrap();
+                    let error = algorithm.error().unwrap();
                     assert!(
                         error < BLOSSOM_V_EPSILON,
                         "error={error}, seed={seed}, options={options}, objective={objective:?}"

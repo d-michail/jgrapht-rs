@@ -112,7 +112,7 @@ impl<T> ArcRingArena<T> {
             .and_then(|head| self.nodes[head.0].previous)
     }
 
-    pub fn get_node(&self, list: RingId, index: usize) -> Option<RingNode> {
+    pub fn node(&self, list: RingId, index: usize) -> Option<RingNode> {
         let len = self.len(list);
         if index >= len {
             return None;
@@ -178,7 +178,7 @@ impl<T> ArcRingArena<T> {
         let successor = if index == self.len(list) {
             self.first(list).unwrap()
         } else {
-            self.get_node(list, index).unwrap()
+            self.node(list, index).unwrap()
         };
         self.link_before(list, node, successor);
         if index == 0 {
@@ -310,7 +310,7 @@ impl<T> ArcRingArena<T> {
             let successor = if index == self.len(list) {
                 self.first(list).unwrap()
             } else {
-                self.get_node(list, index).unwrap()
+                self.node(list, index).unwrap()
             };
             let predecessor = self.previous(successor).unwrap();
             self.nodes[predecessor.0].next = Some(moved_head);

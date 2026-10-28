@@ -452,7 +452,7 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinali
     ///
     /// Returns [`GraphError::Internal`](crate::GraphError::Internal) if an internal invariant of the library is broken (a bug).
     /// Errors of the graph operations it performs are propagated.
-    pub fn get_odd_set_cover(&mut self) -> Result<&HashMap<G::Vertex, i64>> {
+    pub fn odd_set_cover(&mut self) -> Result<&HashMap<G::Vertex, i64>> {
         self.get_matching()?;
         self.odd_set_cover
             .as_ref()

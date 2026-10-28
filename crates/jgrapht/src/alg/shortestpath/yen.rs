@@ -285,7 +285,7 @@ impl<'g, G: OutgoingGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, 
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
-    pub fn get_paths(
+    pub fn paths(
         &self,
         source: &G::Vertex,
         sink: &G::Vertex,
@@ -552,7 +552,7 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
     ///
     /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
     /// the graph operations it performs are propagated.
-    pub fn get_paths(
+    pub fn paths(
         &self,
         source: &G::Vertex,
         sink: &G::Vertex,

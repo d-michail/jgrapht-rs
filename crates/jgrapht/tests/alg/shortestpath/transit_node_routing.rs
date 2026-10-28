@@ -30,7 +30,7 @@ fn hierarchy(graph: &DiGraph<usize>) -> ContractionHierarchy<'_, DiGraph<usize>>
     ContractionHierarchyPrecomputation::with_random_supplier(graph, 4, || {
         StdRng::seed_from_u64((SEED) as u64)
     })
-    .compute_contraction_hierarchy()
+    .contraction_hierarchy()
     .unwrap()
 }
 
@@ -62,7 +62,7 @@ mod precomputation {
         let routing = TransitNodeRoutingPrecomputation::new(&h)
             .with_transit_vertex_count(0)
             .unwrap()
-            .compute_transit_node_routing()
+            .transit_node_routing()
             .unwrap();
         assert!(routing.transit_vertices().is_empty());
     }
@@ -88,7 +88,7 @@ mod precomputation {
         let routing = TransitNodeRoutingPrecomputation::new(&h)
             .with_transit_vertex_count(1)
             .unwrap()
-            .compute_transit_node_routing()
+            .transit_node_routing()
             .unwrap();
         let id = h.contraction_mapping()[&1];
         // transit vertices
@@ -122,7 +122,7 @@ mod precomputation {
         let routing = TransitNodeRoutingPrecomputation::new(&h)
             .with_transit_vertex_count(1)
             .unwrap()
-            .compute_transit_node_routing()
+            .transit_node_routing()
             .unwrap();
         let m = h.contraction_mapping();
         let (cv1, cv2, cv3) = (m[&1], m[&2], m[&3]);
@@ -173,10 +173,10 @@ mod precomputation {
             let h = ContractionHierarchyPrecomputation::with_random_supplier(&graph, 4, || {
                 StdRng::seed_from_u64((SEED) as u64)
             })
-            .compute_contraction_hierarchy()
+            .contraction_hierarchy()
             .unwrap();
             let routing = TransitNodeRoutingPrecomputation::new(&h)
-                .compute_transit_node_routing()
+                .transit_node_routing()
                 .unwrap();
             assert_correct_tnr(&graph, &routing);
         }
@@ -248,7 +248,7 @@ mod shortest_path {
             TransitNodeRoutingPrecomputation::new(h)
                 .with_transit_vertex_count(k)
                 .unwrap()
-                .compute_transit_node_routing()
+                .transit_node_routing()
                 .unwrap(),
         )
     }
@@ -306,7 +306,7 @@ mod shortest_path {
             let expected = Dijkstra::new(&graph).single_source(&0).unwrap();
             let h = hierarchy(&graph);
             let routing = TransitNodeRoutingPrecomputation::new(&h)
-                .compute_transit_node_routing()
+                .transit_node_routing()
                 .unwrap();
             let actual = TransitNodeRoutingShortestPath::from_routing(routing)
                 .single_source(&0)
@@ -348,11 +348,11 @@ mod fixture_graphs {
         let h = ContractionHierarchyPrecomputation::with_random_supplier(graph, 3, || {
             StdRng::seed_from_u64(19)
         })
-        .compute_contraction_hierarchy()
+        .contraction_hierarchy()
         .unwrap();
         let routing = TransitNodeRoutingPrecomputation::new(&h)
             .with_parallelism(3)
-            .compute_transit_node_routing()
+            .transit_node_routing()
             .unwrap();
         let n = graph.vertex_count();
         assert_eq!(

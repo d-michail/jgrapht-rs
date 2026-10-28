@@ -231,7 +231,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     ///
     /// Errors of the graph operations it performs are propagated.
     pub fn test_optimality(&mut self) -> Result<bool> {
-        Ok(self.get_error()? < BLOSSOM_V_EPSILON)
+        Ok(self.error()? < BLOSSOM_V_EPSILON)
     }
 
     /// Returns the accumulated numerical error in the dual and complementary-slackness checks.
@@ -244,7 +244,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     /// # Panics
     ///
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
-    pub fn get_error(&mut self) -> Result<f64> {
+    pub fn error(&mut self) -> Result<f64> {
         self.compute()?;
         let state = self
             .state
@@ -297,7 +297,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     /// # Panics
     ///
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
-    pub fn get_dual_solution(&mut self) -> Result<BlossomVDualSolution<'g, G>> {
+    pub fn dual_solution(&mut self) -> Result<BlossomVDualSolution<'g, G>> {
         self.compute()?;
         let state = self
             .state
@@ -904,12 +904,12 @@ mod tests {
                         actual, expected,
                         "seed={seed}, options={options}, objective={objective:?}"
                     );
-                    let error = algorithm.get_error().unwrap();
+                    let error = algorithm.error().unwrap();
                     assert!(
                         error < BLOSSOM_V_EPSILON,
                         "error={error}, seed={seed}, options={options}, objective={objective:?}"
                     );
-                    let dual = algorithm.get_dual_solution().unwrap();
+                    let dual = algorithm.dual_solution().unwrap();
                     assert!(
                         dual.dual_variables()
                             .keys()

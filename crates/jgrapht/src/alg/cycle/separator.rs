@@ -78,7 +78,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphMinimalVertexSeparator
     }
 
     /// The minimal separators, or `None` if the graph is not chordal.
-    pub fn get_minimal_separators(&mut self) -> Option<Vec<&Vec<G::Vertex>>> {
+    pub fn minimal_separators(&mut self) -> Option<Vec<&Vec<G::Vertex>>> {
         self.lazy_compute();
         self.minimal_separators_with_multiplicities
             .as_ref()
@@ -87,7 +87,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphMinimalVertexSeparator
 
     /// The minimal separators with the number of times each occurs, or `None` if the graph is not
     /// chordal.
-    pub fn get_minimal_separators_with_multiplicities(
+    pub fn minimal_separators_with_multiplicities(
         &mut self,
     ) -> Option<&IndexMap<Vec<G::Vertex>, usize>> {
         self.lazy_compute();
@@ -104,7 +104,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphMinimalVertexSeparator
         }
         let order: Vec<G::Vertex> = self
             .chordality_inspector
-            .get_perfect_elimination_order()
+            .perfect_elimination_order()
             .expect("chordal graph")
             .to_vec();
         let vertex_in_order: HashMap<&G::Vertex, usize> =

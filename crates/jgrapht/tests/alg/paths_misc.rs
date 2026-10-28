@@ -71,35 +71,24 @@ fn simple_paths() {
         (2, 3, 1.0),
     ]);
     let algorithm = AllDirectedPaths::new(&g);
-    let ps = algorithm.get_all_paths(&1, &4, true, None).unwrap();
+    let ps = algorithm.all_paths(&1, &4, true, None).unwrap();
     assert_eq!(ps.len(), 3);
     assert!(ps.iter().all(|p| p.is_valid(&g)));
-    assert_eq!(
-        algorithm
-            .get_all_paths(&1, &4, true, Some(2))
-            .unwrap()
-            .len(),
-        2
-    );
-    assert!(
-        algorithm
-            .get_all_paths(&4, &1, true, None)
-            .unwrap()
-            .is_empty()
-    );
+    assert_eq!(algorithm.all_paths(&1, &4, true, Some(2)).unwrap().len(), 2);
+    assert!(algorithm.all_paths(&4, &1, true, None).unwrap().is_empty());
 }
 
 #[test]
 fn negative_cycles() {
     let g = dg(&[(1, 2, 1.0), (2, 3, -2.0), (3, 1, 0.5), (3, 4, 1.0)]);
-    let error = BellmanFord::new(&g).get_paths(&1).unwrap_err();
+    let error = BellmanFord::new(&g).paths_from(&1).unwrap_err();
     let mut cycle = error.cycle().unwrap().vertex_list().to_vec();
     cycle.pop();
     cycle.sort();
     assert_eq!(cycle, [1, 2, 3]);
     assert!(
         BellmanFord::new(&dg(&[(1, 2, -1.0), (2, 3, 1.0)]))
-            .get_paths(&1)
+            .paths_from(&1)
             .is_ok()
     );
 }
@@ -118,7 +107,7 @@ fn disjoint_paths() {
         (0, 5, 10.0),
     ]);
     let ep = SuurballeKDisjointShortestPaths::new(&g)
-        .get_paths(&0, &5, 3)
+        .paths(&0, &5, 3)
         .unwrap();
     assert_eq!(ep.len(), 3);
     assert!(ep.iter().all(|p| p.is_valid(&g)));
@@ -128,13 +117,13 @@ fn disjoint_paths() {
     dedup.dedup();
     assert_eq!(all_edges.len(), dedup.len());
     let bp = BhandariKDisjointShortestPaths::new(&g)
-        .get_paths(&0, &5, 3)
+        .paths(&0, &5, 3)
         .unwrap();
     assert_eq!(bp.len(), 3);
     assert!(bp.iter().all(|path| path.is_valid(&g)));
     assert!(
         SuurballeKDisjointShortestPaths::new(&g)
-            .get_paths(&0, &0, 1)
+            .paths(&0, &0, 1)
             .is_err()
     );
 }

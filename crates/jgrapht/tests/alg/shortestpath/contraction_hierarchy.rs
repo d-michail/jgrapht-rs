@@ -29,7 +29,7 @@ fn precompute<G: Graph>(graph: &G) -> ContractionHierarchy<'_, G> {
     ContractionHierarchyPrecomputation::with_random_supplier(graph, 4, || {
         StdRng::seed_from_u64((SEED) as u64)
     })
-    .compute_contraction_hierarchy()
+    .contraction_hierarchy()
     .unwrap()
 }
 
@@ -231,7 +231,7 @@ mod precomputation {
                 graph.set_edge_weight(e, random.next_double()).unwrap();
             }
             let h = ContractionHierarchyPrecomputation::new(&graph)
-                .compute_contraction_hierarchy()
+                .contraction_hierarchy()
                 .unwrap();
 
             // correct mapping
@@ -273,8 +273,7 @@ mod precomputation {
         let mut graph = DiGraph::<i32>::simple().weighted();
         graph.add_vertices([1, 2]);
         graph.add_weighted_edge(&1, &2, -1.0).unwrap();
-        let result =
-            ContractionHierarchyPrecomputation::new(&graph).compute_contraction_hierarchy();
+        let result = ContractionHierarchyPrecomputation::new(&graph).contraction_hierarchy();
         assert!(matches!(result, Err(GraphError::InvalidWeight(_))));
     }
 
@@ -289,7 +288,7 @@ mod precomputation {
             let h = ContractionHierarchyPrecomputation::with_random_supplier(&graph, p, || {
                 StdRng::seed_from_u64((SEED) as u64)
             })
-            .compute_contraction_hierarchy()
+            .contraction_hierarchy()
             .unwrap();
             let levels: Vec<_> = h.vertices().iter().map(|v| v.contraction_level).collect();
             (levels, h.edges().len())
@@ -500,7 +499,7 @@ mod fixture_graphs {
         let h = ContractionHierarchyPrecomputation::with_random_supplier(graph, p, || {
             StdRng::seed_from_u64(19)
         })
-        .compute_contraction_hierarchy()
+        .contraction_hierarchy()
         .unwrap();
         for e in h.edges() {
             let (ls, lt) = (

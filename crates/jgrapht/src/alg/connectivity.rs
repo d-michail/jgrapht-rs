@@ -23,7 +23,6 @@
 //!   blocks), [`block_cut_tree`] / [`BlockCutpointGraph`], [`is_biconnected`].
 //! * [`KConnectivityFlowAlgorithm`] decides k-connectivity with maximum flows.
 
-use super::flow::MaximumFlowValueAlgorithm;
 use super::interfaces::StrongConnectivityAlgorithm;
 use super::util::Indexed;
 use crate::event::GraphListener;

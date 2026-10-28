@@ -48,14 +48,14 @@ where
     let targets = targets.into_iter().collect::<Vec<_>>();
     match kind {
         Kind::Default => {
-            DefaultManyToManyShortestPaths::new(graph).get_many_to_many_paths(sources, targets)
+            DefaultManyToManyShortestPaths::new(graph).many_to_many_paths(sources, targets)
         }
         Kind::Dijkstra => {
-            DijkstraManyToManyShortestPaths::new(graph).get_many_to_many_paths(sources, targets)
+            DijkstraManyToManyShortestPaths::new(graph).many_to_many_paths(sources, targets)
         }
         Kind::ContractionHierarchy => {
             let hierarchy =
-                ContractionHierarchyPrecomputation::new(graph).compute_contraction_hierarchy()?;
+                ContractionHierarchyPrecomputation::new(graph).contraction_hierarchy()?;
             ContractionHierarchyManyToManyShortestPaths::new(&hierarchy)
                 .many_to_many(sources, targets)
         }
@@ -657,7 +657,7 @@ mod contraction_hierarchy_many_to_many {
     fn test_get_paths_matches_dijkstra_oracle() {
         let graph = simple_graph();
         let hierarchy = ContractionHierarchyPrecomputation::new(&graph)
-            .compute_contraction_hierarchy()
+            .contraction_hierarchy()
             .unwrap();
         let paths = ContractionHierarchyManyToManyShortestPaths::new(&hierarchy)
             .single_source(&1)

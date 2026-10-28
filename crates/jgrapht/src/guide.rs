@@ -523,7 +523,7 @@
 //! assert_eq!(paths.weight(&'b'), Some(2.0));
 //!
 //! // The edge weights are capacities in a flow problem.
-//! let flow = EdmondsKarp::new(&g)?.calculate_maximum_flow(&'s', &'t')?;
+//! let flow = EdmondsKarp::new(&g)?.maximum_flow_value(&'s', &'t')?;
 //! assert_eq!(flow, 5.0);
 //!
 //! // Spanning trees treat the graph as undirected.
@@ -638,7 +638,7 @@
 //!
 //! Dijkstra, Bellman-Ford, BFS, Floyd-Warshall, Johnson and delta-stepping implement
 //! [`ShortestPathAlgorithm`](crate::alg::shortestpath::ShortestPathAlgorithm) (A* and Yen have their
-//! own `path` and `get_paths` methods): `path(s, t)` gives the walk, `path_weight(s, t)` only its weight, `single_source(s)` all
+//! own `path` and `paths` methods): `path(s, t)` gives the walk, `path_weight(s, t)` only its weight, `single_source(s)` all
 //! distances from `s` at once. Choose the algorithm by the graph: Dijkstra for non-negative
 //! weights, Bellman-Ford when weights can be negative (a negative cycle is
 //! [`GraphError::NegativeCycle`](crate::GraphError::NegativeCycle)), A* when you have a heuristic,
@@ -680,7 +680,7 @@
 //! assert_eq!(astar.weight(), 6.0);
 //!
 //! // The three best paths from start to goal, cheapest first.
-//! let best = YenKShortestPath::new(&g).get_paths(&start, &goal, 3)?;
+//! let best = YenKShortestPath::new(&g).paths(&start, &goal, 3)?;
 //! assert_eq!(best.len(), 3);
 //! assert!(best[0].weight() <= best[1].weight() && best[1].weight() <= best[2].weight());
 //! # Ok::<(), GraphError>(())

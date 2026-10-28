@@ -187,15 +187,12 @@ fn yen() {
         (4, 6, 1.0),
         (5, 6, 2.0),
     ]);
-    let ps = YenKShortestPath::new(&g).get_paths(&1, &6, 3).unwrap();
+    let ps = YenKShortestPath::new(&g).paths(&1, &6, 3).unwrap();
     let ws: Vec<_> = ps.iter().map(|p| p.weight()).collect();
     assert_eq!(ws, [5.0, 7.0, 8.0]);
     assert!(ps.iter().all(|p| p.is_valid(&g)));
     assert_eq!(
-        YenKShortestPath::new(&g)
-            .get_paths(&1, &6, 100)
-            .unwrap()
-            .len(),
+        YenKShortestPath::new(&g).paths(&1, &6, 100).unwrap().len(),
         7
     );
 }

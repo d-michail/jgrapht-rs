@@ -275,7 +275,7 @@ impl<'g, G: Graph> ContractionHierarchyPrecomputation<'g, G> {
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
-    pub fn compute_contraction_hierarchy(&self) -> Result<ContractionHierarchy<'g, G>> {
+    pub fn contraction_hierarchy(&self) -> Result<ContractionHierarchy<'g, G>> {
         let (mut core, originals) = Core::fill(self.graph)?;
         let mut randoms: Vec<_> = (0..self.parallelism)
             .map(|_| (self.random_supplier)())

@@ -55,7 +55,7 @@ fn three_vertex_graph(
 fn martin_test_graph_directed() {
     let (graph, weights) = five_vertex_graph();
     let paths = MartinShortestPath::new(&graph, |edge| weights[edge].clone())
-        .get_paths(&1)
+        .paths_from(&1)
         .unwrap();
 
     assert_eq!(paths.paths(&1).len(), 1);
@@ -70,13 +70,13 @@ fn martin_test_no_paths() {
     let mut graph = DiGraph::<i32>::pseudo();
     graph.add_vertices([1, 2]);
     let paths1 = MartinShortestPath::new(&graph, |_| vec![0.0, 0.0])
-        .get_paths(&1)
+        .paths_from(&1)
         .unwrap();
     assert_eq!(paths1.paths(&1).len(), 1);
     assert!(paths1.paths(&2).is_empty());
 
     let paths2 = MartinShortestPath::new(&graph, |_| vec![0.0, 0.0])
-        .get_paths(&2)
+        .paths_from(&2)
         .unwrap();
     assert!(paths2.paths(&1).is_empty());
     assert_eq!(paths2.paths(&2).len(), 1);
@@ -87,7 +87,7 @@ fn label_correcting_test_graph_directed() {
     let (graph, weights) = three_vertex_graph([5.0, 2.0], [2.0, 8.0], [1.0, 4.0]);
     let paths =
         LabelCorrectingMultiObjectiveShortestPath::new(&graph, |edge| weights[edge].clone())
-            .get_paths(&1)
+            .paths_from(&1)
             .unwrap();
 
     assert_eq!(paths.paths(&2).len(), 2);
@@ -98,7 +98,7 @@ fn label_correcting_test_dominated_paths() {
     let (graph, weights) = three_vertex_graph([3.0, 3.0], [5.0, 5.0], [5.0, 5.0]);
     let paths =
         LabelCorrectingMultiObjectiveShortestPath::new(&graph, |edge| weights[edge].clone())
-            .get_paths(&1)
+            .paths_from(&1)
             .unwrap();
 
     assert_eq!(paths.paths(&2).len(), 1);
@@ -113,7 +113,7 @@ fn label_correcting_test_approximation() {
         0.0,
     )
     .unwrap()
-    .get_paths(&1)
+    .paths_from(&1)
     .unwrap();
     assert_eq!(exact.paths(&2).len(), 2);
 
@@ -123,7 +123,7 @@ fn label_correcting_test_approximation() {
         0.10,
     )
     .unwrap()
-    .get_paths(&1)
+    .paths_from(&1)
     .unwrap();
     assert_eq!(approximate.paths(&2).len(), 1);
 }
@@ -133,13 +133,13 @@ fn label_correcting_test_no_paths() {
     let mut graph = DiGraph::<i32>::pseudo();
     graph.add_vertices([1, 2]);
     let paths1 = LabelCorrectingMultiObjectiveShortestPath::new(&graph, |_| vec![0.0, 0.0])
-        .get_paths(&1)
+        .paths_from(&1)
         .unwrap();
     assert_eq!(paths1.paths(&1).len(), 1);
     assert!(paths1.paths(&2).is_empty());
 
     let paths2 = LabelCorrectingMultiObjectiveShortestPath::new(&graph, |_| vec![0.0, 0.0])
-        .get_paths(&2)
+        .paths_from(&2)
         .unwrap();
     assert!(paths2.paths(&1).is_empty());
     assert_eq!(paths2.paths(&2).len(), 1);
@@ -149,11 +149,11 @@ fn label_correcting_test_no_paths() {
 fn label_correcting_test_compare_with_martin_shortest_path() {
     let (graph, weights) = five_vertex_graph();
     let martin = MartinShortestPath::new(&graph, |edge| weights[edge].clone())
-        .get_paths(&1)
+        .paths_from(&1)
         .unwrap();
     let label_correcting =
         LabelCorrectingMultiObjectiveShortestPath::new(&graph, |edge| weights[edge].clone())
-            .get_paths(&1)
+            .paths_from(&1)
             .unwrap();
 
     for vertex in 1..=5 {

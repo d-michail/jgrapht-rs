@@ -102,7 +102,7 @@ impl<'g, G: IncidenceGraph> PushRelabel<'g, G> {
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
-    pub fn calculate_maximum_flow(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
+    pub fn maximum_flow_value(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
         self.calculate(source, sink)
     }
 

@@ -83,7 +83,7 @@ impl<'g, G: 'g + IncidenceGraph> DefaultManyToManyShortestPaths<'g, G> {
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
-    pub fn get_many_to_many_paths(
+    pub fn many_to_many_paths(
         &self,
         sources: impl IntoIterator<Item = G::Vertex>,
         targets: impl IntoIterator<Item = G::Vertex>,
@@ -181,7 +181,7 @@ impl<'g, G: IncomingGraph + OutgoingGraph> DijkstraManyToManyShortestPaths<'g, G
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
-    pub fn get_many_to_many_paths(
+    pub fn many_to_many_paths(
         &self,
         sources: impl IntoIterator<Item = G::Vertex>,
         targets: impl IntoIterator<Item = G::Vertex>,

@@ -154,7 +154,7 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>> MartinShortestPath<'g, G, F> {
     ///
     /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
     /// the graph operations it performs are propagated.
-    pub fn get_paths(
+    pub fn paths_from(
         &self,
         source: &G::Vertex,
     ) -> Result<MultiObjectiveSingleSourcePaths<G::Vertex, G::Edge>> {
@@ -208,7 +208,7 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>> MartinShortestPath<'g, G, F> {
     ///
     /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
     /// the graph operations it performs are propagated.
-    pub fn get_paths_between(
+    pub fn paths_between(
         &self,
         source: &G::Vertex,
         sink: &G::Vertex,
@@ -216,7 +216,7 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>> MartinShortestPath<'g, G, F> {
         if !self.graph.contains_vertex(sink) {
             return Err(GraphError::VertexNotFound);
         }
-        Ok(self.get_paths(source)?.paths(sink).to_vec())
+        Ok(self.paths_from(source)?.paths(sink).to_vec())
     }
 }
 
@@ -289,7 +289,7 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
     ///
     /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
     /// the graph operations it performs are propagated.
-    pub fn get_paths(
+    pub fn paths_from(
         &self,
         source: &G::Vertex,
     ) -> Result<MultiObjectiveSingleSourcePaths<G::Vertex, G::Edge>> {
@@ -342,7 +342,7 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
     ///
     /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
     /// the graph operations it performs are propagated.
-    pub fn get_paths_between(
+    pub fn paths_between(
         &self,
         source: &G::Vertex,
         sink: &G::Vertex,
@@ -350,6 +350,6 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
         if !self.graph.contains_vertex(sink) {
             return Err(GraphError::VertexNotFound);
         }
-        Ok(self.get_paths(source)?.paths(sink).to_vec())
+        Ok(self.paths_from(source)?.paths(sink).to_vec())
     }
 }

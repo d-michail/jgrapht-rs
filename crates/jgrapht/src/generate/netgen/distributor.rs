@@ -18,7 +18,7 @@ use crate::{GraphError, Result};
 /// Randomly distributes a number of values among keys subject to per-key lower and upper bounds.
 ///
 /// Unlike JGraphT's `Distributor` it does not own its random source; pass it to
-/// [`get_distribution`](Self::get_distribution).
+/// [`distribution`](Self::distribution).
 pub struct Distributor<'a, K> {
     lower_bounds: Vec<Box<dyn Fn(&K) -> i32 + 'a>>,
     upper_bounds: Vec<Box<dyn Fn(&K) -> i32 + 'a>>,
@@ -78,27 +78,27 @@ impl<'a, K> Distributor<'a, K> {
 }
 
 impl<K: std::fmt::Debug> Distributor<'_, K> {
-    /// One value per key, summing to `value_num`, each within its bounds.
+    /// One value per key, summing to `value_count`, each within its bounds.
     ///
     /// # Errors
     ///
     /// Returns [`GraphError::Infeasible`] if the problem has no feasible solution;
     /// [`GraphError::InvalidParameter`] if a parameter is out of range. Errors of the graph
     /// operations it performs are propagated.
-    pub fn get_distribution(
+    pub fn distribution(
         &self,
         rng: &mut impl RandomSource,
         keys: &[K],
-        value_num: i32,
+        value_count: i32,
     ) -> Result<Vec<i32>> {
         let key_lb = self.compute_lower_bounds(keys);
         let key_ub = self.compute_upper_bounds(keys);
         let (lb_suffix, lb_sum) = Self::suffix_sum(&key_lb);
         let (ub_suffix, ub_sum) = Self::suffix_sum(&key_ub);
-        if lb_sum > value_num as i64 || ub_sum < value_num as i64 {
+        if lb_sum > value_count as i64 || ub_sum < value_count as i64 {
             return Err(GraphError::Infeasible);
         }
-        let mut remaining = value_num;
+        let mut remaining = value_count;
         let mut result = Vec::with_capacity(keys.len());
         for i in 0..key_lb.len() {
             // `int` arithmetic as in Java

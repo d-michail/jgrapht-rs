@@ -482,7 +482,7 @@ macro_rules! base_path_growing_tests {
                 path.push(g.add_weighted_edge(&a, &b, w).unwrap().unwrap());
             }
             let mut path_solver = PathGrowingWeightedMatching::new(&g).unwrap().path_solver();
-            let (weight, matching) = path_solver.get_maximum_weight_matching(&g, &path);
+            let (weight, matching) = path_solver.maximum_weight_matching(&g, &path);
             assert!((weight - 15.0).abs() < DEFAULT_EPSILON);
             assert_eq!(3, matching.len());
             assert!(matching.contains(g.get_edge(&0, &1).unwrap()));
@@ -490,14 +490,14 @@ macro_rules! base_path_growing_tests {
             assert!(matching.contains(g.get_edge(&5, &6).unwrap()));
 
             // test 1 (empty path)
-            let (weight1, matching1) = path_solver.get_maximum_weight_matching(&g, &[]);
+            let (weight1, matching1) = path_solver.maximum_weight_matching(&g, &[]);
             assert!(weight1.abs() < DEFAULT_EPSILON);
             assert_eq!(0, matching1.len());
 
             // test 2 (single edge)
             g.add_vertices([7, 8]);
             let path2 = vec![g.add_weighted_edge(&7, &8, 100.0).unwrap().unwrap()];
-            let (weight2, matching2) = path_solver.get_maximum_weight_matching(&g, &path2);
+            let (weight2, matching2) = path_solver.maximum_weight_matching(&g, &path2);
             assert!((weight2 - 100.0).abs() < DEFAULT_EPSILON);
             assert_eq!(1, matching2.len());
             assert!(matching2.contains(g.get_edge(&7, &8).unwrap()));
@@ -508,7 +508,7 @@ macro_rules! base_path_growing_tests {
                 g.add_weighted_edge(&9, &10, 10.0).unwrap().unwrap(),
                 g.add_weighted_edge(&10, &11, 15.0).unwrap().unwrap(),
             ];
-            let (weight3, matching3) = path_solver.get_maximum_weight_matching(&g, &path3);
+            let (weight3, matching3) = path_solver.maximum_weight_matching(&g, &path3);
             assert!((weight3 - 15.0).abs() < DEFAULT_EPSILON);
             assert_eq!(1, matching3.len());
             assert!(matching3.contains(g.get_edge(&10, &11).unwrap()));
@@ -849,7 +849,7 @@ mod maximum_weight_bipartite_matching_test {
             let mut alg =
                 MaximumWeightBipartiteMatching::new(&g, partition_a, partition_b).unwrap();
             let matching = alg.get_matching().unwrap();
-            let pot = alg.get_potentials();
+            let pot = alg.potentials();
             let zero = dashu_float::DBig::ZERO.with_precision(0).value();
             let dec = |x: f64| {
                 format!("{x}")
@@ -1239,7 +1239,7 @@ fn sparse_solution(graph: &UG, cardinality: Option<usize>) {
     if let Some(cardinality) = cardinality {
         verify_matching(graph, &matching, cardinality);
     }
-    let cover = matcher.get_odd_set_cover().unwrap().clone();
+    let cover = matcher.odd_set_cover().unwrap().clone();
     assert!(
         SparseEdmondsMaximumCardinalityMatching::is_optimal_matching(
             graph,

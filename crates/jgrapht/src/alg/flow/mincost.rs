@@ -489,7 +489,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         P: MinimumCostFlowProblem,
         P::Graph: Graph<Vertex = V, Edge = E>,
     {
-        let flow = self.get_minimum_cost_flow(problem)?;
+        let flow = self.solve_flow(problem)?;
         let dual_solution = (0..self.n)
             .map(|i| (self.graph_vertices[i].clone(), self.net.nodes[i].potential))
             .collect();
@@ -515,7 +515,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
     /// Returns [`GraphError::InvalidGraph`] if the graph is not directed; [`GraphError::Internal`]
     /// if an internal invariant of the library is broken (a bug). Errors of the graph operations it
     /// performs are propagated.
-    pub fn get_minimum_cost_flow<P>(&mut self, problem: &P) -> Result<MinimumCostFlow<E>>
+    pub fn solve_flow<P>(&mut self, problem: &P) -> Result<MinimumCostFlow<E>>
     where
         P: MinimumCostFlowProblem,
         P::Graph: Graph<Vertex = V, Edge = E>,
@@ -828,7 +828,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         P: MinimumCostFlowProblem,
         P::Graph: Graph<Vertex = V, Edge = E>,
     {
-        self.get_minimum_cost_flow(problem)
+        self.solve_flow(problem)
     }
 
     fn flow_map(&self) -> Option<&HashMap<E, f64>> {
