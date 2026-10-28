@@ -1,3 +1,4 @@
+use jgrapht::GraphExt;
 use jgrapht::util::java::RandomSource;
 use rand::{SeedableRng, rngs::StdRng};
 // (C) Copyright 2003-2026, by John V Sichi and JGraphT Contributors.
@@ -44,7 +45,7 @@ fn random_graph(n: usize, m: usize, random: &mut StdRng) -> DiGraph<usize> {
         graph.add_edge(&i, &(i + 1)).unwrap();
         graph.add_edge(&(i + 1), &i).unwrap();
     }
-    let edges: Vec<_> = graph.edges().copied().collect();
+    let edges: Vec<_> = graph.edges_cloned().collect();
     for e in &edges {
         graph.set_edge_weight(e, random.next_double()).unwrap();
     }
@@ -224,6 +225,7 @@ mod precomputation {
 
 mod shortest_path {
     use super::*;
+    use jgrapht::GraphExt;
 
     #[test]
     fn test_one_vertex() {
@@ -309,7 +311,7 @@ mod shortest_path {
             let actual = TransitNodeRoutingShortestPath::from_routing(routing)
                 .single_source(&0)
                 .unwrap();
-            let vertices: HashSet<_> = graph.vertices().copied().collect();
+            let vertices: HashSet<_> = graph.vertices_cloned().collect();
             for sink in vertices {
                 assert_eq!(expected.path(&sink), actual.path(&sink));
             }

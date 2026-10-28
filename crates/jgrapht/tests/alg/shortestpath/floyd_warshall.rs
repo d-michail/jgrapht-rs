@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{
     DijkstraShortestPath, FloydWarshallShortestPaths, ShortestPathAlgorithm,
 };
@@ -19,6 +20,7 @@ use jgrapht::generate::{GnmRandomGraphGenerator, GnpRandomGraphGenerator, GraphG
 use jgrapht::graph::{IncidenceGraph, OutgoingGraph};
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use rand::{Rng, SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 
 fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph>(
     graph: &G,
@@ -27,7 +29,9 @@ fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph
     let floyd_warshall = FloydWarshallShortestPaths::new(graph).unwrap();
     let dijkstra = DijkstraShortestPath::new(graph);
     for source in graph.vertices() {
+        let source = source.borrow();
         for target in graph.vertices() {
+            let target = target.borrow();
             let expected = dijkstra.path(source, target).unwrap();
             let actual = floyd_warshall.path(source, target).unwrap();
             match (expected, actual) {
@@ -234,10 +238,10 @@ where
         GnpRandomGraphGenerator::new(N, P, StdRng::seed_from_u64(seed), true).unwrap();
     generator.generate_default(&mut graph).unwrap();
     let mut random = StdRng::seed_from_u64(seed ^ 0x55aa);
-    for edge in graph.edges().copied().collect::<Vec<_>>() {
+    for edge in graph.edges_cloned().collect::<Vec<_>>() {
         graph.set_edge_weight(&edge, random.random()).unwrap();
     }
-    let vertices = graph.vertices().copied().collect::<Vec<_>>();
+    let vertices = graph.vertices_cloned().collect::<Vec<_>>();
     for &source in &vertices {
         for _ in 0..(N as f64 * P) as usize {
             let target = vertices[random.random_range(0..vertices.len())];
@@ -249,11 +253,13 @@ where
 
     let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
     for source in graph.vertices() {
+        let source = source.borrow();
         let dijkstra = DijkstraShortestPath::new(&graph)
             .single_source(source)
             .unwrap();
         let floyd_paths = floyd_warshall.single_source(source).unwrap();
         for target in graph.vertices() {
+            let target = target.borrow();
             assert!(
                 (dijkstra.weight(target).unwrap() - floyd_paths.weight(target).unwrap()).abs()
                     < 1e-9

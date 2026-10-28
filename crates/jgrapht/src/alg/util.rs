@@ -16,6 +16,7 @@
 
 use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
+use std::borrow::Borrow;
 use std::collections::HashMap;
 
 mod neighbor_cache;
@@ -42,9 +43,10 @@ pub fn vertex_degree_comparator<G: IncidenceGraph>(
 /// vertices and a weight. A graph that breaks the contract makes [`Indexed::new`] panic with a
 /// message naming the contract; no valid graph can trigger it.
 pub(crate) struct Indexed<'g, G: Graph> {
-    pub vs: Vec<&'g G::Vertex>,
-    pub idx: HashMap<&'g G::Vertex, usize>,
-    pub es: Vec<&'g G::Edge>,
+    pub vs: Vec<G::Vertex>,
+    pub idx: HashMap<G::Vertex, usize>,
+    pub es: Vec<G::Edge>,
+    _g: std::marker::PhantomData<&'g G>,
     /// `(source, target)` per edge index.
     pub ends: Vec<(usize, usize)>,
     pub w: Vec<f64>,
@@ -57,14 +59,16 @@ pub(crate) struct Indexed<'g, G: Graph> {
 
 impl<'g, G: Graph> Indexed<'g, G> {
     pub fn new(g: &'g G) -> Self {
-        let vs: Vec<_> = g.vertices().collect();
-        let idx: HashMap<_, _> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+        let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
+        let idx: HashMap<G::Vertex, usize> =
+            vs.iter().enumerate().map(|(i, v)| (v.clone(), i)).collect();
         let directed = g.graph_type().directed;
         let n = vs.len();
         let (mut es, mut ends, mut w) = (Vec::new(), Vec::new(), Vec::new());
         let mut out = vec![Vec::new(); n];
         let mut inn = vec![Vec::new(); n];
         for e in g.edges() {
+            let e = e.borrow();
             let (s, t) = g
                 .edge_endpoints(e)
                 .expect("Graph integrity: every edge has a source and a target");
@@ -75,7 +79,7 @@ impl<'g, G: Graph> Indexed<'g, G> {
                     .expect("Graph integrity: edge endpoints are vertices"),
             );
             let k = es.len();
-            es.push(e);
+            es.push(e.clone());
             ends.push((s, t));
             w.push(
                 g.edge_weight(e)
@@ -100,6 +104,7 @@ impl<'g, G: Graph> Indexed<'g, G> {
             out,
             inn,
             directed,
+            _g: std::marker::PhantomData,
         }
     }
     pub fn n(&self) -> usize {

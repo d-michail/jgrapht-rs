@@ -18,6 +18,7 @@ use jgrapht::alg::partition::*;
 use jgrapht::generate::*;
 use jgrapht::*;
 use rand::{Rng, SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 
 fn brute_max_matching(edges: &[(usize, usize, f64)], used: u32, i: usize, weighted: bool) -> f64 {
     if i == edges.len() {
@@ -36,26 +37,29 @@ fn brute_max_matching(edges: &[(usize, usize, f64)], used: u32, i: usize, weight
 fn weighted_edges<G: Graph<Vertex = usize>>(g: &G) -> Vec<(usize, usize, f64)> {
     g.edges()
         .map(|e| {
-            (
-                *g.edge_source(e).unwrap(),
-                *g.edge_target(e).unwrap(),
-                g.edge_weight(e).unwrap(),
-            )
+            let e = e.borrow();
+            {
+                (
+                    *g.edge_source(e).unwrap(),
+                    *g.edge_target(e).unwrap(),
+                    g.edge_weight(e).unwrap(),
+                )
+            }
         })
         .collect()
 }
 
 fn matching_is_valid<G: Graph>(g: &G, matching: &Matching<G::Vertex, G::Edge>) -> bool {
     let mut used = std::collections::HashSet::new();
-    matching
-        .edges()
-        .iter()
-        .all(|edge| match g.edge_endpoints(edge) {
+    matching.edges().iter().all(|edge| {
+        let edge = edge.borrow();
+        match g.edge_endpoints(edge) {
             Some((source, target)) => {
                 source != target && used.insert(source) && used.insert(target)
             }
             None => false,
-        })
+        }
+    })
 }
 
 #[test]
@@ -78,7 +82,7 @@ fn matchings_against_brute_force() {
             .unwrap()
             .generate_indexed(&mut g)
             .unwrap();
-        for e in g.edges().cloned().collect::<Vec<_>>() {
+        for e in g.edges_cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(1..9) as f64)
                 .unwrap();
         }
@@ -119,7 +123,7 @@ fn bipartite_matchings() {
             .generate_indexed(&mut g)
             .unwrap();
         // keep only edges between evens and odds so the graph is bipartite
-        for e in g.edges().cloned().collect::<Vec<_>>() {
+        for e in g.edges_cloned().collect::<Vec<_>>() {
             let (a, b) = (*g.edge_source(&e).unwrap(), *g.edge_target(&e).unwrap());
             if (a + b) % 2 == 0 {
                 g.remove_edge(&e);

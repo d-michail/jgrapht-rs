@@ -20,16 +20,16 @@ Review of 2026-10-27 on `master` (e8d4f07). Build and `cargo test --workspace` a
 
 **I-6. (resolved, with limits)** Caller-reachable panics found by the audit are fixed (five defects, see [`PANIC_AUDIT.md`](PANIC_AUDIT.md)); incidence is a compile-time capability, fallible iterators yield `Result`, and importers are mutation-tested and about 60 algorithms are swept on random pseudographs. 751 `unwrap`/`expect` sites remain, each recorded in [`panic_sites.tsv`](panic_sites.tsv) with a class; indexing sites are classified by rule, not individually read.
 
-**I-7. (resolved)** Fixed: both crates have `#![deny(missing_docs)]`, public fallible functions have `# Errors` sections, and `lib.rs` has doctests for `Option`, `Result<Option<_>>`, fallible iterators and capability bounds. Many of the 686 added doc lines are short name-derived summaries; improve them as the APIs are touched.
+**I-7. (partly resolved)** Fixed: both crates have `#![deny(missing_docs)]`, public fallible functions have `# Errors` sections, and `lib.rs` has doctests for `Option`, `Result<Option<_>>`, fallible iterators and capability bounds. About 440 short name-derived summaries remain ("Creates a new instance.", "Returns the len."); the graph traits, walks, path results, LCA finders, builders and algorithm interfaces were rewritten, the rest are improved as the APIs are touched.
 
-**I-8. (resolved)** Done per [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md): capability traits, typed errors, result objects, `Option` for unreachable. About 95 `InvalidArgument(String)` sites remain as the documented fallback.
+**I-8. (resolved)** Done per [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md): capability traits, typed errors, result objects, `Option` for unreachable. About 57 `InvalidArgument(String)` sites remain as the documented fallback (38 were converted to typed variants).
 
-**I-9. Sparse graphs borrow ids from an identity array** of `max(n, m)` elements because `Graph` returns references (documented in `STATUS.md`). Costs memory proportional to the larger of `n` and `m`; revisit if the `Graph` trait ever returns owned ids.
+**I-9. (resolved)** `Graph::vertices()`/`edges()` yield `VertexRef`/`EdgeRef`; the sparse graphs yield `usize` by value and keep no identity array (`docs/REF_OR_VALUE_PLAN.md`, `tests/sparse_memory.rs`).
 
-**I-10. `NeighborCache` returns snapshots, not live views**, and `AsSubgraph`/other views borrow their base, so Java's listener-based base-change tracking is absent by design. Document in the user guide to avoid surprises when porting Java code.
+**I-10. (resolved)** Documented in `docs/USER_GUIDE.md` ("Views and snapshots"): views borrow their base, `NeighborCache` is a lazily filled cache that stays current only when registered as a listener, and result objects are values.
 
 ## Process
 
-**I-11. (partly resolved)** `cargo fmt --check` is in CI; `benches/` have no regression gate (the Java numbers comparison is manual). The 4 Java `jgrapht-ext`/guava/unimi/osm bridges remain out of scope.
+**I-11. (resolved)** `cargo fmt --check` is in CI, and a `bench-gate` job compares the benchmarks of a pull request with its base on the same runner (`scripts/bench_gate.py`, 30% threshold).
 
 **I-12. (resolved)** The hand-off text in `FIDELITY_ROADMAP.md` sections F/G was trimmed.

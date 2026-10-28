@@ -115,6 +115,14 @@ impl<'f, G: Graph> AsWeighted<'f, G> {
 impl<G: Graph> Graph for AsWeighted<'_, G> {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = G::VertexRef<'a>
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = G::EdgeRef<'a>
+    where
+        Self: 'a;
     fn graph_type(&self) -> GraphType {
         self.graph.graph_type().as_weighted()
     }
@@ -159,6 +167,14 @@ pub struct AsUnweighted<G>(pub G);
 impl<G: Graph> Graph for AsUnweighted<G> {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = G::VertexRef<'a>
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = G::EdgeRef<'a>
+    where
+        Self: 'a;
     fn graph_type(&self) -> GraphType {
         self.0.graph_type().as_unweighted()
     }

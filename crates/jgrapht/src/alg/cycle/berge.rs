@@ -21,6 +21,7 @@ use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
 use crate::view::AsSubgraph;
 use crate::walk::GraphWalk;
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::{BTreeSet, HashMap};
 
 /// The graph under test as a graph on `0..n` (vertex order and edge order are kept, so that
@@ -190,7 +191,7 @@ impl Core {
         &mut self,
         g: &S,
     ) {
-        let vertices: Vec<usize> = g.vertices().copied().collect();
+        let vertices: Vec<usize> = g.vertices_cloned().collect();
         for &start in &vertices {
             if g.degree_of(&start) < 2 {
                 continue;
@@ -238,7 +239,7 @@ impl Core {
 
     /// Whether `g` contains a pyramid.
     fn contains_pyramid(&mut self, g: &H) -> bool {
-        let vertices: Vec<usize> = g.vertices().copied().collect();
+        let vertices: Vec<usize> = g.vertices_cloned().collect();
         let mut visited_triangles: IndexSet<VSet> = IndexSet::new();
         for &b1 in &vertices {
             for &b2 in &vertices {
@@ -440,7 +441,7 @@ impl Core {
     }
 
     fn contains_jewel(&mut self, g: &H) -> bool {
-        let vertices: Vec<usize> = g.vertices().copied().collect();
+        let vertices: Vec<usize> = g.vertices_cloned().collect();
         for &v2 in &vertices {
             for &v3 in &vertices {
                 if v2 == v3 || !ce(g, v2, v3) {
@@ -532,7 +533,7 @@ impl Core {
     }
 
     fn contains_clean_shortest_odd_hole(&mut self, g: &H) -> bool {
-        let vertices: Vec<usize> = g.vertices().copied().collect();
+        let vertices: Vec<usize> = g.vertices_cloned().collect();
         for &u in &vertices {
             for &v in &vertices {
                 if u == v || ce(g, u, v) {
@@ -577,7 +578,7 @@ impl Core {
     }
 
     fn get_path_avoiding_x(g: &H, start: usize, end: usize, x: &VSet) -> Option<Walk> {
-        let mut vertex_set: VSet = g.vertices().copied().collect();
+        let mut vertex_set: VSet = g.vertices_cloned().collect();
         for v in x {
             vertex_set.remove(v);
         }
@@ -587,7 +588,7 @@ impl Core {
     }
 
     fn contains_shortest_odd_hole(&mut self, g: &H, x: &VSet) -> bool {
-        let vertices: Vec<usize> = g.vertices().copied().collect();
+        let vertices: Vec<usize> = g.vertices_cloned().collect();
         for &y1 in &vertices {
             if x.contains(&y1) {
                 continue;
@@ -651,7 +652,7 @@ impl Core {
     }
 
     fn has_configuration_type1(&mut self, g: &H) -> bool {
-        let vertices: Vec<usize> = g.vertices().copied().collect();
+        let vertices: Vec<usize> = g.vertices_cloned().collect();
         for &v1 in &vertices {
             let temp = ConnectivityInspector::new()
                 .connected_set_of(g, &v1)
@@ -716,7 +717,7 @@ impl Core {
     }
 
     fn has_configuration_type2(&mut self, g: &H) -> bool {
-        let vertices: Vec<usize> = g.vertices().copied().collect();
+        let vertices: Vec<usize> = g.vertices_cloned().collect();
         for &v1 in &vertices {
             for &v2 in &vertices {
                 if v1 == v2 || !ce(g, v1, v2) {
@@ -821,7 +822,7 @@ impl Core {
     }
 
     fn has_configuration_type3(&mut self, g: &H) -> bool {
-        let vertices: Vec<usize> = g.vertices().copied().collect();
+        let vertices: Vec<usize> = g.vertices_cloned().collect();
         for &v1 in &vertices {
             for &v2 in &vertices {
                 if v1 == v2 || !ce(g, v1, v2) {
@@ -946,8 +947,7 @@ impl Core {
 
     /// The common neighbours of `a` and `b`.
     fn n(g: &H, a: usize, b: usize) -> VSet {
-        g.vertices()
-            .copied()
+        g.vertices_cloned()
             .filter(|&t| ce(g, t, a) && ce(g, t, b))
             .collect()
     }
@@ -986,8 +986,7 @@ impl Core {
     fn z(g: &H, n_ab: &VSet, c: usize) -> VSet {
         let mut temp = Self::y(g, n_ab, c);
         temp.extend(Self::w(g, n_ab, c));
-        g.vertices()
-            .copied()
+        g.vertices_cloned()
             .filter(|&it| Self::is_yx_complete(g, it, &temp))
             .collect()
     }
@@ -1003,7 +1002,7 @@ impl Core {
     }
 
     fn routine3(g: &H) -> IndexSet<VSet> {
-        let vertices: Vec<usize> = g.vertices().copied().collect();
+        let vertices: Vec<usize> = g.vertices_cloned().collect();
         let mut n_uv_list: IndexSet<VSet> = IndexSet::new();
         for &u in &vertices {
             for &v in &vertices {
@@ -1132,11 +1131,12 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
         if g.graph_type().directed || g.graph_type().mixed {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
         }
-        let vs: Vec<V> = g.vertices().cloned().collect();
+        let vs: Vec<V> = g.vertices_cloned().collect();
         let index: HashMap<&V, usize> = vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let mut h = H::pseudo().weighted();
         h.add_vertices(0..vs.len());
         for e in g.edges() {
+            let e = e.borrow();
             let (s, t) = g.edge_endpoints(e).expect("edge of the graph");
             let id = h
                 .add_edge(&index[s], &index[t])?

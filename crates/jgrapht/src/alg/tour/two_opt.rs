@@ -23,6 +23,7 @@ use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::java::RandomSource;
 use crate::walk::GraphWalk;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 
 type Tour<G> = Result<Option<GraphWalk<<G as Graph>::Vertex, <G as Graph>::Edge>>>;
@@ -132,7 +133,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
     /// Initialize graph and mapping to integer vertices.
     fn init(graph: &G) -> State<G::Vertex> {
         let n = graph.vertex_count();
-        let rev_index: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let rev_index: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let index: HashMap<G::Vertex, usize> = rev_index
             .iter()
             .enumerate()
@@ -140,6 +141,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
             .collect();
         let mut dist = vec![vec![0.0; n]; n];
         for e in graph.edges() {
+            let e = e.borrow();
             let (s, t) = graph.edge_endpoints(e).expect("edge of the graph");
             let weight = graph.weight_of(e);
             let (si, ti) = (index[s], index[t]);
@@ -159,7 +161,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
         let tour = self
             .initializer
             .get_tour(graph)?
-            .ok_or_else(|| GraphError::InvalidArgument("Not a valid tour".into()))?;
+            .ok_or(GraphError::InvalidTour)?;
         Self::path_to_tour(&tour, state)
     }
 
@@ -210,7 +212,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
         let n = state.n;
         let vertex_list = path.vertex_list();
         if vertex_list.len() != n + 1 {
-            return Err(GraphError::InvalidArgument("Not a valid tour".into()));
+            return Err(GraphError::InvalidTour);
         }
         let mut visited = vec![false; n];
         let mut tour = vec![0usize; n + 1];
@@ -218,9 +220,9 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
             let vi = *state
                 .index
                 .get(&vertex_list[i])
-                .ok_or_else(|| GraphError::InvalidArgument("Not a valid tour".into()))?;
+                .ok_or(GraphError::InvalidTour)?;
             if visited[vi] {
-                return Err(GraphError::InvalidArgument("Not a valid tour".into()));
+                return Err(GraphError::InvalidTour);
             }
             visited[vi] = true;
             tour[i] = vi;

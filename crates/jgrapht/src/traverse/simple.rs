@@ -25,10 +25,10 @@ use std::vec::IntoIter;
 /// Breadth-first search.
 pub struct Bfs<'g, G: Graph> {
     g: &'g G,
-    queue: VecDeque<&'g G::Vertex>,
-    seen: HashSet<&'g G::Vertex>,
-    depth: HashMap<&'g G::Vertex, usize>,
-    rest: IntoIter<&'g G::Vertex>,
+    queue: VecDeque<G::Vertex>,
+    seen: HashSet<G::Vertex>,
+    depth: HashMap<G::Vertex, usize>,
+    rest: IntoIter<G::Vertex>,
 }
 
 impl<'g, G: OutgoingGraph> Bfs<'g, G> {
@@ -37,7 +37,7 @@ impl<'g, G: OutgoingGraph> Bfs<'g, G> {
     /// # Errors
     ///
     /// [`GraphError::VertexNotFound`] if `start` is not a vertex of `g`.
-    pub fn new(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
+    pub fn new(g: &'g G, start: &G::Vertex) -> Result<Self> {
         if !g.contains_vertex(start) {
             return Err(GraphError::VertexNotFound);
         }
@@ -48,7 +48,7 @@ impl<'g, G: OutgoingGraph> Bfs<'g, G> {
             depth: HashMap::new(),
             rest: Vec::new().into_iter(),
         };
-        b.enqueue_root(start);
+        b.enqueue_root(start.clone());
         Ok(b)
     }
     /// Covers every component, starting from the vertices in graph order.
@@ -58,12 +58,12 @@ impl<'g, G: OutgoingGraph> Bfs<'g, G> {
             queue: VecDeque::new(),
             seen: HashSet::new(),
             depth: HashMap::new(),
-            rest: g.vertices().collect::<Vec<_>>().into_iter(),
+            rest: g.vertices_cloned().collect::<Vec<_>>().into_iter(),
         }
     }
-    fn enqueue_root(&mut self, v: &'g G::Vertex) {
-        self.seen.insert(v);
-        self.depth.insert(v, 0);
+    fn enqueue_root(&mut self, v: G::Vertex) {
+        self.seen.insert(v.clone());
+        self.depth.insert(v.clone(), 0);
         self.queue.push_back(v);
     }
     /// Hop distance from the root of its search tree, for vertices discovered so far.
@@ -73,16 +73,16 @@ impl<'g, G: OutgoingGraph> Bfs<'g, G> {
 }
 
 impl<'g, G: OutgoingGraph> Iterator for Bfs<'g, G> {
-    type Item = &'g G::Vertex;
+    type Item = G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if let Some(v) = self.queue.pop_front() {
                 let g = self.g;
-                let d = self.depth[v];
-                for n in g.out_neighbors_of(v) {
-                    if self.seen.insert(n) {
-                        self.depth.insert(n, d + 1);
-                        self.queue.push_back(n);
+                let d = self.depth[&v];
+                for n in g.out_neighbors_of(&v) {
+                    if self.seen.insert(n.clone()) {
+                        self.depth.insert(n.clone(), d + 1);
+                        self.queue.push_back(n.clone());
                     }
                 }
                 return Some(v);
@@ -96,9 +96,9 @@ impl<'g, G: OutgoingGraph> Iterator for Bfs<'g, G> {
 /// Depth-first search, pre-order.
 pub struct Dfs<'g, G: Graph> {
     g: &'g G,
-    stack: Vec<&'g G::Vertex>,
-    seen: HashSet<&'g G::Vertex>,
-    rest: IntoIter<&'g G::Vertex>,
+    stack: Vec<G::Vertex>,
+    seen: HashSet<G::Vertex>,
+    rest: IntoIter<G::Vertex>,
 }
 
 impl<'g, G: OutgoingGraph> Dfs<'g, G> {
@@ -107,13 +107,13 @@ impl<'g, G: OutgoingGraph> Dfs<'g, G> {
     /// # Errors
     ///
     /// [`GraphError::VertexNotFound`] if `start` is not a vertex of `g`.
-    pub fn new(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
+    pub fn new(g: &'g G, start: &G::Vertex) -> Result<Self> {
         if !g.contains_vertex(start) {
             return Err(GraphError::VertexNotFound);
         }
         Ok(Dfs {
             g,
-            stack: vec![start],
+            stack: vec![start.clone()],
             seen: HashSet::new(),
             rest: Vec::new().into_iter(),
         })
@@ -124,23 +124,24 @@ impl<'g, G: OutgoingGraph> Dfs<'g, G> {
             g,
             stack: Vec::new(),
             seen: HashSet::new(),
-            rest: g.vertices().collect::<Vec<_>>().into_iter(),
+            rest: g.vertices_cloned().collect::<Vec<_>>().into_iter(),
         }
     }
 }
 
 impl<'g, G: OutgoingGraph> Iterator for Dfs<'g, G> {
-    type Item = &'g G::Vertex;
+    type Item = G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             while let Some(v) = self.stack.pop() {
-                if !self.seen.insert(v) {
+                if !self.seen.insert(v.clone()) {
                     continue;
                 }
                 let g = self.g;
-                let nb: Vec<_> = g
-                    .out_neighbors_of(v)
-                    .filter(|n| !self.seen.contains(n))
+                let nb: Vec<G::Vertex> = g
+                    .out_neighbors_of(&v)
+                    .filter(|n| !self.seen.contains(*n))
+                    .cloned()
                     .collect();
                 self.stack.extend(nb.into_iter().rev());
                 return Some(v);
@@ -154,9 +155,9 @@ impl<'g, G: OutgoingGraph> Iterator for Dfs<'g, G> {
 /// Depth-first search, post-order (a vertex is yielded after all vertices below it).
 pub struct DfsPostOrder<'g, G: Graph> {
     g: &'g G,
-    stack: Vec<(&'g G::Vertex, IntoIter<&'g G::Vertex>)>,
-    seen: HashSet<&'g G::Vertex>,
-    rest: IntoIter<&'g G::Vertex>,
+    stack: Vec<(G::Vertex, IntoIter<G::Vertex>)>,
+    seen: HashSet<G::Vertex>,
+    rest: IntoIter<G::Vertex>,
 }
 
 impl<'g, G: OutgoingGraph> DfsPostOrder<'g, G> {
@@ -165,7 +166,7 @@ impl<'g, G: OutgoingGraph> DfsPostOrder<'g, G> {
     /// # Errors
     ///
     /// [`GraphError::VertexNotFound`] if `start` is not a vertex of `g`.
-    pub fn new(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
+    pub fn new(g: &'g G, start: &G::Vertex) -> Result<Self> {
         if !g.contains_vertex(start) {
             return Err(GraphError::VertexNotFound);
         }
@@ -175,7 +176,7 @@ impl<'g, G: OutgoingGraph> DfsPostOrder<'g, G> {
             seen: HashSet::new(),
             rest: Vec::new().into_iter(),
         };
-        s.push(start);
+        s.push(start.clone());
         Ok(s)
     }
     /// Computes the all.
@@ -184,25 +185,25 @@ impl<'g, G: OutgoingGraph> DfsPostOrder<'g, G> {
             g,
             stack: Vec::new(),
             seen: HashSet::new(),
-            rest: g.vertices().collect::<Vec<_>>().into_iter(),
+            rest: g.vertices_cloned().collect::<Vec<_>>().into_iter(),
         }
     }
-    fn push(&mut self, v: &'g G::Vertex) {
-        self.seen.insert(v);
+    fn push(&mut self, v: G::Vertex) {
+        self.seen.insert(v.clone());
         let g = self.g;
-        self.stack
-            .push((v, g.out_neighbors_of(v).collect::<Vec<_>>().into_iter()));
+        let neighbors: Vec<G::Vertex> = g.out_neighbors_of(&v).cloned().collect();
+        self.stack.push((v, neighbors.into_iter()));
     }
 }
 
 impl<'g, G: OutgoingGraph> Iterator for DfsPostOrder<'g, G> {
-    type Item = &'g G::Vertex;
+    type Item = G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         loop {
             if let Some((_, it)) = self.stack.last_mut() {
                 match it.next() {
                     Some(n) => {
-                        if !self.seen.contains(n) {
+                        if !self.seen.contains(&n) {
                             self.push(n);
                         }
                     }
@@ -231,16 +232,22 @@ impl<'g, G: OutgoingGraph> Iterator for DfsPostOrder<'g, G> {
 /// ```
 pub struct TopologicalOrder<'g, G: DirectedGraph> {
     g: &'g G,
-    queue: VecDeque<&'g G::Vertex>,
-    indeg: HashMap<&'g G::Vertex, usize>,
+    queue: VecDeque<G::Vertex>,
+    indeg: HashMap<G::Vertex, usize>,
     yielded: usize,
 }
 
 impl<'g, G: DirectedGraph + IncidenceGraph> TopologicalOrder<'g, G> {
     /// Creates a new instance.
     pub fn new(g: &'g G) -> Self {
-        let indeg: HashMap<_, _> = g.vertices().map(|v| (v, g.in_degree_of(v))).collect();
-        let queue = g.vertices().filter(|v| indeg[v] == 0).collect();
+        let indeg: HashMap<G::Vertex, usize> = g
+            .vertices_cloned()
+            .map(|v| {
+                let degree = g.in_degree_of(&v);
+                (v, degree)
+            })
+            .collect();
+        let queue = g.vertices_cloned().filter(|v| indeg[v] == 0).collect();
         TopologicalOrder {
             g,
             queue,
@@ -255,19 +262,19 @@ impl<'g, G: DirectedGraph + IncidenceGraph> TopologicalOrder<'g, G> {
 }
 
 impl<'g, G: DirectedGraph + IncidenceGraph> Iterator for TopologicalOrder<'g, G> {
-    type Item = &'g G::Vertex;
+    type Item = G::Vertex;
     fn next(&mut self) -> Option<Self::Item> {
         let v = self.queue.pop_front()?;
         self.yielded += 1;
         let g = self.g;
-        for n in g.out_neighbors_of(v) {
+        for n in g.out_neighbors_of(&v) {
             // an edge to a non-vertex violates the `Graph` integrity contract; ignore it
             let Some(d) = self.indeg.get_mut(n) else {
                 continue;
             };
             *d = d.saturating_sub(1);
             if *d == 0 {
-                self.queue.push_back(n);
+                self.queue.push_back(n.clone());
             }
         }
         Some(v)
@@ -275,7 +282,7 @@ impl<'g, G: DirectedGraph + IncidenceGraph> Iterator for TopologicalOrder<'g, G>
 }
 
 /// A topological ordering of `g`, or `None` if it contains a cycle.
-pub fn topological_sort<G: DirectedGraph + IncidenceGraph>(g: &G) -> Option<Vec<&G::Vertex>> {
+pub fn topological_sort<G: DirectedGraph + IncidenceGraph>(g: &G) -> Option<Vec<G::Vertex>> {
     let mut it = TopologicalOrder::new(g);
     let order: Vec<_> = it.by_ref().collect();
     it.is_complete().then_some(order)

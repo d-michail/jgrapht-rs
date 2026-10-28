@@ -43,9 +43,7 @@ impl<V: Eq + Hash + Clone> Neighbors<V> {
     }
     fn remove(&mut self, v: &V) -> Result<()> {
         match self.counts.get_mut(v) {
-            None => Err(GraphError::InvalidArgument(
-                "Attempting to remove a neighbor that wasn't present".into(),
-            )),
+            None => Err(GraphError::ElementNotFound),
             Some(c) => {
                 *c -= 1;
                 if *c == 0 {

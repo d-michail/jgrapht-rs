@@ -28,12 +28,12 @@ fn dg(edges: &[(u32, u32)]) -> DiGraph<u32> {
 fn bfs_dfs_orders() {
     let g = dg(&[(1, 2), (1, 3), (2, 4), (3, 4), (4, 5)]);
     let mut bfs = Bfs::new(&g, &1).unwrap();
-    let order: Vec<_> = bfs.by_ref().copied().collect();
+    let order: Vec<_> = bfs.by_ref().collect();
     assert_eq!(order, [1, 2, 3, 4, 5]);
     assert_eq!(bfs.depth(&5), Some(3));
-    let dfs: Vec<_> = Dfs::new(&g, &1).unwrap().copied().collect();
+    let dfs: Vec<_> = Dfs::new(&g, &1).unwrap().collect();
     assert_eq!(dfs, [1, 2, 4, 5, 3]);
-    let post: Vec<_> = DfsPostOrder::new(&g, &1).unwrap().copied().collect();
+    let post: Vec<_> = DfsPostOrder::new(&g, &1).unwrap().collect();
     assert_eq!(post, [5, 4, 2, 3, 1]);
 }
 
@@ -50,7 +50,7 @@ fn all_components_and_direction() {
 fn topo() {
     let g = dg(&[(1, 2), (1, 3), (2, 4), (3, 4)]);
     let t = topological_sort(&g).unwrap();
-    let pos = |x: u32| t.iter().position(|v| **v == x).unwrap();
+    let pos = |x: u32| t.iter().position(|v| *v == x).unwrap();
     assert!(pos(1) < pos(2) && pos(2) < pos(4) && pos(3) < pos(4));
     assert!(topological_sort(&dg(&[(1, 2), (2, 1)])).is_none());
 }
@@ -103,6 +103,6 @@ fn orderings() {
     d.by_ref().for_each(drop);
     assert_eq!(d.degeneracy(), 2);
     // LexBFS on a path from the first vertex visits it in path order
-    let order: Vec<_> = LexBfs::new(&g).copied().collect();
+    let order: Vec<_> = LexBfs::new(&g).collect();
     assert_eq!(order, [1, 2, 3, 4]);
 }

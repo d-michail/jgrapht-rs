@@ -21,6 +21,7 @@ use dashu_float::DBig;
 use indexmap::IndexSet;
 use rheaps::AddressableHeap;
 use rheaps::tree::FibonacciHeap;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 type Heap<V> = FibonacciHeap<DBig, V>;
@@ -331,6 +332,7 @@ impl<G: UndirectedGraph + IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
         self.node_in_heap = HashMap::new();
         self.pred = HashMap::new();
         for v in graph.vertices() {
+            let v = v.borrow();
             pot.insert(v.clone(), zero());
             self.pred.insert(v.clone(), None);
             self.dist.insert(v.clone(), zero());

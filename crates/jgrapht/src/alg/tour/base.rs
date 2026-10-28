@@ -100,13 +100,13 @@ pub(crate) fn edge_set_to_tour<G: OutgoingGraph>(
 ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
     let tour_graph =
         crate::view::MaskSubgraph::new(graph, |_| false, |e: &G::Edge| !tour.contains(e));
-    let vertices: Vec<G::Vertex> = DepthFirstIterator::new(&tour_graph).cloned().collect();
+    let vertices: Vec<G::Vertex> = DepthFirstIterator::new(&tour_graph).collect();
     vertex_list_to_tour(vertices, graph)
 }
 
 /// `getSingletonTour`.
 pub(crate) fn singleton_tour<G: Graph>(graph: &G) -> GraphWalk<G::Vertex, G::Edge> {
-    let start = graph.vertices().next().expect("one vertex").clone();
+    let start = graph.vertices_cloned().next().expect("one vertex");
     GraphWalk::new_unchecked(vec![start], Vec::new(), 0.0)
 }
 

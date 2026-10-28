@@ -26,6 +26,7 @@ use crate::{
 };
 use indexmap::{IndexMap, IndexSet};
 use jgrapht::{DefaultEdge, Graph, GraphMut};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::io::{Read, Write};
@@ -786,6 +787,7 @@ where
         }
         let mut ids = HashMap::new();
         for vertex in graph.vertices() {
+            let vertex = vertex.borrow();
             let id = self.base.vertex_id(vertex)?;
             if !is_valid_id(&id) {
                 return Err(IoError::Export(format!("invalid DOT vertex id {id:?}")));
@@ -807,6 +809,7 @@ where
             " -- "
         };
         for edge in graph.edges() {
+            let edge = edge.borrow();
             write_edge(&mut output, graph, edge, &ids, connector, "  ", &self.base)?;
         }
         if let Some(provider) = &self.subgraph_provider {

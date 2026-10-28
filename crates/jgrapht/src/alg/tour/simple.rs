@@ -29,6 +29,7 @@ use crate::util::java::{RandomSource, java_shuffle};
 use crate::walk::GraphWalk;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 type Tour<G> = Result<Option<GraphWalk<<G as Graph>::Vertex, <G as Graph>::Edge>>>;
@@ -74,7 +75,7 @@ impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgori
     /// Computes a tour using the greedy heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
-        let mut vertices: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let mut vertices: Vec<G::Vertex> = graph.vertices_cloned().collect();
         if vertices.len() == 1 {
             return Ok(Some(singleton_tour(graph)));
         }
@@ -170,7 +171,7 @@ impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgori
             return Ok(Some(singleton_tour(graph)));
         }
         let n = graph.vertex_count();
-        let mut path: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let mut path: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let initial_index = match self.initial_vertices.pop_front() {
             Some(first) => path
                 .iter()
@@ -243,12 +244,12 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for TwoApp
             return Ok(Some(singleton_tour(graph)));
         }
         let mut mst = UGraph::<G::Vertex>::simple();
-        mst.add_vertices(graph.vertices().cloned());
+        mst.add_vertices(graph.vertices_cloned());
         for e in kruskal(graph).edges {
             let (u, v) = graph.edge_endpoints(&e).expect("edge of the graph");
             mst.add_edge(u, v)?;
         }
-        let start = graph.vertices().next().expect("non-empty").clone();
+        let start = graph.vertices_cloned().next().expect("non-empty");
         let mut found = HashSet::new();
         let mut tour = Vec::with_capacity(graph.vertex_count() + 1);
         for v in DepthFirstIterator::from_start(&mst, &start)? {
@@ -299,17 +300,21 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for Greedy
         if n == 1 {
             return Ok(Some(singleton_tour(graph)));
         }
-        let mut edges: Vec<&G::Edge> = graph.edges().collect();
+        let mut edges: Vec<G::Edge> = graph.edges_cloned().collect();
         edges.sort_by(|a, b| {
             let (wa, wb) = (graph.weight_of(a), graph.weight_of(b));
             wa.total_cmp(&wb)
         });
-        let index: HashMap<&G::Vertex, usize> =
-            graph.vertices().enumerate().map(|(i, v)| (v, i)).collect();
+        let all_vertices: Vec<G::Vertex> = graph.vertices_cloned().collect();
+        let index: HashMap<&G::Vertex, usize> = all_vertices
+            .iter()
+            .enumerate()
+            .map(|(i, v)| (v, i))
+            .collect();
         let mut tour_edges: HashSet<G::Edge> = HashSet::with_capacity(n);
         let mut vertex_degree = vec![0usize; n];
         let mut tour_set = UnionFind::new(n);
-        for edge in edges {
+        for edge in &edges {
             if tour_edges.len() >= n {
                 break;
             }
@@ -404,11 +409,12 @@ impl<G: Graph> HamiltonianCycleAlgorithm<G> for HeldKarpTSP {
                     .into(),
             ));
         }
-        let index_list: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let index_list: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let vertex_map: HashMap<&G::Vertex, usize> =
             index_list.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let mut w = vec![vec![f64::MAX; n]; n];
         for e in graph.edges() {
+            let e = e.borrow();
             let (source, target) = graph.edge_endpoints(e).expect("edge of the graph");
             let (u, v) = (vertex_map[source], vertex_map[target]);
             let weight = graph.weight_of(e);
@@ -545,7 +551,7 @@ impl<G: IncidenceGraph> HamiltonianCycleAlgorithm<G> for PalmerHamiltonianCycle 
                 "Graph doesn't have Ore's property".into(),
             ));
         }
-        let mut tour: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let mut tour: Vec<G::Vertex> = graph.vertices_cloned().collect();
         while Self::search_and_close_gap(&mut tour, graph)? {}
         tour.push(tour[0].clone());
         closed_vertex_list_to_tour(tour, graph).map(Some)

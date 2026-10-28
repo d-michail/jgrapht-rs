@@ -573,15 +573,15 @@ fn reverse_shortest_path_tree<G: IncomingGraph>(
     graph: &G,
     sink: &G::Vertex,
 ) -> Result<(HashMap<G::Vertex, f64>, HashMap<G::Vertex, G::Edge>)> {
-    let vertices: Vec<_> = graph.vertices().collect();
-    let index: HashMap<_, _> = vertices
+    let vertices: Vec<G::Vertex> = graph.vertices_cloned().collect();
+    let index: HashMap<&G::Vertex, usize> = vertices
         .iter()
         .enumerate()
-        .map(|(index, &vertex)| (vertex, index))
+        .map(|(index, vertex)| (vertex, index))
         .collect();
     let sink_index = index[sink];
     let mut distance = vec![f64::INFINITY; vertices.len()];
-    let mut predecessor: Vec<Option<&G::Edge>> = vec![None; vertices.len()];
+    let mut predecessor: Vec<Option<G::Edge>> = vec![None; vertices.len()];
     let mut settled = vec![false; vertices.len()];
     let mut heap = BinaryHeap::new();
     distance[sink_index] = 0.0;
@@ -592,7 +592,7 @@ fn reverse_shortest_path_tree<G: IncomingGraph>(
             continue;
         }
         settled[vertex_index] = true;
-        let vertex = vertices[vertex_index];
+        let vertex = &vertices[vertex_index];
         for (edge, source) in graph.incoming_of(vertex) {
             let weight = graph.weight_of(edge);
             if weight.is_nan() || weight < 0.0 {
@@ -604,7 +604,7 @@ fn reverse_shortest_path_tree<G: IncomingGraph>(
             let updated = current_distance + weight;
             if updated < distance[source_index] {
                 distance[source_index] = updated;
-                predecessor[source_index] = Some(edge);
+                predecessor[source_index] = Some(edge.clone());
                 heap.push(Reverse((OrderedF64(updated), source_index)));
             }
         }
@@ -615,7 +615,7 @@ fn reverse_shortest_path_tree<G: IncomingGraph>(
     for (vertex_index, vertex) in vertices.into_iter().enumerate() {
         if distance[vertex_index].is_finite() {
             distances.insert(vertex.clone(), distance[vertex_index]);
-            if let Some(edge) = predecessor[vertex_index] {
+            if let Some(edge) = &predecessor[vertex_index] {
                 tree_edges.insert(vertex.clone(), edge.clone());
             }
         }

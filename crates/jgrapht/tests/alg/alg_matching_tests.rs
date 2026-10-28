@@ -24,6 +24,7 @@ use jgrapht::generate::*;
 use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 type UG = UGraph<i32>;
@@ -48,6 +49,7 @@ fn verify_matching<G: Graph>(g: &G, m: &Matching<G::Vertex, G::Edge>, cardinalit
     let mut matched: HashSet<G::Vertex> = HashSet::new();
     let mut weight = 0.0;
     for e in m.edges() {
+        let e = e.borrow();
         let (source, target) = g.edge_endpoints(e).unwrap();
         assert!(
             matched.insert(source.clone()),
@@ -68,6 +70,7 @@ fn verify_matching<G: Graph>(g: &G, m: &Matching<G::Vertex, G::Edge>, cardinalit
 fn is_matching<G: Graph>(g: &G, m: &Matching<G::Vertex, G::Edge>) -> bool {
     let mut matched: HashSet<G::Vertex> = HashSet::new();
     for e in m.edges() {
+        let e = e.borrow();
         let (source, target) = g.edge_endpoints(e).unwrap();
         if !matched.insert(source.clone()) || !matched.insert(target.clone()) {
             return false;
@@ -837,7 +840,7 @@ mod maximum_weight_bipartite_matching_test {
                 }
             }
             // assign random weights
-            for e in g.edges().cloned().collect::<Vec<_>>() {
+            for e in g.edges_cloned().collect::<Vec<_>>() {
                 g.set_edge_weight(&e, 1000.0 * f64::from(rng.random::<i32>()))
                     .unwrap();
             }

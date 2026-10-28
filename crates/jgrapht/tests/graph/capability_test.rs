@@ -16,6 +16,7 @@
 //!
 use crate::common::fixtures::{FullFixture, OutgoingFixture};
 use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
+use std::borrow::Borrow;
 
 /// Needs only outgoing access, so an outgoing-only graph must satisfy the bound.
 fn reachable<G: OutgoingGraph<Vertex = u32>>(g: &G, from: u32) -> Vec<u32> {
@@ -36,7 +37,12 @@ fn reachable<G: OutgoingGraph<Vertex = u32>>(g: &G, from: u32) -> Vec<u32> {
 
 /// Needs the full capability set.
 fn total_degree<G: IncidenceGraph>(g: &G) -> usize {
-    g.vertices().map(|v| IncidenceGraph::degree_of(g, v)).sum()
+    g.vertices()
+        .map(|v| {
+            let v = v.borrow();
+            IncidenceGraph::degree_of(g, v)
+        })
+        .sum()
 }
 
 const EDGES: [(u32, u32, f64); 4] = [(0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0), (0, 2, 10.0)];
@@ -84,9 +90,11 @@ fn parallel_edges_are_each_yielded() {
 }
 
 mod base_graph_parity {
+    use jgrapht::GraphExt;
     use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
     use jgrapht::graph::{DiGraph, FastutilMapGraph, GraphMut, UGraph};
     use jgrapht::graph::{Directed, Undirected};
+    use std::borrow::Borrow;
 
     /// The capability traits must agree with the definition of incidence computed from the edge
     /// endpoints, for every vertex including absent ones. Undirected edges count as both leaving
@@ -101,11 +109,12 @@ mod base_graph_parity {
             v.sort();
             v
         };
-        let vs: Vec<_> = g.vertices().cloned().chain([absent]).collect();
+        let vs: Vec<_> = g.vertices_cloned().chain([absent]).collect();
         for v in &vs {
             let (mut all, mut ins, mut outs) = (vec![], vec![], vec![]);
             let (mut degree, mut in_degree, mut out_degree) = (0, 0, 0);
             for e in g.edges() {
+                let e = e.borrow();
                 let (s, t) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
                 let directed = g.is_edge_directed(e);
                 let weight = if !directed && s == t { 2 } else { 1 };

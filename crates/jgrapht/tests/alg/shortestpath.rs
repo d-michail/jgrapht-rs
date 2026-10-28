@@ -209,7 +209,7 @@ fn algorithms_agree_on_random_graphs() {
             .unwrap()
             .generate_indexed(&mut g)
             .unwrap();
-        let es: Vec<_> = g.edges().cloned().collect();
+        let es: Vec<_> = g.edges_cloned().collect();
         for e in es {
             g.set_edge_weight(&e, rng.random_range(0..20) as f64)
                 .unwrap();
@@ -265,7 +265,7 @@ fn bidirectional_and_delta_stepping() {
                     .unwrap()
                     .generate_indexed(&mut g)
                     .unwrap();
-                let es: Vec<_> = g.edges().cloned().collect();
+                let es: Vec<_> = g.edges_cloned().collect();
                 for e in es {
                     g.set_edge_weight(&e, weights.random_range(1..30) as f64)
                         .unwrap();

@@ -22,6 +22,7 @@ use crate::util::OrderedF64;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use rheaps::tree::PairingHeap;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 
 /// Johnson's all-pairs algorithm: Bellman–Ford potentials, then Dijkstra from every vertex on
@@ -29,10 +30,11 @@ use std::collections::HashMap;
 /// graph has a negative cycle.
 pub(crate) fn johnson<G: OutgoingGraph>(g: &G) -> Result<AllPairsPaths<G::Vertex, G::Edge>> {
     // a virtual source reaching every vertex at cost 0 == all potentials start at 0
-    let mut h: HashMap<&G::Vertex, f64> = g.vertices().map(|v| (v, 0.0)).collect();
+    let mut h: HashMap<G::Vertex, f64> = g.vertices_cloned().map(|v| (v, 0.0)).collect();
     relax_all(g, &mut h, &mut HashMap::new())?;
     let mut by_source = HashMap::new();
     for s in g.vertices() {
+        let s = s.borrow();
         let r = search::<G, PairingHeap<OrderedF64, usize>>(
             g,
             s,

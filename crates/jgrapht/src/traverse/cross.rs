@@ -22,6 +22,7 @@ use crate::util::OrderedF64;
 use crate::{GraphError, Result};
 use rheaps::tree::PairingHeap;
 use rheaps::{AddressableHeap, DecreaseKeyHeap};
+use std::borrow::Borrow;
 use std::collections::{HashMap, VecDeque};
 use std::vec::IntoIter;
 
@@ -30,15 +31,15 @@ pub struct Core<'g, G: OutgoingGraph + 'g, D> {
     /// The g.
     pub g: &'g G,
     /// The seen.
-    pub seen: HashMap<&'g G::Vertex, D>,
+    pub seen: HashMap<G::Vertex, D>,
     /// The listeners.
     pub listeners: TraversalListeners<'g, G::Vertex, G::Edge>,
 }
 
 impl<'g, G: OutgoingGraph + 'g, D> Core<'g, G, D> {
     /// Updates the state for `finish vertex`.
-    pub fn finish_vertex(&mut self, v: &'g G::Vertex) {
-        self.listeners.vertex_finished(v);
+    pub fn finish_vertex(&mut self, v: G::Vertex) {
+        self.listeners.vertex_finished(&v);
     }
 }
 
@@ -49,28 +50,18 @@ pub trait Strategy<'g, G: OutgoingGraph + 'g>: Sized {
     /// True if the current component has nothing left to visit (may fire finish events).
     fn is_exhausted(&mut self, c: &mut Core<'g, G, Self::Data>) -> bool;
     /// Performs `encounter`.
-    fn encounter(
-        &mut self,
-        c: &mut Core<'g, G, Self::Data>,
-        v: &'g G::Vertex,
-        e: Option<&'g G::Edge>,
-    );
+    fn encounter(&mut self, c: &mut Core<'g, G, Self::Data>, v: G::Vertex, e: Option<G::Edge>);
     /// Performs `encounter again`.
-    fn encounter_again(
-        &mut self,
-        c: &mut Core<'g, G, Self::Data>,
-        v: &'g G::Vertex,
-        e: &'g G::Edge,
-    );
+    fn encounter_again(&mut self, c: &mut Core<'g, G, Self::Data>, v: G::Vertex, e: G::Edge);
     /// Returns the provide next.
-    fn provide_next(&mut self, c: &mut Core<'g, G, Self::Data>) -> &'g G::Vertex;
+    fn provide_next(&mut self, c: &mut Core<'g, G, Self::Data>) -> G::Vertex;
 
     /// What the iterator yields: the vertex itself for a strategy that cannot fail, or a
     /// `Result` for one that can (closest-first rejects invalid edge weights while iterating).
     type Output;
     /// Converts one step of the traversal into [`Strategy::Output`]. A strategy whose `Output` is
     /// a bare vertex never receives an `Err`, because it never records an error.
-    fn output(result: Result<&'g G::Vertex>) -> Self::Output;
+    fn output(result: Result<G::Vertex>) -> Self::Output;
     /// An error recorded while encountering vertices. The engine reports it as the next step of
     /// the iteration and stops.
     fn take_error(&mut self) -> Option<GraphError> {
@@ -78,8 +69,7 @@ pub trait Strategy<'g, G: OutgoingGraph + 'g>: Sized {
     }
 }
 
-type EdgeSelector<'g, G> =
-    Box<dyn Fn(&'g G, &'g <G as Graph>::Vertex) -> Vec<&'g <G as Graph>::Edge> + 'g>;
+type EdgeSelector<'g, G> = Box<dyn Fn(&G, &<G as Graph>::Vertex) -> Vec<<G as Graph>::Edge> + 'g>;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum State {
@@ -95,9 +85,9 @@ pub struct CrossComponentIterator<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>>
     core: Core<'g, G, S::Data>,
     strategy: S,
     cross: bool,
-    entire: Option<IntoIter<&'g G::Vertex>>,
-    starts: Option<IntoIter<&'g G::Vertex>>,
-    start_vertex: Option<&'g G::Vertex>,
+    entire: Option<IntoIter<G::Vertex>>,
+    starts: Option<IntoIter<G::Vertex>>,
+    start_vertex: Option<G::Vertex>,
     state: State,
     selector: Option<EdgeSelector<'g, G>>,
     failed: bool,
@@ -111,11 +101,7 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>>
     /// # Errors
     ///
     /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
-    pub fn with_strategy(
-        g: &'g G,
-        starts: Option<Vec<&'g G::Vertex>>,
-        strategy: S,
-    ) -> Result<Self> {
+    pub fn with_strategy(g: &'g G, starts: Option<Vec<G::Vertex>>, strategy: S) -> Result<Self> {
         let mut it = CrossComponentIterator {
             core: Core {
                 g,
@@ -141,19 +127,18 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>>
             }
         };
         if let Some(v) = first {
-            if !g.contains_vertex(v) {
+            if !g.contains_vertex(&v) {
                 return Err(GraphError::VertexNotFound);
             }
-            // resolve to the graph's own reference so lifetimes tie to the graph
             it.start_vertex = Some(v);
         }
         Ok(it)
     }
 
-    fn entire_iterator(&mut self) -> &mut IntoIter<&'g G::Vertex> {
+    fn entire_iterator(&mut self) -> &mut IntoIter<G::Vertex> {
         let g = self.core.g;
         self.entire
-            .get_or_insert_with(|| g.vertices().collect::<Vec<_>>().into_iter())
+            .get_or_insert_with(|| g.vertices_cloned().collect::<Vec<_>>().into_iter())
     }
 
     /// Returns the graph.
@@ -197,7 +182,7 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>>
         self.core.listeners.remove(id)
     }
     /// Replaces the choice of edges followed from a vertex (default: its outgoing edges).
-    pub fn set_edge_selector(&mut self, f: impl Fn(&'g G, &'g G::Vertex) -> Vec<&'g G::Edge> + 'g) {
+    pub fn set_edge_selector(&mut self, f: impl Fn(&G, &G::Vertex) -> Vec<G::Edge> + 'g) {
         self.selector = Some(Box::new(f));
     }
 
@@ -222,10 +207,10 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>>
                     self.starts.as_mut().and_then(Iterator::next)
                 };
                 let Some(v) = next else { return false };
-                if !self.core.g.contains_vertex(v) {
+                if !self.core.g.contains_vertex(&v) {
                     continue;
                 }
-                if !self.core.seen.contains_key(v) {
+                if !self.core.seen.contains_key(&v) {
                     self.strategy.encounter(&mut self.core, v, None);
                     self.state = State::Before;
                     return true;
@@ -235,18 +220,18 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>>
         true
     }
 
-    fn add_unseen_children_of(&mut self, v: &'g G::Vertex) {
+    fn add_unseen_children_of(&mut self, v: &G::Vertex) {
         let g = self.core.g;
-        let edges: Vec<&'g G::Edge> = match &self.selector {
+        let edges: Vec<G::Edge> = match &self.selector {
             Some(f) => f(g, v),
-            None => g.out_edges_of(v).collect(),
+            None => g.out_edges_of(v).cloned().collect(),
         };
         for e in edges {
-            self.core.listeners.edge_traversed(e);
-            let Some(opposite) = g.opposite_vertex(e, v) else {
+            self.core.listeners.edge_traversed(&e);
+            let Some(opposite) = g.opposite_vertex(&e, v).cloned() else {
                 continue;
             };
-            if self.core.seen.contains_key(opposite) {
+            if self.core.seen.contains_key(&opposite) {
                 self.strategy.encounter_again(&mut self.core, opposite, e);
             } else {
                 self.strategy.encounter(&mut self.core, opposite, Some(e));
@@ -265,7 +250,7 @@ impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G
     /// # Errors
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    pub fn try_next(&mut self) -> Result<Option<&'g G::Vertex>> {
+    pub fn try_next(&mut self) -> Result<Option<G::Vertex>> {
         if self.failed {
             return Ok(None);
         }
@@ -276,7 +261,7 @@ impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G
         step
     }
 
-    fn step(&mut self) -> Result<Option<&'g G::Vertex>> {
+    fn step(&mut self) -> Result<Option<G::Vertex>> {
         self.encounter_start_vertex();
         if !self.has_next() {
             return Ok(None);
@@ -286,8 +271,8 @@ impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G
             self.core.listeners.component_started();
         }
         let v = self.strategy.provide_next(&mut self.core);
-        self.core.listeners.vertex_traversed(v);
-        self.add_unseen_children_of(v);
+        self.core.listeners.vertex_traversed(&v);
+        self.add_unseen_children_of(&v);
         match self.strategy.take_error() {
             Some(e) => Err(e),
             None => Ok(Some(v)),
@@ -305,48 +290,38 @@ impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> Iterator for CrossComponentI
 // ---------------------------------------------------------------------------- breadth-first
 
 /// Per-vertex BFS bookkeeping: the spanning-tree edge and the depth.
-#[derive(Debug, Clone, Copy)]
-pub struct BfsData<'g, E> {
+#[derive(Debug, Clone)]
+pub struct BfsData<E> {
     /// The edge.
-    pub edge: Option<&'g E>,
+    pub edge: Option<E>,
     /// The depth.
     pub depth: usize,
 }
 
 pub struct BfsStrategy<'g, G: OutgoingGraph + 'g> {
-    queue: VecDeque<&'g G::Vertex>,
+    queue: VecDeque<G::Vertex>,
+    _g: std::marker::PhantomData<&'g G>,
 }
 
 impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for BfsStrategy<'g, G> {
-    type Data = BfsData<'g, G::Edge>;
+    type Data = BfsData<G::Edge>;
     fn is_exhausted(&mut self, _: &mut Core<'g, G, Self::Data>) -> bool {
         self.queue.is_empty()
     }
-    fn encounter(
-        &mut self,
-        c: &mut Core<'g, G, Self::Data>,
-        v: &'g G::Vertex,
-        e: Option<&'g G::Edge>,
-    ) {
-        let depth = match e {
+    fn encounter(&mut self, c: &mut Core<'g, G, Self::Data>, v: G::Vertex, e: Option<G::Edge>) {
+        let depth = match &e {
             None => 0,
-            Some(e) => c.seen[c.g.opposite_vertex(e, v).expect("edge touches vertex")].depth + 1,
+            Some(e) => c.seen[c.g.opposite_vertex(e, &v).expect("edge touches vertex")].depth + 1,
         };
-        c.seen.insert(v, BfsData { edge: e, depth });
+        c.seen.insert(v.clone(), BfsData { edge: e, depth });
         self.queue.push_back(v);
     }
-    fn encounter_again(
-        &mut self,
-        _: &mut Core<'g, G, Self::Data>,
-        _: &'g G::Vertex,
-        _: &'g G::Edge,
-    ) {
-    }
-    fn provide_next(&mut self, _: &mut Core<'g, G, Self::Data>) -> &'g G::Vertex {
+    fn encounter_again(&mut self, _: &mut Core<'g, G, Self::Data>, _: G::Vertex, _: G::Edge) {}
+    fn provide_next(&mut self, _: &mut Core<'g, G, Self::Data>) -> G::Vertex {
         self.queue.pop_front().expect("non-empty queue")
     }
-    type Output = &'g G::Vertex;
-    fn output(result: Result<&'g G::Vertex>) -> Self::Output {
+    type Output = G::Vertex;
+    fn output(result: Result<G::Vertex>) -> Self::Output {
         result.expect("breadth-first traversal cannot fail")
     }
 }
@@ -366,6 +341,7 @@ impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
             None,
             BfsStrategy {
                 queue: VecDeque::new(),
+                _g: std::marker::PhantomData,
             },
         )
         .expect("no start vertex to validate")
@@ -375,7 +351,7 @@ impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
     /// # Errors
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    pub fn from_start(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
+    pub fn from_start(g: &'g G, start: &G::Vertex) -> Result<Self> {
         Self::from_starts(g, [start])
     }
     /// Computes the from starts.
@@ -383,23 +359,27 @@ impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
     /// # Errors
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    pub fn from_starts(g: &'g G, starts: impl IntoIterator<Item = &'g G::Vertex>) -> Result<Self> {
+    pub fn from_starts(
+        g: &'g G,
+        starts: impl IntoIterator<Item = impl Borrow<G::Vertex>>,
+    ) -> Result<Self> {
         Self::with_strategy(
             g,
-            Some(starts.into_iter().collect()),
+            Some(starts.into_iter().map(|v| v.borrow().clone()).collect()),
             BfsStrategy {
                 queue: VecDeque::new(),
+                _g: std::marker::PhantomData,
             },
         )
     }
     /// Parent of `v` in the BFS tree (`None` for roots and unseen vertices).
-    pub fn parent(&self, v: &G::Vertex) -> Option<&'g G::Vertex> {
-        let e = self.seen_data(v)?.edge?;
-        self.graph().opposite_vertex(e, v)
+    pub fn parent(&self, v: &G::Vertex) -> Option<G::Vertex> {
+        let e = self.seen_data(v)?.edge.as_ref()?;
+        self.graph().opposite_vertex(e, v).cloned()
     }
     /// Returns the spanning tree edge.
-    pub fn spanning_tree_edge(&self, v: &G::Vertex) -> Option<&'g G::Edge> {
-        self.seen_data(v)?.edge
+    pub fn spanning_tree_edge(&self, v: &G::Vertex) -> Option<G::Edge> {
+        self.seen_data(v)?.edge.clone()
     }
     /// Returns the depth.
     pub fn depth(&self, v: &G::Vertex) -> Option<usize> {
@@ -417,14 +397,15 @@ pub enum VisitColor {
     Black,
 }
 
-enum StackEntry<'g, V> {
-    Vertex(&'g V),
+enum StackEntry<V> {
+    Vertex(V),
     Sentinel,
 }
 
 /// The `DfsStrategy` struct.
 pub struct DfsStrategy<'g, G: OutgoingGraph + 'g> {
-    stack: VecDeque<StackEntry<'g, G::Vertex>>,
+    stack: VecDeque<StackEntry<G::Vertex>>,
+    _g: std::marker::PhantomData<&'g G>,
 }
 
 impl<'g, G: OutgoingGraph + 'g> DfsStrategy<'g, G> {
@@ -432,12 +413,13 @@ impl<'g, G: OutgoingGraph + 'g> DfsStrategy<'g, G> {
     pub fn new() -> Self {
         DfsStrategy {
             stack: VecDeque::new(),
+            _g: std::marker::PhantomData,
         }
     }
 
     fn record_finish(&mut self, c: &mut Core<'g, G, VisitColor>) {
         if let Some(StackEntry::Vertex(v)) = self.stack.pop_back() {
-            c.seen.insert(v, VisitColor::Black);
+            c.seen.insert(v.clone(), VisitColor::Black);
             c.finish_vertex(v);
         }
     }
@@ -463,22 +445,12 @@ impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for DfsStrategy<'g, G> {
             }
         }
     }
-    fn encounter(
-        &mut self,
-        c: &mut Core<'g, G, VisitColor>,
-        v: &'g G::Vertex,
-        _: Option<&'g G::Edge>,
-    ) {
-        c.seen.insert(v, VisitColor::White);
+    fn encounter(&mut self, c: &mut Core<'g, G, VisitColor>, v: G::Vertex, _: Option<G::Edge>) {
+        c.seen.insert(v.clone(), VisitColor::White);
         self.stack.push_back(StackEntry::Vertex(v));
     }
-    fn encounter_again(
-        &mut self,
-        c: &mut Core<'g, G, VisitColor>,
-        v: &'g G::Vertex,
-        _: &'g G::Edge,
-    ) {
-        if c.seen[v] != VisitColor::White {
+    fn encounter_again(&mut self, c: &mut Core<'g, G, VisitColor>, v: G::Vertex, _: G::Edge) {
+        if c.seen[&v] != VisitColor::White {
             return;
         }
         // move the pending occurrence to the top of the stack
@@ -491,20 +463,20 @@ impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for DfsStrategy<'g, G> {
         }
         self.stack.push_back(StackEntry::Vertex(v));
     }
-    fn provide_next(&mut self, c: &mut Core<'g, G, VisitColor>) -> &'g G::Vertex {
+    fn provide_next(&mut self, c: &mut Core<'g, G, VisitColor>) -> G::Vertex {
         let v = loop {
             match self.stack.pop_back().expect("non-empty stack") {
                 StackEntry::Sentinel => self.record_finish(c),
                 StackEntry::Vertex(v) => break v,
             }
         };
-        self.stack.push_back(StackEntry::Vertex(v));
+        self.stack.push_back(StackEntry::Vertex(v.clone()));
         self.stack.push_back(StackEntry::Sentinel);
-        c.seen.insert(v, VisitColor::Gray);
+        c.seen.insert(v.clone(), VisitColor::Gray);
         v
     }
-    type Output = &'g G::Vertex;
-    fn output(result: Result<&'g G::Vertex>) -> Self::Output {
+    type Output = G::Vertex;
+    fn output(result: Result<G::Vertex>) -> Self::Output {
         result.expect("depth-first traversal cannot fail")
     }
 }
@@ -524,6 +496,7 @@ impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
             None,
             DfsStrategy {
                 stack: VecDeque::new(),
+                _g: std::marker::PhantomData,
             },
         )
         .expect("no start vertex to validate")
@@ -533,7 +506,7 @@ impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
     /// # Errors
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    pub fn from_start(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
+    pub fn from_start(g: &'g G, start: &G::Vertex) -> Result<Self> {
         Self::from_starts(g, [start])
     }
     /// Computes the from starts.
@@ -541,12 +514,16 @@ impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
     /// # Errors
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    pub fn from_starts(g: &'g G, starts: impl IntoIterator<Item = &'g G::Vertex>) -> Result<Self> {
+    pub fn from_starts(
+        g: &'g G,
+        starts: impl IntoIterator<Item = impl Borrow<G::Vertex>>,
+    ) -> Result<Self> {
         Self::with_strategy(
             g,
-            Some(starts.into_iter().collect()),
+            Some(starts.into_iter().map(|v| v.borrow().clone()).collect()),
             DfsStrategy {
                 stack: VecDeque::new(),
+                _g: std::marker::PhantomData,
             },
         )
     }
@@ -558,10 +535,10 @@ impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
 
 // ---------------------------------------------------------------------------- closest-first
 
-pub struct CfData<'g, G: OutgoingGraph + 'g, Hd> {
+pub struct CfData<G: OutgoingGraph, Hd> {
     handle: Option<Hd>,
     key: f64,
-    edge: Option<&'g G::Edge>,
+    edge: Option<G::Edge>,
     frozen: bool,
 }
 
@@ -576,14 +553,14 @@ pub struct ClosestFirstStrategy<'g, G: OutgoingGraph + 'g, H> {
 impl<'g, G, H> ClosestFirstStrategy<'g, G, H>
 where
     G: OutgoingGraph + 'g,
-    H: AddressableHeap<OrderedF64, &'g G::Vertex>,
+    H: AddressableHeap<OrderedF64, G::Vertex>,
 {
     /// Length of the path to `v` through `e`, or `None` after recording the invalid weight.
     fn path_length(
         &mut self,
-        c: &Core<'g, G, CfData<'g, G, H::Handle>>,
-        v: &'g G::Vertex,
-        e: &'g G::Edge,
+        c: &Core<'g, G, CfData<G, H::Handle>>,
+        v: &G::Vertex,
+        e: &G::Edge,
     ) -> Option<f64> {
         let w = c.g.weight_of(e);
         if w.is_nan() || w < 0.0 {
@@ -600,9 +577,9 @@ where
 impl<'g, G, H> Strategy<'g, G> for ClosestFirstStrategy<'g, G, H>
 where
     G: OutgoingGraph + 'g,
-    H: DecreaseKeyHeap<OrderedF64, &'g G::Vertex>,
+    H: DecreaseKeyHeap<OrderedF64, G::Vertex>,
 {
-    type Data = CfData<'g, G, H::Handle>;
+    type Data = CfData<G, H::Handle>;
     fn is_exhausted(&mut self, _: &mut Core<'g, G, Self::Data>) -> bool {
         if self.heap.is_empty() {
             return true;
@@ -614,20 +591,15 @@ where
         }
         false
     }
-    fn encounter(
-        &mut self,
-        c: &mut Core<'g, G, Self::Data>,
-        v: &'g G::Vertex,
-        e: Option<&'g G::Edge>,
-    ) {
-        let len = match e {
+    fn encounter(&mut self, c: &mut Core<'g, G, Self::Data>, v: G::Vertex, e: Option<G::Edge>) {
+        let len = match &e {
             None => 0.0,
-            Some(e) => match self.path_length(c, v, e) {
+            Some(e) => match self.path_length(c, &v, e) {
                 Some(len) => len,
                 None => return,
             },
         };
-        let handle = self.heap.insert(OrderedF64(len), v);
+        let handle = self.heap.insert(OrderedF64(len), v.clone());
         c.seen.insert(
             v,
             CfData {
@@ -638,19 +610,14 @@ where
             },
         );
     }
-    fn encounter_again(
-        &mut self,
-        c: &mut Core<'g, G, Self::Data>,
-        v: &'g G::Vertex,
-        e: &'g G::Edge,
-    ) {
-        if c.seen[v].frozen {
+    fn encounter_again(&mut self, c: &mut Core<'g, G, Self::Data>, v: G::Vertex, e: G::Edge) {
+        if c.seen[&v].frozen {
             return;
         }
-        let Some(cand) = self.path_length(c, v, e) else {
+        let Some(cand) = self.path_length(c, &v, &e) else {
             return;
         };
-        let d = c.seen.get_mut(v).expect("seen");
+        let d = c.seen.get_mut(&v).expect("seen");
         if cand < d.key {
             d.edge = Some(e);
             d.key = cand;
@@ -659,15 +626,15 @@ where
                 .expect("smaller key");
         }
     }
-    fn provide_next(&mut self, c: &mut Core<'g, G, Self::Data>) -> &'g G::Vertex {
+    fn provide_next(&mut self, c: &mut Core<'g, G, Self::Data>) -> G::Vertex {
         let (_, v) = self.heap.pop().expect("non-empty heap");
-        let d = c.seen.get_mut(v).expect("seen");
+        let d = c.seen.get_mut(&v).expect("seen");
         d.frozen = true;
         d.handle = None;
         v
     }
-    type Output = Result<&'g G::Vertex>;
-    fn output(result: Result<&'g G::Vertex>) -> Self::Output {
+    type Output = Result<G::Vertex>;
+    fn output(result: Result<G::Vertex>) -> Self::Output {
         result
     }
     fn take_error(&mut self) -> Option<GraphError> {
@@ -679,7 +646,7 @@ where
 /// is yielded once as `Err(GraphError::InvalidWeight(..))` in place of the vertex whose outgoing
 /// edge carries it, and the iterator then ends. Collect
 /// with `collect::<Result<Vec<_>>>()` or call [`CrossComponentIterator::try_next`].
-pub type ClosestFirstIterator<'g, G, H = PairingHeap<OrderedF64, &'g <G as Graph>::Vertex>> =
+pub type ClosestFirstIterator<'g, G, H = PairingHeap<OrderedF64, <G as Graph>::Vertex>> =
     CrossComponentIterator<'g, G, ClosestFirstStrategy<'g, G, H>>;
 
 impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
@@ -697,26 +664,34 @@ impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
     /// # Errors
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    pub fn from_start(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
-        Self::build(g, Some(vec![start]), f64::INFINITY, PairingHeap::new())
+    pub fn from_start(g: &'g G, start: &G::Vertex) -> Result<Self> {
+        Self::build(
+            g,
+            Some(vec![start.clone()]),
+            f64::INFINITY,
+            PairingHeap::new(),
+        )
     }
     /// Computes the from start with radius.
     ///
     /// # Errors
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    pub fn from_start_with_radius(g: &'g G, start: &'g G::Vertex, radius: f64) -> Result<Self> {
-        Self::build(g, Some(vec![start]), radius, PairingHeap::new())
+    pub fn from_start_with_radius(g: &'g G, start: &G::Vertex, radius: f64) -> Result<Self> {
+        Self::build(g, Some(vec![start.clone()]), radius, PairingHeap::new())
     }
     /// Computes the from starts.
     ///
     /// # Errors
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
-    pub fn from_starts(g: &'g G, starts: impl IntoIterator<Item = &'g G::Vertex>) -> Result<Self> {
+    pub fn from_starts(
+        g: &'g G,
+        starts: impl IntoIterator<Item = impl Borrow<G::Vertex>>,
+    ) -> Result<Self> {
         Self::build(
             g,
-            Some(starts.into_iter().collect()),
+            Some(starts.into_iter().map(|v| v.borrow().clone()).collect()),
             f64::INFINITY,
             PairingHeap::new(),
         )
@@ -728,12 +703,12 @@ impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_starts_with_radius(
         g: &'g G,
-        starts: impl IntoIterator<Item = &'g G::Vertex>,
+        starts: impl IntoIterator<Item = impl Borrow<G::Vertex>>,
         radius: f64,
     ) -> Result<Self> {
         Self::build(
             g,
-            Some(starts.into_iter().collect()),
+            Some(starts.into_iter().map(|v| v.borrow().clone()).collect()),
             radius,
             PairingHeap::new(),
         )
@@ -743,7 +718,7 @@ impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
 impl<'g, G, H> ClosestFirstIterator<'g, G, H>
 where
     G: OutgoingGraph + 'g + OutgoingGraph,
-    H: DecreaseKeyHeap<OrderedF64, &'g G::Vertex>,
+    H: DecreaseKeyHeap<OrderedF64, G::Vertex>,
 {
     /// Full constructor with an explicit heap. A finite radius is incompatible with
     /// cross-component traversal (`starts == None`).
@@ -751,12 +726,7 @@ where
     /// # Errors
     ///
     /// Returns a [`GraphError`] if an argument violates a precondition; a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
-    pub fn build(
-        g: &'g G,
-        starts: Option<Vec<&'g G::Vertex>>,
-        radius: f64,
-        heap: H,
-    ) -> Result<Self> {
+    pub fn build(g: &'g G, starts: Option<Vec<G::Vertex>>, radius: f64, heap: H) -> Result<Self> {
         if radius.is_nan() || radius < 0.0 {
             return Err(GraphError::must_be_non_negative("radius"));
         }
@@ -765,9 +735,9 @@ where
                 "radius may not be specified for cross-component traversal".into(),
             ));
         }
-        let rest: Vec<&'g G::Vertex> = starts
+        let rest: Vec<G::Vertex> = starts
             .as_ref()
-            .map(|s| s.iter().skip(1).copied().collect())
+            .map(|s| s.iter().skip(1).cloned().collect())
             .unwrap_or_default();
         let multi = starts.is_some();
         let strategy = ClosestFirstStrategy {
@@ -793,7 +763,7 @@ where
         self.seen_data(v).map(|d| d.key)
     }
     /// Returns the spanning tree edge.
-    pub fn spanning_tree_edge(&self, v: &G::Vertex) -> Option<&'g G::Edge> {
-        self.seen_data(v).and_then(|d| d.edge)
+    pub fn spanning_tree_edge(&self, v: &G::Vertex) -> Option<G::Edge> {
+        self.seen_data(v).and_then(|d| d.edge.clone())
     }
 }

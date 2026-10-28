@@ -19,6 +19,7 @@ use super::util::Indexed;
 use crate::Result;
 use crate::graph::OutgoingGraph;
 use crate::graph::{Graph, GraphExt, GraphMut};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 
 fn simple_edges<G: Graph>(ix: &Indexed<'_, G>) -> Vec<(usize, usize)> {
@@ -228,7 +229,7 @@ where
         alg.initialize_network()?;
         // an empty denominator means the whole (empty) graph is the solution
         if alg.denominator(graph) == 0.0 {
-            alg.densest = Some(graph.vertices().cloned().collect());
+            alg.densest = Some(graph.vertices_cloned().collect());
         }
         Ok(alg)
     }
@@ -238,16 +239,22 @@ where
     }
 
     fn numerator<H: Graph<Vertex = G::Vertex>>(&self, g: &H) -> f64 {
-        let edges: f64 = g.edges().map(|e| Self::weight_of(g, e)).sum();
+        let edges: f64 = g
+            .edges()
+            .map(|e| {
+                let e = e.borrow();
+                Self::weight_of(g, e)
+            })
+            .sum();
         match &self.kind {
-            DensityKind::NodeWeights(w) => edges + g.vertices().map(w).sum::<f64>(),
+            DensityKind::NodeWeights(w) => edges + g.vertices().map(|v| w(v.borrow())).sum::<f64>(),
             _ => edges,
         }
     }
 
     fn denominator<H: Graph<Vertex = G::Vertex>>(&self, g: &H) -> f64 {
         match &self.kind {
-            DensityKind::NodeWeightPerEdgeWeight(w) => g.vertices().map(w).sum(),
+            DensityKind::NodeWeightPerEdgeWeight(w) => g.vertices().map(|v| w(v.borrow())).sum(),
             _ => g.vertex_count() as f64,
         }
     }
@@ -283,11 +290,13 @@ where
         self.network.add_vertex(s.clone());
         self.network.add_vertex(t.clone());
         for v in self.graph.vertices() {
+            let v = v.borrow();
             self.network.add_vertex(v.clone());
             self.network.add_edge(&s, v)?;
             self.network.add_edge(v, &t)?;
         }
         for e in self.graph.edges() {
+            let e = e.borrow();
             let (a, b) = (
                 self.graph.edge_source(e).unwrap().clone(),
                 self.graph.edge_target(e).unwrap().clone(),
@@ -303,7 +312,7 @@ where
     }
 
     fn update_network(&mut self) -> Result<()> {
-        let vertices: Vec<G::Vertex> = self.graph.vertices().cloned().collect();
+        let vertices: Vec<G::Vertex> = self.graph.vertices_cloned().collect();
         for v in &vertices {
             let (sw, tw) = (self.source_weight(v), self.sink_weight(v));
             let to_sink = self.network.get_edge(v, &self.t).cloned().unwrap();

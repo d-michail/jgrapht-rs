@@ -13,6 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use super::config::NetworkGeneratorConfig;
+use crate::graph::GraphExt;
 use crate::graph::GraphMut;
 use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet};
@@ -114,7 +115,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> BipartiteMatchingProblem<V, E> 
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn dump_costs<G: GraphMut<Vertex = V, Edge = E>>(&self, graph: &mut G) -> Result<()> {
-        let edges: Vec<E> = graph.edges().cloned().collect();
+        let edges: Vec<E> = graph.edges_cloned().collect();
         for e in edges {
             graph.set_edge_weight(&e, self.costs[&e])?;
         }
@@ -165,7 +166,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> MaximumFlowProblem<V, E> {
     ///
     /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn dump_capacities<G: GraphMut<Vertex = V, Edge = E>>(&self, graph: &mut G) -> Result<()> {
-        let edges: Vec<E> = graph.edges().cloned().collect();
+        let edges: Vec<E> = graph.edges_cloned().collect();
         for e in edges {
             graph.set_edge_weight(&e, self.capacities[&e])?;
         }

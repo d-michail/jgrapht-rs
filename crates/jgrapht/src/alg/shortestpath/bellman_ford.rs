@@ -18,6 +18,7 @@ use crate::graph::OutgoingGraph;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 pub const DEFAULT_EPSILON: f64 = 1e-9;
@@ -150,41 +151,45 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
     fn negative_cycle(
         &self,
         edge: &G::Edge,
-        predecessor: &HashMap<&G::Vertex, (&G::Edge, &G::Vertex)>,
+        predecessor: &HashMap<G::Vertex, (G::Edge, G::Vertex)>,
     ) -> GraphWalk<G::Vertex, G::Edge> {
         let mut visited = HashSet::new();
-        let mut current = self.graph.edge_target(edge).expect("edge belongs to graph");
-        visited.insert(current);
+        let mut current = self
+            .graph
+            .edge_target(edge)
+            .expect("edge belongs to graph")
+            .clone();
+        visited.insert(current.clone());
         current = self
             .graph
-            .opposite_vertex(edge, current)
-            .expect("edge endpoint");
+            .opposite_vertex(edge, &current)
+            .expect("edge endpoint")
+            .clone();
 
-        while visited.insert(current) {
+        while visited.insert(current.clone()) {
             let (edge, previous) = predecessor
-                .get(current)
+                .get(&current)
                 .expect("a detected negative cycle has predecessors");
-            debug_assert!(self.graph.opposite_vertex(edge, current) == Some(*previous));
-            current = previous;
+            debug_assert!(self.graph.opposite_vertex(edge, &current) == Some(previous));
+            current = previous.clone();
         }
 
-        let start = current;
+        let start = current.clone();
         let mut edges = Vec::new();
         let mut weight = 0.0;
         loop {
             let (edge, previous) = predecessor
-                .get(current)
+                .get(&current)
                 .expect("a detected negative cycle has predecessors");
-            edges.push((*edge).clone());
+            edges.push(edge.clone());
             weight += self.graph.weight_of(edge);
-            current = previous;
+            current = previous.clone();
             if current == start {
                 break;
             }
         }
         edges.reverse();
-        GraphWalk::from_edges(self.graph, start.clone(), edges, weight)
-            .expect("predecessors form a cycle")
+        GraphWalk::from_edges(self.graph, start, edges, weight).expect("predecessors form a cycle")
     }
 
     /// Compute all shortest paths starting from a single source vertex.
@@ -199,12 +204,11 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
         SingleSourcePaths<G::Vertex, G::Edge>,
         BellmanFordError<G::Vertex, G::Edge>,
     > {
-        let source = self
-            .graph
-            .vertices()
-            .find(|vertex| *vertex == source)
-            .ok_or(GraphError::VertexNotFound)?;
+        if !self.graph.contains_vertex(source) {
+            return Err(GraphError::VertexNotFound.into());
+        }
         for edge in self.graph.edges() {
+            let edge = edge.borrow();
             let weight = self.graph.weight_of(edge);
             if weight.is_nan() {
                 return Err(GraphError::InvalidWeight(crate::WeightProblem::NaN).into());
@@ -214,14 +218,13 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
             }
         }
         let vertex_count = self.graph.vertex_count();
-        let mut distance = HashMap::from([(source, 0.0)]);
-        let mut predecessor = HashMap::new();
-        let mut current = IndexSet::from([source]);
-        let mut next = IndexSet::new();
+        let mut distance: HashMap<G::Vertex, f64> = HashMap::from([(source.clone(), 0.0)]);
+        let mut predecessor: HashMap<G::Vertex, (G::Edge, G::Vertex)> = HashMap::new();
+        let mut current: IndexSet<G::Vertex> = IndexSet::from([source.clone()]);
+        let mut next: IndexSet<G::Vertex> = IndexSet::new();
 
         for _ in 0..vertex_count.saturating_sub(1).min(self.max_hops) {
             for vertex in &current {
-                let vertex = *vertex;
                 let vertex_distance = distance[vertex];
                 for (edge, target) in self.graph.outgoing_of(vertex) {
                     let candidate = vertex_distance + self.graph.weight_of(edge);
@@ -229,9 +232,9 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
                         candidate,
                         distance.get(target).copied().unwrap_or(f64::INFINITY),
                     ) {
-                        distance.insert(target, candidate);
-                        predecessor.insert(target, (edge, vertex));
-                        next.insert(target);
+                        distance.insert(target.clone(), candidate);
+                        predecessor.insert(target.clone(), (edge.clone(), vertex.clone()));
+                        next.insert(target.clone());
                     }
                 }
             }
@@ -244,7 +247,6 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
 
         if self.max_hops >= vertex_count {
             for vertex in &current {
-                let vertex = *vertex;
                 let vertex_distance = distance[vertex];
                 for (edge, target) in self.graph.outgoing_of(vertex) {
                     let candidate = vertex_distance + self.graph.weight_of(edge);
@@ -252,7 +254,7 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
                         candidate,
                         distance.get(target).copied().unwrap_or(f64::INFINITY),
                     ) {
-                        predecessor.insert(target, (edge, vertex));
+                        predecessor.insert(target.clone(), (edge.clone(), vertex.clone()));
                         let cycle = self.negative_cycle(edge, &predecessor);
                         return Err(BellmanFordError::NegativeCycle(NegativeCycleDetected::new(
                             cycle,
@@ -264,16 +266,8 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
 
         Ok(SingleSourcePaths {
             source: source.clone(),
-            dist: distance
-                .into_iter()
-                .map(|(vertex, value)| (vertex.clone(), value))
-                .collect(),
-            pred: predecessor
-                .into_iter()
-                .map(|(vertex, (edge, previous))| {
-                    (vertex.clone(), (edge.clone(), previous.clone()))
-                })
-                .collect(),
+            dist: distance,
+            pred: predecessor,
         })
     }
 
@@ -308,23 +302,24 @@ impl<G: OutgoingGraph> ShortestPathAlgorithm<G> for BellmanFord<'_, G> {
 
 /// Relaxes all edges up to `|V|` rounds from the given initial distances.
 /// Returns `Err(NegativeCycle)` if still improving afterwards.
-pub(crate) fn relax_all<'g, G: OutgoingGraph>(
-    graph: &'g G,
-    distance: &mut HashMap<&'g G::Vertex, f64>,
-    predecessor: &mut HashMap<&'g G::Vertex, (&'g G::Edge, &'g G::Vertex)>,
+pub(crate) fn relax_all<G: OutgoingGraph>(
+    graph: &G,
+    distance: &mut HashMap<G::Vertex, f64>,
+    predecessor: &mut HashMap<G::Vertex, (G::Edge, G::Vertex)>,
 ) -> Result<()> {
     let vertex_count = graph.vertex_count();
     for round in 0..=vertex_count {
         let mut changed = false;
         for vertex in graph.vertices() {
+            let vertex = vertex.borrow();
             let Some(&vertex_distance) = distance.get(vertex) else {
                 continue;
             };
             for (edge, target) in graph.outgoing_of(vertex) {
                 let candidate = vertex_distance + graph.weight_of(edge);
                 if candidate < distance.get(target).copied().unwrap_or(f64::INFINITY) {
-                    distance.insert(target, candidate);
-                    predecessor.insert(target, (edge, vertex));
+                    distance.insert(target.clone(), candidate);
+                    predecessor.insert(target.clone(), (edge.clone(), vertex.clone()));
                     changed = true;
                 }
             }

@@ -52,8 +52,8 @@ fn create_directed_graph() -> Gr {
     g
 }
 
-fn collect_result<'g, I: Iterator<Item = &'g &'static str>>(it: I) -> String {
-    it.copied().collect::<Vec<_>>().join(",")
+fn collect_result<I: Iterator<Item = &'static str>>(it: I) -> String {
+    it.collect::<Vec<_>>().join(",")
 }
 
 /// `MyTraversalListener`: checks the component expectations while recording the finish string.
@@ -210,11 +210,11 @@ mod breadth_first {
         );
         assert_eq!(bfs.spanning_tree_edge(&"a"), None);
         for (v, e) in [("b", e1), ("c", e2), ("d", e4), ("e", e5), ("z", e3)] {
-            assert_eq!(bfs.spanning_tree_edge(&v), Some(&e));
+            assert_eq!(bfs.spanning_tree_edge(&v), Some(e));
         }
         assert_eq!(bfs.parent(&"a"), None);
         for (v, p) in [("b", "a"), ("c", "b"), ("d", "b"), ("e", "d"), ("z", "b")] {
-            assert_eq!(bfs.parent(&v), Some(&p));
+            assert_eq!(bfs.parent(&v), Some(p));
         }
     }
 
@@ -234,12 +234,12 @@ mod breadth_first {
         );
         assert_eq!(bfs.spanning_tree_edge(&0), None);
         assert_eq!(
-            [1, 2, 3].map(|v| bfs.spanning_tree_edge(&v).copied()),
+            [1, 2, 3].map(|v| bfs.spanning_tree_edge(&v)),
             [Some(e1), Some(e2), Some(e3)]
         );
         assert_eq!(bfs.parent(&0), None);
         assert_eq!(
-            [1, 2, 3].map(|v| bfs.parent(&v).copied()),
+            [1, 2, 3].map(|v| bfs.parent(&v)),
             [Some(0), Some(1), Some(2)]
         );
     }
@@ -323,7 +323,7 @@ mod depth_first {
         ] {
             dg.add_edge(&a, &b).unwrap();
         }
-        let actual: String = DepthFirstIterator::new(&dg).copied().collect();
+        let actual: String = DepthFirstIterator::new(&dg).collect();
         assert_eq!(actual, "ABCGIFEHJKLD");
     }
 }
@@ -512,6 +512,7 @@ mod edge_selection_test {
                         e.0 == "RED"
                     }
                 })
+                .cloned()
                 .collect()
         });
         let (traversed, finished) = (
@@ -535,13 +536,10 @@ mod edge_selection_test {
 mod topological_order {
     use super::*;
 
-    fn order<'g, G: DirectedGraph>(
-        it: impl Iterator<Item = jgrapht::Result<&'g G::Vertex>>,
-    ) -> Vec<G::Vertex>
-    where
-        G::Vertex: 'g,
-    {
-        it.map(|v| v.unwrap().clone()).collect()
+    fn order<G: DirectedGraph>(
+        it: impl Iterator<Item = jgrapht::Result<G::Vertex>>,
+    ) -> Vec<G::Vertex> {
+        it.map(|v| v.unwrap()).collect()
     }
 
     #[test]
@@ -659,7 +657,7 @@ mod topological_order {
         }
         let got: Vec<&str> = TopologicalOrderIterator::new(&graph)
             .unwrap()
-            .map(|v| *v.unwrap())
+            .map(|v| v.unwrap())
             .collect();
         assert_eq!(got, ["v0", "v3", "v1", "v2", "v4", "v5"]);
     }
@@ -726,7 +724,7 @@ mod topological_order {
         };
         let got: Vec<i32> = TopologicalOrderIterator::with_comparator(&graph, cf)
             .unwrap()
-            .map(|v| *v.unwrap())
+            .map(|v| v.unwrap())
             .collect();
         assert_eq!(got, [2, 3, 0, 1]);
     }
@@ -770,7 +768,8 @@ fn tracked() -> (
 }
 
 fn names<V: ToString>(g: &impl Graph<Vertex = V>) -> HashSet<String> {
-    g.vertices().map(|v| v.to_string()).collect()
+    use std::borrow::Borrow;
+    g.vertices().map(|v| v.borrow().to_string()).collect()
 }
 
 // ---------------------------------------------------------------- LexBreadthFirstIterator
@@ -811,10 +810,10 @@ mod lex_bfs {
         for _ in 0..graph.vertex_count() {
             assert!(it.has_next());
             let v = it.next().unwrap();
-            assert!(graph.contains_vertex(v));
+            assert!(graph.contains_vertex(&v));
             returned.insert(v.clone());
         }
-        assert_eq!(returned, graph.vertices().cloned().collect());
+        assert_eq!(returned, graph.vertices_cloned().collect());
         assert!(!it.has_next());
     }
 
@@ -894,10 +893,10 @@ mod max_cardinality {
         for _ in 0..graph.vertex_count() {
             assert!(it.has_next());
             let v = it.next().unwrap();
-            assert!(graph.contains_vertex(v));
+            assert!(graph.contains_vertex(&v));
             returned.insert(v.clone());
         }
-        assert_eq!(returned, graph.vertices().cloned().collect());
+        assert_eq!(returned, graph.vertices_cloned().collect());
         assert!(!it.has_next());
     }
 

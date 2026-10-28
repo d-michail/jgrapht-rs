@@ -15,11 +15,13 @@
 use super::structured::Complete;
 use super::{GeneratorResult, GraphGenerator, add_edge, invalid};
 use crate::graph::Graph;
+use crate::graph::GraphExt;
 use crate::graph::IncidenceGraph;
 use crate::util::java::{RandomSource, java_shuffle};
 use crate::util::sampler::AliasMethodSampler;
 use crate::{GraphError, GraphMut, GraphType, Result};
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 fn check_probability(p: f64) -> Result<f64> {
@@ -245,12 +247,18 @@ impl<R: RandomSource> GraphGenerator for BarabasiAlbertGraphGenerator<R> {
         target: &mut G,
         result: Option<&mut GeneratorResult<G::Vertex>>,
     ) -> Result<()> {
-        let old: HashSet<G::Vertex> = target.vertices().cloned().collect();
+        let old: HashSet<G::Vertex> = target.vertices_cloned().collect();
         Complete(self.m0).generate_graph(target, result)?;
         let new_nodes: Vec<G::Vertex> = target
             .vertices()
-            .filter(|v| !old.contains(*v))
-            .cloned()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                !old.contains(*v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         let mut nodes: Vec<G::Vertex> = Vec::with_capacity(self.n * self.m);
         nodes.extend(new_nodes.iter().cloned());

@@ -84,7 +84,7 @@ where
         {
             return Err(GraphError::VertexNotFound);
         }
-        let mut vertices: Vec<_> = self.graph.vertices().cloned().collect();
+        let mut vertices: Vec<_> = self.graph.vertices_cloned().collect();
         let n = vertices.len();
         let directly_indexed = {
             let mut seen = vec![false; n];

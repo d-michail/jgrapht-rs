@@ -36,9 +36,9 @@ pub struct CycleDetector<'g, G: DirectedGraph> {
 /// back-reference that closes a cycle.
 struct ProbeStrategy<'g, G: Graph + 'g + OutgoingGraph> {
     inner: DfsStrategy<'g, G>,
-    path: Vec<&'g G::Vertex>,
+    path: Vec<G::Vertex>,
     cycle_set: Option<IndexSet<G::Vertex>>,
-    root: Option<&'g G::Vertex>,
+    root: Option<G::Vertex>,
     detected: bool,
 }
 
@@ -49,24 +49,14 @@ impl<'g, G: Graph + 'g + OutgoingGraph> Strategy<'g, G> for ProbeStrategy<'g, G>
         self.inner.is_exhausted(c)
     }
 
-    fn encounter(
-        &mut self,
-        c: &mut Core<'g, G, Self::Data>,
-        v: &'g G::Vertex,
-        e: Option<&'g G::Edge>,
-    ) {
+    fn encounter(&mut self, c: &mut Core<'g, G, Self::Data>, v: G::Vertex, e: Option<G::Edge>) {
         self.inner.encounter(c, v, e)
     }
 
-    fn encounter_again(
-        &mut self,
-        c: &mut Core<'g, G, Self::Data>,
-        v: &'g G::Vertex,
-        e: &'g G::Edge,
-    ) {
-        self.inner.encounter_again(c, v, e);
-        let mut i = if let Some(root) = self.root {
-            if v == root || self.cycle_set.as_ref().is_some_and(|s| s.contains(v)) {
+    fn encounter_again(&mut self, c: &mut Core<'g, G, Self::Data>, v: G::Vertex, e: G::Edge) {
+        self.inner.encounter_again(c, v.clone(), e);
+        let mut i = if let Some(root) = &self.root {
+            if &v == root || self.cycle_set.as_ref().is_some_and(|s| s.contains(&v)) {
                 0
             } else {
                 return;
@@ -88,20 +78,20 @@ impl<'g, G: Graph + 'g + OutgoingGraph> Strategy<'g, G> for ProbeStrategy<'g, G>
         }
     }
 
-    type Output = &'g G::Vertex;
-    fn output(result: crate::Result<&'g G::Vertex>) -> Self::Output {
+    type Output = G::Vertex;
+    fn output(result: crate::Result<G::Vertex>) -> Self::Output {
         result.expect("cycle probing cannot fail")
     }
 
-    fn provide_next(&mut self, c: &mut Core<'g, G, Self::Data>) -> &'g G::Vertex {
+    fn provide_next(&mut self, c: &mut Core<'g, G, Self::Data>) -> G::Vertex {
         let v = self.inner.provide_next(c);
         while let Some(last) = self.path.last() {
-            if c.g.contains_edge_between(last, v) {
+            if c.g.contains_edge_between(last, &v) {
                 break;
             }
             self.path.pop();
         }
-        self.path.push(v);
+        self.path.push(v.clone());
         v
     }
 }
@@ -117,13 +107,13 @@ impl<'g, G: DirectedGraph + 'g + OutgoingGraph> CycleDetector<'g, G> {
     fn execute(
         &self,
         cycle_set: Option<IndexSet<G::Vertex>>,
-        v: Option<&'g G::Vertex>,
+        v: Option<G::Vertex>,
     ) -> Result<(bool, Option<IndexSet<G::Vertex>>)> {
         let strategy = ProbeStrategy {
             inner: DfsStrategy::new(),
             path: Vec::new(),
             cycle_set,
-            root: v,
+            root: v.clone(),
             detected: false,
         };
         let starts = v.map(|v| vec![v]);
@@ -142,8 +132,10 @@ impl<'g, G: DirectedGraph + 'g + OutgoingGraph> CycleDetector<'g, G> {
     }
 
     /// Whether some cycle goes through `v`.
-    pub fn detect_cycles_containing_vertex(&self, v: &'g G::Vertex) -> bool {
-        self.execute(None, Some(v)).map(|r| r.0).unwrap_or(false)
+    pub fn detect_cycles_containing_vertex(&self, v: &G::Vertex) -> bool {
+        self.execute(None, Some(v.clone()))
+            .map(|r| r.0)
+            .unwrap_or(false)
     }
 
     /// All vertices on some cycle: the non-trivial strongly connected components and self-loops.
@@ -158,9 +150,8 @@ impl<'g, G: DirectedGraph + 'g + OutgoingGraph> CycleDetector<'g, G> {
             if component.len() > 1 {
                 set.extend(
                     self.graph
-                        .vertices()
-                        .filter(|v| component.contains(*v))
-                        .cloned(),
+                        .vertices_cloned()
+                        .filter(|v| component.contains(v)),
                 );
             } else {
                 let v = component.iter().next().expect("non-empty component");
@@ -173,8 +164,8 @@ impl<'g, G: DirectedGraph + 'g + OutgoingGraph> CycleDetector<'g, G> {
     }
 
     /// The vertices on cycles through `v`.
-    pub fn find_cycles_containing_vertex(&self, v: &'g G::Vertex) -> IndexSet<G::Vertex> {
-        self.execute(Some(IndexSet::new()), Some(v))
+    pub fn find_cycles_containing_vertex(&self, v: &G::Vertex) -> IndexSet<G::Vertex> {
+        self.execute(Some(IndexSet::new()), Some(v.clone()))
             .ok()
             .and_then(|r| r.1)
             .unwrap_or_default()

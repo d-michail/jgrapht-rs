@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{
     FloydWarshallShortestPaths, JohnsonShortestPaths, ShortestPathAlgorithm,
 };
@@ -68,7 +69,7 @@ fn test_random_graphs_compare_with_floyd_warshall() {
             .weighted()
             .with_vertex_factory(|index| index as usize);
         generator.generate_default(&mut graph).unwrap();
-        let edges = graph.edges().copied().collect::<Vec<_>>();
+        let edges = graph.edges_cloned().collect::<Vec<_>>();
         for edge in edges {
             let source = *graph.edge_source(&edge).unwrap();
             let target = *graph.edge_target(&edge).unwrap();

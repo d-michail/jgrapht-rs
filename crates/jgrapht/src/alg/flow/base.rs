@@ -17,6 +17,7 @@ use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
 use crate::util::ToleranceDoubleComparator;
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::{HashMap, VecDeque};
 
 /// `MaximumFlowAlgorithm.MaximumFlow` together with the minimum cut that certifies it: everything
@@ -211,10 +212,10 @@ pub(crate) struct FlowNet<'g, G: OutgoingGraph> {
     pub graph: &'g G,
     pub directed: bool,
     pub comparator: ToleranceDoubleComparator,
-    pub vs: Vec<&'g G::Vertex>,
-    vindex: HashMap<&'g G::Vertex, usize>,
-    es: Vec<&'g G::Edge>,
-    eindex: HashMap<&'g G::Edge, usize>,
+    pub vs: Vec<G::Vertex>,
+    vindex: HashMap<G::Vertex, usize>,
+    es: Vec<G::Edge>,
+    eindex: HashMap<G::Edge, usize>,
     pub arcs: Vec<Arc>,
     /// `VertexExtensionBase.outgoing`
     pub outgoing: Vec<Vec<usize>>,
@@ -230,14 +231,14 @@ pub(crate) struct FlowNet<'g, G: OutgoingGraph> {
 
 impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     pub fn new(graph: &'g G, epsilon: f64) -> Result<Self> {
-        let vs: Vec<&G::Vertex> = graph.vertices().collect();
-        let es: Vec<&G::Edge> = graph.edges().collect();
+        let vs: Vec<G::Vertex> = graph.vertices_cloned().collect();
+        let es: Vec<G::Edge> = graph.edges_cloned().collect();
         let net = FlowNet {
             graph,
             directed: graph.graph_type().directed,
             comparator: ToleranceDoubleComparator::new(epsilon)?,
-            vindex: vs.iter().enumerate().map(|(i, v)| (*v, i)).collect(),
-            eindex: es.iter().enumerate().map(|(i, e)| (*e, i)).collect(),
+            vindex: vs.iter().enumerate().map(|(i, v)| (v.clone(), i)).collect(),
+            eindex: es.iter().enumerate().map(|(i, e)| (e.clone(), i)).collect(),
             vs,
             es,
             arcs: Vec::new(),
@@ -259,7 +260,7 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     /// Returns a [`GraphError`] if an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
     pub fn check_capacities(&self, epsilon: f64) -> Result<()> {
         for e in &self.es {
-            let capacity = self.weight(self.eindex[*e]);
+            let capacity = self.weight(self.eindex[e]);
             if capacity.is_nan() {
                 return Err(GraphError::InvalidWeight(crate::WeightProblem::NaN));
             }
@@ -291,7 +292,7 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     }
 
     fn weight(&self, e: usize) -> f64 {
-        self.graph.weight_of(self.es[e])
+        self.graph.weight_of(&self.es[e])
     }
 
     /// `init` + `buildInternal`: rebuilds the residual network for a new computation.
@@ -325,7 +326,8 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
         let g = self.graph;
         if self.directed {
             for u in 0..self.vs.len() {
-                for e in g.out_edges_of(self.vs[u]) {
+                let vertex = self.vs[u].clone();
+                for e in g.out_edges_of(&vertex) {
                     let ei = self.eindex[e];
                     let v = self.vindex[g.edge_target(e).unwrap()];
                     let forward = self.create_edge(u, v, ei);
@@ -338,7 +340,7 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
             }
         } else {
             for ei in 0..self.es.len() {
-                let e = self.es[ei];
+                let e = &self.es[ei];
                 let u = self.vindex[g.edge_source(e).unwrap()];
                 let v = self.vindex[g.edge_target(e).unwrap()];
                 let forward = self.create_edge(u, v, ei);
@@ -365,7 +367,7 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
         let (fs, ft) = (self.arcs[forward].source, self.arcs[forward].target);
         let backward_prototype = self
             .graph
-            .get_edge(self.vs[ft], self.vs[fs])
+            .get_edge(&self.vs[ft], &self.vs[fs])
             .map(|e| self.eindex[e]);
         let backward = match backward_prototype {
             Some(p) if self.directed => self.create_edge(ft, fs, p),
@@ -481,12 +483,13 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
         let sink_partition: IndexSet<G::Vertex> = self
             .vs
             .iter()
-            .filter(|v| !source_partition.contains(**v))
-            .map(|v| (*v).clone())
+            .filter(|v| !source_partition.contains(*v))
+            .cloned()
             .collect();
         let g = self.graph;
         let mut cut_edges = IndexSet::new();
         for e in g.edges() {
+            let e = e.borrow();
             let (Some(s), Some(t)) = (g.edge_source(e), g.edge_target(e)) else {
                 continue;
             };

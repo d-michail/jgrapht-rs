@@ -152,7 +152,7 @@ impl<'g, G: IncidenceGraph> PushRelabelMFImpl<'g, G> {
         }
         let g = self.net.graph;
         let mut value = 0.0;
-        for e in g.edges_of(self.net.vs[t]) {
+        for e in g.edges_of(&self.net.vs[t]) {
             let a = self.net.arc_of_edge(e);
             let arc = &self.net.arcs[a];
             value += if self.net.directed {

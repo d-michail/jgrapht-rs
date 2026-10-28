@@ -18,6 +18,7 @@ use super::cycle::{ChordalityInspector, IterationOrder};
 use super::util::Indexed;
 use crate::graph::{Graph, GraphExt, UndirectedGraph};
 use crate::graph::{IncidenceGraph, OutgoingGraph};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
@@ -145,11 +146,16 @@ pub fn saturation_degree_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
 ///
 /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
 pub fn is_proper_coloring<G: Graph>(g: &G, colors: &HashMap<G::Vertex, usize>) -> bool {
-    g.vertices().all(|v| colors.contains_key(v))
-        && g.edges().all(|e| {
+    g.vertices().all(|v| {
+        let v = v.borrow();
+        colors.contains_key(v)
+    }) && g.edges().all(|e| {
+        let e = e.borrow();
+        {
             let (s, t) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
             s == t || colors[s] != colors[t]
-        })
+        }
+    })
 }
 
 /// 1-dimensional Weisfeiler–Leman colour refinement. Returns the stable colouring; vertices
@@ -229,8 +235,8 @@ fn color_in_order<G: IncidenceGraph>(g: &G, order: &[G::Vertex]) -> Result<Color
     })
 }
 
-fn degrees<G: IncidenceGraph>(g: &G) -> (Vec<&G::Vertex>, Vec<usize>, usize) {
-    let vs: Vec<&G::Vertex> = g.vertices().collect();
+fn degrees<G: IncidenceGraph>(g: &G) -> (Vec<G::Vertex>, Vec<usize>, usize) {
+    let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
     let degree: Vec<usize> = vs.iter().map(|v| g.edges_of(v).count()).collect();
     let max = degree.iter().copied().max().unwrap_or(0);
     (vs, degree, max)
@@ -258,7 +264,7 @@ impl<'g, G: Graph> GreedyColoring<'g, G> {
 impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for GreedyColoring<'_, G> {
     /// Computes a vertex coloring.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
-        let order: Vec<G::Vertex> = self.graph.vertices().cloned().collect();
+        let order: Vec<G::Vertex> = self.graph.vertices_cloned().collect();
         color_in_order(self.graph, &order)
     }
 }
@@ -342,7 +348,7 @@ impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for SmallestDegreeLas
         let g = self.graph;
         let (vs, degree0, max_degree) = degrees(g);
         let index: HashMap<&G::Vertex, usize> =
-            vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+            vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
         // buckets keep their members in graph order, standing in for JGraphT's `HashSet`s
         let mut buckets: Vec<BTreeSet<usize>> = vec![BTreeSet::new(); max_degree + 1];
         for (i, &d) in degree0.iter().enumerate() {
@@ -356,9 +362,9 @@ impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for SmallestDegreeLas
                 buckets[i].remove(&v);
                 order.push_front(vs[v].clone());
                 degree.remove(&v);
-                for e in g.edges_of(vs[v]) {
-                    let u = g.opposite_vertex(e, vs[v]).unwrap();
-                    if vs[v] == u {
+                for e in g.edges_of(&vs[v]) {
+                    let u = g.opposite_vertex(e, &vs[v]).unwrap();
+                    if &vs[v] == u {
                         return Err(GraphError::InvalidGraph(crate::GraphProperty::NoSelfLoops));
                     }
                     let ui = index[u];
@@ -405,7 +411,7 @@ impl<G: IncidenceGraph, R: RandomSource> VertexColoringAlgorithm<G::Vertex>
     for RandomGreedyColoring<'_, G, R>
 {
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
-        let mut order: Vec<G::Vertex> = self.graph.vertices().cloned().collect();
+        let mut order: Vec<G::Vertex> = self.graph.vertices_cloned().collect();
         java_shuffle(&mut order, &mut *self.rng.borrow_mut());
         color_in_order(self.graph, &order)
     }
@@ -549,7 +555,7 @@ impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for SaturationDegreeC
         let (vs, mut degree, _) = degrees(g);
         let n = vs.len();
         let index: HashMap<&G::Vertex, usize> =
-            vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+            vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let mut saturation = vec![0usize; n];
         let mut adj_colors: Vec<HashSet<usize>> = vec![HashSet::new(); n];
         let mut colors: HashMap<G::Vertex, usize> = HashMap::new();
@@ -564,8 +570,8 @@ impl<G: IncidenceGraph> VertexColoringAlgorithm<G::Vertex> for SaturationDegreeC
             max_color = max_color.max(c as i64);
             colors.insert(vs[v].clone(), c);
             colored[v] = true;
-            for e in g.edges_of(vs[v]) {
-                let u = index[g.opposite_vertex(e, vs[v]).unwrap()];
+            for e in g.edges_of(&vs[v]) {
+                let u = index[g.opposite_vertex(e, &vs[v]).unwrap()];
                 if !colored[u] {
                     if adj_colors[u].contains(&c) {
                         heap.delete(u, &saturation, &degree);
@@ -654,7 +660,7 @@ impl<V: Clone + Eq + Hash> BrownBacktrackColoring<V> {
     ///
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new<G: Graph<Vertex = V> + IncidenceGraph>(graph: &G) -> Self {
-        let vertex_list: Vec<V> = graph.vertices().cloned().collect();
+        let vertex_list: Vec<V> = graph.vertices_cloned().collect();
         let index: HashMap<&V, usize> = vertex_list
             .iter()
             .enumerate()
@@ -1036,9 +1042,10 @@ impl<'g, G: Graph> ColorRefinementAlgorithm<'g, G> {
         let used: HashSet<usize> = alpha.colors.values().copied().collect();
         let consistent = alpha.colors.len() == graph.vertex_count()
             && used.len() == alpha.count
-            && graph
-                .vertices()
-                .all(|v| alpha.colors.get(v).is_some_and(|&c| c < alpha.count));
+            && graph.vertices().all(|v| {
+                let v = v.borrow();
+                alpha.colors.get(v).is_some_and(|&c| c < alpha.count)
+            });
         if !consistent {
             return Err(GraphError::InvalidArgument(
                 "alpha is not a valid surjective l-coloring for the given graph.".into(),
@@ -1056,9 +1063,9 @@ impl<G: OutgoingGraph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlg
     /// coloring form the coarsest stable partition that refines alpha.
     fn coloring(&self) -> Result<Coloring<G::Vertex>> {
         let g = self.graph;
-        let vs: Vec<&G::Vertex> = g.vertices().collect();
+        let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
         let index: HashMap<&G::Vertex, usize> =
-            vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+            vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let succ: Vec<Vec<usize>> = vs
             .iter()
             .map(|v| {
@@ -1072,7 +1079,7 @@ impl<G: OutgoingGraph> VertexColoringAlgorithm<G::Vertex> for ColorRefinementAlg
             .collect();
         let initial: Vec<usize> = match &self.alpha {
             None => vec![0; vs.len()],
-            Some(a) => vs.iter().map(|v| a.colors[*v]).collect(),
+            Some(a) => vs.iter().map(|v| a.colors[v]).collect(),
         };
         let (color, classes) = refine_colors(&succ, initial);
         Ok(Coloring {

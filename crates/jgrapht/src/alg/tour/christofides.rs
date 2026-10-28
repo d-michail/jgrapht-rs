@@ -24,6 +24,7 @@ use crate::graph::capability::IncidenceGraph;
 use crate::graph::{Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
 use crate::view::AsSubgraph;
 use crate::walk::GraphWalk;
+use std::borrow::Borrow;
 use std::collections::HashSet;
 
 /// A $3/2$-approximation algorithm for the metric TSP problem.
@@ -88,7 +89,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
         }
 
         let mut mst_and_matching = UGraph::<G::Vertex>::pseudo();
-        mst_and_matching.add_vertices(graph.vertices().cloned());
+        mst_and_matching.add_vertices(graph.vertices_cloned());
 
         let spanning_tree = KruskalMinimumSpanningTree::new(graph).spanning_tree();
         for edge in spanning_tree.edges {
@@ -98,6 +99,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
 
         let mut odd_degree_vertices = Vec::new();
         for vertex in mst_and_matching.vertices() {
+            let vertex = vertex.borrow();
             if mst_and_matching.degree_of(vertex) % 2 == 1 {
                 odd_degree_vertices.push(vertex.clone());
             }
@@ -105,6 +107,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
         let subgraph = AsSubgraph::induced(graph, odd_degree_vertices);
         let mut matching = KolmogorovWeightedPerfectMatching::new(&subgraph)?;
         for edge in matching.get_matching()?.edges() {
+            let edge = edge.borrow();
             let (source, target) = graph.edge_endpoints(edge).expect("edge of the graph");
             mst_and_matching.add_edge(source, target)?;
         }

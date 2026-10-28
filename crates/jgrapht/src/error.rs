@@ -98,6 +98,39 @@ pub enum GraphError {
     /// A link prediction index is not defined for the queried pair.
     #[error("link prediction index not well defined: {0}")]
     IndexNotWellDefined(String),
+    /// An element of a set-like data structure (union-find, list, neighbour cache) is not in it.
+    #[error("element not found")]
+    ElementNotFound,
+    /// An element that must be unique is already present.
+    #[error("element already present")]
+    DuplicateElement,
+    /// A tour, or a sub-tour used to start one, is not valid for the graph.
+    #[error("not a valid tour of the graph")]
+    InvalidTour,
+    /// A flow problem violates the requirements of the algorithm.
+    #[error("invalid flow problem: {0}")]
+    InvalidFlowProblem(FlowProblem),
+}
+
+/// What is wrong with a minimum-cost flow problem; see [`GraphError::InvalidFlowProblem`].
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+pub enum FlowProblem {
+    /// The node supplies do not add up to zero.
+    #[error("the node supplies must add up to zero")]
+    SupplyNotBalanced,
+    /// An arc has a negative capacity.
+    #[error("negative arc capacity")]
+    NegativeCapacity,
+    /// An arc has a lower capacity above its upper capacity.
+    #[error("lower capacity above upper capacity")]
+    LowerAboveUpper,
+    /// An arc with infinite capacity has a negative cost.
+    #[error("infinite capacity with negative cost")]
+    InfiniteCapacityNegativeCost,
+    /// An arc has an infinite cost.
+    #[error("infinite cost")]
+    InfiniteCost,
 }
 
 /// A requirement on a numeric or collection parameter; see [`GraphError::InvalidParameter`].
@@ -116,6 +149,9 @@ pub enum ParameterRequirement {
     /// At most the given value.
     #[error("at most {0}")]
     AtMost(u64),
+    /// Exactly the given value.
+    #[error("exactly {0}")]
+    Exactly(u64),
     /// A non-empty collection.
     #[error("non-empty")]
     NonEmpty,
@@ -128,6 +164,15 @@ pub enum ParameterRequirement {
     /// A probability in `[0, 1]`.
     #[error("a probability in [0, 1]")]
     Probability,
+    /// A collection of collections that overlap neither each other nor themselves.
+    #[error("disjoint, without duplicates")]
+    Disjoint,
+    /// Non-negative probabilities that add up to one.
+    #[error("a probability distribution")]
+    ProbabilityDistribution,
+    /// An index inside the bounds of the structure it addresses.
+    #[error("within bounds")]
+    InBounds,
 }
 
 /// Why an edge weight is unusable; see [`GraphError::InvalidWeight`].
@@ -186,6 +231,9 @@ pub enum GraphProperty {
     /// Having at least one vertex.
     #[error("non-empty")]
     NonEmpty,
+    /// Having at least one edge.
+    #[error("a graph with at least one edge")]
+    HasEdges,
     /// Having at least two vertices.
     #[error("a graph with at least two vertices")]
     AtLeastTwoVertices,

@@ -38,10 +38,10 @@ macro_rules! forward_graph {
         fn graph_type(&$s) -> GraphType { $inner.graph_type() }
     };
     (@one $s:ident => $inner:expr; vertices) => {
-        fn vertices(&$s) -> impl Iterator<Item = &<Self as Graph>::Vertex> { $inner.vertices() }
+        fn vertices(&$s) -> impl Iterator<Item = <Self as Graph>::VertexRef<'_>> { $inner.vertices() }
     };
     (@one $s:ident => $inner:expr; edges) => {
-        fn edges(&$s) -> impl Iterator<Item = &<Self as Graph>::Edge> { $inner.edges() }
+        fn edges(&$s) -> impl Iterator<Item = <Self as Graph>::EdgeRef<'_>> { $inner.edges() }
     };
     (@one $s:ident => $inner:expr; vertex_count) => {
         fn vertex_count(&$s) -> usize { $inner.vertex_count() }
@@ -107,6 +107,14 @@ pub(crate) use forward_graph_mut;
 impl<G: Graph + ?Sized> Graph for &G {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = G::VertexRef<'a>
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = G::EdgeRef<'a>
+    where
+        Self: 'a;
     forward_graph!(self => (**self); graph_type, vertices, edges, vertex_count, edge_count, contains_vertex, contains_edge,
         edge_source, edge_target, edge_weight, is_edge_directed, edges_between);
 }
@@ -116,6 +124,14 @@ impl<G: UndirectedGraph + ?Sized> UndirectedGraph for &G {}
 impl<G: Graph + ?Sized> Graph for &mut G {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = G::VertexRef<'a>
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = G::EdgeRef<'a>
+    where
+        Self: 'a;
     forward_graph!(self => (**self); graph_type, vertices, edges, vertex_count, edge_count, contains_vertex, contains_edge,
         edge_source, edge_target, edge_weight, is_edge_directed, edges_between);
 }
@@ -132,6 +148,14 @@ pub struct Unmodifiable<G>(pub G);
 impl<G: Graph> Graph for Unmodifiable<G> {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = G::VertexRef<'a>
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = G::EdgeRef<'a>
+    where
+        Self: 'a;
     fn graph_type(&self) -> GraphType {
         self.0.graph_type().as_unmodifiable()
     }
@@ -161,6 +185,14 @@ pub struct EdgeReversed<G>(pub G);
 impl<G: DirectedGraph> Graph for EdgeReversed<G> {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = G::VertexRef<'a>
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = G::EdgeRef<'a>
+    where
+        Self: 'a;
     forward_graph!(self => self.0; graph_type, vertices, edges, vertex_count, edge_count, contains_vertex, contains_edge,
         edge_weight, is_edge_directed);
     fn edge_source(&self, e: &G::Edge) -> Option<&G::Vertex> {
@@ -193,6 +225,14 @@ pub struct AsUndirected<G>(pub G);
 impl<G: DirectedGraph> Graph for AsUndirected<G> {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = G::VertexRef<'a>
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = G::EdgeRef<'a>
+    where
+        Self: 'a;
     fn graph_type(&self) -> GraphType {
         self.0.graph_type().directed(false)
     }

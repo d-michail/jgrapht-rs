@@ -16,6 +16,7 @@ use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt};
 use crate::util::OrderedF64;
 use crate::{GraphError, Result};
+use std::borrow::Borrow;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
@@ -84,8 +85,11 @@ impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
             }
         }
         if graph.edges().any(|edge| {
-            let weight = graph.weight_of(edge);
-            weight.is_nan() || weight < 0.0
+            let edge = edge.borrow();
+            {
+                let weight = graph.weight_of(edge);
+                weight.is_nan() || weight < 0.0
+            }
         }) {
             return Err(GraphError::InvalidWeight(
                 crate::WeightProblem::NegativeOrNaN,
@@ -170,38 +174,40 @@ fn distances<G: IncidenceGraph>(
     source: &G::Vertex,
     reverse: bool,
 ) -> Result<HashMap<G::Vertex, f64>> {
-    let source = graph
-        .vertices()
-        .find(|vertex| *vertex == source)
-        .ok_or(GraphError::VertexNotFound)?;
-    let mut distance = HashMap::from([(source, 0.0)]);
+    if !graph.contains_vertex(source) {
+        return Err(GraphError::VertexNotFound);
+    }
+    let mut distance: HashMap<G::Vertex, f64> = HashMap::from([(source.clone(), 0.0)]);
     let mut settled = HashSet::new();
-    let mut nodes = vec![source];
+    let mut nodes = vec![source.clone()];
     let mut heap = BinaryHeap::from([Reverse((OrderedF64(0.0), 0usize))]);
 
     while let Some(Reverse((OrderedF64(value), index))) = heap.pop() {
-        let vertex = nodes[index];
-        if settled.contains(vertex) || value > distance[vertex] {
+        let vertex = nodes[index].clone();
+        if settled.contains(&vertex) || value > distance[&vertex] {
             continue;
         }
-        settled.insert(vertex);
-        let adjacent: Vec<_> = if reverse {
-            graph.incoming_of(vertex).collect()
+        settled.insert(vertex.clone());
+        let adjacent: Vec<(G::Edge, G::Vertex)> = if reverse {
+            graph
+                .incoming_of(&vertex)
+                .map(|(e, t)| (e.clone(), t.clone()))
+                .collect()
         } else {
-            graph.outgoing_of(vertex).collect()
+            graph
+                .outgoing_of(&vertex)
+                .map(|(e, t)| (e.clone(), t.clone()))
+                .collect()
         };
         for (edge, target) in adjacent {
-            let candidate = value + graph.weight_of(edge);
-            if candidate < distance.get(target).copied().unwrap_or(f64::INFINITY) {
-                distance.insert(target, candidate);
+            let candidate = value + graph.weight_of(&edge);
+            if candidate < distance.get(&target).copied().unwrap_or(f64::INFINITY) {
+                distance.insert(target.clone(), candidate);
                 nodes.push(target);
                 heap.push(Reverse((OrderedF64(candidate), nodes.len() - 1)));
             }
         }
     }
 
-    Ok(distance
-        .into_iter()
-        .map(|(vertex, value)| (vertex.clone(), value))
-        .collect())
+    Ok(distance)
 }

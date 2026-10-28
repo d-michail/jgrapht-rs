@@ -269,6 +269,14 @@ impl<V: Clone + Eq + Hash> BaseGraph<V, DefaultEdge, Directed> {
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction, S> Graph for BaseGraph<V, E, D, S> {
     type Vertex = V;
     type Edge = E;
+    type VertexRef<'a>
+        = &'a V
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = &'a E
+    where
+        Self: 'a;
 
     fn graph_type(&self) -> GraphType {
         self.ty

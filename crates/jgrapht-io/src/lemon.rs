@@ -22,6 +22,7 @@
 use crate::exporter::format_f64;
 use crate::{BaseExporter, GraphExporter, IntegerIdProvider, Result};
 use jgrapht::Graph;
+use std::borrow::Borrow;
 use std::hash::Hash;
 use std::io::Write;
 
@@ -116,6 +117,7 @@ where
         writeln!(output, "@nodes")?;
         writeln!(output, "label")?;
         for vertex in graph.vertices() {
+            let vertex = vertex.borrow();
             let id = self.base.vertex_id(vertex)?;
             writeln!(output, "{}", self.prepare(&id))?;
         }
@@ -127,6 +129,7 @@ where
             if self.export_weights { "weight" } else { "-" }
         )?;
         for edge in graph.edges() {
+            let edge = edge.borrow();
             let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             let source = self.base.vertex_id(source)?;
             let target = self.base.vertex_id(target)?;

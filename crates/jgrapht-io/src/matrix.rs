@@ -23,6 +23,7 @@
 use crate::exporter::format_f64;
 use crate::{BaseExporter, GraphExporter, IntegerIdProvider, IoError, Result};
 use indexmap::{IndexMap, IndexSet};
+use jgrapht::GraphExt;
 use jgrapht::IncidenceGraph;
 use std::hash::Hash;
 use std::io::Write;
@@ -107,7 +108,7 @@ where
                 "Laplacian formats require an undirected graph".into(),
             ));
         }
-        let vertices: Vec<_> = graph.vertices().cloned().collect();
+        let vertices: Vec<_> = graph.vertices_cloned().collect();
         let mut ids = IndexMap::new();
         for vertex in &vertices {
             ids.insert(vertex.clone(), self.base.vertex_id(vertex)?);

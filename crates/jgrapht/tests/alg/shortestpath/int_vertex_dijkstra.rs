@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{IntVertexDijkstraShortestPath, ShortestPathAlgorithm};
 use jgrapht::graph::OutgoingGraph;
 use jgrapht::{DefaultEdge, DiGraph, GraphMutExt, UGraph};
@@ -23,8 +24,8 @@ where
     let algorithm = IntVertexDijkstraShortestPath::new(graph);
     for &(source, weights) in expected {
         let paths = algorithm.single_source(&source).unwrap();
-        for (target, &weight) in graph.vertices().zip(weights) {
-            let actual = paths.weight(target).unwrap_or(f64::INFINITY);
+        for (target, &weight) in graph.vertices_cloned().zip(weights) {
+            let actual = paths.weight(&target).unwrap_or(f64::INFINITY);
             assert!(
                 (actual == weight) || (actual.is_infinite() && weight.is_infinite()),
                 "distance {source} -> {target}: expected {weight}, got {actual}"

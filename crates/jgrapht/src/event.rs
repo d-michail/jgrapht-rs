@@ -79,13 +79,21 @@ impl<G: Graph> Listenable<G> {
 impl<G: Graph> Graph for Listenable<G> {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = G::VertexRef<'a>
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = G::EdgeRef<'a>
+    where
+        Self: 'a;
     fn graph_type(&self) -> GraphType {
         self.graph.graph_type()
     }
-    fn vertices(&self) -> impl Iterator<Item = &G::Vertex> {
+    fn vertices(&self) -> impl Iterator<Item = Self::VertexRef<'_>> {
         self.graph.vertices()
     }
-    fn edges(&self) -> impl Iterator<Item = &G::Edge> {
+    fn edges(&self) -> impl Iterator<Item = Self::EdgeRef<'_>> {
         self.graph.edges()
     }
     fn vertex_count(&self) -> usize {

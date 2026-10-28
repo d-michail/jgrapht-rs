@@ -70,9 +70,10 @@
 //! ```
 //! use jgrapht::graph::sparse::{FullIncoming, SparseIntDirectedGraph};
 //! use jgrapht::*;
+//! use std::borrow::Borrow;
 //!
 //! fn in_degree_sum<G: IncomingGraph>(g: &G) -> usize {
-//!     g.vertices().map(|v| g.in_degree_of(v)).sum()
+//!     g.vertices().map(|v| g.in_degree_of(v.borrow())).sum()
 //! }
 //!
 //! let g = SparseIntDirectedGraph::<FullIncoming>::from_edges(3, &[(0, 1), (1, 2)])?;
@@ -100,7 +101,9 @@ pub mod util;
 pub mod view;
 pub mod walk;
 
-pub use error::{GraphError, GraphProperty, ParameterRequirement, Result, WeightProblem};
+pub use error::{
+    FlowProblem, GraphError, GraphProperty, ParameterRequirement, Result, WeightProblem,
+};
 pub use graph::{
     BaseGraph, DefaultEdge, DiGraph, DirectedGraph, FastutilMapGraph, FastutilMapIntVertexGraph,
     Graph, GraphExt, GraphMut, GraphMutExt, IncidenceGraph, IncomingGraph, OutgoingGraph, UGraph,

@@ -49,7 +49,7 @@ mod directed_graph_test {
         let e2 = g.add_edge(&V2, &V1).unwrap().unwrap();
         let e3 = g.add_edge(&V2, &V3).unwrap().unwrap();
         let e4 = g.add_edge(&V3, &V1).unwrap().unwrap();
-        assert_eq!(g.edges().copied().collect::<Vec<_>>(), [e1, e2, e3, e4]);
+        assert_eq!(g.edges_cloned().collect::<Vec<_>>(), [e1, e2, e3, e4]);
         assert_eq!(
             g.to_string(),
             "([v1, v2, v3], [(v1,v2), (v2,v1), (v2,v3), (v3,v1)])"
@@ -63,7 +63,7 @@ mod directed_graph_test {
         let e1 = g.add_edge(&V1, &V2).unwrap().unwrap();
         let e2 = g.add_edge(&V2, &V3).unwrap().unwrap();
         let e3 = g.add_edge(&V3, &V1).unwrap().unwrap();
-        assert_eq!(g.edges().copied().collect::<Vec<_>>(), [e1, e2, e3]);
+        assert_eq!(g.edges_cloned().collect::<Vec<_>>(), [e1, e2, e3]);
         assert!(g.test_incidence(&e1, &V1));
         assert!(g.test_incidence(&e1, &V2));
         assert!(!g.test_incidence(&e1, &V3));
@@ -109,7 +109,7 @@ mod directed_graph_test {
     #[test]
     fn test_vertex_order_determinism() {
         let g = multi_triangle();
-        assert_eq!(g.vertices().copied().collect::<Vec<_>>(), [V1, V2, V3]);
+        assert_eq!(g.vertices_cloned().collect::<Vec<_>>(), [V1, V2, V3]);
     }
 }
 

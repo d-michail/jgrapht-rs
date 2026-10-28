@@ -97,7 +97,7 @@ fn closest_first_reports_an_invalid_weight_once_and_ends() {
         let mut it = ClosestFirstIterator::from_start(&g, &0).unwrap();
         // the weight of the edge leaving vertex 1 is found while expanding it, so the error
         // takes the place of vertex 1
-        assert_eq!(it.next(), Some(Ok(&0)));
+        assert_eq!(it.next(), Some(Ok(0)));
         assert_eq!(it.next(), Some(Err(BAD)));
         assert_eq!(it.next(), None);
 
@@ -114,7 +114,7 @@ fn closest_first_collects_into_a_result() {
     let all: jgrapht::Result<Vec<_>> = ClosestFirstIterator::from_start(&good, &0)
         .unwrap()
         .collect();
-    assert_eq!(all.unwrap(), [&0, &1, &2]);
+    assert_eq!(all.unwrap(), [0, 1, 2]);
 
     let bad = weighted_path(&[1.0, -2.0]);
     let all: jgrapht::Result<Vec<_>> = ClosestFirstIterator::from_start(&bad, &0)
@@ -148,10 +148,7 @@ fn topological_order_reports_a_cycle_as_an_error() {
     let items: Vec<_> = TopologicalOrderIterator::new(&g).unwrap().collect();
     assert_eq!(
         items,
-        [
-            Ok(&1),
-            Err(GraphError::InvalidGraph(GraphProperty::Acyclic))
-        ]
+        [Ok(1), Err(GraphError::InvalidGraph(GraphProperty::Acyclic))]
     );
     let sorted: jgrapht::Result<Vec<_>> = TopologicalOrderIterator::new(&g).unwrap().collect();
     assert!(sorted.is_err());

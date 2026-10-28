@@ -1,3 +1,4 @@
+use jgrapht::GraphExt;
 use jgrapht::util::java::RandomSource;
 use rand::{SeedableRng, rngs::StdRng};
 // (C) Copyright 2003-2026, by John V Sichi and JGraphT Contributors.
@@ -179,7 +180,7 @@ fn test_graph_pseudo_periphery_g2() {
 #[test]
 fn test_graph_pseudo_periphery_g3() {
     let g = graph3();
-    let vs: Vec<i32> = g.vertices().copied().collect();
+    let vs: Vec<i32> = g.vertices_cloned().collect();
     let n = vs.len();
     let mut d = vec![vec![f64::INFINITY; n]; n];
     for (i, row) in d.iter_mut().enumerate() {

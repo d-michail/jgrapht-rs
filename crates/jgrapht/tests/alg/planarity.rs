@@ -167,7 +167,7 @@ fn sparse_random_graphs_vs_edge_bound() {
         // planarity is monotone under edge deletion
         if is_planar(&g) {
             let mut h = g.clone();
-            let es: Vec<_> = h.edges().cloned().collect();
+            let es: Vec<_> = h.edges_cloned().collect();
             for e in es.iter().step_by(2) {
                 h.remove_edge(e);
             }

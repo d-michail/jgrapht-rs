@@ -27,6 +27,7 @@ use crate::{
 };
 use indexmap::IndexMap;
 use jgrapht::{DefaultEdge, Graph, GraphMut};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::hash::Hash;
@@ -575,6 +576,7 @@ where
         )?;
         let mut ids = IndexMap::new();
         for vertex in graph.vertices() {
+            let vertex = vertex.borrow();
             let id = self.base.vertex_id(vertex)?;
             ids.insert(vertex.clone(), id.clone());
             writeln!(output, "\tnode\n\t[\n\t\tid {id}")?;
@@ -611,6 +613,7 @@ where
             writeln!(output, "\t]")?;
         }
         for edge in graph.edges() {
+            let edge = edge.borrow();
             let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             writeln!(output, "\tedge\n\t[")?;
             if let Some(id) = self.base.edge_id(edge) {

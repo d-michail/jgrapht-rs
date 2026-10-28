@@ -21,6 +21,7 @@ use jgrapht::graph::OutgoingGraph;
 use jgrapht::util::java::RandomSource;
 use jgrapht::{DiGraph, Graph, GraphError, GraphMut, GraphMutExt, UGraph};
 use rand::{SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 
 const SEED: i64 = 19;
 
@@ -61,6 +62,7 @@ fn assert_simple<G: Graph>(h: &ContractionHierarchy<'_, G>) {
 
 mod precomputation {
     use super::*;
+    use jgrapht::GraphExt;
     use rand::{SeedableRng, rngs::StdRng};
 
     #[test]
@@ -224,7 +226,7 @@ mod precomputation {
                 .generate_indexed(&mut graph)
                 .unwrap();
             let mut random = StdRng::seed_from_u64((SEED) as u64);
-            let edges: Vec<_> = graph.edges().copied().collect();
+            let edges: Vec<_> = graph.edges_cloned().collect();
             for e in &edges {
                 graph.set_edge_weight(e, random.next_double()).unwrap();
             }
@@ -300,6 +302,7 @@ mod precomputation {
 
 mod bidirectional_dijkstra {
     use super::*;
+    use jgrapht::GraphExt;
     use rand::{SeedableRng, rngs::StdRng};
 
     fn weighted_graph(edges: &[(i32, i32, f64)]) -> UGraph<i32> {
@@ -422,7 +425,7 @@ mod bidirectional_dijkstra {
                 graph.add_edge(&i, &(i + 1)).unwrap();
                 graph.add_edge(&(i + 1), &i).unwrap();
             }
-            let edges: Vec<_> = graph.edges().copied().collect();
+            let edges: Vec<_> = graph.edges_cloned().collect();
             for e in &edges {
                 graph.set_edge_weight(e, random.next_double()).unwrap();
             }
@@ -441,6 +444,7 @@ mod bidirectional_dijkstra {
             .single_source(&source)
             .unwrap();
         for sink in graph.vertices() {
+            let sink = sink.borrow();
             assert_eq!(expected.path(sink), actual.path(sink), "sink {sink:?}");
         }
     }
@@ -512,6 +516,7 @@ mod fixture_graphs {
                 .single_source(&source)
                 .unwrap();
             for sink in graph.vertices() {
+                let sink = sink.borrow();
                 assert_eq!(
                     expected.path(sink).map(|w| w.weight()),
                     actual.path(sink).map(|w| w.weight()),

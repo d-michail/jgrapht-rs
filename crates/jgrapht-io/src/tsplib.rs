@@ -26,6 +26,7 @@ use crate::{GraphImporter, IoError, Result};
 use indexmap::IndexMap;
 use jgrapht::graph::IncidenceGraph;
 use jgrapht::{Graph, GraphMut};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::io::Read;
@@ -522,6 +523,7 @@ fn distinct_locations<V>(nodes: &IndexMap<V, TsplibNode>) -> bool {
 
 fn distinct_neighbor_distances<G: IncidenceGraph>(graph: &G) -> Result<bool> {
     for vertex in graph.vertices() {
+        let vertex = vertex.borrow();
         let mut weights = HashSet::new();
         for edge in graph.edges_of(vertex) {
             if !weights.insert(crate::exporter::edge_weight(graph, edge)?.to_bits()) {

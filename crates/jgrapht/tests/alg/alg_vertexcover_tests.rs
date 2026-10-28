@@ -23,6 +23,7 @@ use jgrapht::generate::*;
 use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
@@ -40,8 +41,11 @@ fn random_int(bound: i32) -> i32 {
 
 fn is_cover<G: Graph>(g: &G, cover: &VertexCover<G::Vertex>) -> bool {
     g.edges().all(|e| {
-        cover.vertices.contains(g.edge_source(e).unwrap())
-            || cover.vertices.contains(g.edge_target(e).unwrap())
+        let e = e.borrow();
+        {
+            cover.vertices.contains(g.edge_source(e).unwrap())
+                || cover.vertices.contains(g.edge_target(e).unwrap())
+        }
     })
 }
 

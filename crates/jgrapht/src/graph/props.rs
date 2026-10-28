@@ -17,6 +17,7 @@
 use super::{DirectedExt, DirectedGraph, Graph, GraphExt, UndirectedGraph};
 use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::{GraphError, Result};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// `Ok(g)` if the graph is weighted, otherwise `InvalidGraph(GraphProperty::Weighted)`.
@@ -63,7 +64,11 @@ pub fn is_empty<G: Graph>(g: &G) -> bool {
 
 /// Returns whether there is self loops.
 pub fn has_self_loops<G: Graph>(g: &G) -> bool {
-    g.graph_type().self_loops && g.edges().any(|e| g.edge_source(e) == g.edge_target(e))
+    g.graph_type().self_loops
+        && g.edges().any(|e| {
+            let e = e.borrow();
+            g.edge_source(e) == g.edge_target(e)
+        })
 }
 
 /// Returns whether there is multiple edges.
@@ -72,8 +77,11 @@ pub fn has_multiple_edges<G: OutgoingGraph>(g: &G) -> bool {
         return false;
     }
     g.vertices().any(|v| {
-        let mut seen = HashSet::new();
-        g.outgoing_of(v).any(|(_, u)| !seen.insert(u))
+        let v = v.borrow();
+        {
+            let mut seen = HashSet::new();
+            g.outgoing_of(v).any(|(_, u)| !seen.insert(u))
+        }
     })
 }
 
@@ -83,8 +91,11 @@ pub fn is_simple<G: OutgoingGraph>(g: &G) -> bool {
         return true;
     }
     g.vertices().all(|v| {
-        let mut seen = HashSet::new();
-        g.outgoing_of(v).all(|(_, u)| u != v && seen.insert(u))
+        let v = v.borrow();
+        {
+            let mut seen = HashSet::new();
+            g.outgoing_of(v).all(|(_, u)| u != v && seen.insert(u))
+        }
     })
 }
 
@@ -101,16 +112,16 @@ pub fn is_complete<G: OutgoingGraph>(g: &G) -> bool {
 
 /// Weak connectivity (edge direction ignored). The empty graph is not connected.
 pub fn is_connected<G: IncidenceGraph>(g: &G) -> bool {
-    let Some(start) = g.vertices().next() else {
+    let Some(start) = g.vertices_cloned().next() else {
         return false;
     };
     let mut seen = HashSet::new();
-    let mut q = VecDeque::from([start]);
+    let mut q = VecDeque::from([start.clone()]);
     seen.insert(start);
     while let Some(x) = q.pop_front() {
-        for y in g.neighbors_of(x) {
-            if seen.insert(y) {
-                q.push_back(y);
+        for y in g.neighbors_of(&x) {
+            if seen.insert(y.clone()) {
+                q.push_back(y.clone());
             }
         }
     }
@@ -127,20 +138,20 @@ pub fn is_strongly_connected<G: IncidenceGraph>(g: &G) -> bool {
     if !g.graph_type().directed {
         return is_connected(g);
     }
-    let Some(start) = g.vertices().next() else {
+    let Some(start) = g.vertices_cloned().next() else {
         return false;
     };
     let reach = |forward: bool| {
-        let mut seen = HashSet::from([start]);
-        let mut q = VecDeque::from([start]);
+        let mut seen = HashSet::from([start.clone()]);
+        let mut q = VecDeque::from([start.clone()]);
         while let Some(x) = q.pop_front() {
-            let next: Vec<_> = if forward {
-                g.outgoing_of(x).map(|(_, y)| y).collect()
+            let next: Vec<G::Vertex> = if forward {
+                g.outgoing_of(&x).map(|(_, y)| y.clone()).collect()
             } else {
-                g.incoming_of(x).map(|(_, y)| y).collect()
+                g.incoming_of(&x).map(|(_, y)| y.clone()).collect()
             };
             for y in next {
-                if seen.insert(y) {
+                if seen.insert(y.clone()) {
                     q.push_back(y);
                 }
             }
@@ -155,22 +166,24 @@ pub fn is_forest<G: Graph>(g: &G) -> bool {
     if g.vertex_count() == 0 {
         return false;
     }
-    let mut parent: HashMap<&G::Vertex, &G::Vertex> = g.vertices().map(|v| (v, v)).collect();
-    fn find<'a, V: std::hash::Hash + Eq>(p: &mut HashMap<&'a V, &'a V>, x: &'a V) -> &'a V {
-        let mut r = x;
-        while p[r] != r {
-            r = p[r];
+    let mut parent: HashMap<G::Vertex, G::Vertex> =
+        g.vertices_cloned().map(|v| (v.clone(), v)).collect();
+    fn find<V: std::hash::Hash + Eq + Clone>(p: &mut HashMap<V, V>, x: &V) -> V {
+        let mut r = x.clone();
+        while p[&r] != r {
+            r = p[&r].clone();
         }
-        let mut c = x;
-        while p[c] != r {
-            let n = p[c];
-            p.insert(c, r);
+        let mut c = x.clone();
+        while p[&c] != r {
+            let n = p[&c].clone();
+            p.insert(c, r.clone());
             c = n;
         }
         r
     }
     let mut components = g.vertex_count();
     for e in g.edges() {
+        let e = e.borrow();
         // an edge whose endpoints are missing or not vertices breaks the `Graph` integrity
         // contract; such a graph is not a forest
         let Some((s, t)) = g.edge_endpoints(e) else {
@@ -195,24 +208,29 @@ pub fn is_tree<G: IncidenceGraph>(g: &G) -> bool {
 
 /// Kahn's algorithm.
 pub fn is_dag<G: DirectedGraph + IncomingGraph + OutgoingGraph>(g: &G) -> bool {
-    let mut indeg: HashMap<&G::Vertex, usize> =
-        g.vertices().map(|v| (v, g.in_degree_of(v))).collect();
-    let mut q: VecDeque<_> = indeg
+    let mut indeg: HashMap<G::Vertex, usize> = g
+        .vertices_cloned()
+        .map(|v| {
+            let d = g.in_degree_of(&v);
+            (v, d)
+        })
+        .collect();
+    let mut q: VecDeque<G::Vertex> = indeg
         .iter()
         .filter(|(_, d)| **d == 0)
-        .map(|(v, _)| *v)
+        .map(|(v, _)| v.clone())
         .collect();
     let mut n = 0;
     while let Some(v) = q.pop_front() {
         n += 1;
-        for s in g.successors_of(v) {
+        for s in g.successors_of(&v) {
             // a successor that is not a vertex violates the `Graph` integrity contract; skip it
             let Some(d) = indeg.get_mut(s) else {
                 continue;
             };
             *d = d.saturating_sub(1);
             if *d == 0 {
-                q.push_back(s);
+                q.push_back(s.clone());
             }
         }
     }
@@ -222,7 +240,14 @@ pub fn is_dag<G: DirectedGraph + IncomingGraph + OutgoingGraph>(g: &G) -> bool {
 /// More edges than `max_degree * floor(n / 2)` (a sufficient condition for chromatic index
 /// `max_degree + 1`). An empty graph is not overfull.
 pub fn is_overfull<G: IncidenceGraph>(g: &G) -> bool {
-    let Some(max_degree) = g.vertices().map(|v| g.degree_of(v)).max() else {
+    let Some(max_degree) = g
+        .vertices()
+        .map(|v| {
+            let v = v.borrow();
+            g.degree_of(v)
+        })
+        .max()
+    else {
         return false;
     };
     g.edge_count() as f64 > max_degree as f64 * (g.vertex_count() / 2) as f64
@@ -234,7 +259,13 @@ pub fn is_split<G: IncidenceGraph>(g: &G) -> bool {
     if g.graph_type().directed || !is_simple(g) || g.vertex_count() == 0 {
         return false;
     }
-    let mut degrees: Vec<usize> = g.vertices().map(|v| g.degree_of(v)).collect();
+    let mut degrees: Vec<usize> = g
+        .vertices()
+        .map(|v| {
+            let v = v.borrow();
+            g.degree_of(v)
+        })
+        .collect();
     degrees.sort_unstable_by(|a, b| b.cmp(a));
     let mut m = 1;
     while m < degrees.len() && degrees[m] >= m {
@@ -248,7 +279,10 @@ pub fn is_split<G: IncidenceGraph>(g: &G) -> bool {
 
 /// Every vertex has degree three.
 pub fn is_cubic<G: IncidenceGraph>(g: &G) -> bool {
-    g.vertices().all(|v| g.degree_of(v) == 3)
+    g.vertices().all(|v| {
+        let v = v.borrow();
+        g.degree_of(v) == 3
+    })
 }
 
 /// Ore's condition: simple, undirected, `n >= 3` and `deg(u) + deg(v) >= n` for all
@@ -258,7 +292,7 @@ pub fn has_ore_property<G: IncidenceGraph>(g: &G) -> bool {
     if g.graph_type().directed || !g.graph_type().is_simple() || n < 3 {
         return false;
     }
-    let vs: Vec<_> = g.vertices().collect();
+    let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
     for (i, v) in vs.iter().enumerate() {
         for w in &vs[i + 1..] {
             if !g.contains_edge_between(v, w) && g.degree_of(v) + g.degree_of(w) < n {
@@ -286,18 +320,13 @@ pub fn is_bipartite_partition<G: IncidenceGraph>(
     second: &std::collections::HashSet<G::Vertex>,
 ) -> bool {
     use crate::alg::interfaces::{Partitioning, PartitioningAlgorithm};
-    let p = Partitioning::new(vec![
-        g.vertices()
-            .filter(|v| first.contains(*v))
-            .cloned()
-            .chain(first.iter().filter(|v| !g.contains_vertex(v)).cloned())
-            .collect(),
-        g.vertices()
-            .filter(|v| second.contains(*v))
-            .cloned()
-            .chain(second.iter().filter(|v| !g.contains_vertex(v)).cloned())
-            .collect(),
-    ]);
+    let side = |side: &HashSet<G::Vertex>| -> indexmap::IndexSet<G::Vertex> {
+        g.vertices_cloned()
+            .filter(|v| side.contains(v))
+            .chain(side.iter().filter(|v| !g.contains_vertex(v)).cloned())
+            .collect()
+    };
+    let p = Partitioning::new(vec![side(first), side(second)]);
     crate::alg::partition::BipartitePartitioning::new(g).is_valid_partitioning(&p)
 }
 
@@ -333,27 +362,27 @@ pub fn is_planar<G: IncidenceGraph>(g: &G) -> bool {
 
 /// Vertices of degree `degree` reachable from `start` without passing through another vertex of
 /// that degree.
-fn reachable_with_degree<'a, G: IncidenceGraph>(
-    g: &'a G,
-    start: &'a G::Vertex,
+fn reachable_with_degree<G: IncidenceGraph>(
+    g: &G,
+    start: &G::Vertex,
     degree: usize,
-) -> HashSet<&'a G::Vertex> {
+) -> HashSet<G::Vertex> {
     let mut visited = HashSet::new();
     let mut reachable = HashSet::new();
-    let mut queue = VecDeque::from([start]);
+    let mut queue = VecDeque::from([start.clone()]);
     while let Some(cur) = queue.pop_front() {
-        visited.insert(cur);
-        for e in g.edges_of(cur) {
-            let Some(opp) = g.opposite_vertex(e, cur) else {
+        visited.insert(cur.clone());
+        for e in g.edges_of(&cur) {
+            let Some(opp) = g.opposite_vertex(e, &cur) else {
                 continue;
             };
             if visited.contains(opp) {
                 continue;
             }
             if g.degree_of(opp) == degree {
-                reachable.insert(opp);
+                reachable.insert(opp.clone());
             } else {
-                queue.push_back(opp);
+                queue.push_back(opp.clone());
             }
         }
     }
@@ -362,10 +391,11 @@ fn reachable_with_degree<'a, G: IncidenceGraph>(
 
 /// A subdivision of K3,3 (all vertices have degree 2 or 3, six of degree 3, forming K3,3).
 pub fn is_k33_subdivision<G: IncidenceGraph>(g: &G) -> bool {
-    let mut degree3 = Vec::new();
+    let mut degree3: Vec<G::Vertex> = Vec::new();
     for v in g.vertices() {
+        let v = v.borrow();
         match g.degree_of(v) {
-            3 => degree3.push(v),
+            3 => degree3.push(v.clone()),
             2 => {}
             _ => return false,
         }
@@ -376,12 +406,12 @@ pub fn is_k33_subdivision<G: IncidenceGraph>(g: &G) -> bool {
     let Some(last) = degree3.pop() else {
         return false;
     };
-    let reachable = reachable_with_degree(g, last, 3);
+    let reachable = reachable_with_degree(g, &last, 3);
     if reachable.len() != 3 {
         return false;
     }
     degree3.retain(|v| !reachable.contains(v));
-    let [a, b] = degree3[..] else {
+    let [a, b] = &degree3[..] else {
         return false;
     };
     reachable == reachable_with_degree(g, a, 3) && reachable == reachable_with_degree(g, b, 3)
@@ -391,9 +421,10 @@ pub fn is_k33_subdivision<G: IncidenceGraph>(g: &G) -> bool {
 pub fn is_k5_subdivision<G: IncidenceGraph>(g: &G) -> bool {
     let mut deg4 = HashSet::new();
     for v in g.vertices() {
+        let v = v.borrow();
         match g.degree_of(v) {
             4 => {
-                deg4.insert(v);
+                deg4.insert(v.clone());
             }
             2 => {}
             _ => return false,

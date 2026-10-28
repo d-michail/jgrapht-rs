@@ -13,6 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use crate::GraphType;
+use crate::graph::GraphExt;
 use crate::graph::{DirectedGraph, Graph, UndirectedGraph};
 
 /// How to merge the weights of an edge present in both graphs of a union.
@@ -76,6 +77,14 @@ where
 {
     type Vertex = A::Vertex;
     type Edge = A::Edge;
+    type VertexRef<'a>
+        = A::Vertex
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = A::Edge
+    where
+        Self: 'a;
     fn graph_type(&self) -> GraphType {
         let (x, y) = (self.a.graph_type(), self.b.graph_type());
         let base = GraphType {
@@ -93,15 +102,17 @@ where
             base.as_mixed()
         }
     }
-    fn vertices(&self) -> impl Iterator<Item = &A::Vertex> {
-        self.a
-            .vertices()
-            .chain(self.b.vertices().filter(|v| !self.a.contains_vertex(v)))
+    fn vertices(&self) -> impl Iterator<Item = A::Vertex> {
+        self.a.vertices_cloned().chain(
+            self.b
+                .vertices_cloned()
+                .filter(|v| !self.a.contains_vertex(v)),
+        )
     }
-    fn edges(&self) -> impl Iterator<Item = &A::Edge> {
+    fn edges(&self) -> impl Iterator<Item = A::Edge> {
         self.a
-            .edges()
-            .chain(self.b.edges().filter(|e| !self.a.contains_edge(e)))
+            .edges_cloned()
+            .chain(self.b.edges_cloned().filter(|e| !self.a.contains_edge(e)))
     }
     fn vertex_count(&self) -> usize {
         self.vertices().count()

@@ -417,6 +417,7 @@ mod yen_error_reporting {
 
 mod yen_k_shortest_path_test {
     use super::*;
+    use jgrapht::GraphExt;
     use rand::{SeedableRng, rngs::StdRng};
 
     #[test]
@@ -480,13 +481,13 @@ mod yen_k_shortest_path_test {
                     }
                 }
             }
-            for edge in graph.edges().copied().collect::<Vec<_>>() {
+            for edge in graph.edges_cloned().collect::<Vec<_>>() {
                 graph.set_edge_weight(&edge, random.next_double()).unwrap();
             }
             let source = (random.next_double() * 25.0) as u32;
             let target = (random.next_double() * 25.0) as u32;
 
-            let edges = graph.edges().copied().collect::<Vec<_>>();
+            let edges = graph.edges_cloned().collect::<Vec<_>>();
             let mut selection_random = StdRng::seed_from_u64(13);
             let mut forbidden = HashSet::new();
             while forbidden.len() < 5 {

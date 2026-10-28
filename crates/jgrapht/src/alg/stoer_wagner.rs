@@ -25,6 +25,7 @@ use crate::error::{GraphError, Result};
 use crate::graph::GraphExt;
 use crate::graph::UndirectedGraph;
 use indexmap::{IndexMap, IndexSet};
+use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
@@ -235,13 +236,15 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
         };
 
         // each vertex wrapped in a set
+        let vertex_snapshot: Vec<V> = graph.vertices_cloned().collect();
         let mut vertex_map: HashMap<&V, Id> = HashMap::new();
-        for v in graph.vertices() {
+        for v in &vertex_snapshot {
             let id = this.working.add_vertex();
             this.members.push(IndexSet::from([v.clone()]));
             vertex_map.insert(v, id);
         }
         for e in graph.edges() {
+            let e = e.borrow();
             let w = graph.weight_of(e);
             if w < 0.0 {
                 return Err(GraphError::InvalidWeight(crate::WeightProblem::Negative));

@@ -206,7 +206,7 @@ mod connectivity_inspector {
 /// Rotates the vertex labels of a directed graph by `shift` positions (the vertices are added in
 /// the same order every time, so the algorithms start from a different logical vertex).
 fn rotated<V: Clone + Eq + Hash>(g: &DiGraph<V>, shift: usize) -> DiGraph<V> {
-    let vs: Vec<V> = g.vertices().cloned().collect();
+    let vs: Vec<V> = g.vertices_cloned().collect();
     let shifted = |v: &V| {
         let i = vs.iter().position(|x| x == v).unwrap();
         vs[(i + shift) % vs.len()].clone()
@@ -239,7 +239,7 @@ macro_rules! strong_connectivity_tests {
             where
                 V: Clone + Eq + Hash + Ord + std::fmt::Debug,
             {
-                let vs: Vec<V> = graph.vertices().cloned().collect();
+                let vs: Vec<V> = graph.vertices_cloned().collect();
                 for shift in 0..vs.len() {
                     let g = rotated(graph, shift);
                     let rotate = |v: &V| {
@@ -259,7 +259,7 @@ macro_rules! strong_connectivity_tests {
 
                     let mut actual = HashSet::new();
                     for sg in inspector.strongly_connected_components() {
-                        actual.insert(sg.vertices().cloned().collect::<BTreeSet<V>>());
+                        actual.insert(sg.vertices_cloned().collect::<BTreeSet<V>>());
                         assert!($algo::new(&sg).is_strongly_connected());
                     }
                     assert_eq!(actual, want);
@@ -426,7 +426,7 @@ macro_rules! strong_connectivity_tests {
                 let i4 = component_index(&inspector, &["v5"]);
                 let comps = inspector.strongly_connected_components();
 
-                let inner: HashSet<DefaultEdge> = comps[i1].edges().cloned().collect();
+                let inner: HashSet<DefaultEdge> = comps[i1].edges_cloned().collect();
                 let want: HashSet<DefaultEdge> = [
                     *g.get_edge(&s("v1"), &s("v2")).unwrap(),
                     *g.get_edge(&s("v2"), &s("v1")).unwrap(),
@@ -456,7 +456,7 @@ macro_rules! strong_connectivity_tests {
                 let comps = inspector.strongly_connected_components();
 
                 let edges_of = |c: &jgrapht::AsSubgraph<&DiGraph<String>>| -> HashSet<DefaultEdge> {
-                    c.edges().cloned().collect()
+                    c.edges_cloned().collect()
                 };
                 assert_eq!(
                     edges_of(&comps[i1]),

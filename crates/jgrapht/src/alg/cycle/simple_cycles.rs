@@ -14,6 +14,7 @@
 
 use crate::error::{GraphError, Result};
 use crate::graph::DirectedGraph;
+use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
 use crate::graph::props::has_multiple_edges;
 use indexmap::IndexSet;
@@ -49,7 +50,7 @@ pub trait DirectedSimpleCycles<V> {
 /// Vertices in graph order and the targets of every vertex's outgoing edges (parallel edges give
 /// repeated targets).
 fn index_graph<G: OutgoingGraph>(g: &G) -> (Vec<G::Vertex>, Vec<Vec<usize>>) {
-    let vs: Vec<G::Vertex> = g.vertices().cloned().collect();
+    let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
     let index: std::collections::HashMap<&G::Vertex, usize> =
         vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
     let out = vs

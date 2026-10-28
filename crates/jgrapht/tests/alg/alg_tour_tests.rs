@@ -28,6 +28,7 @@ use jgrapht::graph::GraphExt;
 use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::hash::Hash;
 
@@ -357,7 +358,10 @@ fn assert_hamiltonian_path<G: Graph>(
     assert_eq!(n.saturating_sub(1), edges.len());
     let seen: HashSet<&G::Vertex> = vertices.iter().collect();
     assert_eq!(n, seen.len(), "duplicate vertex");
-    assert!(graph.vertices().all(|v| seen.contains(v)));
+    assert!(graph.vertices().all(|v| {
+        let v = v.borrow();
+        seen.contains(v)
+    }));
     assert_eq!(Some(&vertices[0]), path.start_vertex());
     assert_eq!(Some(&vertices[n - 1]), path.end_vertex());
     let mut weight = 0.0;
@@ -962,7 +966,7 @@ mod backtracking_hamiltonian_path_test {
             }
             false
         }
-        let mut vertices: Vec<i32> = graph.vertices().copied().collect();
+        let mut vertices: Vec<i32> = graph.vertices_cloned().collect();
         vertices.len() == 1 || permute(graph, &mut vertices, 0)
     }
 
@@ -1425,7 +1429,7 @@ mod palmer_hamiltonian_cycle_test {
     }
 
     fn add_until_ore(graph: &mut Ug, n: i32, random: &mut StdRng) {
-        let mut vertex_list: Vec<i32> = graph.vertices().copied().collect();
+        let mut vertex_list: Vec<i32> = graph.vertices_cloned().collect();
         while !has_ore_property(graph) {
             java_shuffle(&mut vertex_list, random);
             'search: for i in 0..vertex_list.len() {
@@ -1463,7 +1467,7 @@ mod palmer_hamiltonian_cycle_test {
         for _ in 0..100 {
             let n = 3 + random.random_range(0..40);
             let mut graph = ug(n, &[]);
-            let mut vertex_list: Vec<i32> = graph.vertices().copied().collect();
+            let mut vertex_list: Vec<i32> = graph.vertices_cloned().collect();
             loop {
                 let mut changed = false;
                 java_shuffle(&mut vertex_list, &mut random);

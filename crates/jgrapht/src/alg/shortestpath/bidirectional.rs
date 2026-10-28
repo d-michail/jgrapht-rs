@@ -20,6 +20,7 @@ use crate::util::heap::JavaPairingHeap;
 use crate::walk::GraphWalk;
 use crate::{GraphError, Result};
 use rheaps::{AddressableHeap, DecreaseKeyHeap};
+use std::borrow::Borrow;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 
@@ -41,6 +42,7 @@ where
         pred: HashMap::new(),
     };
     for target in graph.vertices() {
+        let target = target.borrow();
         let Some(path) = path_to(target)? else {
             continue;
         };
@@ -186,32 +188,32 @@ impl<G: IncidenceGraph, F: Fn(&G::Vertex, &G::Vertex) -> f64> ShortestPathAlgori
     }
 }
 
-struct AStarSide<'g, G: Graph> {
-    score: HashMap<&'g G::Vertex, f64>,
-    key: HashMap<&'g G::Vertex, f64>,
-    pred: HashMap<&'g G::Vertex, (&'g G::Edge, &'g G::Vertex)>,
-    open: HashSet<&'g G::Vertex>,
-    closed: HashSet<&'g G::Vertex>,
-    nodes: Vec<&'g G::Vertex>,
+struct AStarSide<G: Graph> {
+    score: HashMap<G::Vertex, f64>,
+    key: HashMap<G::Vertex, f64>,
+    pred: HashMap<G::Vertex, (G::Edge, G::Vertex)>,
+    open: HashSet<G::Vertex>,
+    closed: HashSet<G::Vertex>,
+    nodes: Vec<G::Vertex>,
     heap: BinaryHeap<Reverse<(OrderedF64, usize)>>,
 }
 
-impl<'g, G: IncidenceGraph> AStarSide<'g, G> {
-    fn new(start: &'g G::Vertex, estimate: f64) -> Self {
+impl<G: IncidenceGraph> AStarSide<G> {
+    fn new(start: &G::Vertex, estimate: f64) -> Self {
         Self {
-            score: HashMap::from([(start, 0.0)]),
-            key: HashMap::from([(start, estimate)]),
+            score: HashMap::from([(start.clone(), 0.0)]),
+            key: HashMap::from([(start.clone(), estimate)]),
             pred: HashMap::new(),
-            open: HashSet::from([start]),
+            open: HashSet::from([start.clone()]),
             closed: HashSet::new(),
-            nodes: vec![start],
+            nodes: vec![start.clone()],
             heap: BinaryHeap::from([Reverse((OrderedF64(estimate), 0))]),
         }
     }
 
     fn clean(&mut self) {
         while let Some(Reverse((OrderedF64(key), index))) = self.heap.peek().copied() {
-            let vertex = self.nodes[index];
+            let vertex = &self.nodes[index];
             if !self.open.contains(vertex) || key > self.key[vertex] {
                 self.heap.pop();
             } else {
@@ -227,32 +229,34 @@ impl<'g, G: IncidenceGraph> AStarSide<'g, G> {
             .map_or(f64::INFINITY, |Reverse((OrderedF64(key), _))| *key)
     }
 
-    fn pop(&mut self) -> Option<(&'g G::Vertex, f64)> {
+    fn pop(&mut self) -> Option<(G::Vertex, f64)> {
         self.clean();
         let Reverse((_, index)) = self.heap.pop()?;
-        let vertex = self.nodes[index];
-        self.open.remove(vertex);
-        self.closed.insert(vertex);
-        Some((vertex, self.score[vertex]))
+        let vertex = self.nodes[index].clone();
+        self.open.remove(&vertex);
+        self.closed.insert(vertex.clone());
+        let score = self.score[&vertex];
+        Some((vertex, score))
     }
 
     fn update(
         &mut self,
-        vertex: &'g G::Vertex,
-        parent: &'g G::Vertex,
-        edge: &'g G::Edge,
+        vertex: &G::Vertex,
+        parent: &G::Vertex,
+        edge: &G::Edge,
         score: f64,
         key: f64,
     ) {
         if score >= self.score.get(vertex).copied().unwrap_or(f64::INFINITY) {
             return;
         }
-        self.score.insert(vertex, score);
-        self.key.insert(vertex, key);
-        self.pred.insert(vertex, (edge, parent));
+        self.score.insert(vertex.clone(), score);
+        self.key.insert(vertex.clone(), key);
+        self.pred
+            .insert(vertex.clone(), (edge.clone(), parent.clone()));
         self.closed.remove(vertex);
-        self.open.insert(vertex);
-        self.nodes.push(vertex);
+        self.open.insert(vertex.clone());
+        self.nodes.push(vertex.clone());
         self.heap
             .push(Reverse((OrderedF64(key), self.nodes.len() - 1)));
     }
@@ -268,14 +272,9 @@ where
     G: IncidenceGraph,
     F: Fn(&G::Vertex, &G::Vertex) -> f64,
 {
-    let source = graph
-        .vertices()
-        .find(|vertex| *vertex == source)
-        .ok_or(GraphError::VertexNotFound)?;
-    let target = graph
-        .vertices()
-        .find(|vertex| *vertex == target)
-        .ok_or(GraphError::VertexNotFound)?;
+    if !graph.contains_vertex(source) || !graph.contains_vertex(target) {
+        return Err(GraphError::VertexNotFound);
+    }
     if source == target {
         return Ok(Some(GraphWalk::single(source.clone())));
     }
@@ -284,7 +283,7 @@ where
     let mut backward = AStarSide::<G>::new(target, heuristic(source, target));
     let mut scan_forward = true;
     let mut best = f64::INFINITY;
-    let mut meeting = None;
+    let mut meeting: Option<G::Vertex> = None;
 
     loop {
         let forward_key = forward.min_key();
@@ -304,16 +303,22 @@ where
         let Some((vertex, vertex_score)) = side.pop() else {
             break;
         };
-        let adjacent: Vec<_> = if scan_forward {
-            graph.outgoing_of(vertex).collect()
+        let adjacent: Vec<(G::Edge, G::Vertex)> = if scan_forward {
+            graph
+                .outgoing_of(&vertex)
+                .map(|(e, v)| (e.clone(), v.clone()))
+                .collect()
         } else {
-            graph.incoming_of(vertex).collect()
+            graph
+                .incoming_of(&vertex)
+                .map(|(e, v)| (e.clone(), v.clone()))
+                .collect()
         };
         for (edge, successor) in adjacent {
             if successor == vertex {
                 continue;
             }
-            let edge_weight = graph.weight_of(edge);
+            let edge_weight = graph.weight_of(&edge);
             if edge_weight.is_nan() || edge_weight < 0.0 {
                 return Err(GraphError::InvalidWeight(
                     crate::WeightProblem::NegativeOrNaN,
@@ -321,15 +326,19 @@ where
             }
             let candidate = vertex_score + edge_weight;
             let estimate = if scan_forward {
-                heuristic(successor, target)
+                heuristic(&successor, target)
             } else {
-                heuristic(source, successor)
+                heuristic(source, &successor)
             };
-            side.update(successor, vertex, edge, candidate, candidate + estimate);
+            side.update(&successor, &vertex, &edge, candidate, candidate + estimate);
 
             let joined = vertex_score
                 + edge_weight
-                + other.score.get(successor).copied().unwrap_or(f64::INFINITY);
+                + other
+                    .score
+                    .get(&successor)
+                    .copied()
+                    .unwrap_or(f64::INFINITY);
             if joined < best {
                 best = joined;
                 meeting = Some(successor);
@@ -347,19 +356,19 @@ where
     };
     let mut vertices = vec![meeting.clone()];
     let mut edges = Vec::new();
-    let mut current = meeting;
-    while let Some(&(edge, parent)) = forward.pred.get(current) {
+    let mut current = meeting.clone();
+    while let Some((edge, parent)) = forward.pred.get(&current) {
         edges.push(edge.clone());
         vertices.push(parent.clone());
-        current = parent;
+        current = parent.clone();
     }
     vertices.reverse();
     edges.reverse();
     current = meeting;
-    while let Some(&(edge, parent)) = backward.pred.get(current) {
+    while let Some((edge, parent)) = backward.pred.get(&current) {
         edges.push(edge.clone());
         vertices.push(parent.clone());
-        current = parent;
+        current = parent.clone();
     }
     Ok(Some(GraphWalk {
         vertices,
@@ -373,15 +382,15 @@ type JavaHandle =
 
 /// One search frontier of Java's `DijkstraSearchFrontier`: a pairing heap and the seen vertices
 /// with their current distance and tree edge.
-struct Side<'g, G: Graph> {
+struct Side<G: Graph> {
     heap: JavaPairingHeap<OrderedF64, usize>,
-    nodes: Vec<&'g G::Vertex>,
-    index: HashMap<&'g G::Vertex, usize>,
-    seen: Vec<(f64, JavaHandle, Option<(&'g G::Edge, &'g G::Vertex)>)>,
+    nodes: Vec<G::Vertex>,
+    index: HashMap<G::Vertex, usize>,
+    seen: Vec<(f64, JavaHandle, Option<(G::Edge, G::Vertex)>)>,
 }
 
-impl<'g, G: IncidenceGraph> Side<'g, G> {
-    fn new(start: &'g G::Vertex) -> Self {
+impl<G: IncidenceGraph> Side<G> {
+    fn new(start: &G::Vertex) -> Self {
         let mut side = Side {
             heap: JavaPairingHeap::default(),
             nodes: Vec::new(),
@@ -394,16 +403,16 @@ impl<'g, G: IncidenceGraph> Side<'g, G> {
 
     fn update_distance(
         &mut self,
-        v: &'g G::Vertex,
-        tree: Option<(&'g G::Edge, &'g G::Vertex)>,
+        v: &G::Vertex,
+        tree: Option<(G::Edge, G::Vertex)>,
         distance: f64,
     ) {
         match self.index.get(v) {
             None => {
                 let id = self.nodes.len();
                 let handle = self.heap.insert(OrderedF64(distance), id);
-                self.nodes.push(v);
-                self.index.insert(v, id);
+                self.nodes.push(v.clone());
+                self.index.insert(v.clone(), id);
                 self.seen.push((distance, handle, tree));
             }
             Some(&id) if distance < self.seen[id].0 => {
@@ -427,8 +436,8 @@ impl<'g, G: IncidenceGraph> Side<'g, G> {
         self.heap.peek().map(|(_, key, _)| key.0)
     }
 
-    fn tree_edge(&self, v: &G::Vertex) -> Option<(&'g G::Edge, &'g G::Vertex)> {
-        self.index.get(v).and_then(|&id| self.seen[id].2)
+    fn tree_edge(&self, v: &G::Vertex) -> Option<(G::Edge, G::Vertex)> {
+        self.index.get(v).and_then(|&id| self.seen[id].2.clone())
     }
 }
 
@@ -450,20 +459,15 @@ impl<G: IncidenceGraph> BidirectionalDijkstra<'_, G> {
         t: &G::Vertex,
     ) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
         let g = self.0;
-        let s = g
-            .vertices()
-            .find(|v| *v == s)
-            .ok_or(GraphError::VertexNotFound)?;
-        let t = g
-            .vertices()
-            .find(|v| *v == t)
-            .ok_or(GraphError::VertexNotFound)?;
+        if !g.contains_vertex(s) || !g.contains_vertex(t) {
+            return Err(GraphError::VertexNotFound);
+        }
         if s == t {
             return Ok(Some(GraphWalk::single(s.clone())));
         }
         let mut sides = [Side::<G>::new(s), Side::<G>::new(t)];
         let mut best_path = f64::INFINITY;
-        let mut common: Option<&G::Vertex> = None;
+        let mut common: Option<G::Vertex> = None;
         let mut current = 0;
         while let (Some(min), Some(other_min)) =
             (sides[current].min_key(), sides[1 - current].min_key())
@@ -473,22 +477,26 @@ impl<G: IncidenceGraph> BidirectionalDijkstra<'_, G> {
             }
             // frontier scan
             let (OrderedF64(distance), id) = sides[current].heap.pop().expect("non-empty heap");
-            let v = sides[current].nodes[id];
-            let edges: Vec<_> = if current == 0 {
-                g.outgoing_of(v).collect()
+            let v = sides[current].nodes[id].clone();
+            let edges: Vec<(G::Edge, G::Vertex)> = if current == 0 {
+                g.outgoing_of(&v)
+                    .map(|(e, u)| (e.clone(), u.clone()))
+                    .collect()
             } else {
-                g.incoming_of(v).collect()
+                g.incoming_of(&v)
+                    .map(|(e, u)| (e.clone(), u.clone()))
+                    .collect()
             };
             for (e, u) in edges {
-                let weight = g.weight_of(e);
+                let weight = g.weight_of(&e);
                 if weight.is_nan() || weight < 0.0 {
                     return Err(GraphError::InvalidWeight(
                         crate::WeightProblem::NegativeOrNaN,
                     ));
                 }
-                sides[current].update_distance(u, Some((e, v)), distance + weight);
+                sides[current].update_distance(&u, Some((e, v.clone())), distance + weight);
                 // check path with u's distance from the other frontier
-                let path_distance = distance + weight + sides[1 - current].distance(u);
+                let path_distance = distance + weight + sides[1 - current].distance(&u);
                 if path_distance < best_path {
                     best_path = path_distance;
                     common = Some(u);
@@ -502,15 +510,15 @@ impl<G: IncidenceGraph> BidirectionalDijkstra<'_, G> {
         };
         let mut vertices = VecDeque::from([common.clone()]);
         let mut edges = VecDeque::new();
-        let mut v = common;
-        while let Some((e, parent)) = sides[0].tree_edge(v) {
-            edges.push_front(e.clone());
+        let mut v = common.clone();
+        while let Some((e, parent)) = sides[0].tree_edge(&v) {
+            edges.push_front(e);
             vertices.push_front(parent.clone());
             v = parent;
         }
         v = common;
-        while let Some((e, parent)) = sides[1].tree_edge(v) {
-            edges.push_back(e.clone());
+        while let Some((e, parent)) = sides[1].tree_edge(&v) {
+            edges.push_back(e);
             vertices.push_back(parent.clone());
             v = parent;
         }

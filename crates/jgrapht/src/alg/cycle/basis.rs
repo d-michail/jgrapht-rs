@@ -20,6 +20,7 @@ use crate::graph::props::has_multiple_edges;
 use crate::graph::{Graph, GraphExt};
 use crate::walk::GraphWalk;
 use indexmap::{IndexMap, IndexSet};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// `CycleBasisAlgorithm.CycleBasis`: a set of cycles (as edge lists) with their total length and
@@ -118,6 +119,7 @@ fn fundamental_cycle_basis<G: Graph>(
     let mut length = 0;
     let mut weight = 0.0;
     for e in graph.edges() {
+        let e = e.borrow();
         if !tree_edges.contains(e) {
             let (cycle, w) = build_fundamental_cycle(graph, e, spanning_forest);
             length += cycle.len();
@@ -200,6 +202,7 @@ macro_rules! fundamental_basis {
                 let mut pred: HashMap<G::Vertex, Option<G::Edge>> = HashMap::new();
                 let mut queue: VecDeque<G::Vertex> = VecDeque::new();
                 for s in graph.vertices() {
+                    let s = s.borrow();
                     if pred.contains_key(s) {
                         continue;
                     }
@@ -291,6 +294,7 @@ impl<'g, G: IncidenceGraph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, 
         let mut total_length = 0;
         let mut total_weight = 0.0;
         for root in graph.vertices() {
+            let root = root.borrow();
             if parent.contains_key(root) {
                 continue;
             }

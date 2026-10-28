@@ -19,6 +19,7 @@ use super::util::Indexed;
 use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt, props};
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 
@@ -113,7 +114,7 @@ impl<G: IncidenceGraph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G
             return self.cached.as_ref();
         }
         let g = self.graph;
-        let mut unknown: IndexSet<G::Vertex> = g.vertices().cloned().collect();
+        let mut unknown: IndexSet<G::Vertex> = g.vertices_cloned().collect();
         let mut odd: HashSet<G::Vertex> = HashSet::new();
         let mut queue: VecDeque<G::Vertex> = VecDeque::new();
         while !unknown.is_empty() {
@@ -138,10 +139,26 @@ impl<G: IncidenceGraph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G
         }
         let even: IndexSet<G::Vertex> = g
             .vertices()
-            .filter(|v| !odd.contains(*v))
-            .cloned()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                !odd.contains(*v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
-        let odd: IndexSet<G::Vertex> = g.vertices().filter(|v| odd.contains(*v)).cloned().collect();
+        let odd: IndexSet<G::Vertex> = g
+            .vertices()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                odd.contains(*v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
+            .collect();
         self.computed = true;
         self.cached = Some(Partitioning::new(vec![even, odd]));
         self.cached.as_ref()
@@ -158,6 +175,7 @@ impl<G: IncidenceGraph> PartitioningAlgorithm<G> for BipartitePartitioning<'_, G
             return false;
         }
         for v in g.vertices() {
+            let v = v.borrow();
             let other = if first.contains(v) {
                 second
             } else if second.contains(v) {

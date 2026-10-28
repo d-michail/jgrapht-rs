@@ -13,10 +13,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use super::forward_graph;
+use crate::graph::GraphExt;
 use crate::graph::IncidenceGraph;
 use crate::graph::{DirectedGraph, Graph, GraphMut, UndirectedGraph};
 use crate::{GraphError, GraphType, Result};
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 
 /// Subgraph that *hides* the vertices and edges selected by two predicates (JGraphT's
 /// `MaskSubgraph`: `true` means masked). An edge is hidden if it is masked or either endpoint is.
@@ -54,14 +56,24 @@ impl<G: Graph, FV: Fn(&G::Vertex) -> bool, FE: Fn(&G::Edge) -> bool> Graph
 {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = G::VertexRef<'a>
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = G::EdgeRef<'a>
+    where
+        Self: 'a;
     fn graph_type(&self) -> GraphType {
         self.graph.graph_type().as_unmodifiable()
     }
-    fn vertices(&self) -> impl Iterator<Item = &G::Vertex> {
-        self.graph.vertices().filter(|v| !(self.vertex_mask)(v))
+    fn vertices(&self) -> impl Iterator<Item = Self::VertexRef<'_>> {
+        self.graph
+            .vertices()
+            .filter(|v| !(self.vertex_mask)((*v).borrow()))
     }
-    fn edges(&self) -> impl Iterator<Item = &G::Edge> {
-        self.graph.edges().filter(|e| self.edge_ok(e))
+    fn edges(&self) -> impl Iterator<Item = Self::EdgeRef<'_>> {
+        self.graph.edges().filter(|e| self.edge_ok((*e).borrow()))
     }
     fn vertex_count(&self) -> usize {
         self.vertices().count()
@@ -160,12 +172,18 @@ impl<G: Graph> AsSubgraph<G> {
         edge_subset: Option<Vec<G::Edge>>,
     ) -> Self {
         let vertices: IndexSet<G::Vertex> = match vertex_subset {
-            None => base.vertices().cloned().collect(),
+            None => base.vertices_cloned().collect(),
             Some(vs) => {
                 let wanted: IndexSet<G::Vertex> = vs.into_iter().collect();
                 base.vertices()
-                    .filter(|v| wanted.contains(*v))
-                    .cloned()
+                    .filter(|v| {
+                        let v = &(*v).borrow();
+                        wanted.contains(*v)
+                    })
+                    .map(|x| {
+                        let x = x.borrow();
+                        x.clone()
+                    })
                     .collect()
             }
         };
@@ -174,12 +192,28 @@ impl<G: Graph> AsSubgraph<G> {
             None => false,
         };
         let edges: IndexSet<G::Edge> = match edge_subset {
-            None => base.edges().filter(|e| both_in(e)).cloned().collect(),
+            None => base
+                .edges()
+                .filter(|e| {
+                    let e = &(*e).borrow();
+                    both_in(e)
+                })
+                .map(|x| {
+                    let x = x.borrow();
+                    x.clone()
+                })
+                .collect(),
             Some(es) => {
                 let wanted: IndexSet<G::Edge> = es.into_iter().collect();
                 base.edges()
-                    .filter(|e| wanted.contains(*e) && both_in(e))
-                    .cloned()
+                    .filter(|e| {
+                        let e = &(*e).borrow();
+                        wanted.contains(*e) && both_in(e)
+                    })
+                    .map(|x| {
+                        let x = x.borrow();
+                        x.clone()
+                    })
                     .collect()
             }
         };
@@ -226,6 +260,14 @@ impl<G: Graph> EdgePair for G {}
 impl<G: Graph> Graph for AsSubgraph<G> {
     type Vertex = G::Vertex;
     type Edge = G::Edge;
+    type VertexRef<'a>
+        = &'a G::Vertex
+    where
+        Self: 'a;
+    type EdgeRef<'a>
+        = &'a G::Edge
+    where
+        Self: 'a;
     forward_graph!(self => self.base; graph_type, edge_weight, is_edge_directed);
     fn vertices(&self) -> impl Iterator<Item = &G::Vertex> {
         self.vertices.iter()
@@ -287,9 +329,7 @@ impl<G: IncidenceGraph> GraphMut for AsSubgraph<G> {
     }
     fn add_edge_with(&mut self, u: &G::Vertex, v: &G::Vertex, e: G::Edge) -> Result<bool> {
         if !self.base.contains_edge(&e) {
-            return Err(GraphError::InvalidArgument(
-                "no such edge in base graph".into(),
-            ));
+            return Err(GraphError::EdgeNotFound);
         }
         if !self.vertices.contains(u) || !self.vertices.contains(v) {
             return Err(GraphError::VertexNotFound);
@@ -302,9 +342,7 @@ impl<G: IncidenceGraph> GraphMut for AsSubgraph<G> {
         }
         let candidates: Vec<G::Edge> = self.base.edges_between(u, v).cloned().collect();
         if candidates.is_empty() {
-            return Err(GraphError::InvalidArgument(
-                "no such edge in base graph".into(),
-            ));
+            return Err(GraphError::EdgeNotFound);
         }
         Ok(candidates
             .into_iter()

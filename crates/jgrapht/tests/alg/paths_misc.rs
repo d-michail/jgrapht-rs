@@ -21,6 +21,7 @@ use jgrapht::alg::tour::*;
 use jgrapht::generate::*;
 use jgrapht::*;
 use rand::{Rng, SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 
 fn dg(edges: &[(u32, u32, f64)]) -> DiGraph<u32> {
     let mut g = DiGraph::<u32>::simple().weighted();
@@ -34,15 +35,15 @@ fn dg(edges: &[(u32, u32, f64)]) -> DiGraph<u32> {
 
 fn matching_is_valid<G: Graph>(g: &G, matching: &Matching<G::Vertex, G::Edge>) -> bool {
     let mut used = std::collections::HashSet::new();
-    matching
-        .edges()
-        .iter()
-        .all(|edge| match g.edge_endpoints(edge) {
+    matching.edges().iter().all(|edge| {
+        let edge = edge.borrow();
+        match g.edge_endpoints(edge) {
             Some((source, target)) => {
                 source != target && used.insert(source) && used.insert(target)
             }
             None => false,
-        })
+        }
+    })
 }
 
 fn exact_matching(edges: &[(usize, usize, f64)], used: u16, index: usize) -> (f64, usize) {
@@ -193,7 +194,7 @@ fn approximate_and_exact_weighted_matching() {
             .unwrap()
             .generate_indexed(&mut g)
             .unwrap();
-        for e in g.edges().cloned().collect::<Vec<_>>() {
+        for e in g.edges_cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(1..10) as f64)
                 .unwrap();
         }

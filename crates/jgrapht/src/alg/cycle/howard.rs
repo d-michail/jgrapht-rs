@@ -19,6 +19,7 @@ use crate::graph::IncomingGraph;
 use crate::graph::{DirectedGraph, Graph, GraphExt};
 use crate::util::ToleranceDoubleComparator;
 use crate::walk::GraphWalk;
+use std::borrow::Borrow;
 use std::collections::{HashMap, VecDeque};
 
 /// The algorithm for finding minimum cycle mean in a graph.
@@ -127,9 +128,11 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
         component: &C,
     ) {
         for v in component.vertices() {
+            let v = v.borrow();
             self.vertex_distance.insert(v.clone(), f64::INFINITY);
         }
         for u in component.vertices() {
+            let u = u.borrow();
             for e in component.in_edges_of(u) {
                 let v = component
                     .opposite_vertex(e, u)
@@ -165,11 +168,13 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
     /// cycle has been detected.
     fn construct_cycle<C: Graph<Vertex = G::Vertex, Edge = G::Edge>>(&mut self, component: &C) {
         for v in component.vertices() {
+            let v = v.borrow();
             self.vertex_level.insert(v.clone(), -1);
         }
         self.is_current_cycle_found = false;
         let mut current_cycle_level = 0i64;
         for start in component.vertices() {
+            let start = start.borrow();
             let mut u = start.clone();
             if self.vertex_level[&u] >= 0 {
                 continue; // vertex already belongs to a cycle
@@ -211,8 +216,13 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
         component: &C,
     ) -> bool {
         let mut queue: VecDeque<G::Vertex> = VecDeque::new();
-        let mut reached: HashMap<G::Vertex, bool> =
-            component.vertices().map(|v| (v.clone(), false)).collect();
+        let mut reached: HashMap<G::Vertex, bool> = component
+            .vertices()
+            .map(|v| {
+                let v = v.borrow();
+                (v.clone(), false)
+            })
+            .collect();
         let cycle_vertex = self
             .current_cycle_vertex
             .clone()
@@ -236,6 +246,7 @@ impl<'g, G: DirectedGraph, S: StrongConnectivityAlgorithm<G = G>> HowardMinimumM
         }
         let mut improved = false;
         for u in component.vertices() {
+            let u = u.borrow();
             for e in component.in_edges_of(u) {
                 let v = component
                     .opposite_vertex(e, u)

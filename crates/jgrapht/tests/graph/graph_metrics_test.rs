@@ -201,7 +201,7 @@ fn test_count_triangles() {
         )
         .unwrap();
         generate_ints(&mut graph, &mut generator);
-        let vs: Vec<i32> = graph.vertices().copied().collect();
+        let vs: Vec<i32> = graph.vertices_cloned().collect();
         assert_eq!(
             naive_count_triangles(&graph, &vs),
             number_of_triangles(&graph)
@@ -219,7 +219,7 @@ fn test_count_triangles_2() {
             GnpRandomGraphGenerator::new(n, 0.55, StdRng::seed_from_u64(random.random()), false)
                 .unwrap();
         generate_ints(&mut graph, &mut generator);
-        let vs: Vec<i32> = graph.vertices().copied().collect();
+        let vs: Vec<i32> = graph.vertices_cloned().collect();
         assert_eq!(
             naive_count_triangles(&graph, &vs),
             number_of_triangles(&graph)
@@ -228,7 +228,7 @@ fn test_count_triangles_2() {
 }
 
 fn clear<G: GraphMut>(g: &mut G) {
-    let vs: Vec<_> = g.vertices().cloned().collect();
+    let vs: Vec<_> = g.vertices_cloned().collect();
     for v in vs {
         g.remove_vertex(&v);
     }
@@ -239,7 +239,7 @@ fn test_count_triangles_3() {
     let mut graph = UGraph::<i32>::simple();
     // Complete graph: expected (|V| choose 3)
     generate_ints(&mut graph, &mut Complete(50));
-    let vs: Vec<i32> = graph.vertices().copied().collect();
+    let vs: Vec<i32> = graph.vertices_cloned().collect();
     assert_eq!(number_of_triangles(&graph), 50 * 49 * 48 / 6);
     assert_eq!(naive_count_triangles(&graph, &vs), 50 * 49 * 48 / 6);
 
@@ -252,7 +252,7 @@ fn test_count_triangles_3() {
             inward_spokes: false,
         },
     );
-    let vs: Vec<i32> = graph.vertices().copied().collect();
+    let vs: Vec<i32> = graph.vertices_cloned().collect();
     assert_eq!(number_of_triangles(&graph), 49);
     assert_eq!(naive_count_triangles(&graph, &vs), 49);
 
@@ -264,7 +264,7 @@ fn test_count_triangles_3() {
         (named::klein7_regular(), 56),
     ] {
         let graph = build(structure);
-        let vs: Vec<usize> = graph.vertices().copied().collect();
+        let vs: Vec<usize> = graph.vertices_cloned().collect();
         assert_eq!(number_of_triangles(&graph), expected);
         assert_eq!(naive_count_triangles(&graph, &vs), expected);
     }
@@ -324,7 +324,7 @@ fn test_count_triangles_4() {
     for (a, b) in edges {
         g.add_edge(&a, &b).unwrap();
     }
-    let vs: Vec<i32> = g.vertices().copied().collect();
+    let vs: Vec<i32> = g.vertices_cloned().collect();
     assert_eq!(number_of_triangles(&g), naive_count_triangles(&g, &vs));
 }
 

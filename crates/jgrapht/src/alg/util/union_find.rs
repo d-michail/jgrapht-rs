@@ -59,9 +59,7 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn add_element(&mut self, element: T) -> Result<()> {
         if self.contains(&element) {
-            return Err(GraphError::InvalidArgument(
-                "element is already contained in UnionFind".into(),
-            ));
+            return Err(GraphError::DuplicateElement);
         }
         self.parent.insert(element.clone(), element.clone());
         self.rank.insert(element, 0);
@@ -81,9 +79,7 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn find(&mut self, element: &T) -> Result<T> {
         if !self.contains(element) {
-            return Err(GraphError::InvalidArgument(
-                "element is not contained in this UnionFind data structure".into(),
-            ));
+            return Err(GraphError::ElementNotFound);
         }
         let mut current = element.clone();
         loop {
@@ -112,9 +108,7 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn union(&mut self, element1: &T, element2: &T) -> Result<()> {
         if !self.contains(element1) || !self.contains(element2) {
-            return Err(GraphError::InvalidArgument(
-                "elements must be contained in given set".into(),
-            ));
+            return Err(GraphError::ElementNotFound);
         }
         let parent1 = self.find(element1)?;
         let parent2 = self.find(element2)?;

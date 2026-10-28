@@ -57,8 +57,8 @@ mod line_graph_converter_test {
         target: &T,
     ) {
         assert_eq!(
-            target.vertices().collect::<HashSet<_>>(),
-            g.edges().collect::<HashSet<_>>()
+            target.vertices_cloned().collect::<HashSet<_>>(),
+            g.edges_cloned().collect::<HashSet<_>>()
         );
     }
 
@@ -344,13 +344,13 @@ mod kou_markowsky_berman_algorithm_test {
             .generate_default(&mut g)
             .unwrap();
         let mut rand = StdRng::from_os_rng();
-        let edges: Vec<DefaultEdge> = g.edges().cloned().collect();
+        let edges: Vec<DefaultEdge> = g.edges_cloned().collect();
         for e in &edges {
             let w =
                 rand.random_range(0..10) as f64 + (1.0 + rand.random_range(0..10) as f64) / 10.0;
             g.set_edge_weight(e, w).unwrap();
         }
-        let mut shuffled: Vec<String> = g.vertices().cloned().collect();
+        let mut shuffled: Vec<String> = g.vertices_cloned().collect();
         jgrapht::util::java::java_shuffle(&mut shuffled, &mut StdRng::from_os_rng());
         let selected: Vec<String> = shuffled[..10].to_vec();
         let tree = kmb_steiner_tree(&g, &selected).unwrap();

@@ -12,7 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use super::{CsrBooleanMatrix, collect_endpoints, identity_ids};
+use super::{CsrBooleanMatrix, collect_endpoints};
 use crate::graph::Graph;
 use crate::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::{GraphError, GraphType, Result};
@@ -21,7 +21,6 @@ use crate::{GraphError, GraphType, Result};
 /// which every edge is listed under both endpoints, so a self-loop appears twice in its row.
 #[derive(Debug)]
 struct UndirectedCore {
-    ids: Vec<usize>,
     source: Vec<usize>,
     target: Vec<usize>,
     incidence: CsrBooleanMatrix,
@@ -40,7 +39,6 @@ impl UndirectedCore {
             non_zeros.push((t, e));
         }
         Ok(Self {
-            ids: identity_ids(num_vertices, num_edges),
             incidence: CsrBooleanMatrix::new(num_vertices, num_edges, &non_zeros)?,
             source,
             target,
@@ -66,6 +64,8 @@ macro_rules! undirected_graph_impl {
         impl Graph for $graph {
             type Vertex = usize;
             type Edge = usize;
+            type VertexRef<'a> = usize;
+            type EdgeRef<'a> = usize;
 
             fn graph_type(&self) -> GraphType {
                 GraphType::pseudograph()
@@ -73,12 +73,12 @@ macro_rules! undirected_graph_impl {
                     .as_unmodifiable()
             }
 
-            fn vertices(&self) -> impl Iterator<Item = &usize> {
-                self.core.ids[..self.core.incidence.rows()].iter()
+            fn vertices(&self) -> impl Iterator<Item = usize> {
+                0..self.core.incidence.rows()
             }
 
-            fn edges(&self) -> impl Iterator<Item = &usize> {
-                self.core.ids[..self.core.source.len()].iter()
+            fn edges(&self) -> impl Iterator<Item = usize> {
+                0..self.core.source.len()
             }
 
             fn vertex_count(&self) -> usize {

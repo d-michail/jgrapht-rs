@@ -46,11 +46,15 @@ impl AliasMethodSampler {
     /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn with_epsilon(p: &[f64], epsilon: f64) -> Result<Self> {
         let comparator = ToleranceDoubleComparator::new(epsilon)?;
-        let bad = || GraphError::InvalidArgument("Non valid probability distribution".into());
+        let bad = || GraphError::InvalidParameter {
+            name: "probabilities",
+            requirement: crate::ParameterRequirement::ProbabilityDistribution,
+        };
         if p.is_empty() {
-            return Err(GraphError::InvalidArgument(
-                "Probabilities cannot be empty".into(),
-            ));
+            return Err(GraphError::InvalidParameter {
+                name: "probabilities",
+                requirement: crate::ParameterRequirement::NonEmpty,
+            });
         }
         let mut sum = 0.0;
         for &x in p {

@@ -20,6 +20,7 @@ use crate::graph::GraphExt;
 use crate::util::OrderedF64;
 use crate::util::heap::{JavaPairingHandle, JavaPairingHeap};
 use rheaps::{AddressableHeap, DecreaseKeyHeap};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 /// This class represents a [minimum cost flow problem](https://en.wikipedia.org/wiki/Minimum-cost_flow_problem). It serves as input for the minimum cost flow algorithms.
@@ -570,13 +571,14 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         self.arcs = Vec::with_capacity(graph.edge_count());
         self.graph_vertices = Vec::with_capacity(n);
         self.edge_target.clear();
+        let vertex_snapshot: Vec<V> = graph.vertices_cloned().collect();
         let mut node_map: HashMap<&V, usize> = HashMap::with_capacity(n);
         let mut supply_sum: i32 = 0;
         // nodes 0..n are the vertices, node n is the dummy node
         for _ in 0..=n {
             self.net.nodes.push(Node::new(0));
         }
-        for (i, vertex) in graph.vertices().enumerate() {
+        for (i, vertex) in vertex_snapshot.iter().enumerate() {
             self.graph_vertices.push(vertex.clone());
             let supply = problem.node_supply(vertex);
             supply_sum += supply;
@@ -586,12 +588,13 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
             self.net.add_arc_to(n, i, CAP_INF, COST_INF);
         }
         if supply_sum.abs() > 0 {
-            return Err(GraphError::InvalidArgument(
-                "Total node supply isn't equal to 0".into(),
+            return Err(GraphError::InvalidFlowProblem(
+                crate::FlowProblem::SupplyNotBalanced,
             ));
         }
         let mut graph_edges = Vec::with_capacity(graph.edge_count());
         for edge in graph.edges() {
+            let edge = edge.borrow();
             graph_edges.push(edge.clone());
             let mut node = node_map[graph.edge_source(edge).unwrap()];
             let mut opposite = node_map[graph.edge_target(edge).unwrap()];
@@ -599,23 +602,22 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
             let lower_cap = problem.arc_capacity_lower_bound(edge);
             let mut cost = problem.arc_cost(edge);
             if upper_cap < 0 {
-                return Err(GraphError::InvalidArgument(
-                    "Negative edge capacities are not allowed".into(),
+                return Err(GraphError::InvalidFlowProblem(
+                    crate::FlowProblem::NegativeCapacity,
                 ));
             } else if lower_cap > upper_cap {
-                return Err(GraphError::InvalidArgument(
-                    "Lower edge capacity must not exceed upper edge capacity".into(),
+                return Err(GraphError::InvalidFlowProblem(
+                    crate::FlowProblem::LowerAboveUpper,
                 ));
             } else if lower_cap >= CAP_INF {
                 return Err(GraphError::Unbounded);
             } else if upper_cap >= CAP_INF && cost < 0.0 {
-                return Err(GraphError::InvalidArgument(
-                    "The algorithm doesn't support infinite capacity arcs with negative cost"
-                        .into(),
+                return Err(GraphError::InvalidFlowProblem(
+                    crate::FlowProblem::InfiniteCapacityNegativeCost,
                 ));
             } else if cost.abs() >= COST_INF {
-                return Err(GraphError::InvalidArgument(
-                    "Specified flow network contains an edge of infinite cost".into(),
+                return Err(GraphError::InvalidFlowProblem(
+                    crate::FlowProblem::InfiniteCost,
                 ));
             } else if node == opposite {
                 return Err(GraphError::InvalidGraph(crate::GraphProperty::NoSelfLoops));

@@ -236,9 +236,8 @@ fn arborescence<G: DirectedGraph>(
         .zip(&ix.w)
         .map(|(&(s, t), &w)| (s, t, sign * w))
         .collect();
-    let chosen = chu_liu(ix.n(), r, &edges).ok_or_else(|| {
-        GraphError::InvalidArgument("not every vertex is reachable from the root".into())
-    })?;
+    let chosen = chu_liu(ix.n(), r, &edges)
+        .ok_or(GraphError::InvalidGraph(crate::GraphProperty::Connected))?;
     Ok(tree_of(&ix, &chosen))
 }
 

@@ -23,6 +23,7 @@ use crate::util::ToleranceDoubleComparator;
 use crate::util::java::RandomSource;
 use crate::{GraphError, Result};
 use rand::{SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
@@ -55,6 +56,7 @@ fn init<G: Graph, M: LayoutModel2D<G::Vertex>>(
 ) {
     if let Some(f) = initializer {
         for v in graph.vertices() {
+            let v = v.borrow();
             if let Some(p) = f(v) {
                 model.put(v.clone(), p);
             }
@@ -131,7 +133,7 @@ impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for CircularLayoutAlgorithm2D<G::Ve
         }
         let n = graph.vertex_count();
         let angle_step = 2.0 * std::f64::consts::PI / n as f64;
-        let mut vertices: Vec<&G::Vertex> = graph.vertices().collect();
+        let mut vertices: Vec<G::Vertex> = graph.vertices_cloned().collect();
         if let Some(c) = &self.vertex_comparator {
             vertices.sort_by(|a, b| c(a, b));
         }
@@ -174,6 +176,7 @@ impl<G: IncidenceGraph, R: RandomSource> LayoutAlgorithm2D<G> for RandomLayoutAl
         // like the Java original, both offsets use the area's minimum x
         let (min_x, min_y) = (area.min_x(), area.min_x());
         for v in graph.vertices() {
+            let v = v.borrow();
             let x = self.rng.next_double() * area.width();
             let y = self.rng.next_double() * area.height();
             model.put(v.clone(), Point2D::of(min_x + x, min_y + y));
@@ -222,6 +225,7 @@ impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for RescaleLayoutAlgorithm2D {
         if !entries.is_empty() {
             let mean_x = entries.iter().map(|(_, p)| p.x).sum::<f64>() / entries.len() as f64;
             for v in graph.vertices() {
+                let v = v.borrow();
                 let p = model.get(v).ok_or_else(missing)?;
                 let nx = p.x - mean_x;
                 model.put(v.clone(), Point2D::of(nx, p.y));
@@ -232,6 +236,7 @@ impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for RescaleLayoutAlgorithm2D {
         if !entries.is_empty() {
             let mean_y = entries.iter().map(|(_, p)| p.y).sum::<f64>() / entries.len() as f64;
             for v in graph.vertices() {
+                let v = v.borrow();
                 let p = model.get(v).ok_or_else(missing)?;
                 let ny = p.y - mean_y;
                 model.put(v.clone(), Point2D::of(p.x, ny));
@@ -241,10 +246,12 @@ impl<G: IncidenceGraph> LayoutAlgorithm2D<G> for RescaleLayoutAlgorithm2D {
         let all_max = max_x.max(max_y);
         if all_max > 0.0 {
             for v in graph.vertices() {
+                let v = v.borrow();
                 let p = model.get(v).ok_or_else(missing)?;
                 model.put(v.clone(), Point2D::of(cx + p.x * self.scale / all_max, p.y));
             }
             for v in graph.vertices() {
+                let v = v.borrow();
                 let p = model.get(v).ok_or_else(missing)?;
                 model.put(v.clone(), Point2D::of(p.x, cy + p.y * self.scale / all_max));
             }
@@ -351,6 +358,7 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
         let (mut left, mut right): (Vec<V>, Vec<V>) = (Vec::new(), Vec::new());
         if let Some(partition) = &self.partition {
             for v in graph.vertices() {
+                let v = v.borrow();
                 if partition.contains(v) {
                     left.push(v.clone());
                 } else {
@@ -358,6 +366,7 @@ impl<V: Eq + Hash + Clone> TwoLayeredBipartiteLayout2D<V> {
                 }
             }
             for e in graph.edges() {
+                let e = e.borrow();
                 let (v, u) = (graph.edge_source(e).unwrap(), graph.edge_target(e).unwrap());
                 if partition.contains(v) == partition.contains(u) {
                     return Err(GraphError::InvalidArgument(

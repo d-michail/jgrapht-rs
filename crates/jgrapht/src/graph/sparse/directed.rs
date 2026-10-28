@@ -12,7 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use super::{CsrBooleanMatrix, collect_endpoints, identity_ids};
+use super::{CsrBooleanMatrix, collect_endpoints};
 use crate::graph::Graph;
 use crate::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::{GraphError, GraphType, Result};
@@ -66,7 +66,6 @@ impl HasIncoming for FullIncoming {}
 /// an outgoing CSR matrix (vertex by edge id) and, when supported, an incoming one.
 #[derive(Debug)]
 struct DirectedCore {
-    ids: Vec<usize>,
     num_vertices: usize,
     source: Vec<usize>,
     target: Vec<usize>,
@@ -84,7 +83,6 @@ impl DirectedCore {
         let outgoing: Vec<_> = source.iter().copied().zip(0..).collect();
         let out_matrix = CsrBooleanMatrix::new(num_vertices, num_edges, &outgoing)?;
         let core = Self {
-            ids: identity_ids(num_vertices, num_edges),
             num_vertices,
             source,
             target,
@@ -144,17 +142,19 @@ macro_rules! directed_graph_impl {
         impl<I: IncomingMode> Graph for $graph<I> {
             type Vertex = usize;
             type Edge = usize;
+            type VertexRef<'a> = usize;
+            type EdgeRef<'a> = usize;
 
             fn graph_type(&self) -> GraphType {
                 self.core.graph_type($weighted)
             }
 
-            fn vertices(&self) -> impl Iterator<Item = &usize> {
-                self.core.ids[..self.core.num_vertices].iter()
+            fn vertices(&self) -> impl Iterator<Item = usize> {
+                0..self.core.num_vertices
             }
 
-            fn edges(&self) -> impl Iterator<Item = &usize> {
-                self.core.ids[..self.core.source.len()].iter()
+            fn edges(&self) -> impl Iterator<Item = usize> {
+                0..self.core.source.len()
             }
 
             fn vertex_count(&self) -> usize {

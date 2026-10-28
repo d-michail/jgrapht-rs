@@ -21,6 +21,7 @@ use crate::graph::Graph;
 use crate::util::ToleranceDoubleComparator;
 use crate::util::java::RandomSource;
 use crate::{GraphError, Result};
+use std::borrow::Borrow;
 use std::collections::{HashMap, VecDeque};
 
 const NW: usize = 0;
@@ -191,7 +192,10 @@ impl FRQuadTree {
         match &self.nodes[n].points {
             Some(p) => {
                 if p.is_empty() {
-                    return Err(GraphError::InvalidArgument("No points".into()));
+                    return Err(GraphError::InvalidParameter {
+                        name: "points",
+                        requirement: crate::ParameterRequirement::NonEmpty,
+                    });
                 }
                 let (x, y) = p.iter().fold((0.0, 0.0), |(x, y), q| (x + q.x, y + q.y));
                 Ok(Point2D::of(x / p.len() as f64, y / p.len() as f64))
@@ -374,9 +378,11 @@ impl<V: Eq + std::hash::Hash + Clone, R: RandomSource> FRLayoutAlgorithm2D<V, R>
     ) -> HashMap<V, Point2D> {
         let mut disp = HashMap::new();
         for v in graph.vertices() {
+            let v = v.borrow();
             let v_pos = points::subtract(Self::position(model, v), origin);
             let mut v_disp = Point2D::of(0.0, 0.0);
             for u in graph.vertices() {
+                let u = u.borrow();
                 if v == u {
                     continue;
                 }
@@ -404,11 +410,13 @@ impl<V: Eq + std::hash::Hash + Clone, R: RandomSource> FRLayoutAlgorithm2D<V, R>
     ) -> HashMap<V, Point2D> {
         let mut tree = FRQuadTree::new(model.drawable_area());
         for v in graph.vertices() {
+            let v = v.borrow();
             tree.insert(Self::position(model, v))
                 .expect("point inside the drawable area");
         }
         let mut disp = HashMap::new();
         for v in graph.vertices() {
+            let v = v.borrow();
             let v_pos = points::subtract(Self::position(model, v), origin);
             let mut v_disp = Point2D::of(0.0, 0.0);
             let mut queue = VecDeque::from([tree.root()]);
@@ -458,6 +466,7 @@ impl<V: Eq + std::hash::Hash + Clone, R: RandomSource> FRLayoutAlgorithm2D<V, R>
         let mut disp: HashMap<V, Point2D> = HashMap::new();
         let zero = Point2D::of(0.0, 0.0);
         for e in graph.edges() {
+            let e = e.borrow();
             let (v, u) = (graph.edge_source(e).unwrap(), graph.edge_target(e).unwrap());
             let v_pos = points::subtract(Self::position(model, v), origin);
             let u_pos = points::subtract(Self::position(model, u), origin);
@@ -483,11 +492,13 @@ impl<G: Graph, R: RandomSource> LayoutAlgorithm2D<G> for FRLayoutAlgorithm2D<G::
         let (min_x, min_y) = (area.min_x(), area.min_y());
         if let Some(f) = &self.initializer {
             for v in graph.vertices() {
+                let v = v.borrow();
                 if let Some(p) = f(v) {
                     model.put(v.clone(), p);
                 }
             }
             for v in graph.vertices() {
+                let v = v.borrow();
                 if model.get(v).is_none() {
                     model.put(v.clone(), Point2D::of(min_x, min_y));
                 }
@@ -497,11 +508,13 @@ impl<G: Graph, R: RandomSource> LayoutAlgorithm2D<G> for FRLayoutAlgorithm2D<G::
             let mut random = MapLayoutModel2D::new(area);
             let (rmin_x, rmin_y) = (area.min_x(), area.min_x());
             for v in graph.vertices() {
+                let v = v.borrow();
                 let x = self.rng.next_double() * area.width();
                 let y = self.rng.next_double() * area.height();
                 random.put(v.clone(), Point2D::of(rmin_x + x, rmin_y + y));
             }
             for v in graph.vertices() {
+                let v = v.borrow();
                 model.put(v.clone(), random.get(v).unwrap());
             }
         }
@@ -518,6 +531,7 @@ impl<G: Graph, R: RandomSource> LayoutAlgorithm2D<G> for FRLayoutAlgorithm2D<G::
             let attractive = self.attractive_forces(graph, model);
             let temp = temperature(i, self.iterations);
             for v in graph.vertices() {
+                let v = v.borrow();
                 let zero = Point2D::of(0.0, 0.0);
                 let v_disp = points::add(repulsive[v], attractive.get(v).copied().unwrap_or(zero));
                 if self.comparator.compare(v_disp.x, 0.0) != 0

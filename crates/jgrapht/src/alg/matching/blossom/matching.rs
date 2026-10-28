@@ -119,8 +119,8 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
             return Ok(());
         }
 
-        let vertices: Vec<_> = self.graph.vertices().cloned().collect();
-        let original_edges: Vec<_> = self.graph.edges().cloned().collect();
+        let vertices: Vec<_> = self.graph.vertices_cloned().collect();
+        let original_edges: Vec<_> = self.graph.edges_cloned().collect();
         let n = vertices.len();
         let graph_type = GraphType::multigraph().as_weighted();
         let mut augmented: UGraph<usize, usize> =

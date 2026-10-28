@@ -18,6 +18,7 @@ use super::util::Indexed;
 use crate::graph::Graph;
 use crate::graph::{IncidenceGraph, IncomingGraph, OutgoingGraph, UndirectedGraph};
 use crate::util::OrderedF64;
+use std::borrow::Borrow;
 use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 
@@ -33,7 +34,7 @@ pub fn degree_centrality<G: IncidenceGraph>(g: &G, normalize: bool) -> HashMap<G
     let ix = Indexed::new(g);
     let d = (ix.n().max(2) - 1) as f64;
     let s = (0..ix.n())
-        .map(|v| g.degree_of(ix.vs[v]) as f64 / if normalize { d } else { 1.0 })
+        .map(|v| g.degree_of(&ix.vs[v]) as f64 / if normalize { d } else { 1.0 })
         .collect();
     scores(&ix, s)
 }
@@ -519,11 +520,17 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
 
     fn compute(&self) -> Result<IndexMap<G::Edge, f64>, GraphError> {
         let g = self.graph;
-        let mut scores: IndexMap<G::Edge, f64> = g.edges().map(|e| (e.clone(), 0.0)).collect();
+        let mut scores: IndexMap<G::Edge, f64> = g
+            .edges()
+            .map(|e| {
+                let e = e.borrow();
+                (e.clone(), 0.0)
+            })
+            .collect();
         let weighted = g.graph_type().weighted;
         let starts: Vec<G::Vertex> = match &self.start_vertices {
             Some(s) => s.clone(),
-            None => g.vertices().cloned().collect(),
+            None => g.vertices_cloned().collect(),
         };
         let divide_by_two = self.start_vertices.is_none() && !g.graph_type().directed;
         let mut stack: Vec<G::Vertex> = Vec::new();
@@ -534,8 +541,13 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
                 self.unweighted_search(source, &mut stack)?
             };
             // accumulate dependencies
-            let mut delta: HashMap<G::Vertex, f64> =
-                g.vertices().map(|v| (v.clone(), 0.0)).collect();
+            let mut delta: HashMap<G::Vertex, f64> = g
+                .vertices()
+                .map(|v| {
+                    let v = v.borrow();
+                    (v.clone(), 0.0)
+                })
+                .collect();
             while let Some(w) = stack.pop() {
                 if let Some(w_pred) = pred.get(&w) {
                     for e in w_pred {
@@ -578,7 +590,13 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
         let g = self.graph;
         let mut pred: HashMap<G::Vertex, Vec<G::Edge>> = HashMap::new();
         let mut dist: HashMap<G::Vertex, f64> = HashMap::new();
-        let mut sigma: HashMap<G::Vertex, i64> = g.vertices().map(|v| (v.clone(), 0)).collect();
+        let mut sigma: HashMap<G::Vertex, i64> = g
+            .vertices()
+            .map(|v| {
+                let v = v.borrow();
+                (v.clone(), 0)
+            })
+            .collect();
         sigma.insert(source.clone(), 1);
         dist.insert(source.clone(), 0.0);
         let mut queue = std::collections::VecDeque::from([source.clone()]);
@@ -612,7 +630,13 @@ impl<'g, G: OutgoingGraph> EdgeBetweennessCentrality<'g, G> {
         let g = self.graph;
         let mut pred: HashMap<G::Vertex, Vec<G::Edge>> = HashMap::new();
         let mut handles = HashMap::new();
-        let mut sigma: HashMap<G::Vertex, i64> = g.vertices().map(|v| (v.clone(), 0)).collect();
+        let mut sigma: HashMap<G::Vertex, i64> = g
+            .vertices()
+            .map(|v| {
+                let v = v.borrow();
+                (v.clone(), 0)
+            })
+            .collect();
         let mut heap: PairingHeap<OrderedF64, G::Vertex> = PairingHeap::new();
         sigma.insert(source.clone(), 1);
         handles.insert(source.clone(), heap.insert(OrderedF64(0.0), source.clone()));
@@ -704,7 +728,7 @@ fn all_distances<G: OutgoingGraph>(g: &G, incoming: bool) -> Vec<Vec<f64>> {
                 .map(|i| {
                     (0..n)
                         .map(|j| match &fw {
-                            Some(fw) => fw.weight(ix.vs[i], ix.vs[j]).unwrap_or(f64::INFINITY),
+                            Some(fw) => fw.weight(&ix.vs[i], &ix.vs[j]).unwrap_or(f64::INFINITY),
                             None => f64::NAN,
                         })
                         .collect()
@@ -768,7 +792,7 @@ impl<V: Eq + std::hash::Hash + Clone> ClosenessCentrality<V> {
     ) -> Self {
         let d = all_distances(g, incoming);
         let n = d.len();
-        let ix_vertices: Vec<&V> = g.vertices().collect();
+        let ix_vertices: Vec<V> = g.vertices_cloned().collect();
         let scores = (0..n)
             .map(|i| {
                 let sum = (0..n).filter(|&j| j != i).fold(0.0, |a, j| a + d[i][j]);
@@ -838,7 +862,7 @@ impl<V: Eq + std::hash::Hash + Clone> HarmonicCentrality<V> {
     ) -> Self {
         let d = all_distances(g, incoming);
         let n = d.len();
-        let vs: Vec<&V> = g.vertices().collect();
+        let vs: Vec<V> = g.vertices_cloned().collect();
         let scores = (0..n)
             .map(|i| {
                 let sum = (0..n)
@@ -964,7 +988,10 @@ impl<'g, G: IncidenceGraph> ClusteringCoefficient<'g, G> {
     pub fn new(graph: &'g G) -> Self {
         let scores = graph
             .vertices()
-            .map(|v| (v.clone(), Self::local(graph, v)))
+            .map(|v| {
+                let v = v.borrow();
+                (v.clone(), Self::local(graph, v))
+            })
             .collect();
         ClusteringCoefficient { graph, scores }
     }
@@ -1002,6 +1029,7 @@ impl<'g, G: IncidenceGraph> ClusteringCoefficient<'g, G> {
         let g = self.graph;
         let mut triplets = 0.0;
         for v in g.vertices() {
+            let v = v.borrow();
             if !g.graph_type().directed {
                 let d = g.degree_of(v) as f64;
                 triplets += d * (d - 1.0) / 2.0;
@@ -1036,8 +1064,8 @@ fn invalid(msg: &str) -> GraphError {
 }
 
 /// Weighted incoming neighbours of every vertex as indices, in the graph's iteration order.
-fn incoming_lists<G: IncomingGraph>(g: &G, vs: &[&G::Vertex]) -> Vec<Vec<(usize, f64)>> {
-    let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+fn incoming_lists<G: IncomingGraph>(g: &G, vs: &[G::Vertex]) -> Vec<Vec<(usize, f64)>> {
+    let idx: HashMap<&G::Vertex, usize> = vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
     vs.iter()
         .map(|v| {
             g.in_edges_of(v)
@@ -1098,7 +1126,7 @@ impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
         if tolerance <= 0.0 {
             return Err(GraphError::must_be_positive("tolerance"));
         }
-        let vs: Vec<&V> = g.vertices().collect();
+        let vs: Vec<V> = g.vertices_cloned().collect();
         let n = vs.len();
         let incoming = incoming_lists(g, &vs);
         let mut scores = vec![(1.0 / n as f64).sqrt(); n];
@@ -1126,7 +1154,7 @@ impl<V: Eq + std::hash::Hash + Clone> EigenvectorCentrality<V> {
             remaining -= 1;
         }
         Ok(EigenvectorCentrality {
-            scores: vs.into_iter().cloned().zip(scores).collect(),
+            scores: vs.into_iter().zip(scores).collect(),
         })
     }
 }
@@ -1217,10 +1245,10 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
         if tolerance <= 0.0 {
             return Err(GraphError::must_be_positive("tolerance"));
         }
-        let vs: Vec<&V> = g.vertices().collect();
+        let vs: Vec<V> = g.vertices_cloned().collect();
         let n = vs.len();
         let incoming = incoming_lists(g, &vs);
-        let exo: Vec<f64> = vs.iter().map(|v| exogenous_factor(v)).collect();
+        let exo: Vec<f64> = vs.iter().map(exogenous_factor).collect();
         let mut scores = exo.clone();
         let mut next = vec![0.0; n];
         let mut max_change = tolerance;
@@ -1239,7 +1267,7 @@ impl<V: Eq + std::hash::Hash + Clone> KatzCentrality<V> {
             remaining -= 1;
         }
         Ok(KatzCentrality {
-            scores: vs.into_iter().cloned().zip(scores).collect(),
+            scores: vs.into_iter().zip(scores).collect(),
         })
     }
 }
@@ -1310,7 +1338,7 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
         if tolerance <= 0.0 {
             return Err(GraphError::must_be_positive("tolerance"));
         }
-        let vs: Vec<&V> = g.vertices().collect();
+        let vs: Vec<V> = g.vertices_cloned().collect();
         let n = vs.len();
         let weighted = g.graph_type().weighted;
         let out_degree: Vec<usize> = vs.iter().map(|v| g.out_degree_of(v)).collect();
@@ -1355,7 +1383,7 @@ impl<V: Eq + std::hash::Hash + Clone> PageRank<V> {
             iterations -= 1;
         }
         Ok(PageRank {
-            scores: vs.into_iter().cloned().zip(cur).collect(),
+            scores: vs.into_iter().zip(cur).collect(),
         })
     }
 }
@@ -1433,9 +1461,9 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
         normalize: bool,
         overflow: OverflowStrategy,
     ) -> Result<Self, GraphError> {
-        let vs: Vec<&V> = g.vertices().collect();
+        let vs: Vec<V> = g.vertices_cloned().collect();
         let n = vs.len();
-        let idx: HashMap<&V, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+        let idx: HashMap<&V, usize> = vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let out: Vec<Vec<(usize, f64)>> = vs
             .iter()
             .map(|v| {
@@ -1459,7 +1487,7 @@ impl<V: Eq + std::hash::Hash + Clone> BetweennessCentrality<V> {
             }
         }
         Ok(BetweennessCentrality {
-            scores: vs.into_iter().cloned().zip(scores).collect(),
+            scores: vs.into_iter().zip(scores).collect(),
         })
     }
 
@@ -1706,9 +1734,9 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
     ) -> Result<Self, GraphError> {
         let precision = ap_precision(precision)?;
 
-        let vs: Vec<&V> = g.vertices().collect();
+        let vs: Vec<V> = g.vertices_cloned().collect();
         let n = vs.len();
-        let idx: HashMap<&V, usize> = vs.iter().enumerate().map(|(i, v)| (*v, i)).collect();
+        let idx: HashMap<&V, usize> = vs.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let out: Vec<Vec<(usize, f64)>> = vs
             .iter()
             .map(|v| {
@@ -1800,7 +1828,7 @@ impl<V: Eq + std::hash::Hash + Clone> ApBetweennessCentrality<V> {
             }
         }
         Ok(ApBetweennessCentrality {
-            scores: vs.into_iter().cloned().zip(scores).collect(),
+            scores: vs.into_iter().zip(scores).collect(),
         })
     }
 }

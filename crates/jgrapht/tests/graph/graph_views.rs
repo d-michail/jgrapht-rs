@@ -319,7 +319,7 @@ mod as_weighted_graph_tests {
         g1.add_edge_with_vertices(0, 1).unwrap();
         g1.add_edge_with_vertices(1, 2).unwrap();
         g1.add_edge_with_vertices(2, 0).unwrap();
-        let es: Vec<_> = g1.edges().copied().collect();
+        let es: Vec<_> = g1.edges_cloned().collect();
         for (e, w) in es.iter().zip([2.0, 3.0, 4.0]) {
             g1.set_edge_weight(e, w).unwrap();
         }
@@ -367,21 +367,21 @@ mod as_subgraph_test {
     fn test_induced_subgraph_everything() {
         let g = init();
         let sub = AsSubgraph::all(&g);
-        assert_eq!(set(g.vertices().copied()), set(sub.vertices().copied()));
-        assert_eq!(set(g.edges().copied()), set(sub.edges().copied()));
+        assert_eq!(set(g.vertices_cloned()), set(sub.vertices_cloned()));
+        assert_eq!(set(g.edges_cloned()), set(sub.edges_cloned()));
     }
 
     #[test]
     fn test_subgraph() {
         let g = init();
         let sub = AsSubgraph::new(&g, Some(vec![V1]), None);
-        assert_eq!(set(sub.vertices().copied()), set([V1]));
+        assert_eq!(set(sub.vertices_cloned()), set([V1]));
         assert_eq!(sub.degree_of(&V1), 0);
         assert_eq!(sub.edge_count(), 0);
         let vset = vec![V1, V2, V3];
         let one_edge: Vec<_> = g.edges_between(&V1, &V2).copied().collect();
         let sub = AsSubgraph::new(&g, Some(vset.clone()), Some(one_edge));
-        assert_eq!(set(sub.vertices().copied()), set(vset));
+        assert_eq!(set(sub.vertices_cloned()), set(vset));
         assert_eq!(sub.edge_count(), 1);
     }
 
@@ -661,8 +661,8 @@ mod as_graph_union_test {
         u: &G,
         e: &[DefaultEdge; 8],
     ) {
-        assert_eq!(set(u.vertices().copied()), set([V0, V1, V2, V3, V4]));
-        assert_eq!(set(u.edges().copied()), set(e.iter().copied()));
+        assert_eq!(set(u.vertices_cloned()), set([V0, V1, V2, V3, V4]));
+        assert_eq!(set(u.edges_cloned()), set(e.iter().copied()));
         let [e1, e2, e3, e4, e5, e6, e7, e8] = *e;
         assert_eq!(set(u.edges_of(&V0).copied()), set([e1, e3]));
         assert_eq!(set(u.edges_of(&V1).copied()), set([e1, e2, e4, e7]));

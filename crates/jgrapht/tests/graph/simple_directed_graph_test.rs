@@ -187,13 +187,13 @@ fn test_edge_set() {
     assert_eq!(f.g2.edge_count(), 2);
     assert_eq!(f.g3.edge_count(), 6);
     assert_eq!(f.g4.edge_count(), 4);
-    assert_eq!(set(f.g2.edges().copied()), set([f.e12_1, f.e21_1]));
+    assert_eq!(set(f.g2.edges_cloned()), set([f.e12_1, f.e21_1]));
     assert_eq!(
-        set(f.g3.edges().copied()),
+        set(f.g3.edges_cloned()),
         set([f.e12_2, f.e21_2, f.e23_1, f.e32_1, f.e31_1, f.e13_1])
     );
     assert_eq!(
-        set(f.g4.edges().copied()),
+        set(f.g4.edges_cloned()),
         set([f.e12_3, f.e23_2, f.e34_1, f.e41_1])
     );
 }
@@ -360,13 +360,10 @@ fn test_remove_vertex() {
 #[test]
 fn test_vertex_set() {
     let f = setup();
-    assert_eq!(f.g1.vertices().copied().collect::<Vec<_>>(), [V1]);
-    assert_eq!(f.g2.vertices().copied().collect::<Vec<_>>(), [V1, V2]);
-    assert_eq!(f.g3.vertices().copied().collect::<Vec<_>>(), [V1, V2, V3]);
-    assert_eq!(
-        f.g4.vertices().copied().collect::<Vec<_>>(),
-        [V1, V2, V3, V4]
-    );
+    assert_eq!(f.g1.vertices_cloned().collect::<Vec<_>>(), [V1]);
+    assert_eq!(f.g2.vertices_cloned().collect::<Vec<_>>(), [V1, V2]);
+    assert_eq!(f.g3.vertices_cloned().collect::<Vec<_>>(), [V1, V2, V3]);
+    assert_eq!(f.g4.vertices_cloned().collect::<Vec<_>>(), [V1, V2, V3, V4]);
 }
 
 #[test]
@@ -377,8 +374,8 @@ fn test_reversed_view() {
     {
         let r = EdgeReversed(&g);
         assert!(r.contains_vertex(&V1) && r.contains_vertex(&V2));
-        assert_eq!(set(g.vertices().copied()), set(r.vertices().copied()));
-        assert_eq!(set(g.edges().copied()), set(r.edges().copied()));
+        assert_eq!(set(g.vertices_cloned()), set(r.vertices_cloned()));
+        assert_eq!(set(g.edges_cloned()), set(r.edges_cloned()));
         assert!(r.contains_edge_between(&V2, &V1));
         assert_eq!(r.get_edge(&V2, &V1), Some(&e));
         assert!(!r.contains_edge_between(&V1, &V2));
@@ -394,10 +391,10 @@ fn test_reversed_view() {
             ],
             [1, 0, 0, 1]
         );
-        assert_eq!(set(r.in_edges_of(&V1).copied()), set(g.edges().copied()));
+        assert_eq!(set(r.in_edges_of(&V1).copied()), set(g.edges_cloned()));
         assert_eq!(r.out_edges_of(&V1).count(), 0);
         assert_eq!(r.in_edges_of(&V2).count(), 0);
-        assert_eq!(set(r.out_edges_of(&V2).copied()), set(g.edges().copied()));
+        assert_eq!(set(r.out_edges_of(&V2).copied()), set(g.edges_cloned()));
         assert_eq!(r.edge_source(&e), Some(&V2));
         assert_eq!(r.edge_target(&e), Some(&V1));
     }

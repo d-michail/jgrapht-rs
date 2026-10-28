@@ -60,7 +60,7 @@ fn mst_algorithms_agree() {
             .unwrap()
             .generate_indexed(&mut g)
             .unwrap();
-        for e in g.edges().cloned().collect::<Vec<_>>() {
+        for e in g.edges_cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(0..10) as f64)
                 .unwrap();
         }
@@ -162,7 +162,7 @@ fn flow_algorithms_agree_randomly() {
             .unwrap()
             .generate_indexed(&mut g)
             .unwrap();
-        for e in g.edges().cloned().collect::<Vec<_>>() {
+        for e in g.edges_cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(1..10) as f64)
                 .unwrap();
         }
@@ -196,7 +196,7 @@ fn gomory_hu_and_stoer_wagner() {
             .unwrap()
             .generate_indexed(&mut g)
             .unwrap();
-        for e in g.edges().cloned().collect::<Vec<_>>() {
+        for e in g.edges_cloned().collect::<Vec<_>>() {
             g.set_edge_weight(&e, rng.random_range(1..8) as f64)
                 .unwrap();
         }
@@ -236,7 +236,7 @@ fn min_cost_flow_works() {
         (1, 2, 0.0),
     ]);
     // edges in insertion order: 0-1, 0-2, 1-3, 2-3, 1-2
-    let order: Vec<DefaultEdge> = g.edges().copied().collect();
+    let order: Vec<DefaultEdge> = g.edges_cloned().collect();
     let pos = |e: &DefaultEdge| order.iter().position(|x| x == e).unwrap();
     let cap = |e: &DefaultEdge| [4, 2, 3, 5, 10][pos(e)];
     let cost = |e: &DefaultEdge| [1.0, 2.0, 3.0, 1.0, 1.0][pos(e)];

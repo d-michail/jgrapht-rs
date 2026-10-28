@@ -19,6 +19,7 @@ use crate::graph::IncidenceGraph;
 use crate::graph::UndirectedGraph;
 use crate::graph::{DefaultEdge, Graph, GraphExt, GraphMut, GraphMutExt, UGraph};
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::{HashMap, VecDeque};
 
 type CutAlgorithm<'g, G> =
@@ -31,7 +32,7 @@ fn index_vertices<G: Graph>(network: &G) -> Result<(Vec<G::Vertex>, HashMap<G::V
             crate::GraphProperty::AtLeastTwoVertices,
         ));
     }
-    let vertex_list: Vec<G::Vertex> = network.vertices().cloned().collect();
+    let vertex_list: Vec<G::Vertex> = network.vertices_cloned().collect();
     let index_map = vertex_list
         .iter()
         .enumerate()
@@ -509,17 +510,29 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MinimumSTCutAlgorithm<G::Vert
         let g = self.network;
         let sink_partition: IndexSet<G::Vertex> = g
             .vertices()
-            .filter(|v| !source_partition.contains(*v))
-            .cloned()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                !source_partition.contains(*v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         let cut_edges: IndexSet<G::Edge> = g
             .edges()
             .filter(|e| {
-                g.edge_endpoints(e).is_some_and(|(u, v)| {
-                    source_partition.contains(u) ^ source_partition.contains(v)
-                })
+                let e = &(*e).borrow();
+                {
+                    g.edge_endpoints(e).is_some_and(|(u, v)| {
+                        source_partition.contains(u) ^ source_partition.contains(v)
+                    })
+                }
             })
-            .cloned()
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         Ok(MinimumCut::new(
             capacity,

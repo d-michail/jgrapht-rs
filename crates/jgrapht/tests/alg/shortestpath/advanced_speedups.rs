@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{
     CHManyToManyShortestPaths, ContractionHierarchyBidirectionalDijkstra,
     ContractionHierarchyPrecomputation, Dijkstra, ShortestPathAlgorithm,
@@ -114,7 +115,7 @@ fn contraction_hierarchy_matches_dijkstra_on_random_graphs() {
             .unwrap()
             .generate_indexed(&mut graph)
             .unwrap();
-        let edges: Vec<_> = graph.edges().copied().collect();
+        let edges: Vec<_> = graph.edges_cloned().collect();
         for edge in edges {
             graph
                 .set_edge_weight(&edge, weights.random_range(1..=30) as f64)

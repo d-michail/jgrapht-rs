@@ -27,7 +27,9 @@ use crate::{
     BaseExporter, EventDrivenImporter, GraphExporter, GraphImporter, ImportEvent,
     IntegerIdProvider, IoError, Result,
 };
+use jgrapht::GraphExt;
 use jgrapht::{Graph, GraphMut, OutgoingGraph};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::io::{Read, Write};
@@ -662,6 +664,7 @@ where
         match self.format {
             CsvFormat::EdgeList => {
                 for edge in graph.edges() {
+                    let edge = edge.borrow();
                     let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
                     let source = self.base.vertex_id(source)?;
                     let target = self.base.vertex_id(target)?;
@@ -682,7 +685,7 @@ where
                 }
             }
             CsvFormat::AdjacencyList => {
-                let vertices: Vec<_> = graph.vertices().cloned().collect();
+                let vertices: Vec<_> = graph.vertices_cloned().collect();
                 for vertex in &vertices {
                     let id = self.base.vertex_id(vertex)?;
                     write!(output, "{}", escape_field(&id, self.delimiter))?;
@@ -707,7 +710,7 @@ where
                 }
             }
             CsvFormat::Matrix => {
-                let vertices: Vec<_> = graph.vertices().cloned().collect();
+                let vertices: Vec<_> = graph.vertices_cloned().collect();
                 let node_ids = self.parameters.contains(&CsvParameter::MatrixNodeId);
                 let zero_missing = self
                     .parameters
@@ -806,10 +809,12 @@ where
 {
     fn export_graph<W: Write>(&mut self, graph: &G, mut output: W) -> Result<()> {
         for vertex in graph.vertices() {
+            let vertex = vertex.borrow();
             let name = self.base.vertex_id(vertex)?;
             writeln!(output, "Shape,{name},,{name}")?;
         }
         for edge in graph.edges() {
+            let edge = edge.borrow();
             let (source, target) = crate::exporter::edge_endpoints(graph, edge)?;
             let source = self.base.vertex_id(source)?;
             let target = self.base.vertex_id(target)?;

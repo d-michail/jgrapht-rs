@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{
     BidirectionalDijkstraShortestPath, DijkstraShortestPath, ShortestPathAlgorithm,
 };
@@ -19,6 +20,7 @@ use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
 use jgrapht::graph::IncidenceGraph;
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use rand::{Rng, SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 
 fn directed_graph() -> DiGraph<&'static str> {
     let mut graph = DiGraph::<&str>::pseudo().weighted();
@@ -195,7 +197,9 @@ where
     let dijkstra = DijkstraShortestPath::new(graph).radius(radius);
     let bidirectional = BidirectionalDijkstraShortestPath::with_radius(graph, radius).unwrap();
     for source in graph.vertices() {
+        let source = source.borrow();
         for target in graph.vertices() {
+            let target = target.borrow();
             let expected = dijkstra.path(source, target).unwrap();
             let actual = bidirectional.path(source, target).unwrap();
             match (expected, actual) {
@@ -225,7 +229,7 @@ fn random_directed(weighted: bool) -> DiGraph<usize> {
         .unwrap();
     if weighted {
         let mut random = StdRng::seed_from_u64(7);
-        for edge in graph.edges().copied().collect::<Vec<_>>() {
+        for edge in graph.edges_cloned().collect::<Vec<_>>() {
             graph.set_edge_weight(&edge, random.random()).unwrap();
         }
     }

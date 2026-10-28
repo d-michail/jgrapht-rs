@@ -29,7 +29,7 @@ pub struct GraphBuilder<G: GraphMut> {
 }
 
 impl<G: GraphMut> GraphBuilder<G> {
-    /// Creates a new instance.
+    /// Starts a builder on top of an existing graph, which becomes the graph that is built.
     pub fn new(graph: G) -> Self {
         GraphBuilder { graph, error: None }
     }
@@ -40,12 +40,12 @@ impl<G: GraphMut> GraphBuilder<G> {
         }
     }
 
-    /// Adds vertex.
+    /// Adds the vertex when the graph is built.
     pub fn add_vertex(mut self, v: G::Vertex) -> Self {
         self.graph.add_vertex(v);
         self
     }
-    /// Adds vertices.
+    /// Adds all the vertices when the graph is built.
     pub fn add_vertices(mut self, vs: impl IntoIterator<Item = G::Vertex>) -> Self {
         self.graph.add_vertices(vs);
         self
@@ -72,7 +72,7 @@ impl<G: GraphMut> GraphBuilder<G> {
         self.record(r);
         self
     }
-    /// Adds weighted edge with.
+    /// Adds an edge object between two vertices with the given weight.
     pub fn add_weighted_edge_with(
         mut self,
         u: G::Vertex,
@@ -107,12 +107,12 @@ impl<G: GraphMut> GraphBuilder<G> {
         self.record(r);
         self
     }
-    /// Removes vertex.
+    /// Removes the vertex and its incident edges when the graph is built.
     pub fn remove_vertex(mut self, v: &G::Vertex) -> Self {
         self.graph.remove_vertex(v);
         self
     }
-    /// Removes vertices.
+    /// Removes all the vertices and their incident edges when the graph is built.
     pub fn remove_vertices<'a>(mut self, vs: impl IntoIterator<Item = &'a G::Vertex>) -> Self
     where
         G::Vertex: 'a,
@@ -127,12 +127,12 @@ impl<G: GraphMut> GraphBuilder<G> {
         self.graph.remove_edge_between(u, v);
         self
     }
-    /// Removes edge.
+    /// Removes the edge when the graph is built.
     pub fn remove_edge(mut self, e: &G::Edge) -> Self {
         self.graph.remove_edge(e);
         self
     }
-    /// Returns the build.
+    /// Applies the recorded operations in order and returns the graph, or the first error.
     ///
     /// # Errors
     ///
@@ -143,7 +143,7 @@ impl<G: GraphMut> GraphBuilder<G> {
             None => Ok(self.graph),
         }
     }
-    /// Returns the build as unmodifiable.
+    /// Like [`build`](Self::build), wrapped so that it cannot be modified afterwards.
     ///
     /// # Errors
     ///
@@ -164,13 +164,13 @@ pub struct GraphTypeBuilder<V, E, D> {
 }
 
 impl<V, E> GraphTypeBuilder<V, E, Directed> {
-    /// Computes the directed.
+    /// A builder for directed graphs.
     pub fn directed() -> Self {
         Self::start()
     }
 }
 impl<V, E> GraphTypeBuilder<V, E, Undirected> {
-    /// Computes the undirected.
+    /// A builder for undirected graphs.
     pub fn undirected() -> Self {
         Self::start()
     }
@@ -207,29 +207,29 @@ impl<V, E, D: Direction> GraphTypeBuilder<V, E, D> {
         self.ty.self_loops = allow;
         self
     }
-    /// Sets the weighted and returns the builder.
+    /// Whether the graph to build carries edge weights.
     pub fn weighted(mut self, weighted: bool) -> Self {
         self.ty.weighted = weighted;
         self
     }
-    /// Sets the edge supplier and returns the builder.
+    /// The function that creates edge values from a running counter.
     pub fn edge_supplier(mut self, f: fn(u64) -> E) -> Self {
         self.edge_factory = Some(f);
         self
     }
-    /// Sets the vertex supplier and returns the builder.
+    /// The function that creates vertex values from a running counter.
     pub fn vertex_supplier(mut self, f: fn(u64) -> V) -> Self {
         self.vertex_factory = Some(f);
         self
     }
-    /// Returns the graph type.
+    /// The graph type the builder is currently configured for.
     pub fn graph_type(&self) -> GraphType {
         self.ty
     }
 }
 
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphTypeBuilder<V, E, D> {
-    /// Returns the build graph.
+    /// Creates the configured graph.
     pub fn build_graph(self) -> BaseGraph<V, E, D> {
         let g = match self.edge_factory {
             Some(f) => BaseGraph::<V, E, D, DefaultGraphSpecifics>::with_edge_factory(self.ty, f),
@@ -249,7 +249,7 @@ impl<V> GraphTypeBuilder<V, crate::DefaultEdge, Directed> {
     }
 }
 impl<V> GraphTypeBuilder<V, crate::DefaultEdge, Undirected> {
-    /// Returns the default edges.
+    /// Uses [`DefaultEdge`](crate::DefaultEdge) objects, numbered by a counter.
     pub fn default_edges(self) -> Self {
         self.edge_supplier(crate::DefaultEdge::from_id)
     }

@@ -29,6 +29,7 @@ use crate::{GraphError, Result};
 use indexmap::IndexSet;
 use rand::{SeedableRng, rngs::StdRng};
 use rheaps::{AddressableHeap, DecreaseKeyHeap};
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::Deref;
 use std::sync::Arc;
@@ -364,8 +365,8 @@ impl Core {
     /// original graph, the shortest is added. Self loops are ignored. If the original graph is
     /// undirected, each edge becomes two directed edges.
     fn fill<G: Graph>(graph: &G) -> Result<(Self, Vec<G::Edge>)> {
-        let ids: HashMap<&G::Vertex, usize> =
-            graph.vertices().enumerate().map(|(i, v)| (v, i)).collect();
+        let all: Vec<G::Vertex> = graph.vertices_cloned().collect();
+        let ids: HashMap<&G::Vertex, usize> = all.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let n = ids.len();
         let mut core = Core {
             undirected: !graph.graph_type().directed,
@@ -381,6 +382,7 @@ impl Core {
         };
         let mut originals = Vec::new();
         for edge in graph.edges() {
+            let edge = edge.borrow();
             let source = ids[graph.edge_source(edge).ok_or(GraphError::EdgeNotFound)?];
             let target = ids[graph.edge_target(edge).ok_or(GraphError::EdgeNotFound)?];
             if source == target {
@@ -769,7 +771,7 @@ impl Core {
         graph: &'g G,
         originals: Vec<G::Edge>,
     ) -> ContractionHierarchy<'g, G> {
-        let input: Vec<&G::Vertex> = graph.vertices().collect();
+        let input: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let vertices: Vec<ContractionVertex<G::Vertex>> = self
             .order
             .iter()
@@ -1074,6 +1076,7 @@ impl<G: Graph> ShortestPathAlgorithm<G> for ContractionHierarchyBidirectionalDij
             pred: HashMap::new(),
         };
         for target in self.hierarchy.graph.vertices() {
+            let target = target.borrow();
             if let Some(path) = self.path(source, target)? {
                 result.dist.insert(target.clone(), path.weight);
                 for (vertices, edge) in path.vertices.windows(2).zip(path.edges) {

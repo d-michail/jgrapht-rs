@@ -20,6 +20,7 @@ use crate::graph::OutgoingGraph;
 use crate::graph::{DirectedExt, DirectedGraph, Graph, GraphExt, GraphMut, props};
 use crate::traverse::TopologicalOrderIterator;
 use indexmap::IndexSet;
+use std::borrow::Borrow;
 use std::collections::VecDeque;
 
 /// Constructs the transitive closure of the input graph.
@@ -58,7 +59,7 @@ impl TransitiveClosure {
                 crate::GraphProperty::SimpleDirected,
             ));
         }
-        let vertex_set: Vec<G::Vertex> = graph.vertices().cloned().collect();
+        let vertex_set: Vec<G::Vertex> = graph.vertices_cloned().collect();
         let mut new_edge_targets: IndexSet<G::Vertex> = IndexSet::new();
 
         let bound = compute_binary_log(vertex_set.len());
@@ -259,12 +260,13 @@ impl TransitiveReduction {
     pub fn reduce<G: Graph + GraphMut>(&self, directed_graph: &mut G) -> Result<()> {
         props::require_directed(directed_graph)?;
 
-        let vertices: Vec<G::Vertex> = directed_graph.vertices().cloned().collect();
+        let vertices: Vec<G::Vertex> = directed_graph.vertices_cloned().collect();
         let n = vertices.len();
         let index_of = |v: &G::Vertex| vertices.iter().position(|x| x == v).expect("vertex");
 
         let mut original_matrix: Vec<BitSet> = (0..n).map(|_| BitSet::new(n)).collect();
         for edge in directed_graph.edges() {
+            let edge = edge.borrow();
             let (v1, v2) = directed_graph.edge_endpoints(edge).expect("edge endpoints");
             original_matrix[index_of(v1)].set(index_of(v2), true);
         }

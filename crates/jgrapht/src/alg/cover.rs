@@ -21,6 +21,7 @@ use crate::graph::Graph;
 use crate::graph::IncidenceGraph;
 use crate::graph::UndirectedGraph;
 use crate::{GraphError, Result};
+use std::borrow::Borrow;
 use std::collections::{HashSet, VecDeque};
 
 /// A vertex cover with its total vertex weight.
@@ -96,7 +97,7 @@ pub fn bar_yehuda_even_vertex_cover<G: Graph>(
     weight: impl Fn(&G::Vertex) -> f64,
 ) -> VertexCover<G::Vertex> {
     let ix = Indexed::new(g);
-    let mut residual: Vec<f64> = (0..ix.n()).map(|v| weight(ix.vs[v])).collect();
+    let mut residual: Vec<f64> = (0..ix.n()).map(|v| weight(&ix.vs[v])).collect();
     for &(a, b) in &ix.ends {
         let d = residual[a].min(residual[b]);
         residual[a] -= d;
@@ -113,7 +114,7 @@ pub fn clarkson_vertex_cover<G: Graph>(
 ) -> VertexCover<G::Vertex> {
     let ix = Indexed::new(g);
     let n = ix.n();
-    let mut w: Vec<f64> = (0..n).map(|v| weight(ix.vs[v])).collect();
+    let mut w: Vec<f64> = (0..n).map(|v| weight(&ix.vs[v])).collect();
     let mut alive: Vec<HashSet<usize>> = (0..n)
         .map(|v| {
             ix.out[v]
@@ -177,6 +178,7 @@ pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(
         .get_matching()?;
     let mut mate = vec![None; ix.n()];
     for edge in matching.edges() {
+        let edge = edge.borrow();
         let (source, target) = g.edge_endpoints(edge).expect("matching edge of the graph");
         let (source, target) = (ix.idx[source], ix.idx[target]);
         mate[source] = Some(target);
@@ -218,8 +220,10 @@ pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(
 /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
 pub fn is_vertex_cover<G: Graph>(g: &G, vs: &[G::Vertex]) -> bool {
     let set: HashSet<_> = vs.iter().collect();
-    g.edges()
-        .all(|e| set.contains(g.edge_source(e).unwrap()) || set.contains(g.edge_target(e).unwrap()))
+    g.edges().all(|e| {
+        let e = e.borrow();
+        set.contains(g.edge_source(e).unwrap()) || set.contains(g.edge_target(e).unwrap())
+    })
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -234,7 +238,12 @@ use std::collections::{BTreeSet, HashMap};
 use std::hash::Hash;
 
 fn unit_weights<G: Graph>(g: &G) -> HashMap<G::Vertex, f64> {
-    g.vertices().map(|v| (v.clone(), 1.0)).collect()
+    g.vertices()
+        .map(|v| {
+            let v = v.borrow();
+            (v.clone(), 1.0)
+        })
+        .collect()
 }
 
 fn weight_of<V: Eq + Hash>(weights: &HashMap<V, f64>, v: &V) -> Result<f64> {
@@ -262,9 +271,10 @@ fn ratio_cover<G: IncidenceGraph>(
             self.weight / self.degree as f64
         }
     }
+    let all_vertices: Vec<G::Vertex> = g.vertices_cloned().collect();
     let mut ids: HashMap<&G::Vertex, usize> = HashMap::new();
     let mut rv: Vec<RatioVertex<G::Vertex>> = Vec::new();
-    for v in g.vertices() {
+    for v in &all_vertices {
         if g.degree_of(v) > 0 {
             ids.insert(v, rv.len());
             rv.push(RatioVertex {
@@ -276,6 +286,7 @@ fn ratio_cover<G: IncidenceGraph>(
         }
     }
     for e in g.edges() {
+        let e = e.borrow();
         let (a, b) = (
             ids[g.edge_source(e).unwrap()],
             ids[g.edge_target(e).unwrap()],
@@ -381,6 +392,7 @@ impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for BarYehudaEvenTwoAppr
         let g = self.graph;
         let mut w: HashMap<G::Vertex, f64> = HashMap::new();
         for v in g.vertices() {
+            let v = v.borrow();
             w.insert(v.clone(), weight_of(&self.weights, v)?);
         }
         let mut removed: HashSet<G::Vertex> = HashSet::new();
@@ -388,6 +400,7 @@ impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for BarYehudaEvenTwoAppr
         let mut weight = 0.0;
         // the first remaining edge, repeatedly = a scan over the edges that skips removed vertices
         for e in g.edges() {
+            let e = e.borrow();
             let (p, q) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
             if removed.contains(p) || removed.contains(q) {
                 continue;
@@ -434,6 +447,7 @@ impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for EdgeBasedTwoApproxVc
         let mut removed: HashSet<G::Vertex> = HashSet::new();
         let mut cover: indexmap::IndexSet<G::Vertex> = indexmap::IndexSet::new();
         for e in g.edges() {
+            let e = e.borrow();
             let (u, v) = (g.edge_source(e).unwrap(), g.edge_target(e).unwrap());
             if removed.contains(u) || removed.contains(v) {
                 continue;
@@ -570,7 +584,7 @@ impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for RecursiveExactVcImpl
         // (for unit weights the weighted sum equals the vertex count, so one code path suffices)
         let weighted = true;
         // vertices sorted by weight / degree, ascending (stable)
-        let mut vertices: Vec<G::Vertex> = g.vertices().cloned().collect();
+        let mut vertices: Vec<G::Vertex> = g.vertices_cloned().collect();
         let mut keyed: Vec<(f64, G::Vertex)> = Vec::new();
         for v in vertices.drain(..) {
             let ratio = weight_of(&self.weights, &v)? / g.degree_of(&v) as f64;

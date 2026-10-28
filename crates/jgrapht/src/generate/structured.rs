@@ -16,7 +16,9 @@ use super::{
     GeneratorResult, GraphGenerator, add_edge, invalid, put, require_directed_or_undirected,
 };
 use crate::graph::Graph;
+use crate::graph::GraphExt;
 use crate::{GraphError, GraphMut, GraphMutExt, Result};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 use std::hash::Hash;
 
@@ -134,12 +136,18 @@ impl GraphGenerator for Wheel {
         if self.n < 1 {
             return Ok(());
         }
-        let before: HashSet<G::Vertex> = target.vertices().cloned().collect();
+        let before: HashSet<G::Vertex> = target.vertices_cloned().collect();
         Ring::run(self.n - 1, target)?;
         let rim: Vec<G::Vertex> = target
             .vertices()
-            .filter(|v| !before.contains(*v))
-            .cloned()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                !before.contains(*v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         let hub = target.add_new_vertex()?;
         put(&mut result, HUB_VERTEX, hub.clone());
@@ -168,7 +176,7 @@ impl GraphGenerator for Complete {
         for _ in 0..self.0 {
             target.add_new_vertex()?;
         }
-        let nodes: Vec<G::Vertex> = target.vertices().cloned().collect();
+        let nodes: Vec<G::Vertex> = target.vertices_cloned().collect();
         for i in 0..nodes.len() {
             for j in i + 1..nodes.len() {
                 add_edge(target, &nodes[i], &nodes[j])?;
@@ -415,12 +423,13 @@ impl<V: Clone + Eq + Hash> Complement<V> {
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new<G: Graph<Vertex = V>>(graph: &G, generate_self_loops: bool) -> Result<Self> {
         require_directed_or_undirected(&graph.graph_type())?;
-        let vertices: Vec<V> = graph.vertices().cloned().collect();
+        let vertices: Vec<V> = graph.vertices_cloned().collect();
         let index: std::collections::HashMap<&V, usize> =
             vertices.iter().enumerate().map(|(i, v)| (v, i)).collect();
         let directed = graph.graph_type().directed;
         let mut present = HashSet::new();
         for e in graph.edges() {
+            let e = e.borrow();
             let (s, t) = (
                 index[graph.edge_source(e).unwrap()],
                 index[graph.edge_target(e).unwrap()],

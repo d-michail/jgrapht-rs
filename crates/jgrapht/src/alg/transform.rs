@@ -18,6 +18,7 @@
 use crate::Result;
 use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt, GraphMut, GraphMutExt};
+use std::borrow::Borrow;
 
 /// Complement: same vertices, an edge wherever `g` has none (no loops unless `loops`).
 ///
@@ -29,9 +30,9 @@ where
     G: Graph,
     T: GraphMut<Vertex = G::Vertex>,
 {
-    target.add_vertices(g.vertices().cloned());
+    target.add_vertices(g.vertices_cloned());
     let directed = g.graph_type().directed;
-    let vs: Vec<_> = g.vertices().collect();
+    let vs: Vec<G::Vertex> = g.vertices_cloned().collect();
     for (i, u) in vs.iter().enumerate() {
         for (j, v) in vs.iter().enumerate() {
             if (!directed && j < i) || (i == j && !loops) {
@@ -84,7 +85,7 @@ where
     T: GraphMut<Vertex = G::Edge>,
     F: Fn(&G::Edge, &G::Edge) -> f64,
 {
-    target.add_vertices(g.edges().cloned());
+    target.add_vertices(g.edges_cloned());
     let link = |target: &mut T, e1: &G::Edge, e2: &G::Edge| -> Result<()> {
         if let Some(edge) = target.add_edge(e1, e2)? {
             if let Some(f) = &weight {
@@ -95,6 +96,7 @@ where
     };
     if g.graph_type().directed {
         for v in g.vertices() {
+            let v = v.borrow();
             for e1 in g.in_edges_of(v) {
                 for e2 in g.out_edges_of(v) {
                     link(target, e1, e2)?;
@@ -103,6 +105,7 @@ where
         }
     } else {
         for v in g.vertices() {
+            let v = v.borrow();
             for e1 in g.edges_of(v) {
                 for e2 in g.edges_of(v) {
                     if e1 != e2 {

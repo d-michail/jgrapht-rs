@@ -222,9 +222,7 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
         let first_node = self.node_map[first];
         let second_node = self.node_map[second];
         let Some(&arc_to_second) = self.nodes[first_node].target_map.get(&second_node) else {
-            return Err(GraphError::InvalidArgument(
-                "elements are not adjacent in the forest".into(),
-            ));
+            return Err(GraphError::ElementNotFound);
         };
 
         let tree = self.get_tree(first_node);

@@ -27,6 +27,7 @@ use jgrapht::alg::shortestpath::*;
 use jgrapht::alg::spanning::*;
 use jgrapht::*;
 use rand::{Rng, SeedableRng, rngs::StdRng};
+use std::borrow::Borrow;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
 fn random_graph<G: GraphMut<Vertex = usize>>(mut g: G, rng: &mut StdRng, weights: &[f64]) -> G {
@@ -44,7 +45,7 @@ fn random_graph<G: GraphMut<Vertex = usize>>(mut g: G, rng: &mut StdRng, weights
     g
 }
 
-fn sweep<G: GraphMut<Vertex = usize>>(
+pub(crate) fn sweep<G: GraphMut<Vertex = usize>>(
     name: &str,
     make: impl Fn() -> G,
     weights: &[f64],
@@ -57,7 +58,10 @@ fn sweep<G: GraphMut<Vertex = usize>>(
             "{name}: n={} edges={:?}",
             g.vertex_count(),
             g.edges()
-                .map(|e| g.edge_endpoints(e).map(|(a, b)| (*a, *b)))
+                .map(|e| {
+                    let e = e.borrow();
+                    g.edge_endpoints(e).map(|(a, b)| (*a, *b))
+                })
                 .collect::<Vec<_>>()
         );
         if catch_unwind(AssertUnwindSafe(|| run(&g))).is_err() {
@@ -66,15 +70,15 @@ fn sweep<G: GraphMut<Vertex = usize>>(
     }
 }
 
-const VALID: [f64; 5] = [0.0, 1.0, 2.5, 7.0, -1.0];
-const POSITIVE: [f64; 4] = [0.0, 1.0, 2.5, 7.0];
+pub(crate) const VALID: [f64; 5] = [0.0, 1.0, 2.5, 7.0, -1.0];
+pub(crate) const POSITIVE: [f64; 4] = [0.0, 1.0, 2.5, 7.0];
 const INVALID: [f64; 4] = [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 1.0];
 
-fn undirected() -> UGraph<usize> {
+pub(crate) fn undirected() -> UGraph<usize> {
     UGraph::<usize>::pseudo().weighted()
 }
 
-fn directed() -> DiGraph<usize> {
+pub(crate) fn directed() -> DiGraph<usize> {
     DiGraph::<usize>::pseudo().weighted()
 }
 
@@ -137,7 +141,7 @@ fn directed_algorithms_do_not_panic() {
 }
 
 fn shortest_paths<G: IncidenceGraph<Vertex = usize> + IncomingGraph + GraphMut>(g: &G) {
-    let vs: Vec<usize> = g.vertices().copied().collect();
+    let vs: Vec<usize> = g.vertices_cloned().collect();
     for a in vs.iter().chain([&99]) {
         for b in vs.iter().chain([&99]) {
             let _ = Dijkstra::new(g).path_weight(a, b);

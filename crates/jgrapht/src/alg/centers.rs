@@ -16,6 +16,7 @@
 
 use super::interfaces::{CentersLocationAlgorithm, CentersSolution};
 use super::util::Indexed;
+use crate::graph::GraphExt;
 use crate::graph::OutgoingGraph;
 use crate::graph::UndirectedGraph;
 use crate::graph::{Graph, props};
@@ -24,6 +25,7 @@ use crate::util::java::RandomSource;
 use crate::{GraphError, Result};
 use indexmap::{IndexMap, IndexSet};
 use rand::rngs::StdRng;
+use std::borrow::Borrow;
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
 use std::collections::{HashMap, HashSet};
@@ -180,7 +182,7 @@ impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonH
         if n == k {
             // every vertex is a center: nothing to assign, nothing to cover
             return Ok(CentersSolution::new(
-                graph.vertices().cloned().collect(),
+                graph.vertices_cloned().collect(),
                 IndexMap::new(),
                 0.0,
             ));
@@ -202,7 +204,7 @@ impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonH
             let rng = self.rng.as_mut().ok_or_else(|| {
                 GraphError::InvalidArgument("no random source and no initial centers".into())
             })?;
-            let v = graph.vertices().nth(rng.next_int_bound(n)).unwrap().clone();
+            let v = graph.vertices_cloned().nth(rng.next_int_bound(n)).unwrap();
             self.initial_centers = Some(HashSet::from([v]));
         }
         let weight = |a: &V, b: &V| -> f64 {
@@ -213,13 +215,25 @@ impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonH
         };
         let mut centers: IndexSet<V> = graph
             .vertices()
-            .filter(|v| self.initial_centers.as_ref().unwrap().contains(*v))
-            .cloned()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                self.initial_centers.as_ref().unwrap().contains(*v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         let mut clients: IndexSet<V> = graph
             .vertices()
-            .filter(|v| !centers.contains(*v))
-            .cloned()
+            .filter(|v| {
+                let v = &(*v).borrow();
+                !centers.contains(*v)
+            })
+            .map(|x| {
+                let x = x.borrow();
+                x.clone()
+            })
             .collect();
         // distance from each client to the set of centers
         let mut distances: HashMap<V, f64> = clients

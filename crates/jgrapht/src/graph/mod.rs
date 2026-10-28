@@ -36,6 +36,7 @@ pub use map::{
 };
 
 use crate::{GraphType, Result};
+use std::borrow::Borrow;
 use std::hash::Hash;
 
 /// Read-only access to a graph. Vertices and edges are user-provided values.
@@ -59,27 +60,41 @@ pub trait Graph {
     type Vertex: Clone + Eq + Hash;
     /// The edge type.
     type Edge: Clone + Eq + Hash;
+    /// What [`Graph::vertices`] yields: `&'a Vertex` for a graph that stores its vertices, the
+    /// vertex itself for a graph that computes them (for example the integers `0..n`). Call
+    /// `borrow()` to get a `&Vertex` from either.
+    type VertexRef<'a>: Borrow<Self::Vertex>
+    where
+        Self: 'a;
+    /// What [`Graph::edges`] yields; see [`Graph::VertexRef`].
+    type EdgeRef<'a>: Borrow<Self::Edge>
+    where
+        Self: 'a;
 
-    /// Returns the graph type.
+    /// The kind of graph this is: directed or undirected, and whether it allows loops, parallel edges and weights.
     fn graph_type(&self) -> GraphType;
 
-    /// Returns the vertices.
-    fn vertices(&self) -> impl Iterator<Item = &Self::Vertex>;
-    /// Returns the edges.
-    fn edges(&self) -> impl Iterator<Item = &Self::Edge>;
-    /// Returns the vertex count.
+    /// Iterates over all vertices, in the order the graph keeps them.
+    ///
+    /// Each item is a [`Graph::VertexRef`]: call `borrow()` to get a `&Vertex`, or use [`GraphExt::vertices_cloned`](crate::GraphExt::vertices_cloned) for owned values.
+    fn vertices(&self) -> impl Iterator<Item = Self::VertexRef<'_>>;
+    /// Iterates over all edges, in the order the graph keeps them.
+    ///
+    /// See [`Graph::vertices`] for how to turn an item into a `&Edge`.
+    fn edges(&self) -> impl Iterator<Item = Self::EdgeRef<'_>>;
+    /// Number of vertices.
     fn vertex_count(&self) -> usize;
-    /// Returns the edge count.
+    /// Number of edges; parallel edges and loops count once each.
     fn edge_count(&self) -> usize;
 
-    /// Returns the contains vertex.
+    /// Whether `v` is a vertex of the graph.
     fn contains_vertex(&self, v: &Self::Vertex) -> bool;
-    /// Returns the contains edge.
+    /// Whether `e` is an edge of the graph (by edge value, not by endpoints; see [`Graph::contains_edge_between`]).
     fn contains_edge(&self, e: &Self::Edge) -> bool;
 
-    /// Returns the edge source.
+    /// The source of `e` (for undirected graphs the endpoint it was inserted with first), or `None` if `e` is not an edge of the graph.
     fn edge_source(&self, e: &Self::Edge) -> Option<&Self::Vertex>;
-    /// Returns the edge target.
+    /// The target of `e` (the second endpoint for undirected graphs), or `None` if `e` is not an edge of the graph.
     fn edge_target(&self, e: &Self::Edge) -> Option<&Self::Vertex>;
     /// Weight of the edge; `1.0` for unweighted graphs. `None` if the edge does not exist.
     fn edge_weight(&self, e: &Self::Edge) -> Option<f64>;
@@ -96,11 +111,11 @@ pub trait Graph {
     fn is_edge_directed(&self, _e: &Self::Edge) -> bool {
         self.graph_type().directed
     }
-    /// Returns the edge.
+    /// Some edge from `u` to `v` (either direction for undirected graphs), or `None` if there is none or either vertex is absent. With parallel edges the first one in graph order is returned.
     fn get_edge<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> Option<&'a Self::Edge> {
         self.edges_between(u, v).next()
     }
-    /// Returns the contains edge between.
+    /// Whether at least one edge joins `u` and `v` (direction matters only for directed graphs).
     fn contains_edge_between<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> bool {
         self.get_edge(u, v).is_some()
     }
@@ -128,7 +143,7 @@ pub trait GraphMut: Graph {
     fn add_edge_with(&mut self, u: &Self::Vertex, v: &Self::Vertex, e: Self::Edge) -> Result<bool>;
     /// Removes an edge, returning `false` if it was absent.
     fn remove_edge(&mut self, e: &Self::Edge) -> bool;
-    /// Sets the edge weight.
+    /// Sets the weight of `e`.
     ///
     /// # Errors
     ///
@@ -182,20 +197,26 @@ where
     {
         return false;
     }
-    if !a.vertices().all(|v| b.contains_vertex(v)) {
+    if !a.vertices().all(|v| {
+        let v = v.borrow();
+        b.contains_vertex(v)
+    }) {
         return false;
     }
     let directed = a.graph_type().directed;
     a.edges().all(|e| {
-        let (Some((s, t)), Some((bs, bt))) = (a.edge_endpoints(e), b.edge_endpoints(e)) else {
-            return false;
-        };
-        let ends = if directed {
-            s == bs && t == bt
-        } else {
-            (s == bs && t == bt) || (s == bt && t == bs)
-        };
-        ends && a.edge_weight(e).map(f64::to_bits) == b.edge_weight(e).map(f64::to_bits)
+        let e = e.borrow();
+        {
+            let (Some((s, t)), Some((bs, bt))) = (a.edge_endpoints(e), b.edge_endpoints(e)) else {
+                return false;
+            };
+            let ends = if directed {
+                s == bs && t == bt
+            } else {
+                (s == bs && t == bt) || (s == bt && t == bs)
+            };
+            ends && a.edge_weight(e).map(f64::to_bits) == b.edge_weight(e).map(f64::to_bits)
+        }
     })
 }
 
@@ -213,8 +234,12 @@ pub fn graph_hash<G: Graph>(g: &G) -> u64 {
         s.finish()
     }
     let directed = g.graph_type().directed;
-    let mut total = g.vertices().map(h).fold(0u64, u64::wrapping_add);
+    let mut total = g
+        .vertices()
+        .map(|v| h(v.borrow()))
+        .fold(0u64, u64::wrapping_add);
     for e in g.edges() {
+        let e = e.borrow();
         let (s, t) = g.edge_endpoints(e).expect("edge endpoints");
         let (hs, ht) = (h(s), h(t));
         let ends = if directed {
@@ -244,6 +269,7 @@ where
     let labelled = std::any::TypeId::of::<G::Edge>() != std::any::TypeId::of::<DefaultEdge>();
     let mut out = String::from("([");
     for (i, v) in g.vertices().enumerate() {
+        let v = v.borrow();
         if i > 0 {
             out.push_str(", ");
         }
@@ -251,6 +277,7 @@ where
     }
     out.push_str("], [");
     for (i, e) in g.edges().enumerate() {
+        let e = e.borrow();
         if i > 0 {
             out.push_str(", ");
         }

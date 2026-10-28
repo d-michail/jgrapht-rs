@@ -27,6 +27,7 @@ use jgrapht::graph::GraphExt;
 use jgrapht::*;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
+use std::borrow::Borrow;
 use std::collections::HashSet;
 
 const EPS: f64 = DEFAULT_EPSILON;
@@ -70,7 +71,7 @@ fn generate_graph<D: jgrapht::graph::Direction>(
         .unwrap()
         .generate_default(&mut graph)
         .unwrap();
-    let edges: Vec<DefaultEdge> = graph.edges().cloned().collect();
+    let edges: Vec<DefaultEdge> = graph.edges_cloned().collect();
     for e in edges {
         graph
             .set_edge_weight(&e, rng.random_range(0..100) as f64)
@@ -97,6 +98,7 @@ fn verify_directed<
         "{expected} vs {flow_value}"
     );
     for e in network.edges() {
+        let e = e.borrow();
         assert!(flow.contains_key(e));
     }
     for (e, f) in flow {
@@ -105,6 +107,7 @@ fn verify_directed<
         assert!(*f <= network.edge_weight(e).unwrap() + EPS);
     }
     for v in network.vertices() {
+        let v = v.borrow();
         let mut balance = 0.0;
         for e in network.out_edges_of(v) {
             balance -= flow[e];
@@ -141,6 +144,7 @@ fn verify_undirected<
     let flow = max_flow.flow_map();
     assert_eq!(expected, flow_value);
     for e in graph.edges() {
+        let e = e.borrow();
         assert!(flow.contains_key(e));
     }
     for (e, f) in flow {
@@ -149,6 +153,7 @@ fn verify_undirected<
         assert!(*f <= graph.edge_weight(e).unwrap() + EPS);
     }
     for u in graph.vertices() {
+        let u = u.borrow();
         let mut balance = 0.0;
         for e in graph.edges_of(u) {
             let v = *max_flow.flow_direction(e).unwrap();
@@ -483,18 +488,24 @@ fn verify_cut<G: Graph<Vertex = i32, Edge = DefaultEdge>>(
         .chain(sink_partition.iter())
         .copied()
         .collect();
-    assert_eq!(union, network.vertices().copied().collect::<HashSet<_>>());
+    assert_eq!(union, network.vertices_cloned().collect::<HashSet<_>>());
     let expected_edges: HashSet<DefaultEdge> = network
         .edges()
         .filter(|e| {
-            let (u, v) = network.edge_endpoints(e).unwrap();
-            if directed {
-                source_partition.contains(u) && sink_partition.contains(v)
-            } else {
-                source_partition.contains(u) ^ source_partition.contains(v)
+            let e = &(*e).borrow();
+            {
+                let (u, v) = network.edge_endpoints(e).unwrap();
+                if directed {
+                    source_partition.contains(u) && sink_partition.contains(v)
+                } else {
+                    source_partition.contains(u) ^ source_partition.contains(v)
+                }
             }
         })
-        .cloned()
+        .map(|x| {
+            let x = x.borrow();
+            *x
+        })
         .collect();
     assert_eq!(
         expected_edges,
@@ -934,7 +945,7 @@ mod gusfield {
                         .unwrap()
                         .generate_default(&mut graph)
                         .unwrap();
-                        let edges: Vec<DefaultEdge> = graph.edges().cloned().collect();
+                        let edges: Vec<DefaultEdge> = graph.edges_cloned().collect();
                         for e in edges {
                             graph
                                 .set_edge_weight(&e, rand.random_range(0..150) as f64)
@@ -993,7 +1004,7 @@ mod padberg_rao_odd_minimum_cutset_test {
             .chain(sink_partition.iter())
             .copied()
             .collect();
-        assert_eq!(net.vertices().copied().collect::<HashSet<_>>(), union);
+        assert_eq!(net.vertices_cloned().collect::<HashSet<_>>(), union);
         assert!(Pr::is_odd_vertex_set(&source_partition, odd_vertices));
         assert!(Pr::is_odd_vertex_set(&sink_partition, odd_vertices));
         let expected_cut_edges: HashSet<DefaultEdge> = net
@@ -1011,7 +1022,7 @@ mod padberg_rao_odd_minimum_cutset_test {
         // exhaustive check over the edges of a Gomory-Hu tree
         let mut gusfield = GusfieldGomoryHuCutTree::new(net).unwrap();
         let mut tree = gusfield.gomory_hu_tree().unwrap();
-        let edges: Vec<DefaultEdge> = tree.edges().cloned().collect();
+        let edges: Vec<DefaultEdge> = tree.edges_cloned().collect();
         let mut found_best = false;
         for edge in edges {
             let (source, target) = {
@@ -1123,7 +1134,7 @@ mod padberg_rao_odd_minimum_cutset_test {
                 .unwrap()
                 .generate_default(&mut graph)
                 .unwrap();
-            let edges: Vec<DefaultEdge> = graph.edges().cloned().collect();
+            let edges: Vec<DefaultEdge> = graph.edges_cloned().collect();
             for e in edges {
                 graph
                     .set_edge_weight(&e, rand.random_range(0..150) as f64)
@@ -1137,7 +1148,7 @@ mod padberg_rao_odd_minimum_cutset_test {
                 let min = 2;
                 let count =
                     min + 2 * (rand.random::<f64>() * ((max - min) / 2 + 1) as f64) as usize;
-                let all: Vec<i32> = graph.vertices().copied().collect();
+                let all: Vec<i32> = graph.vertices_cloned().collect();
                 let odd: IndexSet<i32> = all.choose_multiple(&mut rand, count).copied().collect();
                 run_test(&graph, &odd, true);
                 run_test(&graph, &odd, false);
