@@ -16,12 +16,12 @@ The existing `alg/` is a *functional* port: one function per family (`maximal_cl
 
 ## Next up (priority order)
 
-1. **Release hygiene** (cheap, blocks CI): ISSUES I-1 (clippy error in `tests/graph/map_graph_test.rs`) and I-2 (128 lib clippy warnings, mostly doc-list indentation from the Javadoc port). CI runs `cargo clippy --workspace --all-targets` and currently fails on I-1.
+1. ~~Release hygiene~~ done (ISSUES I-1, I-2).
 2. ~~Finish 1i~~ done (see `FIDELITY_ROADMAP.md` section G).
-3. **Rust API hardening**: complete the capability, `Result`/`Option`, iterator, stateful-result,
+3. ~~Rust API hardening~~ done (all 22 steps, see `RUST_API_ROADMAP.md`); was: complete the capability, `Result`/`Option`, iterator, stateful-result,
    error-type and panic work in [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md). This expands the old
    Phase 4 API pass and ISSUES I-6/I-8 into release-gated milestones.
-4. **Publish**: README mapping table is done; remaining are the crates.io metadata check, a `CHANGELOG`, and a first `0.1.0` tag.
+4. **Publish**: README mapping table is done; `CHANGELOG.md` and the crates.io metadata are in place; remaining is the first `0.1.0` tag and `cargo publish`, once the user is ready.
 
 ## Principles (carried over)
 

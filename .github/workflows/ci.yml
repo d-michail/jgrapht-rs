@@ -4,6 +4,8 @@ on:
   push:
     branches: [master]
   pull_request:
+  schedule:
+    - cron: "17 3 * * 0"
 
 env:
   CARGO_TERM_COLOR: always
@@ -23,6 +25,16 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo build --workspace --all-targets
       - run: cargo test --workspace
+
+  ignored-tests:
+    # The slow upstream cases (ISSUES I-5); weekly only.
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --release -- --ignored
 
   clippy:
     runs-on: ubuntu-latest
