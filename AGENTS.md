@@ -65,7 +65,8 @@ whole workspace once before a pull request. CI also runs clippy with `-D warning
 ## Benchmarks
 
 Benchmarks never run automatically (not on push, pull request or schedule). Run them locally with
-`scripts/bench.sh`, or through the manual **Benchmarks** workflow. They are noisy on shared
+`scripts/bench.sh`, or through the manual **Benchmarks** workflow; see `docs/BENCHMARKS.md` for the files, results and where
+reports are written. They are noisy on shared
 machines; compare ratios on the same machine, not absolute numbers.
 
 ## Working on the repository
