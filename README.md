@@ -22,8 +22,7 @@ generators and import/export for common file formats. It is a port of the core o
 > requires Rust 1.88 or newer. The graph, traversal, generator, sparse and map backends and graph
 > I/O are complete, and most algorithm packages are too. Coverage against the upstream test suite
 > is tracked in the [core status register](crates/jgrapht/tests/STATUS.md) and the
-> [I/O status register](crates/jgrapht-io/tests/STATUS.md); plans are in
-> [`docs/ROADMAP.md`](docs/ROADMAP.md). Coming from JGraphT? The [user guide](docs/USER_GUIDE.md) lists the differences.
+> [I/O status register](crates/jgrapht-io/tests/STATUS.md).
 
 ## Crates
 
@@ -76,10 +75,9 @@ cargo run --example quickstart
   your own edge type with `BaseGraph::with_edge_factory` or `add_edge_with`.
 - Enable the `serde` feature to serialize graphs and result objects.
 
-The [user guide](docs/USER_GUIDE.md) explains the design decisions that are not obvious from the
-signatures: absent values and errors, capability bounds, vertex references, views and snapshots,
-randomness and serialization.
-
+The rustdoc of the crate root (`cargo doc --open`) explains the design decisions that are not
+obvious from the signatures. `AGENTS.md` describes the conventions the code follows: absent values
+and errors, capability bounds, vertex references, views and snapshots, randomness and serialization.
 ## Algorithms
 
 - **Shortest paths:** Dijkstra (any `rheaps` decrease-key heap), bidirectional Dijkstra, A\*,
@@ -141,8 +139,9 @@ scripts/bench.sh -b master graph_perf    # also run master and fail on a >30% sl
 
 or use the manual **Benchmarks** workflow on GitHub (Actions tab, Run workflow). Results are
 printed to the terminal and written to `target/criterion/report/index.html`; the workflow logs show
-them for the GitHub runs. Details, the list of benchmark files and reference numbers are in
-[`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
+them for the GitHub runs.
+The benchmark files are in `crates/jgrapht/benches/` (`graph_perf`, `shortestpath_perf`,
+`algorithms_perf`, `structures_perf`, `pathsearch_perf`).
 
 ## License
 

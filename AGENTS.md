@@ -2,8 +2,7 @@
 
 jgrapht-rs is a Rust port of [JGraphT](https://jgrapht.org). This is a *port*, not a release
 project: the goal is a faithful, idiomatic Rust library. Do not publish crates or create release
-tags unless asked. See `README.md` for the overview and `docs/ROADMAP.md` and
-`docs/FIDELITY_ROADMAP.md` for the plans.
+tags unless asked. See `README.md` for the overview.
 
 ## Layout
 
@@ -16,7 +15,6 @@ tags unless asked. See `README.md` for the overview and `docs/ROADMAP.md` and
 | `crates/jgrapht-io` | importers and exporters, one module per format |
 | `crates/*/tests` | ports of the Java tests; `tests/STATUS.md` in each crate maps Java test classes to Rust |
 | `crates/jgrapht/benches` | criterion benchmarks (on demand only, see below) |
-| `docs/` | plans, user guide, benchmarks |
 
 ## Commands
 
@@ -37,8 +35,7 @@ whole workspace once before a pull request. CI also runs clippy with `-D warning
 
 ## Patterns and best practices
 
-These come from the design work recorded in `docs/RUST_API_ROADMAP.md`, `docs/USER_GUIDE.md` and
-`docs/FIDELITY_ROADMAP.md`. Java is the oracle for *results, ordering and complexity*; it is not the
+These come from the design work of the port. Java is the oracle for *results, ordering and complexity*; it is not the
 oracle for API shape. Do not copy Java exceptions, nullable results, stateful getters or numeric
 sentinels when Rust can express the contract with traits, enums, `Option` or `Result`.
 
@@ -162,14 +159,13 @@ sentinels when Rust can express the contract with traits, enums, `Option` or `Re
 ## Benchmarks
 
 Benchmarks never run automatically (not on push, pull request or schedule). Run them locally with
-`scripts/bench.sh`, or through the manual **Benchmarks** workflow; see `docs/BENCHMARKS.md` for the files, results and where
-reports are written. They are noisy on shared
-machines; compare ratios on the same machine, not absolute numbers.
+`scripts/bench.sh`, or through the manual **Benchmarks** workflow; criterion writes HTML reports to
+`target/criterion/report/index.html`. They are noisy on shared machines; compare ratios on the same machine, not absolute numbers.
 
 ## Working on the repository
 
-- Keep changes focused; update `docs/USER_GUIDE.md` when behaviour users rely on changes, and the status registers when
-  an item is closed.
+- Keep changes focused; update the rustdoc when behaviour users rely on changes, and the status registers when an item
+  is closed.
 - Do not leave generated or scratch files in the repository.
 - Commit messages describe the change and its reason. Do not force-push shared branches; merge
   the base branch instead.
