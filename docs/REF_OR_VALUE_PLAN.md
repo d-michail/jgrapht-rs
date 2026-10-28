@@ -1,6 +1,6 @@
 # Plan: reference-or-value items in `Graph::vertices()` and `Graph::edges()`
 
-Status: phases 1 to 5 implemented (see `MIGRATION.md`). The sparse graphs yield `usize` by value and
+Status: phases 1 to 5 implemented. The sparse graphs yield `usize` by value and
 keep no identity array (`tests/sparse_memory.rs` measures it).
 
 ## Problem
@@ -97,7 +97,7 @@ concrete `BaseGraph<String, _>` it can be ambiguous (`Borrow<String>` vs `Borrow
 3. **Sparse graphs:** return `usize` / by-value items, delete `identity_ids`, `ids` and the
    `max(n, m)` allocation; measure bytes per edge before and after.
 4. **Tests and `jgrapht-io`:** compile-driven fixes (~590 sites).
-5. **Docs:** `MIGRATION.md`, user guide section, `STATUS.md`.
+5. **Docs:** user guide section, `STATUS.md`.
 
 Phases 2 and 3 are the risky ones; do them on their own PR with the benchmarks attached.
 
@@ -112,7 +112,7 @@ Phases 2 and 3 are the risky ones; do them on their own PR with the benchmarks a
 ## Risks and open questions
 
 1. **Breaking change** to every external `Graph` implementation (two new associated types). The
-   crates are unpublished, so acceptable, but `MIGRATION.md` must say it.
+   crates are unpublished, so acceptable.
 2. **Compile times and error messages** for GATs inside `impl Iterator` returns. Prototype on
    `graph/mod.rs`, `base.rs` and one algorithm before committing to the full flip.
 3. **Should `Vertex` be required to be `Copy` for by-value graphs?** Not needed: `Borrow` plus

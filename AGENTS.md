@@ -17,7 +17,6 @@ tags unless asked. See `README.md` for the overview and `docs/ROADMAP.md` and
 | `crates/*/tests` | ports of the Java tests; `tests/STATUS.md` in each crate maps Java test classes to Rust |
 | `crates/jgrapht/benches` | criterion benchmarks (on demand only, see below) |
 | `docs/` | plans, user guide, benchmarks |
-| `MIGRATION.md`, `CHANGELOG.md` | differences from the Java API; user-visible changes |
 
 ## Commands
 
@@ -145,8 +144,8 @@ sentinels when Rust can express the contract with traits, enums, `Option` or `Re
 
 ### Definition of done for a change
 
-- Public signatures follow the table above; `MIGRATION.md` lists every breaking rename or
-  return-type change and `CHANGELOG.md` the user-visible ones.
+- Public signatures follow the table above; describe breaking changes in the commit message and
+  the pull request.
 - Targeted tests pass, then the whole workspace once before a pull request; clippy and rustdoc with
   `-D warnings` and `cargo fmt --check` are clean.
 - Status registers change only when fidelity or coverage changed.
@@ -169,8 +168,8 @@ machines; compare ratios on the same machine, not absolute numbers.
 
 ## Working on the repository
 
-- Keep changes focused; update `CHANGELOG.md` for user-visible changes, `MIGRATION.md` for API
-  differences from Java, and the status registers when an item is closed.
+- Keep changes focused; update `docs/USER_GUIDE.md` when behaviour users rely on changes, and the status registers when
+  an item is closed.
 - Do not leave generated or scratch files in the repository.
 - Commit messages describe the change and its reason. Do not force-push shared branches; merge
   the base branch instead.

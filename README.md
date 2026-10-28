@@ -23,7 +23,7 @@ generators and import/export for common file formats. It is a port of the core o
 > I/O are complete, and most algorithm packages are too. Coverage against the upstream test suite
 > is tracked in the [core status register](crates/jgrapht/tests/STATUS.md) and the
 > [I/O status register](crates/jgrapht-io/tests/STATUS.md); plans are in
-> [`docs/ROADMAP.md`](docs/ROADMAP.md). Coming from JGraphT? See [`MIGRATION.md`](MIGRATION.md).
+> [`docs/ROADMAP.md`](docs/ROADMAP.md). Coming from JGraphT? The [user guide](docs/USER_GUIDE.md) lists the differences.
 
 ## Crates
 

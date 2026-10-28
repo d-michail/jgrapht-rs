@@ -12,7 +12,7 @@ stable. It lists the concrete work packages.
 | 3. `BaseGraph` and map graphs | done |
 | 4. Sparse directed type-state | done (`NoIncoming`/`LazyIncoming`/`FullIncoming`) |
 | 5. Sparse undirected graphs and views | done |
-| 6. Final `Graph` surface | done: fallible incidence methods removed, callers moved to capability bounds (many still wider than needed, see R4); notes in `MIGRATION.md` |
+| 6. Final `Graph` surface | done: fallible incidence methods removed, callers moved to capability bounds (many still wider than needed, see R4) |
 | 7. Normalize `GraphExt`/`DirectedExt`, remove panic helpers | done within step 6: every `try_*` variant and panic wrapper is gone, the remaining helpers are infallible with `where Self: <capability>` clauses |
 | 8. First typed `GraphError` variants | done: `InvalidParameter`, `InvalidWeight`, `InvalidGraph`, `SourceEqualsSink`, `Infeasible`, `Unbounded`; about 100 `InvalidArgument(String)` sites converted (the rest, about 150 mostly in generators, followed on 2026-10-28, so the library returns none), the rest are converted as their family is migrated (R8 final pass) |
 | 9. Traversals and listener iterators | done: start vertices and radii validated at construction, iteration-time errors are `Result` items, `ClosestFirstIterator` no longer panics on a negative weight, topological cycles are reported; `Strategy`/`Advance` gained an `Output` type |
@@ -565,9 +565,6 @@ large algorithm-family item by module, but do not combine unrelated stages.
 21. Complete the typed-error migration and remove Java exception language from Rust docs.
 22. Run the final panic classification, documentation, Clippy, formatting, test, doc and package
     gates; close the roadmap only after all acceptance criteria pass.
-
-At steps 6, 10, 17, 18 and 19, update a temporary `MIGRATION.md` or the eventual `CHANGELOG.md` with
-old and new call examples. Do not postpone all migration notes until the release commit.
 
 ## Dependency order and milestones
 
