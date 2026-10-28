@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Cyclic-exchange local augmentation of Ahuja, Orlin and Sharma
-//! (`AhujaOrlinSharmaCyclicExchangeLocalAugmentation`): finds a negative cost cycle of bounded
+//! (`AhujaOrlinSharmaCyclicExchange`): finds a negative cost cycle of bounded
 //! length in a labelled directed improvement graph that visits every label at most once.
 
 use crate::graph::DirectedGraph;
@@ -73,15 +73,15 @@ type PathIndex<V> = IndexMap<PathSetKey<V>, LabeledPath<V>>;
 ///
 /// This algorithm is used to detect valid cyclic exchanges in a cyclic exchange neighborhood for the
 /// Capacitated Minomum Spanning Tree problem
-/// `org.jgrapht.alg.spanning.AhujaOrlinSharmaCapacitatedMinimumSpanningTree`
-pub struct AhujaOrlinSharmaCyclicExchangeLocalAugmentation<'g, G: DirectedGraph> {
+/// `org.jgrapht.alg.spanning.AhujaOrlinSharma`
+pub struct AhujaOrlinSharmaCyclicExchange<'g, G: DirectedGraph> {
     graph: &'g G,
     length_bound: usize,
     label_map: &'g HashMap<G::Vertex, i64>,
     best_improvement: bool,
 }
 
-impl<'g, G: DirectedGraph + OutgoingGraph> AhujaOrlinSharmaCyclicExchangeLocalAugmentation<'g, G>
+impl<'g, G: DirectedGraph + OutgoingGraph> AhujaOrlinSharmaCyclicExchange<'g, G>
 where
     G::Vertex: Eq + Hash,
 {
@@ -103,7 +103,7 @@ where
         }) {
             return Err(GraphError::MissingVertexData("label"));
         }
-        Ok(AhujaOrlinSharmaCyclicExchangeLocalAugmentation {
+        Ok(AhujaOrlinSharmaCyclicExchange {
             graph,
             length_bound,
             label_map,

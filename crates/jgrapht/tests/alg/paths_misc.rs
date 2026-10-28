@@ -204,10 +204,7 @@ fn approximate_and_exact_weighted_matching() {
             .unwrap();
         assert!(matching_is_valid(&g, &pg));
         assert!(2.0 * pg.weight() >= exact_weight - 1e-9 && pg.weight() <= exact_weight + 1e-9);
-        let maximum_cardinality = DenseEdmondsMaximumCardinalityMatching::new(&g)
-            .unwrap()
-            .get_matching()
-            .unwrap();
+        let maximum_cardinality = DenseEdmonds::new(&g).unwrap().get_matching().unwrap();
         assert!(exact_len <= maximum_cardinality.len());
     }
 }
@@ -227,10 +224,7 @@ fn christofides_is_within_bound() {
                 g.add_weighted_edge(&i, &j, w).unwrap();
             }
         }
-        let c = ChristofidesThreeHalvesApproxMetricTsp::new()
-            .get_tour(&g)
-            .unwrap()
-            .unwrap();
+        let c = Christofides::new().get_tour(&g).unwrap().unwrap();
         assert!(c.is_valid(&g) && c.length() == 9);
         let opt = HeldKarpTsp::new().get_tour(&g).unwrap().unwrap();
         assert!(c.weight() >= opt.weight() - 1e-9 && c.weight() <= 1.5 * opt.weight() + 1e-9);

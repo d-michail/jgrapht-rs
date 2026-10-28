@@ -16,7 +16,7 @@
 
 use super::contraction_hierarchy::{
     ContractionHierarchy, ContractionHierarchyBidirectionalDijkstra,
-    ContractionHierarchyManyToManyShortestPaths, ManyToManyPaths, parallel_chunks,
+    ContractionHierarchyManyToMany, ManyToManyPaths, parallel_chunks,
 };
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::Graph;
@@ -295,7 +295,7 @@ where
         let voronoi_diagram = compute_voronoi_diagram(h, &transit_vertex_ids);
 
         // paths between the transit vertices
-        let transit_paths = ContractionHierarchyManyToManyShortestPaths::new(h).many_to_many(
+        let transit_paths = ContractionHierarchyManyToMany::new(h).many_to_many(
             transit_vertices.iter().cloned(),
             transit_vertices.iter().cloned(),
         )?;
@@ -349,7 +349,7 @@ where
         let (backward_access, backward_cells) =
             hierarchy_bfs(h, v, is_transit, voronoi, |u| h.downward_incoming(u));
         let vertex = h.vertices()[v].vertex.clone();
-        let many_to_many = ContractionHierarchyManyToManyShortestPaths::new(h);
+        let many_to_many = ContractionHierarchyManyToMany::new(h);
         let access = |ids: &[usize]| -> Vec<G::Vertex> {
             ids.iter()
                 .map(|&u| h.vertices()[u].vertex.clone())

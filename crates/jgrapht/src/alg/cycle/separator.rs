@@ -52,24 +52,24 @@ use std::collections::HashMap;
 ///
 /// # Rust notes
 ///
-/// `ChordalGraphMinimalVertexSeparatorFinder`: the minimal vertex separators of a chordal graph
+/// `MinimalVertexSeparatorFinder`: the minimal vertex separators of a chordal graph
 /// with their multiplicities, read off a perfect elimination order.
 ///
 /// A separator is a set of vertices; it is represented by the vector of its members sorted by
 /// their position in the perfect elimination order, so equal sets have equal vectors.
-pub struct ChordalGraphMinimalVertexSeparatorFinder<'g, G: UndirectedGraph> {
+pub struct MinimalVertexSeparatorFinder<'g, G: UndirectedGraph> {
     graph: &'g G,
     chordality_inspector: ChordalityInspector<'g, G>,
     computed: bool,
     minimal_separators_with_multiplicities: Option<IndexMap<Vec<G::Vertex>, usize>>,
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphMinimalVertexSeparatorFinder<'g, G> {
-    /// Creates new `ChordalGraphMinimalVertexSeparatorFinder` instance. The
+impl<'g, G: UndirectedGraph + IncidenceGraph> MinimalVertexSeparatorFinder<'g, G> {
+    /// Creates new `MinimalVertexSeparatorFinder` instance. The
     /// `ChordalityInspector` used in this implementation uses the
     /// `org.jgrapht.traverse.MaximumCardinalityIterator` iterator
     pub fn new(graph: &'g G) -> Self {
-        ChordalGraphMinimalVertexSeparatorFinder {
+        MinimalVertexSeparatorFinder {
             graph,
             chordality_inspector: ChordalityInspector::with_order(graph, IterationOrder::Mcs),
             computed: false,

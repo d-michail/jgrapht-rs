@@ -14,7 +14,7 @@
 
 use super::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
 use crate::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
-use crate::alg::matching::{KuhnMunkresMinimalWeightBipartitePerfectMatching, MatchingAlgorithm};
+use crate::alg::matching::{KuhnMunkres, MatchingAlgorithm};
 use crate::alg::shortestpath::{Dijkstra, ShortestPathAlgorithm};
 use crate::graph::IncidenceGraph;
 use crate::graph::{
@@ -213,7 +213,7 @@ impl ChinesePostman {
             }
         }
 
-        let mut matching = KuhnMunkresMinimalWeightBipartitePerfectMatching::new(
+        let mut matching = KuhnMunkres::new(
             &auxiliary,
             negative_partition.clone(),
             positive_partition.clone(),

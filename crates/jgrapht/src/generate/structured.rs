@@ -504,22 +504,22 @@ impl<V: Clone + Eq + Hash> Complement<V> {
     }
 }
 
-/// Complete weighted graph from a weight matrix (`SimpleWeightedGraphMatrixGenerator`).
-pub struct SimpleWeightedGraphMatrixGenerator<V> {
+/// Complete weighted graph from a weight matrix (`WeightedMatrixGenerator`).
+pub struct WeightedMatrixGenerator<V> {
     vertices: Option<Vec<V>>,
     weights: Option<Vec<Vec<f64>>>,
 }
 
-impl<V: Clone + Eq + Hash> Default for SimpleWeightedGraphMatrixGenerator<V> {
+impl<V: Clone + Eq + Hash> Default for WeightedMatrixGenerator<V> {
     fn default() -> Self {
-        SimpleWeightedGraphMatrixGenerator {
+        WeightedMatrixGenerator {
             vertices: None,
             weights: None,
         }
     }
 }
 
-impl<V: Clone + Eq + Hash> SimpleWeightedGraphMatrixGenerator<V> {
+impl<V: Clone + Eq + Hash> WeightedMatrixGenerator<V> {
     /// An empty builder; set the vertices and the weights before generating.
     pub fn new() -> Self {
         Self::default()
@@ -566,15 +566,15 @@ impl<V: Clone + Eq + Hash> SimpleWeightedGraphMatrixGenerator<V> {
 }
 
 /// Complete bipartite weighted graph from a weight matrix.
-pub struct SimpleWeightedBipartiteGraphMatrixGenerator<V> {
+pub struct WeightedBipartiteMatrixGenerator<V> {
     first: Option<Vec<V>>,
     second: Option<Vec<V>>,
     weights: Option<Vec<Vec<f64>>>,
 }
 
-impl<V: Clone + Eq + Hash> Default for SimpleWeightedBipartiteGraphMatrixGenerator<V> {
+impl<V: Clone + Eq + Hash> Default for WeightedBipartiteMatrixGenerator<V> {
     fn default() -> Self {
-        SimpleWeightedBipartiteGraphMatrixGenerator {
+        WeightedBipartiteMatrixGenerator {
             first: None,
             second: None,
             weights: None,
@@ -582,7 +582,7 @@ impl<V: Clone + Eq + Hash> Default for SimpleWeightedBipartiteGraphMatrixGenerat
     }
 }
 
-impl<V: Clone + Eq + Hash> SimpleWeightedBipartiteGraphMatrixGenerator<V> {
+impl<V: Clone + Eq + Hash> WeightedBipartiteMatrixGenerator<V> {
     /// An empty builder; set the two vertex sets and the weights before generating.
     pub fn new() -> Self {
         Self::default()

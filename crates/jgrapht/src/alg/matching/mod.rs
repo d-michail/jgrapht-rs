@@ -21,9 +21,9 @@
 //! |---|---|---|
 //! | [`GreedyMaximumCardinalityMatching`], [`GreedyWeightedMatching`] | any undirected | no (heuristic) |
 //! | [`PathGrowingWeightedMatching`] | any undirected | no (1/2-approximation of maximum weight) |
-//! | [`HopcroftKarpMaximumCardinalityBipartiteMatching`] | bipartite, given the two sides | maximum cardinality |
-//! | [`MaximumWeightBipartiteMatching`], [`KuhnMunkresMinimalWeightBipartitePerfectMatching`] | bipartite | maximum weight / minimum-weight perfect |
-//! | [`DenseEdmondsMaximumCardinalityMatching`], [`SparseEdmondsMaximumCardinalityMatching`] | any undirected | maximum cardinality |
+//! | [`HopcroftKarp`] | bipartite, given the two sides | maximum cardinality |
+//! | [`MaximumWeightBipartiteMatching`], [`KuhnMunkres`] | bipartite | maximum weight / minimum-weight perfect |
+//! | [`DenseEdmonds`], [`SparseEdmonds`] | any undirected | maximum cardinality |
 //! | the Blossom V module | any undirected | minimum-weight perfect matching |
 
 mod base;
@@ -37,12 +37,12 @@ mod path_growing;
 mod sparse_edmonds;
 
 pub use base::{DEFAULT_EPSILON, Matching, MatchingAlgorithm};
-pub use dense_edmonds::DenseEdmondsMaximumCardinalityMatching;
+pub use dense_edmonds::DenseEdmonds;
 pub use greedy::{GreedyMaximumCardinalityMatching, GreedyWeightedMatching};
-pub use hopcroft_karp::HopcroftKarpMaximumCardinalityBipartiteMatching;
-pub use kuhn_munkres::KuhnMunkresMinimalWeightBipartitePerfectMatching;
+pub use hopcroft_karp::HopcroftKarp;
+pub use kuhn_munkres::KuhnMunkres;
 pub use max_weight_bipartite::MaximumWeightBipartiteMatching;
 pub use path_growing::{
     DEFAULT_USE_HEURISTICS, DynamicProgrammingPathSolver, PathGrowingWeightedMatching,
 };
-pub use sparse_edmonds::SparseEdmondsMaximumCardinalityMatching;
+pub use sparse_edmonds::SparseEdmonds;

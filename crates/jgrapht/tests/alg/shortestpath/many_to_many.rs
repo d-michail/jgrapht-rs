@@ -17,7 +17,7 @@ use std::borrow::Borrow;
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use jgrapht::alg::shortestpath::{
-    ContractionHierarchyManyToManyShortestPaths, ContractionHierarchyPrecomputation,
+    ContractionHierarchyManyToMany, ContractionHierarchyPrecomputation,
     DefaultManyToManyShortestPaths, Dijkstra, DijkstraManyToManyShortestPaths, ManyToManyPaths,
     ShortestPathAlgorithm, SingleSourcePaths,
 };
@@ -56,8 +56,7 @@ where
         Kind::ContractionHierarchy => {
             let hierarchy =
                 ContractionHierarchyPrecomputation::new(graph).contraction_hierarchy()?;
-            ContractionHierarchyManyToManyShortestPaths::new(&hierarchy)
-                .many_to_many(sources, targets)
+            ContractionHierarchyManyToMany::new(&hierarchy).many_to_many(sources, targets)
         }
     }
 }
@@ -659,7 +658,7 @@ mod contraction_hierarchy_many_to_many {
         let hierarchy = ContractionHierarchyPrecomputation::new(&graph)
             .contraction_hierarchy()
             .unwrap();
-        let paths = ContractionHierarchyManyToManyShortestPaths::new(&hierarchy)
+        let paths = ContractionHierarchyManyToMany::new(&hierarchy)
             .single_source(&1)
             .unwrap();
         assert_single_source(&graph, &paths, 1);

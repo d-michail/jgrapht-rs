@@ -141,10 +141,7 @@ mod christofides_three_halves_approx_metric_tsp_test {
 
     fn run_tour(edges: &[(i32, i32, f64)]) -> (Ug, GraphWalk<i32, DefaultEdge>) {
         let graph = graph(edges);
-        let tour = ChristofidesThreeHalvesApproxMetricTsp::new()
-            .get_tour(&graph)
-            .unwrap()
-            .unwrap();
+        let tour = Christofides::new().get_tour(&graph).unwrap().unwrap();
         (graph, tour)
     }
 
@@ -157,18 +154,14 @@ mod christofides_three_halves_approx_metric_tsp_test {
     #[test]
     fn rejects_directed_empty_and_incomplete_graphs() {
         assert!(
-            ChristofidesThreeHalvesApproxMetricTsp::new()
+            Christofides::new()
                 .get_tour(&Ug::simple().weighted())
                 .is_err()
         );
 
         let mut incomplete = Ug::simple().weighted();
         incomplete.add_vertices([0, 1]);
-        assert!(
-            ChristofidesThreeHalvesApproxMetricTsp::new()
-                .get_tour(&incomplete)
-                .is_err()
-        );
+        assert!(Christofides::new().get_tour(&incomplete).is_err());
     }
 
     #[test]

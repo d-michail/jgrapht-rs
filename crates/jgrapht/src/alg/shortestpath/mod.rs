@@ -54,8 +54,8 @@ pub use bidirectional::{
 pub use closest_first::DijkstraClosestFirstIterator;
 pub use contraction_hierarchy::{
     ContractionEdge, ContractionHierarchy, ContractionHierarchyBidirectionalDijkstra,
-    ContractionHierarchyManyToManyShortestPaths, ContractionHierarchyPrecomputation,
-    ContractionVertex, ManyToManyPaths,
+    ContractionHierarchyManyToMany, ContractionHierarchyPrecomputation, ContractionVertex,
+    ManyToManyPaths,
 };
 pub use dag_all_paths::DagAllPathsCounter;
 pub use delta_stepping::DeltaStepping;

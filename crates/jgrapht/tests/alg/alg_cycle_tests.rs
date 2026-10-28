@@ -16,7 +16,7 @@
 //! cycle enumerations (DirectedSimpleCyclesTest, JohnsonSimpleCyclesTest, HawickJamesSimpleCyclesTest),
 //! CycleDetectorTest and CyclesTest.
 
-use jgrapht::alg::cyclic_exchange::AhujaOrlinSharmaCyclicExchangeLocalAugmentation;
+use jgrapht::alg::cyclic_exchange::AhujaOrlinSharmaCyclicExchange;
 use jgrapht::*;
 use std::borrow::Borrow;
 use std::collections::HashMap;
@@ -361,7 +361,7 @@ mod ahuja_orlin_sharma_cyclic_exchange {
     }
 
     fn cycle_of(g: &G, bound: usize, labels: &HashMap<i32, i64>, best: bool) -> (Vec<i32>, f64) {
-        let c = AhujaOrlinSharmaCyclicExchangeLocalAugmentation::new(g, bound, labels, best)
+        let c = AhujaOrlinSharmaCyclicExchange::new(g, bound, labels, best)
             .unwrap()
             .local_augmentation_cycle();
         (c.vertex_list().to_vec(), c.weight())
@@ -463,7 +463,7 @@ mod ahuja_orlin_sharma_cyclic_exchange {
         edge(&mut g, 1, 4, 1.0);
         set_weight(&mut g, 1, 4, -3.0);
         set_weight(&mut g, 3, 4, -6.0);
-        let c = AhujaOrlinSharmaCyclicExchangeLocalAugmentation::new(&g, 6, &l, false)
+        let c = AhujaOrlinSharmaCyclicExchange::new(&g, 6, &l, false)
             .unwrap()
             .local_augmentation_cycle();
         assert!((c.weight() + 2.0).abs() < 1e-7);
@@ -4084,7 +4084,7 @@ mod chordality_inspector_test {
 
 mod chordal_graph_minimal_vertex_separator_finder_test {
     use super::*;
-    use jgrapht::alg::cycle::ChordalGraphMinimalVertexSeparatorFinder;
+    use jgrapht::alg::cycle::MinimalVertexSeparatorFinder;
     use std::collections::HashSet;
 
     type Separators = Vec<(HashSet<i32>, usize)>;
@@ -4101,7 +4101,7 @@ mod chordal_graph_minimal_vertex_separator_finder_test {
     }
 
     fn separators(graph: &UGraph<i32>) -> Option<(HashSet<Vec<i32>>, Separators)> {
-        let mut finder = ChordalGraphMinimalVertexSeparatorFinder::new(graph);
+        let mut finder = MinimalVertexSeparatorFinder::new(graph);
         let keys: Option<HashSet<Vec<i32>>> = finder.minimal_separators().map(|s| {
             s.into_iter()
                 .map(|v| {

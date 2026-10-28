@@ -535,10 +535,7 @@ macro_rules! base_path_growing_tests {
                     .unwrap()
                     .get_matching()
                     .unwrap();
-                let m3 = SparseEdmondsMaximumCardinalityMatching::new(&g)
-                    .unwrap()
-                    .get_matching()
-                    .unwrap();
+                let m3 = SparseEdmonds::new(&g).unwrap().get_matching().unwrap();
                 let m4 = GreedyWeightedMatching::new(&g, false)
                     .unwrap()
                     .get_matching()
@@ -594,8 +591,8 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
         graph: &'g G,
         partition1: impl IntoIterator<Item = i32>,
         partition2: impl IntoIterator<Item = i32>,
-    ) -> HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G> {
-        HopcroftKarpMaximumCardinalityBipartiteMatching::new(graph, partition1, partition2).unwrap()
+    ) -> HopcroftKarp<'g, G> {
+        HopcroftKarp::new(graph, partition1, partition2).unwrap()
     }
 
     /// `verifyMatching` of the base class: also certified maximum by `DenseEdmonds`.
@@ -605,7 +602,7 @@ mod hopcroft_karp_maximum_cardinality_bipartite_matching_test {
         cardinality: usize,
     ) {
         verify_matching(g, m, cardinality);
-        let mut matcher = DenseEdmondsMaximumCardinalityMatching::new(g).unwrap();
+        let mut matcher = DenseEdmonds::new(g).unwrap();
         assert!(matcher.is_maximum_matching(m).unwrap());
     }
 
@@ -924,13 +921,13 @@ mod kuhn_munkres_minimal_weight_bipartite_perfect_matching_test {
         let first: Vec<_> = (0..n).map(|i| (0, i as u8)).collect();
         let second: Vec<_> = (0..n).map(|i| (1, i as u8)).collect();
         let mut graph = UGraph::<Vertex>::simple().weighted();
-        SimpleWeightedBipartiteGraphMatrixGenerator::new()
+        WeightedBipartiteMatrixGenerator::new()
             .first(first.clone())
             .second(second.clone())
             .weights(weights)
             .generate_into(&mut graph)
             .unwrap();
-        KuhnMunkresMinimalWeightBipartitePerfectMatching::new(
+        KuhnMunkres::new(
             &graph,
             first.into_iter().collect(),
             second.into_iter().collect(),
@@ -952,11 +949,7 @@ mod kuhn_munkres_minimal_weight_bipartite_perfect_matching_test {
     #[test]
     fn test_for_empty_graph() {
         let graph = UGraph::<Vertex>::simple().weighted();
-        let mut algorithm = KuhnMunkresMinimalWeightBipartitePerfectMatching::new(
-            &graph,
-            IndexSet::new(),
-            IndexSet::new(),
-        );
+        let mut algorithm = KuhnMunkres::new(&graph, IndexSet::new(), IndexSet::new());
         assert!(algorithm.get_matching().unwrap().is_empty());
     }
 
@@ -1225,7 +1218,7 @@ fn edmonds_large_graph(edges: &[(i32, i32)]) -> UG {
 }
 
 fn dense_solution(graph: &UG, cardinality: Option<usize>) {
-    let mut matcher = DenseEdmondsMaximumCardinalityMatching::new(graph).unwrap();
+    let mut matcher = DenseEdmonds::new(graph).unwrap();
     let matching = matcher.get_matching().unwrap();
     if let Some(cardinality) = cardinality {
         verify_matching(graph, &matching, cardinality);
@@ -1234,19 +1227,17 @@ fn dense_solution(graph: &UG, cardinality: Option<usize>) {
 }
 
 fn sparse_solution(graph: &UG, cardinality: Option<usize>) {
-    let mut matcher = SparseEdmondsMaximumCardinalityMatching::new(graph).unwrap();
+    let mut matcher = SparseEdmonds::new(graph).unwrap();
     let matching = matcher.get_matching().unwrap();
     if let Some(cardinality) = cardinality {
         verify_matching(graph, &matching, cardinality);
     }
     let cover = matcher.odd_set_cover().unwrap().clone();
-    assert!(
-        SparseEdmondsMaximumCardinalityMatching::is_optimal_matching(
-            graph,
-            matching.edges(),
-            &cover
-        )
-    );
+    assert!(SparseEdmonds::is_optimal_matching(
+        graph,
+        matching.edges(),
+        &cover
+    ));
 }
 
 const DISCONNECTED: &[(i32, i32)] = &[(0, 1), (1, 2), (0, 2), (3, 4), (4, 5), (5, 6), (3, 6)];
@@ -1324,7 +1315,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
         .collect();
         let maximum = Matching::new(&graph, edges, 2.);
         assert!(
-            DenseEdmondsMaximumCardinalityMatching::new(&graph)
+            DenseEdmonds::new(&graph)
                 .unwrap()
                 .is_maximum_matching(&maximum)
                 .unwrap()
@@ -1333,7 +1324,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
         graph.add_vertex(5);
         graph.add_edge(&2, &5).unwrap();
         assert!(
-            DenseEdmondsMaximumCardinalityMatching::new(&graph)
+            DenseEdmonds::new(&graph)
                 .unwrap()
                 .is_maximum_matching(&maximum)
                 .unwrap()
@@ -1342,7 +1333,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
         let edges: IndexSet<_> = [*graph.get_edge(&1, &2).unwrap()].into_iter().collect();
         let nonmaximum = Matching::new(&graph, edges, 2.);
         assert!(
-            !DenseEdmondsMaximumCardinalityMatching::new(&graph)
+            !DenseEdmonds::new(&graph)
                 .unwrap()
                 .is_maximum_matching(&nonmaximum)
                 .unwrap()
@@ -1386,7 +1377,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
         let matching = Matching::new(&graph, edges, 4.);
         verify_matching(&graph, &matching, 4);
         assert!(
-            DenseEdmondsMaximumCardinalityMatching::new(&graph)
+            DenseEdmonds::new(&graph)
                 .unwrap()
                 .is_maximum_matching(&matching)
                 .unwrap()
@@ -1417,7 +1408,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
             .unwrap();
             let mut graph = integer_graph();
             generator.generate_default(&mut graph).unwrap();
-            let mut matcher = DenseEdmondsMaximumCardinalityMatching::new(&graph).unwrap();
+            let mut matcher = DenseEdmonds::new(&graph).unwrap();
             let matching = matcher.get_matching().unwrap();
             verify_matching(&graph, &matching, matching.len());
             assert!(matcher.is_maximum_matching(&matching).unwrap());
@@ -1445,7 +1436,7 @@ mod dense_edmonds_maximum_cardinality_matching_test {
             #[test]
             fn $name() {
                 let graph = edmonds_large_graph(crate::matching_data::$data);
-                let mut matcher = DenseEdmondsMaximumCardinalityMatching::new(&graph).unwrap();
+                let mut matcher = DenseEdmonds::new(&graph).unwrap();
                 let matching = matcher.get_matching().unwrap();
                 verify_matching(&graph, &matching, $cardinality);
                 assert!(matcher.is_maximum_matching(&matching).unwrap());

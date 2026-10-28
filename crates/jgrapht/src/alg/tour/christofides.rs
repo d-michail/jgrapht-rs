@@ -69,18 +69,16 @@ use std::collections::HashSet;
 /// The input must be a non-empty, complete, undirected graph. As in JGraphT, non-negative edge
 /// weights and the triangle inequality are part of the caller's metric-instance contract.
 #[derive(Default)]
-pub struct ChristofidesThreeHalvesApproxMetricTsp;
+pub struct Christofides;
 
-impl ChristofidesThreeHalvesApproxMetricTsp {
+impl Christofides {
     /// Constructs a new instance.
     pub fn new() -> Self {
         Self
     }
 }
 
-impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
-    for ChristofidesThreeHalvesApproxMetricTsp
-{
+impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for Christofides {
     /// Computes a $3/2$-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Result<Option<GraphWalk<G::Vertex, G::Edge>>> {
         check_graph(graph)?;

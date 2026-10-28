@@ -185,7 +185,7 @@ impl NetworkGeneratorConfigBuilder {
     #[allow(clippy::too_many_arguments)]
     /// Sets every parameter of a general minimum-cost flow problem at once. The two `transship_*`
     /// counts say how many sources and sinks also act as transshipment nodes.
-    pub fn set_params(
+    pub fn with_params(
         self,
         node_count: i32,
         arc_count: i32,
@@ -201,34 +201,34 @@ impl NetworkGeneratorConfigBuilder {
         percent_capacitated: i32,
         percent_with_inf_cost: i32,
     ) -> Self {
-        self.set_node_count(node_count)
-            .set_arc_count(arc_count)
-            .set_source_count(source_count)
-            .set_sink_count(sink_count)
-            .set_tsource_count(transship_source_count)
-            .set_tsink_count(transship_sink_count)
-            .set_total_supply(total_supply)
-            .set_min_cap(min_cap)
-            .set_max_cap(max_cap)
-            .set_min_cost(min_cost)
-            .set_max_cost(max_cost)
-            .set_percent_capacitated(percent_capacitated)
-            .set_percent_with_inf_cost(percent_with_inf_cost)
+        self.with_node_count(node_count)
+            .with_arc_count(arc_count)
+            .with_source_count(source_count)
+            .with_sink_count(sink_count)
+            .with_tsource_count(transship_source_count)
+            .with_tsink_count(transship_sink_count)
+            .with_total_supply(total_supply)
+            .with_min_cap(min_cap)
+            .with_max_cap(max_cap)
+            .with_min_cost(min_cost)
+            .with_max_cost(max_cost)
+            .with_percent_capacitated(percent_capacitated)
+            .with_percent_with_inf_cost(percent_with_inf_cost)
     }
 
     /// Single source, single sink, unit capacities.
-    pub fn set_maximum_flow_problem_params(
+    pub fn with_maximum_flow_problem_params(
         self,
         node_count: i32,
         arc_count: i32,
         supply: i32,
     ) -> Self {
-        self.set_maximum_flow_problem_params_cap(node_count, arc_count, supply, 1, 1)
+        self.with_maximum_flow_problem_params_cap(node_count, arc_count, supply, 1, 1)
     }
 
-    /// As [`set_maximum_flow_problem_params`](Self::set_maximum_flow_problem_params) with the arc
+    /// As [`with_maximum_flow_problem_params`](Self::with_maximum_flow_problem_params) with the arc
     /// capacities drawn from `min_cap..=max_cap`.
-    pub fn set_maximum_flow_problem_params_cap(
+    pub fn with_maximum_flow_problem_params_cap(
         self,
         node_count: i32,
         arc_count: i32,
@@ -236,14 +236,14 @@ impl NetworkGeneratorConfigBuilder {
         min_cap: i32,
         max_cap: i32,
     ) -> Self {
-        self.set_maximum_flow_problem_params_sources(
+        self.with_maximum_flow_problem_params_sources(
             node_count, arc_count, supply, min_cap, max_cap, 1, 1,
         )
     }
 
-    /// As [`set_maximum_flow_problem_params_cap`](Self::set_maximum_flow_problem_params_cap) with
+    /// As [`with_maximum_flow_problem_params_cap`](Self::with_maximum_flow_problem_params_cap) with
     /// explicit numbers of sources and sinks.
-    pub fn set_maximum_flow_problem_params_sources(
+    pub fn with_maximum_flow_problem_params_sources(
         self,
         node_count: i32,
         arc_count: i32,
@@ -253,7 +253,7 @@ impl NetworkGeneratorConfigBuilder {
         source_count: i32,
         sink_count: i32,
     ) -> Self {
-        self.set_maximum_flow_problem_params_full(
+        self.with_maximum_flow_problem_params_full(
             node_count,
             arc_count,
             supply,
@@ -266,9 +266,9 @@ impl NetworkGeneratorConfigBuilder {
     }
 
     #[allow(clippy::too_many_arguments)]
-    /// As [`set_maximum_flow_problem_params_sources`](Self::set_maximum_flow_problem_params_sources)
+    /// As [`with_maximum_flow_problem_params_sources`](Self::with_maximum_flow_problem_params_sources)
     /// with `percent_capacitated` percent of the arcs capacitated; the others have infinite capacity.
-    pub fn set_maximum_flow_problem_params_full(
+    pub fn with_maximum_flow_problem_params_full(
         self,
         node_count: i32,
         arc_count: i32,
@@ -279,7 +279,7 @@ impl NetworkGeneratorConfigBuilder {
         sink_count: i32,
         percent_capacitated: i32,
     ) -> Self {
-        self.set_params(
+        self.with_params(
             node_count,
             arc_count,
             source_count,
@@ -298,27 +298,27 @@ impl NetworkGeneratorConfigBuilder {
 
     /// Bipartite matching problem on `node_count` nodes (half on each side) with `arc_count` arcs and unit
     /// costs. `node_count` must be even.
-    pub fn set_bipartite_matching_problem_params(self, node_count: i32, arc_count: i32) -> Self {
-        self.set_bipartite_matching_problem_params_cost(node_count, arc_count, 1, 1)
+    pub fn with_bipartite_matching_problem_params(self, node_count: i32, arc_count: i32) -> Self {
+        self.with_bipartite_matching_problem_params_cost(node_count, arc_count, 1, 1)
     }
 
-    /// As [`set_bipartite_matching_problem_params`](Self::set_bipartite_matching_problem_params) with
+    /// As [`with_bipartite_matching_problem_params`](Self::with_bipartite_matching_problem_params) with
     /// arc costs drawn from `min_cost..=max_cost`.
-    pub fn set_bipartite_matching_problem_params_cost(
+    pub fn with_bipartite_matching_problem_params_cost(
         self,
         node_count: i32,
         arc_count: i32,
         min_cost: i32,
         max_cost: i32,
     ) -> Self {
-        self.set_bipartite_matching_problem_params_full(
+        self.with_bipartite_matching_problem_params_full(
             node_count, arc_count, min_cost, max_cost, 0,
         )
     }
 
-    /// As [`set_bipartite_matching_problem_params_cost`](Self::set_bipartite_matching_problem_params_cost)
+    /// As [`with_bipartite_matching_problem_params_cost`](Self::with_bipartite_matching_problem_params_cost)
     /// with `percent_with_inf_cost` percent of the arcs given infinite cost.
-    pub fn set_bipartite_matching_problem_params_full(
+    pub fn with_bipartite_matching_problem_params_full(
         mut self,
         node_count: i32,
         arc_count: i32,
@@ -333,7 +333,7 @@ impl NetworkGeneratorConfigBuilder {
             });
             return self;
         }
-        self.set_params(
+        self.with_params(
             node_count,
             arc_count,
             node_count / 2,
@@ -351,7 +351,7 @@ impl NetworkGeneratorConfigBuilder {
     }
 
     /// Total number of nodes; must be positive.
-    pub fn set_node_count(mut self, node_count: i32) -> Self {
+    pub fn with_node_count(mut self, node_count: i32) -> Self {
         if node_count <= 0 {
             self.fail(GraphError::must_be_positive("number_of_nodes"));
         } else {
@@ -360,7 +360,7 @@ impl NetworkGeneratorConfigBuilder {
         self
     }
     /// Number of arcs to generate.
-    pub fn set_arc_count(mut self, arc_count: i32) -> Self {
+    pub fn with_arc_count(mut self, arc_count: i32) -> Self {
         if arc_count > MAX_ARC_NUM {
             self.fail(GraphError::InvalidParameter {
                 name: "number_of_arcs",
@@ -372,7 +372,7 @@ impl NetworkGeneratorConfigBuilder {
         self
     }
     /// Number of sources; must be positive.
-    pub fn set_source_count(mut self, source_count: i32) -> Self {
+    pub fn with_source_count(mut self, source_count: i32) -> Self {
         if source_count <= 0 {
             self.fail(GraphError::must_be_positive("number_of_sources"));
         } else {
@@ -381,7 +381,7 @@ impl NetworkGeneratorConfigBuilder {
         self
     }
     /// Number of sinks; must be positive.
-    pub fn set_sink_count(mut self, sink_count: i32) -> Self {
+    pub fn with_sink_count(mut self, sink_count: i32) -> Self {
         if sink_count <= 0 {
             self.fail(GraphError::must_be_positive("number_of_sinks"));
         } else {
@@ -390,7 +390,7 @@ impl NetworkGeneratorConfigBuilder {
         self
     }
     /// Number of sources that are also transshipment nodes; must not be negative.
-    pub fn set_tsource_count(mut self, tsource_count: i32) -> Self {
+    pub fn with_tsource_count(mut self, tsource_count: i32) -> Self {
         if tsource_count < 0 {
             self.fail(GraphError::must_be_non_negative(
                 "number_of_transshipment_sources",
@@ -401,7 +401,7 @@ impl NetworkGeneratorConfigBuilder {
         self
     }
     /// Number of sinks that are also transshipment nodes; must not be negative.
-    pub fn set_tsink_count(mut self, tsink_count: i32) -> Self {
+    pub fn with_tsink_count(mut self, tsink_count: i32) -> Self {
         if tsink_count < 0 {
             self.fail(GraphError::must_be_non_negative(
                 "number_of_transshipment_sinks",
@@ -412,7 +412,7 @@ impl NetworkGeneratorConfigBuilder {
         self
     }
     /// Total supply injected by the sources.
-    pub fn set_total_supply(mut self, total_supply: i32) -> Self {
+    pub fn with_total_supply(mut self, total_supply: i32) -> Self {
         if total_supply > MAX_SUPPLY {
             self.fail(GraphError::InvalidParameter {
                 name: "total_supply",
@@ -424,7 +424,7 @@ impl NetworkGeneratorConfigBuilder {
         self
     }
     /// Smallest arc capacity; must not be negative.
-    pub fn set_min_cap(mut self, min_cap: i32) -> Self {
+    pub fn with_min_cap(mut self, min_cap: i32) -> Self {
         if min_cap < 0 {
             self.fail(GraphError::must_be_non_negative("minimum_capacity"));
         } else {
@@ -433,7 +433,7 @@ impl NetworkGeneratorConfigBuilder {
         self
     }
     /// Largest arc capacity; must not be negative.
-    pub fn set_max_cap(mut self, max_cap: i32) -> Self {
+    pub fn with_max_cap(mut self, max_cap: i32) -> Self {
         if max_cap < 0 {
             self.fail(GraphError::must_be_non_negative("maximum_capacity"));
         } else {
@@ -442,17 +442,17 @@ impl NetworkGeneratorConfigBuilder {
         self
     }
     /// Smallest arc cost.
-    pub fn set_min_cost(mut self, min_cost: i32) -> Self {
+    pub fn with_min_cost(mut self, min_cost: i32) -> Self {
         self.min_cost = self.check_capacity_cost_constraint(min_cost);
         self
     }
     /// Largest arc cost.
-    pub fn set_max_cost(mut self, max_cost: i32) -> Self {
+    pub fn with_max_cost(mut self, max_cost: i32) -> Self {
         self.max_cost = self.check_capacity_cost_constraint(max_cost);
         self
     }
     /// Percentage of arcs that get a finite capacity, in `0..=100`.
-    pub fn set_percent_capacitated(mut self, p: i32) -> Self {
+    pub fn with_percent_capacitated(mut self, p: i32) -> Self {
         if !(0..=100).contains(&p) {
             self.fail(GraphError::InvalidParameter {
                 name: "percent_capacitated",
@@ -464,7 +464,7 @@ impl NetworkGeneratorConfigBuilder {
         self
     }
     /// Percentage of arcs with infinite cost, in `0..=100`.
-    pub fn set_percent_with_inf_cost(mut self, p: i32) -> Self {
+    pub fn with_percent_with_inf_cost(mut self, p: i32) -> Self {
         if !(0..=100).contains(&p) {
             self.fail(GraphError::InvalidParameter {
                 name: "percent_with_inf_cost",

@@ -64,7 +64,7 @@ impl<'g, G: Graph> BlossomVDualSolution<'g, G> {
 /// two vertices can belong to the matching in the corresponding optimization problems. Currently,
 /// users are responsible for doing this reduction themselves before invoking the algorithm.
 ///
-/// Note that if the graph is unweighted and dense, `SparseEdmondsMaximumCardinalityMatching`
+/// Note that if the graph is unweighted and dense, `SparseEdmonds`
 /// may be a better choice.
 ///
 /// For more information about the algorithm see the following paper: *Kolmogorov, V. Math. Prog.

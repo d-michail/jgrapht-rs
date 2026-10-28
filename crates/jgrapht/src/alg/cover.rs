@@ -14,7 +14,7 @@
 
 //! Vertex cover.
 
-use super::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
+use super::matching::{HopcroftKarp, MatchingAlgorithm};
 use super::partition::two_color;
 use super::util::Indexed;
 use crate::graph::Graph;
@@ -184,8 +184,7 @@ pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(
         .filter(|&v| side[v])
         .map(|v| ix.vertex(v))
         .collect();
-    let matching = HopcroftKarpMaximumCardinalityBipartiteMatching::new(g, partition1, partition2)?
-        .get_matching()?;
+    let matching = HopcroftKarp::new(g, partition1, partition2)?.get_matching()?;
     let mut mate = vec![None; ix.n()];
     for edge in matching.edges() {
         let edge = edge.borrow();

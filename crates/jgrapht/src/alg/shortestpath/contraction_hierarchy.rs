@@ -1177,14 +1177,14 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone> ManyToManyPaths<V, E> {
 /// a path from the search spaces when it is asked for; here all requested paths are unpacked once
 /// into a [`ManyToManyPaths`]. The iteration order of the vertex sets is the order of the
 /// hierarchy ids (Java: `HashSet` order), which only decides between equally long paths.
-pub struct ContractionHierarchyManyToManyShortestPaths<'h, 'g, G: Graph> {
+pub struct ContractionHierarchyManyToMany<'h, 'g, G: Graph> {
     hierarchy: &'h ContractionHierarchy<'g, G>,
 }
 
 /// Distance and tree edge of the vertices reached by one search of the many-to-many algorithm.
 type SearchSpace = HashMap<usize, (f64, Option<usize>)>;
 
-impl<'h, 'g, G: Graph> ContractionHierarchyManyToManyShortestPaths<'h, 'g, G> {
+impl<'h, 'g, G: Graph> ContractionHierarchyManyToMany<'h, 'g, G> {
     /// Constructs a new instance of the algorithm for a given contraction hierarchy.
     pub fn new(hierarchy: &'h ContractionHierarchy<'g, G>) -> Self {
         Self { hierarchy }
@@ -1372,7 +1372,7 @@ impl<'g, G: Graph> ContractionHierarchy<'g, G> {
     }
 }
 
-impl<G: Graph> ShortestPathAlgorithm<G> for ContractionHierarchyManyToManyShortestPaths<'_, '_, G> {
+impl<G: Graph> ShortestPathAlgorithm<G> for ContractionHierarchyManyToMany<'_, '_, G> {
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         ContractionHierarchyBidirectionalDijkstra::new(self.hierarchy).single_source(source)
     }

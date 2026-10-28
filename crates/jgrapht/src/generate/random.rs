@@ -1202,12 +1202,12 @@ impl<R: RandomSource> GraphGenerator for KleinbergSmallWorldGraphGenerator<R> {
 
 /// Linearized chord diagram (LCD) preferential attachment; needs a target allowing multi-edges
 /// and loops.
-pub struct LinearizedChordDiagramGraphGenerator<R> {
+pub struct LinearizedChordDiagramGenerator<R> {
     n: usize,
     m: usize,
     rng: R,
 }
-impl<R: RandomSource> LinearizedChordDiagramGraphGenerator<R> {
+impl<R: RandomSource> LinearizedChordDiagramGenerator<R> {
     /// Creates a new instance.
     ///
     /// # Errors
@@ -1227,10 +1227,10 @@ impl<R: RandomSource> LinearizedChordDiagramGraphGenerator<R> {
                 requirement: crate::ParameterRequirement::Positive,
             });
         }
-        Ok(LinearizedChordDiagramGraphGenerator { n, m, rng })
+        Ok(LinearizedChordDiagramGenerator { n, m, rng })
     }
 }
-impl<R: RandomSource> GraphGenerator for LinearizedChordDiagramGraphGenerator<R> {
+impl<R: RandomSource> GraphGenerator for LinearizedChordDiagramGenerator<R> {
     fn generate_graph<G: GraphMut>(
         &mut self,
         target: &mut G,

@@ -37,22 +37,22 @@ fn is_positive_zero(x: f64) -> bool {
 ///
 /// # Rust notes
 ///
-/// `KuhnMunkresMinimalWeightBipartitePerfectMatching`: a perfect matching of minimum weight in a
+/// `KuhnMunkres`: a perfect matching of minimum weight in a
 /// complete bipartite graph with equally sized partitions, by the Hungarian method in `O(n^3)`.
-pub struct KuhnMunkresMinimalWeightBipartitePerfectMatching<'g, G: Graph> {
+pub struct KuhnMunkres<'g, G: Graph> {
     graph: &'g G,
     partition1: IndexSet<G::Vertex>,
     partition2: IndexSet<G::Vertex>,
 }
 
-impl<'g, G: Graph> KuhnMunkresMinimalWeightBipartitePerfectMatching<'g, G> {
+impl<'g, G: Graph> KuhnMunkres<'g, G> {
     /// Construct a new instance of the algorithm.
     pub fn new(
         graph: &'g G,
         partition1: IndexSet<G::Vertex>,
         partition2: IndexSet<G::Vertex>,
     ) -> Self {
-        KuhnMunkresMinimalWeightBipartitePerfectMatching {
+        KuhnMunkres {
             graph,
             partition1,
             partition2,
@@ -60,9 +60,7 @@ impl<'g, G: Graph> KuhnMunkresMinimalWeightBipartitePerfectMatching<'g, G> {
     }
 }
 
-impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
-    for KuhnMunkresMinimalWeightBipartitePerfectMatching<'_, G>
-{
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for KuhnMunkres<'_, G> {
     fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         if self.partition1.len() != self.partition2.len() {

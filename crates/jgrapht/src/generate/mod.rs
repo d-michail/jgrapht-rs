@@ -29,15 +29,14 @@ mod structured;
 pub use random::{
     BarabasiAlbertForestGenerator, BarabasiAlbertGraphGenerator, DirectedScaleFreeGraphGenerator,
     GnmRandomBipartiteGraphGenerator, GnmRandomGraphGenerator, GnpRandomBipartiteGraphGenerator,
-    GnpRandomGraphGenerator, KleinbergSmallWorldGraphGenerator,
-    LinearizedChordDiagramGraphGenerator, PlantedPartitionGraphGenerator, PruferTreeGenerator,
-    RandomRegularGraphGenerator, ScaleFreeGraphGenerator, WattsStrogatzGraphGenerator,
-    ordered_partitions,
+    GnpRandomGraphGenerator, KleinbergSmallWorldGraphGenerator, LinearizedChordDiagramGenerator,
+    PlantedPartitionGraphGenerator, PruferTreeGenerator, RandomRegularGraphGenerator,
+    ScaleFreeGraphGenerator, WattsStrogatzGraphGenerator, ordered_partitions,
 };
 pub use structured::{
     Complement, Complete, CompleteBipartite, Empty, GeneralizedPetersen, Grid, Hypercube, Linear,
-    Ring, SimpleWeightedBipartiteGraphMatrixGenerator, SimpleWeightedGraphMatrixGenerator, Star,
-    Wheel, Windmill, WindmillMode,
+    Ring, Star, WeightedBipartiteMatrixGenerator, WeightedMatrixGenerator, Wheel, Windmill,
+    WindmillMode,
 };
 
 use crate::graph::Graph;

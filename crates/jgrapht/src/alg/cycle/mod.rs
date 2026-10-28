@@ -44,7 +44,7 @@ pub use chordality::{ChordalityInspector, IterationOrder};
 pub use detector::{CycleDetector, simple_cycle_to_graph_path};
 pub use eulerian::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
 pub use howard::{HowardMinimumMeanCycle, MinimumCycleMeanAlgorithm};
-pub use separator::ChordalGraphMinimalVertexSeparatorFinder;
+pub use separator::MinimalVertexSeparatorFinder;
 pub use simple_cycles::{
     DirectedSimpleCycles, HawickJamesSimpleCycles, JohnsonSimpleCycles,
     SzwarcfiterLauerSimpleCycles, TarjanSimpleCycles, TiernanSimpleCycles,

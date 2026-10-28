@@ -20,7 +20,7 @@
 //! source per call; problems do not hold the graph.
 
 use jgrapht::alg::flow::{MinimumCostFlowProblem, PushRelabel};
-use jgrapht::alg::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
+use jgrapht::alg::matching::{HopcroftKarp, MatchingAlgorithm};
 use jgrapht::generate::netgen::*;
 use jgrapht::util::java::RandomSource;
 use jgrapht::*;
@@ -137,19 +137,19 @@ mod config_builder_test {
         pi: i32,
     ) -> NetworkGeneratorConfigBuilder {
         NetworkGeneratorConfigBuilder::new()
-            .set_node_count(n)
-            .set_arc_count(a)
-            .set_source_count(s)
-            .set_sink_count(t)
-            .set_tsource_count(ts)
-            .set_tsink_count(tt)
-            .set_total_supply(supply)
-            .set_min_cap(min_cap)
-            .set_max_cap(max_cap)
-            .set_min_cost(min_cost)
-            .set_max_cost(max_cost)
-            .set_percent_capacitated(pc)
-            .set_percent_with_inf_cost(pi)
+            .with_node_count(n)
+            .with_arc_count(a)
+            .with_source_count(s)
+            .with_sink_count(t)
+            .with_tsource_count(ts)
+            .with_tsink_count(tt)
+            .with_total_supply(supply)
+            .with_min_cap(min_cap)
+            .with_max_cap(max_cap)
+            .with_min_cost(min_cost)
+            .with_max_cost(max_cost)
+            .with_percent_capacitated(pc)
+            .with_percent_with_inf_cost(pi)
     }
     fn assignment() -> NetworkGeneratorConfigBuilder {
         builder(4, 4, 2, 2, 0, 0, 2, 1, 1, 0, 0, 100, 0)
@@ -171,175 +171,175 @@ mod config_builder_test {
     #[test]
     fn node_count() {
         err(partial()
-            .set_arc_count(20)
-            .set_source_count(2)
-            .set_sink_count(3)
-            .set_tsource_count(1)
-            .set_tsink_count(1)
-            .set_total_supply(50)
-            .set_min_cap(1)
-            .set_max_cap(10)
-            .set_min_cost(0)
-            .set_max_cost(10)
-            .set_percent_capacitated(100)
-            .set_percent_with_inf_cost(0));
-        err(min_cost_flow().set_node_count(-1));
-        err(min_cost_flow().set_node_count(MAX_NODE_NUM + 1));
+            .with_arc_count(20)
+            .with_source_count(2)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_min_cap(1)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_node_count(-1));
+        err(min_cost_flow().with_node_count(MAX_NODE_NUM + 1));
     }
 
     #[test]
     fn arc_count() {
         err(partial()
-            .set_node_count(10)
-            .set_source_count(2)
-            .set_sink_count(3)
-            .set_tsource_count(1)
-            .set_tsink_count(1)
-            .set_total_supply(50)
-            .set_min_cap(1)
-            .set_max_cap(10)
-            .set_min_cost(0)
-            .set_max_cost(10)
-            .set_percent_capacitated(100)
-            .set_percent_with_inf_cost(0));
-        err(min_cost_flow().set_arc_count(-1));
-        err(min_cost_flow().set_arc_count(MAX_ARC_NUM + 1));
+            .with_node_count(10)
+            .with_source_count(2)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_min_cap(1)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_arc_count(-1));
+        err(min_cost_flow().with_arc_count(MAX_ARC_NUM + 1));
     }
 
     #[test]
     fn arc_count_in_assignment_problem() {
-        err(assignment().set_arc_count(1));
-        ok(assignment().set_arc_count(2));
-        err(assignment().set_arc_count(5));
-        ok(assignment().set_arc_count(4));
+        err(assignment().with_arc_count(1));
+        ok(assignment().with_arc_count(2));
+        err(assignment().with_arc_count(5));
+        ok(assignment().with_arc_count(4));
     }
 
     #[test]
     fn arc_count_in_min_cost_flow_problem() {
-        err(min_cost_flow().set_arc_count(7));
-        ok(min_cost_flow().set_arc_count(8));
-        err(min_cost_flow().set_arc_count(9 + 8 + 40 + 8 + 1));
-        ok(min_cost_flow().set_arc_count(9 + 8 + 40 + 8));
+        err(min_cost_flow().with_arc_count(7));
+        ok(min_cost_flow().with_arc_count(8));
+        err(min_cost_flow().with_arc_count(9 + 8 + 40 + 8 + 1));
+        ok(min_cost_flow().with_arc_count(9 + 8 + 40 + 8));
     }
 
     #[test]
     fn source_and_sink_count() {
         err(partial()
-            .set_node_count(10)
-            .set_arc_count(20)
-            .set_sink_count(3)
-            .set_tsource_count(1)
-            .set_tsink_count(1)
-            .set_total_supply(50)
-            .set_min_cap(1)
-            .set_max_cap(10)
-            .set_min_cost(0)
-            .set_max_cost(10)
-            .set_percent_capacitated(100)
-            .set_percent_with_inf_cost(0));
-        err(min_cost_flow().set_source_count(-1));
-        err(min_cost_flow().set_source_count(11));
+            .with_node_count(10)
+            .with_arc_count(20)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_min_cap(1)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_source_count(-1));
+        err(min_cost_flow().with_source_count(11));
         err(partial()
-            .set_node_count(10)
-            .set_arc_count(20)
-            .set_source_count(2)
-            .set_tsource_count(1)
-            .set_tsink_count(1)
-            .set_total_supply(50)
-            .set_min_cap(1)
-            .set_max_cap(10)
-            .set_min_cost(0)
-            .set_max_cost(10)
-            .set_percent_capacitated(100)
-            .set_percent_with_inf_cost(0));
-        err(min_cost_flow().set_sink_count(-1));
-        err(min_cost_flow().set_sink_count(11));
-        err(min_cost_flow().set_source_count(5).set_sink_count(6));
+            .with_node_count(10)
+            .with_arc_count(20)
+            .with_source_count(2)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_min_cap(1)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_sink_count(-1));
+        err(min_cost_flow().with_sink_count(11));
+        err(min_cost_flow().with_source_count(5).with_sink_count(6));
     }
 
     #[test]
     fn transshipment_sources_and_sinks() {
-        err(min_cost_flow().set_tsource_count(-1));
-        err(min_cost_flow().set_tsource_count(3));
-        err(min_cost_flow().set_tsink_count(-1));
-        err(min_cost_flow().set_tsink_count(4));
+        err(min_cost_flow().with_tsource_count(-1));
+        err(min_cost_flow().with_tsource_count(3));
+        err(min_cost_flow().with_tsink_count(-1));
+        err(min_cost_flow().with_tsink_count(4));
     }
 
     #[test]
     fn supply() {
         err(partial()
-            .set_node_count(10)
-            .set_arc_count(20)
-            .set_source_count(2)
-            .set_sink_count(3)
-            .set_tsource_count(1)
-            .set_tsink_count(1)
-            .set_min_cap(1)
-            .set_max_cap(10)
-            .set_min_cost(0)
-            .set_max_cost(10)
-            .set_percent_capacitated(100)
-            .set_percent_with_inf_cost(0));
-        err(min_cost_flow().set_total_supply(-1));
-        err(min_cost_flow().set_total_supply(MAX_SUPPLY + 1));
-        ok(min_cost_flow().set_total_supply(MAX_SUPPLY));
-        err(min_cost_flow().set_total_supply(1));
+            .with_node_count(10)
+            .with_arc_count(20)
+            .with_source_count(2)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_min_cap(1)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_total_supply(-1));
+        err(min_cost_flow().with_total_supply(MAX_SUPPLY + 1));
+        ok(min_cost_flow().with_total_supply(MAX_SUPPLY));
+        err(min_cost_flow().with_total_supply(1));
     }
 
     #[test]
     fn capacities() {
-        err(min_cost_flow().set_min_cap(-1));
-        err(min_cost_flow().set_max_cap(-1));
+        err(min_cost_flow().with_min_cap(-1));
+        err(min_cost_flow().with_max_cap(-1));
         err(partial()
-            .set_node_count(10)
-            .set_arc_count(20)
-            .set_source_count(2)
-            .set_sink_count(3)
-            .set_tsource_count(1)
-            .set_tsink_count(1)
-            .set_total_supply(50)
-            .set_max_cap(10)
-            .set_min_cost(0)
-            .set_max_cost(10)
-            .set_percent_capacitated(100)
-            .set_percent_with_inf_cost(0));
+            .with_node_count(10)
+            .with_arc_count(20)
+            .with_source_count(2)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_max_cap(10)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
         err(partial()
-            .set_node_count(10)
-            .set_arc_count(20)
-            .set_source_count(2)
-            .set_sink_count(3)
-            .set_tsource_count(1)
-            .set_tsink_count(1)
-            .set_total_supply(50)
-            .set_min_cap(1)
-            .set_min_cost(0)
-            .set_max_cost(10)
-            .set_percent_capacitated(100)
-            .set_percent_with_inf_cost(0));
-        err(min_cost_flow().set_min_cap(CAPACITY_COST_BOUND + 1));
+            .with_node_count(10)
+            .with_arc_count(20)
+            .with_source_count(2)
+            .with_sink_count(3)
+            .with_tsource_count(1)
+            .with_tsink_count(1)
+            .with_total_supply(50)
+            .with_min_cap(1)
+            .with_min_cost(0)
+            .with_max_cost(10)
+            .with_percent_capacitated(100)
+            .with_percent_with_inf_cost(0));
+        err(min_cost_flow().with_min_cap(CAPACITY_COST_BOUND + 1));
         ok(min_cost_flow()
-            .set_min_cap(CAPACITY_COST_BOUND)
-            .set_max_cap(CAPACITY_COST_BOUND));
-        err(min_cost_flow().set_max_cap(CAPACITY_COST_BOUND + 1));
-        ok(min_cost_flow().set_max_cap(CAPACITY_COST_BOUND));
-        err(min_cost_flow().set_min_cap(10).set_max_cap(9));
+            .with_min_cap(CAPACITY_COST_BOUND)
+            .with_max_cap(CAPACITY_COST_BOUND));
+        err(min_cost_flow().with_max_cap(CAPACITY_COST_BOUND + 1));
+        ok(min_cost_flow().with_max_cap(CAPACITY_COST_BOUND));
+        err(min_cost_flow().with_min_cap(10).with_max_cap(9));
     }
 
     #[test]
     fn costs() {
-        err(min_cost_flow().set_min_cost(-CAPACITY_COST_BOUND - 1));
-        err(min_cost_flow().set_max_cost(-CAPACITY_COST_BOUND - 1));
-        err(min_cost_flow().set_min_cost(CAPACITY_COST_BOUND + 1));
-        err(min_cost_flow().set_max_cost(CAPACITY_COST_BOUND + 1));
-        err(min_cost_flow().set_min_cost(10).set_max_cost(9));
+        err(min_cost_flow().with_min_cost(-CAPACITY_COST_BOUND - 1));
+        err(min_cost_flow().with_max_cost(-CAPACITY_COST_BOUND - 1));
+        err(min_cost_flow().with_min_cost(CAPACITY_COST_BOUND + 1));
+        err(min_cost_flow().with_max_cost(CAPACITY_COST_BOUND + 1));
+        err(min_cost_flow().with_min_cost(10).with_max_cost(9));
     }
 
     #[test]
     fn percentages() {
-        err(min_cost_flow().set_percent_capacitated(-1));
-        err(min_cost_flow().set_percent_capacitated(101));
-        err(min_cost_flow().set_percent_with_inf_cost(-1));
-        err(min_cost_flow().set_percent_with_inf_cost(101));
+        err(min_cost_flow().with_percent_capacitated(-1));
+        err(min_cost_flow().with_percent_capacitated(101));
+        err(min_cost_flow().with_percent_with_inf_cost(-1));
+        err(min_cost_flow().with_percent_with_inf_cost(101));
     }
 
     #[test]
@@ -575,7 +575,7 @@ mod network_generator_test {
         let (g2, p2) = gen_bipartite(config, seed);
         // feasibility: a perfect matching exists
         let undirected = AsUndirected(&g1);
-        let matching = HopcroftKarpMaximumCardinalityBipartiteMatching::new(
+        let matching = HopcroftKarp::new(
             &undirected,
             p1.partition1.iter().copied(),
             p1.partition2.iter().copied(),
@@ -604,7 +604,7 @@ mod network_generator_test {
         supply: i32,
     ) -> NetworkGeneratorConfig {
         NetworkGeneratorConfigBuilder::new()
-            .set_params(
+            .with_params(
                 (s + tn + t) as i32,
                 arcs as i32,
                 s as i32,
@@ -672,7 +672,7 @@ mod network_generator_test {
 
     fn max_flow_config(s: i64, tn: i64, t: i64, arcs: i64) -> NetworkGeneratorConfig {
         NetworkGeneratorConfigBuilder::new()
-            .set_maximum_flow_problem_params_sources(
+            .with_maximum_flow_problem_params_sources(
                 (s + tn + t) as i32,
                 arcs as i32,
                 10 * s as i32,
@@ -737,7 +737,7 @@ mod network_generator_test {
 
     fn bipartite_config(i: i32, arcs: i32) -> NetworkGeneratorConfig {
         NetworkGeneratorConfigBuilder::new()
-            .set_bipartite_matching_problem_params_cost(2 * i, arcs, 1, 100)
+            .with_bipartite_matching_problem_params_cost(2 * i, arcs, 1, 100)
             .build()
             .unwrap()
     }
@@ -770,7 +770,7 @@ mod network_generator_test {
     #[test]
     fn bipartite_matching_large_problem() {
         let config = NetworkGeneratorConfigBuilder::new()
-            .set_bipartite_matching_problem_params_cost(1000, 250000, 1, 100)
+            .with_bipartite_matching_problem_params_cost(1000, 250000, 1, 100)
             .build()
             .unwrap();
         test_bipartite(&config, rng().next_u64() as i64 as u64);
@@ -783,7 +783,7 @@ mod network_generator_test {
 #[test]
 fn seeded_network_has_the_requested_structure() {
     let c = NetworkGeneratorConfigBuilder::new()
-        .set_params(30, 120, 3, 4, 1, 2, 500, 1, 100, -5, 50, 80, 10)
+        .with_params(30, 120, 3, 4, 1, 2, 500, 1, 100, -5, 50, 80, 10)
         .build()
         .unwrap();
     for seed in 0..20u64 {

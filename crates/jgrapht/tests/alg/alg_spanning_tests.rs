@@ -505,8 +505,8 @@ mod esau_williams {
         capacity: f64,
         demands: HashMap<i32, f64>,
         ops: usize,
-    ) -> Result<EsauWilliamsCapacitatedMinimumSpanningTree<'g, WG>> {
-        EsauWilliamsCapacitatedMinimumSpanningTree::new(g, 0, capacity, demands, ops)
+    ) -> Result<EsauWilliams<'g, WG>> {
+        EsauWilliams::new(g, 0, capacity, demands, ops)
     }
 
     #[test]
@@ -673,7 +673,7 @@ mod ahuja_orlin_sharma {
         d: &HashMap<i32, f64>,
         length_bound: usize,
     ) -> Tree {
-        AhujaOrlinSharmaCapacitatedMinimumSpanningTree::with_initial_solution(
+        AhujaOrlinSharma::with_initial_solution(
             start,
             g,
             0,
@@ -746,7 +746,7 @@ mod ahuja_orlin_sharma {
     fn test_instance_2() {
         let g = complete(6, &INSTANCE_2, None);
         let d = demands(&[(1, 2.0), (2, 1.0), (3, 2.0), (4, 3.0), (5, 2.0)]);
-        let c = AhujaOrlinSharmaCapacitatedMinimumSpanningTree::with_options(
+        let c = AhujaOrlinSharma::with_options(
             &g,
             0,
             4.0,
@@ -946,17 +946,10 @@ mod ahuja_orlin_sharma {
     fn run_complicated(opts: AhujaOrlinSharmaOptions) {
         let (g, d) = complicated(40);
         let capacity = 30.0;
-        let c = AhujaOrlinSharmaCapacitatedMinimumSpanningTree::with_options(
-            &g,
-            0,
-            capacity,
-            d.clone(),
-            7,
-            opts,
-        )
-        .unwrap()
-        .capacitated_spanning_tree()
-        .unwrap();
+        let c = AhujaOrlinSharma::with_options(&g, 0, capacity, d.clone(), 7, opts)
+            .unwrap()
+            .capacitated_spanning_tree()
+            .unwrap();
         assert!(c.is_capacitated_spanning_tree(&g, &0, capacity, &d));
     }
 
@@ -1006,7 +999,7 @@ mod ahuja_orlin_sharma {
         g.add_vertex(50);
         d.insert(50, 1.0);
         assert!(
-            AhujaOrlinSharmaCapacitatedMinimumSpanningTree::with_options(
+            AhujaOrlinSharma::with_options(
                 &g,
                 0,
                 30.0,
@@ -1022,7 +1015,7 @@ mod ahuja_orlin_sharma {
     fn test_violated_capacity_constraint() {
         let (g, d) = complicated(10);
         assert!(
-            AhujaOrlinSharmaCapacitatedMinimumSpanningTree::with_options(
+            AhujaOrlinSharma::with_options(
                 &g,
                 0,
                 -1.0,
