@@ -44,7 +44,7 @@
 //! trait (`GreedyColoring`, `BronKerboschCliqueFinder`). The function is a shortcut for the struct
 //! with default settings; both give the same result.
 //!
-The [user guide](crate::guide#algorithms) shows examples.
+//! The [user guide](crate::guide#algorithms) shows examples.
 
 pub mod capacitated;
 pub mod centers;
