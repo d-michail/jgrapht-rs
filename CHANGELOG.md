@@ -5,6 +5,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+- Benchmarks no longer run on pull requests. `scripts/bench.sh` (local) and the manual `Benchmarks`
+  workflow run them on demand, optionally against a base ref.
+
 - `GraphError::InvalidArgument(String)` is no longer returned by the library. Its remaining uses
   (about 150 call sites, most of them in the generators) are typed: `InvalidParameter` with new
   `ParameterRequirement`s (`InRange`, `AbsAtMost`, `AtMostVertexCount`, `Consistent`, `FitsArea`,

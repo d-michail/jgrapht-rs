@@ -140,6 +140,20 @@ cargo test -p jgrapht --test delta_stepping
 cargo test -p jgrapht-io
 ```
 
+## Benchmarks
+
+Benchmarks never run automatically. Start them on demand:
+
+```sh
+scripts/bench.sh graph_perf              # one benchmark file (no name runs all of them)
+scripts/bench.sh -b master graph_perf    # also run master and fail on a >30% slowdown
+```
+
+or use the manual **Benchmarks** workflow on GitHub (Actions tab, Run workflow). Results are
+printed to the terminal and written to `target/criterion/report/index.html`; the workflow logs show
+them for the GitHub runs. Details, the list of benchmark files and reference numbers are in
+[`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
+
 The Java sources used as the oracle live in a separate JGraphT checkout. Rust test modules mirror
 the upstream test classes, while `crates/jgrapht/tests/STATUS.md` and
 `crates/jgrapht-io/tests/STATUS.md` record ported and deliberately inapplicable cases.
