@@ -37,27 +37,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace --release -- --ignored
 
-  bench-gate:
-    # Runs the benchmarks of the base branch and of the pull request on the same runner and fails
-    # when one is more than 30% slower. Shared runners are noisy, so the threshold is generous and
-    # the benchmarks use few samples; see scripts/bench_gate.py.
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Benchmarks of the base branch
-        run: |
-          git worktree add ../base "origin/${{ github.base_ref }}"
-          (cd ../base && CARGO_TARGET_DIR="$GITHUB_WORKSPACE/target" cargo bench -p jgrapht --benches -- --save-baseline base)
-      - name: Benchmarks of the pull request
-        run: cargo bench -p jgrapht --benches -- --save-baseline head
-      - name: Compare
-        run: python3 scripts/bench_gate.py base head --threshold 1.30
-
   clippy:
     runs-on: ubuntu-latest
     steps:

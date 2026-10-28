@@ -30,7 +30,7 @@ Review of 2026-10-28 on `master`. Targeted test runs are green (`alg` 1593, `gen
 
 ## Process
 
-**I-11. (resolved)** `cargo fmt --check` is in CI, and a `bench-gate` job compares the benchmarks of a pull request with its base on the same runner (`scripts/bench_gate.py`, 30% threshold).
+**I-11. (resolved)** `cargo fmt --check` is in CI, and benchmarks run only on demand: `scripts/bench.sh [-b <ref>] [bench...]` locally, or the manual "Benchmarks" workflow (`workflow_dispatch`); with a base ref both revisions are run on the same machine and compared by `scripts/bench_gate.py` (30% threshold). Nothing runs them automatically.
 
 **I-12. (resolved)** The hand-off text in `FIDELITY_ROADMAP.md` sections F/G was trimmed.
 

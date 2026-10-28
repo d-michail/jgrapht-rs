@@ -1,0 +1,42 @@
+name: Benchmarks
+
+# Manual only: Actions tab -> Benchmarks -> Run workflow (or `gh workflow run bench.yml`).
+# Never triggered by pushes, pull requests or schedules. The same runs are available locally with
+# `scripts/bench.sh`.
+on:
+  workflow_dispatch:
+    inputs:
+      bench:
+        description: "Benchmark file under crates/jgrapht/benches (for example graph_perf); empty runs all"
+        required: false
+        default: ""
+      base:
+        description: "Git ref to compare against (for example master); empty only runs the benchmarks"
+        required: false
+        default: ""
+      threshold:
+        description: "Fail if the selected revision is slower than the base by this factor"
+        required: false
+        default: "1.30"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run
+        env:
+          BENCH: ${{ inputs.bench }}
+          BASE: ${{ inputs.base }}
+          THRESHOLD: ${{ inputs.threshold }}
+        run: |
+          args=(-t "$THRESHOLD")
+          if [ -n "$BASE" ]; then args+=(-b "origin/$BASE"); fi
+          scripts/bench.sh "${args[@]}" $BENCH
