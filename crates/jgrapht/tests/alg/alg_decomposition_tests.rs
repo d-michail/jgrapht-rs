@@ -269,6 +269,25 @@ mod heavy_path_decomposition_test {
     }
 
     #[test]
+    fn test_depth_and_parent() {
+        // 1 - 2 - 3 - 4 rooted at 2, plus a second tree 10 - 11 rooted at 10
+        let mut graph = G::simple();
+        graph.add_vertices([1, 2, 3, 4, 10, 11]);
+        for (a, b) in [(1, 2), (2, 3), (3, 4), (10, 11)] {
+            graph.add_edge(&a, &b).unwrap();
+        }
+        let d = HeavyPathDecomposition::with_roots(&graph, [2, 10]).unwrap();
+        assert_eq!(
+            [1, 2, 3, 4, 10, 11].map(|v| d.depth_of(&v)),
+            [Some(1), Some(0), Some(1), Some(2), Some(0), Some(1)]
+        );
+        assert_eq!(d.parent_of(&2), None);
+        assert_eq!(d.parent_of(&4), Some(&3));
+        assert_eq!(d.depth_of(&99), None);
+        assert_eq!(d.depth_array().iter().flatten().count(), 6);
+    }
+
+    #[test]
     fn test_one_vertex() {
         let mut graph = SG::simple();
         graph.add_vertex("a".into());
