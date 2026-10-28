@@ -148,16 +148,16 @@ fn shortest_paths<G: IncidenceGraph<Vertex = usize> + IncomingGraph + GraphMut>(
             let _ = BellmanFord::new(g).path_weight(a, b);
             let _ = BfsShortestPath::new(g).path_weight(a, b);
             let _ = BidirectionalDijkstraShortestPath::new(g).path_weight(a, b);
-            if let Ok(mut flow) = EdmondsKarpMFImpl::new(g) {
+            if let Ok(mut flow) = EdmondsKarp::new(g) {
                 let _ = flow.maximum_flow(a, b);
             }
-            if let Ok(mut flow) = DinicMFImpl::new(g) {
+            if let Ok(mut flow) = Dinic::new(g) {
                 let _ = flow.maximum_flow(a, b);
             }
-            if let Ok(mut flow) = BoykovKolmogorovMFImpl::new(g) {
+            if let Ok(mut flow) = BoykovKolmogorov::new(g) {
                 let _ = flow.maximum_flow(a, b);
             }
-            if let Ok(mut flow) = PushRelabelMFImpl::new(g) {
+            if let Ok(mut flow) = PushRelabel::new(g) {
                 let _ = flow.maximum_flow(a, b);
             }
         }

@@ -41,7 +41,7 @@ use std::collections::{HashSet, VecDeque};
 ///
 /// The runtime complexity of this class is $O(nm^2)$, where $n$ is the number of vertices and $m$
 /// the number of edges in the graph. For a more efficient algorithm, consider using
-/// `PushRelabelMFImpl` instead.
+/// `PushRelabel` instead.
 ///
 /// This class can also compute minimum s-t cuts. Effectively, to compute a minimum s-t cut, the
 /// implementation first computes a minimum s-t flow, after which a BFS is run on the residual graph.
@@ -53,16 +53,16 @@ use std::collections::{HashSet, VecDeque};
 ///
 /// # Rust notes
 ///
-/// `EdmondsKarpMFImpl`: shortest augmenting paths found by breadth-first search, `O(V E²)`.
+/// `EdmondsKarp`: shortest augmenting paths found by breadth-first search, `O(V E²)`.
 /// All shortest paths of a round are augmented together.
-pub struct EdmondsKarpMFImpl<'g, G: OutgoingGraph> {
+pub struct EdmondsKarp<'g, G: OutgoingGraph> {
     net: FlowNet<'g, G>,
     visited: Vec<bool>,
     /// last arc(s) of the shortest path(s) used to reach each vertex
     last_arcs: Vec<Option<Vec<usize>>>,
 }
 
-impl<'g, G: OutgoingGraph> EdmondsKarpMFImpl<'g, G> {
+impl<'g, G: OutgoingGraph> EdmondsKarp<'g, G> {
     /// Constructs `MaximumFlow` instance to work with *a copy of* `network`.
     /// Current source and sink are set to `null`. If `network` is weighted, then
     /// capacities are weights, otherwise all capacities are equal to one. Doubles are compared using
@@ -87,7 +87,7 @@ impl<'g, G: OutgoingGraph> EdmondsKarpMFImpl<'g, G> {
         }
         let net = FlowNet::new(network, epsilon)?;
         net.check_capacities(epsilon)?;
-        Ok(EdmondsKarpMFImpl {
+        Ok(EdmondsKarp {
             net,
             visited: Vec::new(),
             last_arcs: Vec::new(),
@@ -196,4 +196,4 @@ impl<'g, G: OutgoingGraph> EdmondsKarpMFImpl<'g, G> {
     }
 }
 
-flow_algorithm_api!(EdmondsKarpMFImpl, crate::graph::OutgoingGraph);
+flow_algorithm_api!(EdmondsKarp, crate::graph::OutgoingGraph);

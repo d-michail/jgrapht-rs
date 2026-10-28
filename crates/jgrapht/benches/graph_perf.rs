@@ -20,7 +20,7 @@ mod common;
 use common::*;
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use jgrapht::alg::connectivity::is_strongly_connected;
-use jgrapht::alg::flow::EdmondsKarpMFImpl;
+use jgrapht::alg::flow::EdmondsKarp;
 use jgrapht::alg::shortestpath::{Dijkstra, ShortestPathAlgorithm};
 use jgrapht::{Graph, GraphExt, OutgoingGraph};
 
@@ -41,7 +41,7 @@ fn graph_performance(c: &mut Criterion) {
     c.bench_function("graph/edmonds_karp", |b| {
         b.iter(|| {
             black_box(
-                EdmondsKarpMFImpl::new(&g)
+                EdmondsKarp::new(&g)
                     .unwrap()
                     .calculate_maximum_flow(&0, &(N - 1))
                     .unwrap(),

@@ -441,22 +441,22 @@ impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for BarYehudaEvenTwoAppr
 
 /// Takes both endpoints of a maximal matching (`EdgeBasedTwoApproxVCImpl`); the weight is the
 /// number of vertices.
-pub struct EdgeBasedTwoApproxVcImpl<'g, G: Graph> {
+pub struct EdgeBasedTwoApproxVertexCover<'g, G: Graph> {
     graph: &'g G,
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph> EdgeBasedTwoApproxVcImpl<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> EdgeBasedTwoApproxVertexCover<'g, G> {
     /// Creates a new instance.
     ///
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
-        Ok(EdgeBasedTwoApproxVcImpl { graph })
+        Ok(EdgeBasedTwoApproxVertexCover { graph })
     }
 }
 
-impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for EdgeBasedTwoApproxVcImpl<'_, G> {
+impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for EdgeBasedTwoApproxVertexCover<'_, G> {
     fn vertex_cover(&self) -> Result<VertexCover<G::Vertex>> {
         let g = self.graph;
         let mut removed: HashSet<G::Vertex> = HashSet::new();

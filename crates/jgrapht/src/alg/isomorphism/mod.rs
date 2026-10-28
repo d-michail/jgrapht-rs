@@ -25,15 +25,15 @@ mod refinement;
 mod vf2;
 
 pub use ahu::{
-    AHUForestIsomorphismInspector, AHURootedTreeIsomorphismInspector,
-    AHUUnrootedTreeIsomorphismInspector,
+    AhuForestIsomorphismInspector, AhuRootedTreeIsomorphismInspector,
+    AhuUnrootedTreeIsomorphismInspector,
 };
 pub use mapping::{IsomorphicGraphMapping, NULL_NODE};
 pub use ordering::GraphOrdering;
 pub use refinement::{ColorRefinementIsomorphismInspector, IsomorphismUndecidable};
 pub use vf2::{
-    EdgeComparator, VF2GraphIsomorphismInspector, VF2MappingIterator,
-    VF2SubgraphIsomorphismInspector, VertexComparator,
+    EdgeComparator, VF2GraphIsomorphismInspector, VF2SubgraphIsomorphismInspector,
+    VertexComparator, Vf2MappingIterator,
 };
 
 /// General interface for graph and subgraph isomorphism.

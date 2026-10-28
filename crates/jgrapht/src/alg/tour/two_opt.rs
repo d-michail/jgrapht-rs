@@ -16,7 +16,7 @@ use super::base::{
     HamiltonianCycleAlgorithm, HamiltonianCycleImprovementAlgorithm, check_graph,
     closed_vertex_list_to_tour, singleton_tour,
 };
-use super::simple::{RandomTourTSP, reverse};
+use super::simple::{RandomTourTsp, reverse};
 use crate::error::{GraphError, Result};
 use crate::graph::OutgoingGraph;
 use crate::graph::UndirectedGraph;
@@ -40,7 +40,7 @@ type Tour<G> = Result<Option<GraphWalk<<G as Graph>::Vertex, <G as Graph>::Edge>
 /// pair of edges $(i,i+1)$ and $(j,j+1)$ such that replacing them with $(i,j)$ and $(i+1,j+1)$
 /// minimizes the tour length. The default initial tours use RandomTour, however an alternative
 /// algorithm can be provided to create the initial tour. Initial tours generated using
-/// NearestNeighborHeuristicTSP give good results and performance.
+/// NearestNeighborHeuristicTsp give good results and performance.
 ///
 /// See [wikipedia](https://en.wikipedia.org/wiki/2-opt) for more details.
 ///
@@ -49,9 +49,9 @@ type Tour<G> = Result<Option<GraphWalk<<G as Graph>::Vertex, <G as Graph>::Edge>
 ///
 /// # Rust notes
 ///
-/// `TwoOptHeuristicTSP`: repeatedly applies the best improving 2-opt move to a tour produced by an
+/// `TwoOptHeuristicTsp`: repeatedly applies the best improving 2-opt move to a tour produced by an
 /// initializer (a random tour by default), `passes` times, and keeps the best result.
-pub struct TwoOptHeuristicTSP<'a, G: Graph> {
+pub struct TwoOptHeuristicTsp<'a, G: Graph> {
     passes: usize,
     initializer: Box<dyn HamiltonianCycleAlgorithm<G> + 'a>,
     min_cost_improvement: f64,
@@ -64,7 +64,7 @@ struct State<V> {
     rev_index: Vec<V>,
 }
 
-impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTsp<'a, G> {
     /// One pass from a random tour.
     pub fn new() -> Self {
         Self::with_passes(1)
@@ -72,7 +72,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
 
     /// Creates an instance with the given passes.
     pub fn with_passes(passes: usize) -> Self {
-        Self::with_all(passes, Box::new(RandomTourTSP::new()), 1e-8).expect("one pass at least")
+        Self::with_all(passes, Box::new(RandomTourTsp::new()), 1e-8).expect("one pass at least")
     }
 
     /// Creates an instance with the given seed.
@@ -91,7 +91,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
     ///
     /// Errors of the graph operations it performs are propagated.
     pub fn with_rng(passes: usize, rng: impl RandomSource + 'a) -> Result<Self> {
-        Self::with_all(passes, Box::new(RandomTourTSP::with_rng(rng)), 1e-8)
+        Self::with_all(passes, Box::new(RandomTourTsp::with_rng(rng)), 1e-8)
     }
 
     /// Creates an instance with the given initializer.
@@ -116,7 +116,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
                 requirement: crate::ParameterRequirement::AtLeast(1),
             });
         }
-        Ok(TwoOptHeuristicTSP {
+        Ok(TwoOptHeuristicTsp {
             passes,
             initializer,
             min_cost_improvement: min_cost_improvement.abs(),
@@ -225,14 +225,14 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
     }
 }
 
-impl<'a, G: UndirectedGraph + OutgoingGraph + 'a> Default for TwoOptHeuristicTSP<'a, G> {
+impl<'a, G: UndirectedGraph + OutgoingGraph + 'a> Default for TwoOptHeuristicTsp<'a, G> {
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
-    for TwoOptHeuristicTSP<'a, G>
+    for TwoOptHeuristicTsp<'a, G>
 {
     /// Computes a 2-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
@@ -255,7 +255,7 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
 }
 
 impl<'a, G: UndirectedGraph + OutgoingGraph + 'a> HamiltonianCycleImprovementAlgorithm<G>
-    for TwoOptHeuristicTSP<'a, G>
+    for TwoOptHeuristicTsp<'a, G>
 {
     /// Try to improve a tour by running the 2-opt heuristic.
     fn improve_tour(

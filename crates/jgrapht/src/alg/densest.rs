@@ -14,7 +14,7 @@
 
 //! Densest subgraph (density = edges / vertices, direction and multiplicity ignored).
 
-use super::flow::{MinimumSTCutAlgorithm, PushRelabelMFImpl};
+use super::flow::{MinimumStCutAlgorithm, PushRelabel};
 use super::util::Indexed;
 use crate::Result;
 use crate::graph::OutgoingGraph;
@@ -74,13 +74,13 @@ pub fn greedy_densest_subgraph<G: Graph>(g: &G) -> (Vec<G::Vertex>, f64) {
 pub type DensityNetwork<V> = crate::BaseGraph<V, crate::DefaultEdge, crate::graph::Directed>;
 
 /// Computes the source side of a minimum `s`-`t` cut of a [`DensityNetwork`] (edge weights are
-/// the capacities). This plays the role of JGraphT's `MinimumSTCutAlgorithm` factory argument.
+/// the capacities). This plays the role of JGraphT's `MinimumStCutAlgorithm` factory argument.
 pub type MinCutFn<V> = Box<dyn Fn(&DensityNetwork<V>, &V, &V) -> Result<HashSet<V>>>;
 
 /// The default min-cut used by the Goldberg algorithms (max-flow based).
 pub fn default_min_cut<V: Clone + Eq + std::hash::Hash + 'static>() -> MinCutFn<V> {
     Box::new(|net, s, t| {
-        let mut push_relabel = PushRelabelMFImpl::new_allowing_negative_capacities(net)?;
+        let mut push_relabel = PushRelabel::new_allowing_negative_capacities(net)?;
         let cut = push_relabel.minimum_cut(s, t)?;
         Ok(cut.source_partition().iter().cloned().collect())
     })

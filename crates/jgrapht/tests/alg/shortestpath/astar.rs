@@ -12,7 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::alg::shortestpath::AStarShortestPath;
+use jgrapht::alg::shortestpath::AStar;
 use jgrapht::{DiGraph, GraphMut, GraphMutExt, UGraph};
 use std::collections::HashMap;
 
@@ -92,7 +92,7 @@ pub(super) fn manhattan(source: &Node, target: &Node) -> f64 {
 #[test]
 fn test_labyrinth_1() {
     let (graph, source, target) = labyrinth(&LABYRINTH_1);
-    let path = AStarShortestPath::new(&graph, manhattan)
+    let path = AStar::new(&graph, manhattan)
         .path(&source, &target)
         .unwrap()
         .unwrap();
@@ -105,7 +105,7 @@ fn test_labyrinth_1() {
         let y = source.1.abs_diff(target.1) as f64;
         (x * x + y * y).sqrt()
     };
-    let path = AStarShortestPath::new(&graph, euclidean)
+    let path = AStar::new(&graph, euclidean)
         .path(&source, &target)
         .unwrap()
         .unwrap();
@@ -117,7 +117,7 @@ fn test_labyrinth_1() {
 fn test_labyrinth_2() {
     let (graph, source, target) = labyrinth(&LABYRINTH_2);
     assert!(
-        AStarShortestPath::new(&graph, manhattan)
+        AStar::new(&graph, manhattan)
             .path(&source, &target)
             .unwrap()
             .is_none()
@@ -142,7 +142,7 @@ fn test_multigraph() {
         graph.add_weighted_edge(&source, &target, weight).unwrap();
     }
 
-    let path = AStarShortestPath::new(&graph, manhattan)
+    let path = AStar::new(&graph, manhattan)
         .path(&n1, &n3)
         .unwrap()
         .unwrap();
@@ -175,9 +175,6 @@ fn test_inconsistent_heuristic() {
         _ => 0.0,
     };
 
-    let path = AStarShortestPath::new(&graph, heuristic)
-        .path(&3, &2)
-        .unwrap()
-        .unwrap();
+    let path = AStar::new(&graph, heuristic).path(&3, &2).unwrap().unwrap();
     assert!((path.weight() - 0.9641320715228003).abs() < 1e-9);
 }

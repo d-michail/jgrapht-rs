@@ -66,16 +66,16 @@ struct AdoptionParent {
 /// This algorithm doesn't have the best performance on all types of networks. It's recommended to
 /// check if this algorithm gives substantial performance improvement before using it in a particular
 /// application. A good general-purpose alternative which works fast in all scenarios is the
-/// `PushRelabelMFImpl`.
+/// `PushRelabel`.
 ///
 /// This algorithm works with both directed and undirected networks. The algorithm doesn't have
 /// internal synchronization, thus any concurrent network modification has undefined behaviour.
 ///
 /// # Rust notes
 ///
-/// `BoykovKolmogorovMFImpl`: two search trees (from the source and from the sink) that are grown,
+/// `BoykovKolmogorov`: two search trees (from the source and from the sink) that are grown,
 /// augmented along and repaired, `O(V² E |C|)` in theory and fast on vision-style graphs.
-pub struct BoykovKolmogorovMFImpl<'g, G: OutgoingGraph> {
+pub struct BoykovKolmogorov<'g, G: OutgoingGraph> {
     net: FlowNet<'g, G>,
     data: Vec<VertexData>,
     current_timestamp: u64,
@@ -84,7 +84,7 @@ pub struct BoykovKolmogorovMFImpl<'g, G: OutgoingGraph> {
     child_orphans: VecDeque<usize>,
 }
 
-impl<'g, G: OutgoingGraph> BoykovKolmogorovMFImpl<'g, G> {
+impl<'g, G: OutgoingGraph> BoykovKolmogorov<'g, G> {
     /// Creates a new algorithm instance with the specified `network`. The created algorithm
     /// uses default epsilon.
     ///
@@ -103,7 +103,7 @@ impl<'g, G: OutgoingGraph> BoykovKolmogorovMFImpl<'g, G> {
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         let net = FlowNet::new(network, epsilon)?;
         net.check_capacities(epsilon)?;
-        Ok(BoykovKolmogorovMFImpl {
+        Ok(BoykovKolmogorov {
             net,
             data: Vec::new(),
             current_timestamp: 0,
@@ -522,4 +522,4 @@ impl<'g, G: OutgoingGraph> BoykovKolmogorovMFImpl<'g, G> {
     }
 }
 
-flow_algorithm_api!(BoykovKolmogorovMFImpl, crate::graph::OutgoingGraph);
+flow_algorithm_api!(BoykovKolmogorov, crate::graph::OutgoingGraph);

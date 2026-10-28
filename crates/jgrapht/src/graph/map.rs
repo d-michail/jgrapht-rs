@@ -24,29 +24,25 @@ use std::hash::Hash;
 /// matching the relevant storage and iteration properties of fastutil's
 /// `Object2ObjectLinkedOpenHashMap`.
 #[derive(Debug, Clone, Copy, Default)]
-pub struct FastutilMapSpecifics;
+pub struct MapSpecifics;
 
 /// Storage marker for the integer-vertex map graph implementation.
 ///
 /// Rust stores `usize` keys inline, so this has the same no-boxing property as fastutil's
 /// `Int2ReferenceLinkedOpenHashMap`.
 #[derive(Debug, Clone, Copy, Default)]
-pub struct FastutilMapIntVertexSpecifics;
+pub struct IntMapSpecifics;
 
 /// Map-backed graph with arbitrary hashable vertices.
 ///
 /// The final type parameter selects direction and defaults to [`Undirected`]. Constructors accept
 /// a `fast_lookups` flag; when enabled, endpoint pairs are indexed for expected O(1) edge lookup.
-pub type FastutilMapGraph<V, E = DefaultEdge, D = Undirected> =
-    BaseGraph<V, E, D, FastutilMapSpecifics>;
+pub type MapGraph<V, E = DefaultEdge, D = Undirected> = BaseGraph<V, E, D, MapSpecifics>;
 
 /// Map-backed graph specialized for integer vertices.
-pub type FastutilMapIntVertexGraph<E = DefaultEdge, D = Undirected> =
-    BaseGraph<usize, E, D, FastutilMapIntVertexSpecifics>;
+pub type IntMapGraph<E = DefaultEdge, D = Undirected> = BaseGraph<usize, E, D, IntMapSpecifics>;
 
-impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction>
-    BaseGraph<V, E, D, FastutilMapSpecifics>
-{
+impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> BaseGraph<V, E, D, MapSpecifics> {
     /// Creates a map graph with an edge factory and optional endpoint indexing.
     pub fn with_edge_factory_and_lookup(
         ty: GraphType,
@@ -62,7 +58,7 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction>
     }
 }
 
-impl<E: Clone + Eq + Hash, D: Direction> BaseGraph<usize, E, D, FastutilMapIntVertexSpecifics> {
+impl<E: Clone + Eq + Hash, D: Direction> BaseGraph<usize, E, D, IntMapSpecifics> {
     /// Creates an integer-vertex map graph with an edge factory and optional endpoint indexing.
     pub fn with_edge_factory_and_lookup(
         ty: GraphType,
@@ -78,14 +74,14 @@ impl<E: Clone + Eq + Hash, D: Direction> BaseGraph<usize, E, D, FastutilMapIntVe
     }
 }
 
-impl<V: Clone + Eq + Hash, D: Direction> BaseGraph<V, DefaultEdge, D, FastutilMapSpecifics> {
+impl<V: Clone + Eq + Hash, D: Direction> BaseGraph<V, DefaultEdge, D, MapSpecifics> {
     /// Creates a map graph with [`DefaultEdge`]s and optional endpoint indexing.
     pub fn with_graph_type_and_lookup(ty: GraphType, fast_lookups: bool) -> Self {
         Self::with_edge_factory_and_lookup(ty, DefaultEdge::from_id, fast_lookups)
     }
 }
 
-impl<D: Direction> BaseGraph<usize, DefaultEdge, D, FastutilMapIntVertexSpecifics> {
+impl<D: Direction> BaseGraph<usize, DefaultEdge, D, IntMapSpecifics> {
     /// Creates an integer-vertex map graph with [`DefaultEdge`]s and optional endpoint indexing.
     pub fn with_graph_type_and_lookup(ty: GraphType, fast_lookups: bool) -> Self {
         Self::with_edge_factory_and_lookup(ty, DefaultEdge::from_id, fast_lookups)

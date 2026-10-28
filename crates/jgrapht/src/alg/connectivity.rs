@@ -1183,12 +1183,12 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
         Self::with_flow(
             graph,
             |g, s, t| {
-                super::flow::EdmondsKarpMFImpl::new(g)
+                super::flow::EdmondsKarp::new(g)
                     .and_then(|mut ek| ek.maximum_flow_value(s, t))
                     .unwrap_or(0.0)
             },
             |g, s, t| {
-                super::flow::EdmondsKarpMFImpl::new(g)
+                super::flow::EdmondsKarp::new(g)
                     .and_then(|mut ek| ek.maximum_flow_value(s, t))
                     .unwrap_or(0.0)
             },

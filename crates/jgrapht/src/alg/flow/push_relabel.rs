@@ -38,9 +38,9 @@ use std::collections::VecDeque;
 ///
 /// # Rust notes
 ///
-/// `PushRelabelMFImpl`: FIFO push-relabel with the global-relabelling and gap heuristics,
+/// `PushRelabel`: FIFO push-relabel with the global-relabelling and gap heuristics,
 /// `O(V³)`.
-pub struct PushRelabelMFImpl<'g, G: IncidenceGraph> {
+pub struct PushRelabel<'g, G: IncidenceGraph> {
     net: FlowNet<'g, G>,
     n: usize,
     count_height: Vec<usize>,
@@ -54,7 +54,7 @@ pub struct PushRelabelMFImpl<'g, G: IncidenceGraph> {
     comparator: ToleranceDoubleComparator,
 }
 
-impl<'g, G: IncidenceGraph> PushRelabelMFImpl<'g, G> {
+impl<'g, G: IncidenceGraph> PushRelabel<'g, G> {
     /// Construct a new push-relabel algorithm.
     ///
     /// # Errors
@@ -84,7 +84,7 @@ impl<'g, G: IncidenceGraph> PushRelabelMFImpl<'g, G> {
 
     fn from_net(net: FlowNet<'g, G>) -> Result<Self> {
         let n = net.vs.len();
-        Ok(PushRelabelMFImpl {
+        Ok(PushRelabel {
             net,
             n,
             count_height: Vec::new(),
@@ -275,4 +275,4 @@ impl<'g, G: IncidenceGraph> PushRelabelMFImpl<'g, G> {
     }
 }
 
-flow_algorithm_api!(PushRelabelMFImpl, crate::graph::IncidenceGraph);
+flow_algorithm_api!(PushRelabel, crate::graph::IncidenceGraph);

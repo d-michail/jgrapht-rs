@@ -15,8 +15,8 @@
 //! Rust-native tests of the flow result objects (API roadmap R5): a run returns everything it
 //! produced, owned, and there is no state to query in the wrong order.
 use jgrapht::alg::flow::{
-    DinicMFImpl, EdmondsKarpMFImpl, GusfieldEquivalentFlowTree, GusfieldGomoryHuCutTree,
-    MaximumFlowAlgorithm, MaximumFlowValueAlgorithm, MinimumSTCutAlgorithm, PushRelabelMFImpl,
+    Dinic, EdmondsKarp, GusfieldEquivalentFlowTree, GusfieldGomoryHuCutTree, MaximumFlowAlgorithm,
+    MaximumFlowValueAlgorithm, MinimumStCutAlgorithm, PushRelabel,
 };
 use jgrapht::{DiGraph, Graph, GraphError, GraphMut, GraphMutExt, UGraph, WeightProblem};
 
@@ -40,7 +40,7 @@ fn network() -> DiGraph<u32> {
 #[test]
 fn a_result_outlives_the_next_run_of_the_same_algorithm() {
     let g = network();
-    let mut dinic = DinicMFImpl::new(&g).unwrap();
+    let mut dinic = Dinic::new(&g).unwrap();
     let first = dinic.maximum_flow(&0, &3).unwrap();
     let second = dinic.maximum_flow(&0, &1).unwrap();
     assert_eq!(first.value(), 5.0);
@@ -55,15 +55,9 @@ fn a_result_outlives_the_next_run_of_the_same_algorithm() {
 fn the_cut_certifies_the_flow() {
     let g = network();
     for result in [
-        DinicMFImpl::new(&g).unwrap().maximum_flow(&0, &3).unwrap(),
-        EdmondsKarpMFImpl::new(&g)
-            .unwrap()
-            .maximum_flow(&0, &3)
-            .unwrap(),
-        PushRelabelMFImpl::new(&g)
-            .unwrap()
-            .maximum_flow(&0, &3)
-            .unwrap(),
+        Dinic::new(&g).unwrap().maximum_flow(&0, &3).unwrap(),
+        EdmondsKarp::new(&g).unwrap().maximum_flow(&0, &3).unwrap(),
+        PushRelabel::new(&g).unwrap().maximum_flow(&0, &3).unwrap(),
     ] {
         assert_eq!(result.value(), 5.0);
         assert_eq!(result.cut_capacity(), result.value());
@@ -93,8 +87,8 @@ fn the_cut_certifies_the_flow() {
 #[test]
 fn minimum_cut_is_the_cut_of_the_flow() {
     let g = network();
-    let cut = DinicMFImpl::new(&g).unwrap().minimum_cut(&0, &3).unwrap();
-    let flow = DinicMFImpl::new(&g).unwrap().maximum_flow(&0, &3).unwrap();
+    let cut = Dinic::new(&g).unwrap().minimum_cut(&0, &3).unwrap();
+    let flow = Dinic::new(&g).unwrap().maximum_flow(&0, &3).unwrap();
     assert_eq!(cut.capacity(), flow.value());
     assert_eq!(cut.source_partition(), flow.source_partition());
     assert_eq!(cut.cut_edges(), flow.cut_edges());
@@ -103,7 +97,7 @@ fn minimum_cut_is_the_cut_of_the_flow() {
 #[test]
 fn bad_terminals_and_capacities_are_typed_errors() {
     let g = network();
-    let mut dinic = DinicMFImpl::new(&g).unwrap();
+    let mut dinic = Dinic::new(&g).unwrap();
     assert_eq!(
         dinic.maximum_flow(&0, &99).err(),
         Some(GraphError::VertexNotFound)
@@ -122,7 +116,7 @@ fn bad_terminals_and_capacities_are_typed_errors() {
     let e = *negative.get_edge(&0, &1).unwrap();
     negative.set_edge_weight(&e, -1.0).unwrap();
     assert_eq!(
-        DinicMFImpl::new(&negative).err(),
+        Dinic::new(&negative).err(),
         Some(GraphError::InvalidWeight(WeightProblem::Negative))
     );
 }

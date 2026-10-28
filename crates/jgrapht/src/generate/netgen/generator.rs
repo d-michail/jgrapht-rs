@@ -15,7 +15,7 @@
 use super::config::NetworkGeneratorConfig;
 use super::distributor::Distributor;
 use super::problems::{BipartiteMatchingProblem, MaximumFlowProblem, NetworkInfo};
-use crate::alg::flow::MinimumCostFlowProblemImpl;
+use crate::alg::flow::MinimumCostFlowNetwork;
 use crate::graph::OutgoingGraph;
 use crate::graph::props::require_directed;
 use crate::graph::{Graph, GraphMut};
@@ -178,14 +178,14 @@ where
     >(
         &mut self,
         graph: &'g mut G,
-    ) -> Result<MinimumCostFlowProblemImpl<'g, G>>
+    ) -> Result<MinimumCostFlowNetwork<'g, G>>
     where
         V: 'g,
         E: 'g,
     {
         require_directed(graph)?;
         let run = self.generate(graph)?;
-        Ok(MinimumCostFlowProblemImpl::with_costs(
+        Ok(MinimumCostFlowNetwork::with_costs(
             graph,
             move |vertex| run.supply.get(vertex).copied().unwrap_or(0),
             move |edge| run.capacity[edge],

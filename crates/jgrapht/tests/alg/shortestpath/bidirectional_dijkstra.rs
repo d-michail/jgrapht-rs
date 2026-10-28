@@ -14,7 +14,7 @@
 
 use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{
-    BidirectionalDijkstraShortestPath, DijkstraShortestPath, ShortestPathAlgorithm,
+    BidirectionalDijkstraShortestPath, Dijkstra, ShortestPathAlgorithm,
 };
 use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
 use jgrapht::graph::IncidenceGraph;
@@ -194,7 +194,7 @@ fn assert_matches_dijkstra<G>(graph: &G, radius: f64)
 where
     G: Graph<Vertex = usize, Edge = DefaultEdge> + IncidenceGraph,
 {
-    let dijkstra = DijkstraShortestPath::new(graph).radius(radius);
+    let dijkstra = Dijkstra::new(graph).radius(radius);
     let bidirectional = BidirectionalDijkstraShortestPath::with_radius(graph, radius).unwrap();
     for source in graph.vertices() {
         let source = source.borrow();

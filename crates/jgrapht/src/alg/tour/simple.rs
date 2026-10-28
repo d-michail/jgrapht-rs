@@ -38,39 +38,39 @@ type Tour<G> = Result<Option<GraphWalk<<G as Graph>::Vertex, <G as Graph>::Edge>
 ///
 /// This class generates a random Hamiltonian Cycle. This is a simple unoptimised solution to the
 /// Travelling Salesman Problem, or more usefully is a starting point for optimising a tour using
-/// TwoOptHeuristicTSP.
+/// TwoOptHeuristicTsp.
 ///
 /// # Rust notes
 ///
-/// `RandomTourTSP`: a uniformly random permutation of the vertices.
-pub struct RandomTourTSP<R = StdRng> {
+/// `RandomTourTsp`: a uniformly random permutation of the vertices.
+pub struct RandomTourTsp<R = StdRng> {
     rng: R,
 }
 
-impl RandomTourTSP<StdRng> {
+impl RandomTourTsp<StdRng> {
     /// Construct with default random number generator
     pub fn new() -> Self {
-        RandomTourTSP {
+        RandomTourTsp {
             rng: StdRng::from_os_rng(),
         }
     }
 }
 
-impl Default for RandomTourTSP<StdRng> {
+impl Default for RandomTourTsp<StdRng> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<R: RandomSource> RandomTourTSP<R> {
+impl<R: RandomSource> RandomTourTsp<R> {
     /// Creates an instance with the given rng.
     pub fn with_rng(rng: R) -> Self {
-        RandomTourTSP { rng }
+        RandomTourTsp { rng }
     }
 }
 
 impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgorithm<G>
-    for RandomTourTSP<R>
+    for RandomTourTsp<R>
 {
     /// Computes a tour using the greedy heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
@@ -96,11 +96,11 @@ impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgori
 /// The tour computed with a `Nearest-Neighbor-Heuristic` can vary depending on the first
 /// vertex visited. The first vertex for the next or for multiple subsequent tour computations (calls
 /// of `getTour(Graph)`) can be specified in the constructors
-/// `NearestNeighborHeuristicTSP(Object)` or `NearestNeighborHeuristicTSP(Iterable)`.
+/// `NearestNeighborHeuristicTsp(Object)` or `NearestNeighborHeuristicTsp(Iterable)`.
 /// This can be used for example to ensure that the first vertices visited are different for
 /// subsequent calls of `getTour(Graph)`. Once each specified first vertex is used, the first
 /// vertex in subsequent tour computations is selected randomly from the graph. Alternatively
-/// `NearestNeighborHeuristicTSP(Random)` or `NearestNeighborHeuristicTSP(long)` can be
+/// `NearestNeighborHeuristicTsp(Random)` or `NearestNeighborHeuristicTsp(long)` can be
 /// used to specify a `Random` used to randomly select the vertex visited first.
 ///
 /// The implementation of this class is based on:
@@ -113,15 +113,15 @@ impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgori
 ///
 /// # Rust notes
 ///
-/// `NearestNeighborHeuristicTSP`: starts at a given or random vertex and repeatedly walks to the
+/// `NearestNeighborHeuristicTsp`: starts at a given or random vertex and repeatedly walks to the
 /// nearest unvisited vertex.
-pub struct NearestNeighborHeuristicTSP<V, R = StdRng> {
+pub struct NearestNeighborHeuristicTsp<V, R = StdRng> {
     rng: R,
     /// initial vertices still to be used, one per call
     initial_vertices: VecDeque<V>,
 }
 
-impl<V> NearestNeighborHeuristicTSP<V, StdRng> {
+impl<V> NearestNeighborHeuristicTsp<V, StdRng> {
     /// Constructor. By default a random vertex is chosen to start.
     pub fn new() -> Self {
         Self::with_rng(StdRng::from_os_rng())
@@ -139,23 +139,23 @@ impl<V> NearestNeighborHeuristicTSP<V, StdRng> {
 
     /// Call `i` starts at the `i`-th given vertex; once they are used up, at random vertices.
     pub fn with_initial_vertices(initial_vertices: impl IntoIterator<Item = V>) -> Self {
-        NearestNeighborHeuristicTSP {
+        NearestNeighborHeuristicTsp {
             rng: StdRng::from_os_rng(),
             initial_vertices: initial_vertices.into_iter().collect(),
         }
     }
 }
 
-impl<V> Default for NearestNeighborHeuristicTSP<V, StdRng> {
+impl<V> Default for NearestNeighborHeuristicTsp<V, StdRng> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<V, R> NearestNeighborHeuristicTSP<V, R> {
+impl<V, R> NearestNeighborHeuristicTsp<V, R> {
     /// Creates an instance with the given rng.
     pub fn with_rng(rng: R) -> Self {
-        NearestNeighborHeuristicTSP {
+        NearestNeighborHeuristicTsp {
             rng,
             initial_vertices: VecDeque::new(),
         }
@@ -163,7 +163,7 @@ impl<V, R> NearestNeighborHeuristicTSP<V, R> {
 }
 
 impl<G: OutgoingGraph + UndirectedGraph, R: RandomSource> HamiltonianCycleAlgorithm<G>
-    for NearestNeighborHeuristicTSP<G::Vertex, R>
+    for NearestNeighborHeuristicTsp<G::Vertex, R>
 {
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -225,18 +225,18 @@ fn nearest_neighbor<G: Graph>(
 ///
 /// # Rust notes
 ///
-/// `TwoApproxMetricTSP`: shortcuts a depth-first walk of a minimum spanning tree.
+/// `TwoApproxMetricTsp`: shortcuts a depth-first walk of a minimum spanning tree.
 #[derive(Default)]
-pub struct TwoApproxMetricTSP;
+pub struct TwoApproxMetricTsp;
 
-impl TwoApproxMetricTSP {
+impl TwoApproxMetricTsp {
     /// Constructs a new instance.
     pub fn new() -> Self {
-        TwoApproxMetricTSP
+        TwoApproxMetricTsp
     }
 }
 
-impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for TwoApproxMetricTSP {
+impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for TwoApproxMetricTsp {
     /// Computes a 2-approximate tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -281,18 +281,18 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for TwoApp
 ///
 /// # Rust notes
 ///
-/// `GreedyHeuristicTSP`: repeatedly adds the cheapest edge that keeps a partial tour.
+/// `GreedyHeuristicTsp`: repeatedly adds the cheapest edge that keeps a partial tour.
 #[derive(Default)]
-pub struct GreedyHeuristicTSP;
+pub struct GreedyHeuristicTsp;
 
-impl GreedyHeuristicTSP {
+impl GreedyHeuristicTsp {
     /// Constructs a new instance.
     pub fn new() -> Self {
-        GreedyHeuristicTSP
+        GreedyHeuristicTsp
     }
 }
 
-impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for GreedyHeuristicTSP {
+impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for GreedyHeuristicTsp {
     /// Computes a tour using the greedy heuristic.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
@@ -357,17 +357,17 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G> for Greedy
 ///
 /// # Rust notes
 ///
-/// `HeldKarpTSP`: the exact dynamic program, `O(2^n n²)`; at most 31 vertices.
+/// `HeldKarpTsp`: the exact dynamic program, `O(2^n n²)`; at most 31 vertices.
 #[derive(Default)]
-pub struct HeldKarpTSP;
+pub struct HeldKarpTsp;
 
 /// `Double.MIN_VALUE`, the smallest positive double, marks an unset memo entry.
 const MIN_VALUE: f64 = f64::from_bits(1);
 
-impl HeldKarpTSP {
+impl HeldKarpTsp {
     /// Constructs a new instance.
     pub fn new() -> Self {
-        HeldKarpTSP
+        HeldKarpTsp
     }
 
     fn memo(previous_node: usize, state: usize, c: &mut [Vec<f64>], w: &[Vec<f64>]) -> f64 {
@@ -392,7 +392,7 @@ impl HeldKarpTSP {
     }
 }
 
-impl<G: Graph> HamiltonianCycleAlgorithm<G> for HeldKarpTSP {
+impl<G: Graph> HamiltonianCycleAlgorithm<G> for HeldKarpTsp {
     /// Computes a minimum-cost Hamiltonian tour.
     fn get_tour(&mut self, graph: &G) -> Tour<G> {
         require_not_empty(graph)?;

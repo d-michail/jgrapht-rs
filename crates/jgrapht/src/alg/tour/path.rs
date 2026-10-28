@@ -593,7 +593,7 @@ impl<G: IncidenceGraph> HamiltonianPathAlgorithm<G> for HeldKarpHamiltonianPath 
 ///   options tend to fail or commit early, which generally reduces search.
 ///
 /// Empty graphs are rejected with an error, matching the convention used by the other
-/// Hamiltonian / TSP solvers (for example `HeldKarpTSP`). Graphs with self-loops are accepted but self-loops
+/// Hamiltonian / TSP solvers (for example `HeldKarpTsp`). Graphs with self-loops are accepted but self-loops
 /// are ignored, since they cannot be part of a simple path. In multigraphs, parallel edges
 /// between the same pair of vertices collapse into a single DFS branch and the returned path
 /// picks an arbitrary representative edge via `Graph#getEdge`; the result is not

@@ -19,7 +19,7 @@
 //! whose Java setter throws on its own check `build().is_err()`; `Distributor` takes the random
 //! source per call; problems do not hold the graph.
 
-use jgrapht::alg::flow::{MaximumFlowValueAlgorithm, MinimumCostFlowProblem, PushRelabelMFImpl};
+use jgrapht::alg::flow::{MaximumFlowValueAlgorithm, MinimumCostFlowProblem, PushRelabel};
 use jgrapht::alg::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
 use jgrapht::generate::netgen::*;
 use jgrapht::util::java::RandomSource;
@@ -548,7 +548,7 @@ mod network_generator_test {
         let mut g = g1;
         let converted = p1.to_single_source_single_sink_problem(&mut g).unwrap();
         converted.dump_capacities(&mut g).unwrap();
-        let flow = PushRelabelMFImpl::new(&g)
+        let flow = PushRelabel::new(&g)
             .unwrap()
             .maximum_flow_value(converted.source(), converted.sink())
             .unwrap();

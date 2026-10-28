@@ -502,7 +502,7 @@
 //! Shortest paths, spanning trees and flows:
 //!
 //! ```
-//! use jgrapht::alg::flow::EdmondsKarpMFImpl;
+//! use jgrapht::alg::flow::EdmondsKarp;
 //! use jgrapht::alg::shortestpath::{BellmanFord, Dijkstra, ShortestPathAlgorithm};
 //! use jgrapht::alg::spanning::kruskal;
 //! use jgrapht::*;
@@ -523,7 +523,7 @@
 //! assert_eq!(paths.weight(&'b'), Some(2.0));
 //!
 //! // The edge weights are capacities in a flow problem.
-//! let flow = EdmondsKarpMFImpl::new(&g)?.calculate_maximum_flow(&'s', &'t')?;
+//! let flow = EdmondsKarp::new(&g)?.calculate_maximum_flow(&'s', &'t')?;
 //! assert_eq!(flow, 5.0);
 //!
 //! // Spanning trees treat the graph as undirected.
@@ -689,16 +689,16 @@
 //! ## Maximum flow and minimum cut
 //!
 //! A flow network is a directed graph whose edge weights are capacities. Every maximum-flow class
-//! ([`EdmondsKarpMFImpl`](crate::alg::flow::EdmondsKarpMFImpl),
-//! [`DinicMFImpl`](crate::alg::flow::DinicMFImpl),
-//! [`PushRelabelMFImpl`](crate::alg::flow::PushRelabelMFImpl),
-//! [`BoykovKolmogorovMFImpl`](crate::alg::flow::BoykovKolmogorovMFImpl)) answers
+//! ([`EdmondsKarp`](crate::alg::flow::EdmondsKarp),
+//! [`Dinic`](crate::alg::flow::Dinic),
+//! [`PushRelabel`](crate::alg::flow::PushRelabel),
+//! [`BoykovKolmogorov`](crate::alg::flow::BoykovKolmogorov)) answers
 //! `maximum_flow(source, sink)` with a [`MaximumFlow`](crate::alg::flow::MaximumFlow): the value,
 //! the flow on every edge and the minimum cut that proves it is maximal. Constructors reject
 //! negative capacities, and a source equal to the sink is an error.
 //!
 //! ```
-//! use jgrapht::alg::flow::{DinicMFImpl, MaximumFlowAlgorithm};
+//! use jgrapht::alg::flow::{Dinic, MaximumFlowAlgorithm};
 //! use jgrapht::*;
 //!
 //! let mut net = DiGraph::<&str>::simple().weighted();
@@ -712,7 +712,7 @@
 //! let at = edge("a", "t", 5.0)?;
 //! let bt = edge("b", "t", 10.0)?;
 //!
-//! let flow = DinicMFImpl::new(&net)?.maximum_flow(&"s", &"t")?;
+//! let flow = Dinic::new(&net)?.maximum_flow(&"s", &"t")?;
 //! assert_eq!(flow.value(), 15.0);
 //! assert_eq!(flow.flow(&sa), Some(10.0));
 //! assert_eq!(flow.flow(&at).unwrap() + flow.flow(&bt).unwrap(), 15.0);

@@ -99,9 +99,6 @@ pub struct BellmanFord<'g, G> {
     max_hops: usize,
 }
 
-/// Java-compatible class name for [`BellmanFord`].
-pub type BellmanFordShortestPath<'g, G> = BellmanFord<'g, G>;
-
 impl<'g, G> BellmanFord<'g, G> {
     /// Construct a new instance.
     pub fn new(graph: &'g G) -> Self {

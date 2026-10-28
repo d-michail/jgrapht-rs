@@ -14,7 +14,7 @@
 
 use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{
-    CHManyToManyShortestPaths, ContractionHierarchyBidirectionalDijkstra,
+    ContractionHierarchyBidirectionalDijkstra, ContractionHierarchyManyToManyShortestPaths,
     ContractionHierarchyPrecomputation, Dijkstra, ShortestPathAlgorithm,
     TransitNodeRoutingPrecomputation, TransitNodeRoutingShortestPath,
 };
@@ -96,7 +96,7 @@ fn ch_many_to_many_materializes_requested_product() {
     let hierarchy = ContractionHierarchyPrecomputation::new(&graph)
         .compute_contraction_hierarchy()
         .unwrap();
-    let paths = CHManyToManyShortestPaths::new(&hierarchy)
+    let paths = ContractionHierarchyManyToManyShortestPaths::new(&hierarchy)
         .many_to_many([1, 7, 9], [3, 5])
         .unwrap();
     assert_eq!(paths.weight(&1, &3), Some(2.0));

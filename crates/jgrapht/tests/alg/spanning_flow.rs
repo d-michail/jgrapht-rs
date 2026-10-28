@@ -109,15 +109,9 @@ fn clrs() -> DiGraph<u32> {
 fn max_flow_algorithms() {
     let g = clrs();
     let flows = [
-        EdmondsKarpMFImpl::new(&g)
-            .unwrap()
-            .maximum_flow(&0, &5)
-            .unwrap(),
-        DinicMFImpl::new(&g).unwrap().maximum_flow(&0, &5).unwrap(),
-        PushRelabelMFImpl::new(&g)
-            .unwrap()
-            .maximum_flow(&0, &5)
-            .unwrap(),
+        EdmondsKarp::new(&g).unwrap().maximum_flow(&0, &5).unwrap(),
+        Dinic::new(&g).unwrap().maximum_flow(&0, &5).unwrap(),
+        PushRelabel::new(&g).unwrap().maximum_flow(&0, &5).unwrap(),
     ];
     for f in flows {
         assert_eq!(f.value(), 23.0);
@@ -140,7 +134,7 @@ fn max_flow_algorithms() {
                 .all(|e| f.flow(e).unwrap() <= g.edge_weight(e).unwrap() + 1e-9)
         );
     }
-    let mut cut = PushRelabelMFImpl::new(&g).unwrap();
+    let mut cut = PushRelabel::new(&g).unwrap();
     let min_cut = cut.minimum_cut(&0, &5).unwrap();
     assert_eq!(min_cut.capacity(), 23.0);
     assert_eq!(
@@ -166,20 +160,17 @@ fn flow_algorithms_agree_randomly() {
             g.set_edge_weight(&e, rng.random_range(1..10) as f64)
                 .unwrap();
         }
-        let a = EdmondsKarpMFImpl::new(&g)
+        let a = EdmondsKarp::new(&g)
             .unwrap()
             .maximum_flow_value(&0, &11)
             .unwrap();
         assert_eq!(
             a,
-            DinicMFImpl::new(&g)
-                .unwrap()
-                .maximum_flow_value(&0, &11)
-                .unwrap()
+            Dinic::new(&g).unwrap().maximum_flow_value(&0, &11).unwrap()
         );
         assert_eq!(
             a,
-            PushRelabelMFImpl::new(&g)
+            PushRelabel::new(&g)
                 .unwrap()
                 .maximum_flow_value(&0, &11)
                 .unwrap()
@@ -201,7 +192,7 @@ fn gomory_hu_and_stoer_wagner() {
                 .unwrap();
         }
         let mut tree = GusfieldEquivalentFlowTree::new(&g).unwrap();
-        let mut dinic = DinicMFImpl::new(&g).unwrap();
+        let mut dinic = Dinic::new(&g).unwrap();
         let mut global = f64::INFINITY;
         for a in 0..9 {
             for b in a + 1..9 {
@@ -240,7 +231,7 @@ fn min_cost_flow_works() {
     let pos = |e: &DefaultEdge| order.iter().position(|x| x == e).unwrap();
     let cap = |e: &DefaultEdge| [4, 2, 3, 5, 10][pos(e)];
     let cost = |e: &DefaultEdge| [1.0, 2.0, 3.0, 1.0, 1.0][pos(e)];
-    let problem = MinimumCostFlowProblemImpl::with_costs(
+    let problem = MinimumCostFlowNetwork::with_costs(
         &g,
         |vertex| match *vertex {
             0 => 6,
@@ -262,7 +253,7 @@ fn min_cost_flow_works() {
     );
     assert_eq!(flow.cost, 19.0);
     // cheapest: 0-1-2-3 costs 3, 0-1-3 costs 4, 0-2-3 costs 3: fill 0-1 (4) and 0-2 (2)
-    let problem = MinimumCostFlowProblemImpl::with_costs(
+    let problem = MinimumCostFlowNetwork::with_costs(
         &g,
         |vertex| match *vertex {
             0 => 2,

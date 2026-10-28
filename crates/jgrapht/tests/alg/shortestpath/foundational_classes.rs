@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use jgrapht::alg::shortestpath::{
-    ALTAdmissibleHeuristic, AStarShortestPath, BFSShortestPath, DijkstraClosestFirstIterator,
-    DijkstraShortestPath, ShortestPathAlgorithm, TreeMeasurer,
+    AStar, AltAdmissibleHeuristic, BfsShortestPath, Dijkstra, DijkstraClosestFirstIterator,
+    ShortestPathAlgorithm, TreeMeasurer,
 };
 use jgrapht::*;
 use rand::rngs::StdRng;
@@ -38,7 +38,7 @@ fn bfs_graph() -> (DiGraph<&'static str>, [DefaultEdge; 5]) {
 #[test]
 fn bfs_shortest_path_test_path_between() {
     let (graph, [e12, e13, e24, e35, _]) = bfs_graph();
-    let bfs = BFSShortestPath::new(&graph);
+    let bfs = BfsShortestPath::new(&graph);
 
     assert_eq!(bfs.path(&"v1", &"v2").unwrap().unwrap().edge_list(), [e12]);
     assert_eq!(
@@ -55,7 +55,7 @@ fn bfs_shortest_path_test_path_between() {
 #[test]
 fn bfs_shortest_path_test_all_paths() {
     let (graph, [e12, e13, e24, e35, _]) = bfs_graph();
-    let paths = BFSShortestPath::new(&graph).single_source(&"v1").unwrap();
+    let paths = BfsShortestPath::new(&graph).single_source(&"v1").unwrap();
 
     assert!(paths.path(&"v1").unwrap().edge_list().is_empty());
     assert_eq!(paths.path(&"v2").unwrap().edge_list(), [e12]);
@@ -149,9 +149,9 @@ fn check_alt_paths<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(
     while landmarks.len() < 2 {
         landmarks.insert(random.random_range(0..30));
     }
-    let heuristic = ALTAdmissibleHeuristic::new(graph, landmarks).unwrap();
-    let dijkstra = DijkstraShortestPath::new(graph);
-    let astar = AStarShortestPath::new(graph, |source, target| {
+    let heuristic = AltAdmissibleHeuristic::new(graph, landmarks).unwrap();
+    let dijkstra = Dijkstra::new(graph);
+    let astar = AStar::new(graph, |source, target| {
         heuristic.cost_estimate(source, target)
     });
     for source in graph.vertices() {
@@ -189,12 +189,10 @@ fn alt_admissible_heuristic_test_random() {
 fn check_alt_admissibility<G: Graph<Vertex = i32, Edge = DefaultEdge> + IncidenceGraph>(graph: &G) {
     for landmark in graph.vertices() {
         let landmark = landmark.borrow();
-        let heuristic = ALTAdmissibleHeuristic::new(graph, [*landmark]).unwrap();
+        let heuristic = AltAdmissibleHeuristic::new(graph, [*landmark]).unwrap();
         for source in graph.vertices() {
             let source = source.borrow();
-            let paths = DijkstraShortestPath::new(graph)
-                .single_source(source)
-                .unwrap();
+            let paths = Dijkstra::new(graph).single_source(source).unwrap();
             for target in graph.vertices() {
                 let target = target.borrow();
                 let estimate = heuristic.cost_estimate(source, target);

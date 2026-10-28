@@ -81,10 +81,6 @@ pub struct SingleSourcePaths<V, E> {
     pub pred: HashMap<V, (E, V)>,
 }
 
-/// The compact predecessor-tree representation used by shortest-path
-/// algorithms (JGraphT's `TreeSingleSourcePathsImpl`).
-pub type TreeSingleSourcePaths<V, E> = SingleSourcePaths<V, E>;
-
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> SingleSourcePaths<V, E> {
     /// The vertex all paths start at.
     pub fn source(&self) -> &V {

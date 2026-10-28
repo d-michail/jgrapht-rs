@@ -55,14 +55,14 @@ use std::collections::{BinaryHeap, HashMap, HashSet};
 /// Construction performs one Dijkstra search per landmark in undirected
 /// graphs and a forward plus reverse search in directed graphs. Query time is
 /// linear in the number of landmarks.
-pub struct ALTAdmissibleHeuristic<'g, G: Graph> {
+pub struct AltAdmissibleHeuristic<'g, G: Graph> {
     graph: &'g G,
     from_landmark: HashMap<G::Vertex, HashMap<G::Vertex, f64>>,
     to_landmark: HashMap<G::Vertex, HashMap<G::Vertex, f64>>,
     directed: bool,
 }
 
-impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
+impl<'g, G: IncidenceGraph> AltAdmissibleHeuristic<'g, G> {
     /// Constructs a new `AStarAdmissibleHeuristic` using a set of landmarks.
     ///
     /// # Errors

@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use super::base::{MaximumFlowValueAlgorithm, MinimumCut, MinimumSTCutAlgorithm};
-use super::{DEFAULT_EPSILON, PushRelabelMFImpl};
+use super::base::{MaximumFlowValueAlgorithm, MinimumCut, MinimumStCutAlgorithm};
+use super::{DEFAULT_EPSILON, PushRelabel};
 use crate::error::{GraphError, Result};
 use crate::graph::IncidenceGraph;
 use crate::graph::UndirectedGraph;
@@ -23,7 +23,7 @@ use std::borrow::Borrow;
 use std::collections::{HashMap, VecDeque};
 
 type CutAlgorithm<'g, G> =
-    Box<dyn MinimumSTCutAlgorithm<<G as Graph>::Vertex, <G as Graph>::Edge> + 'g>;
+    Box<dyn MinimumStCutAlgorithm<<G as Graph>::Vertex, <G as Graph>::Edge> + 'g>;
 
 /// Shared set-up of the two Gusfield algorithms: the vertex order and index map.
 fn index_vertices<G: Graph>(network: &G) -> Result<(Vec<G::Vertex>, HashMap<G::Vertex, usize>)> {
@@ -52,7 +52,7 @@ fn index_vertices<G: Graph>(network: &G) -> Result<(Vec<G::Vertex>, HashMap<G::V
 ///
 /// The runtime complexity of this class is $O((V-1)Q)$, where $Q$ is the runtime complexity of the
 /// algorithm used to compute $s-t$ cuts in the graph. By default, this class uses the
-/// `PushRelabelMFImpl` implementation to calculate minimum $s-t$ cuts. This class has a
+/// `PushRelabel` implementation to calculate minimum $s-t$ cuts. This class has a
 /// runtime complexity of $O(V^3)$, resulting in a $O(V^4)$ runtime complexity for the overal
 /// algorithm.
 ///
@@ -118,7 +118,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         Self::with_algorithm(
             network,
-            Box::new(PushRelabelMFImpl::with_epsilon(network, epsilon)?),
+            Box::new(PushRelabel::with_epsilon(network, epsilon)?),
         )
     }
 
@@ -226,11 +226,11 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MaximumFlowValueAlgorithm<G::
 /// computes the maximum flow/minimum cut between each of these pairs efficiently by performing
 /// exactly $(n-1)$ minimum $s-t$ cut computations. If your application needs fewer than $n-1$
 /// flow/cut computations, consider computing the maximum flows/minimum cuts manually through
-/// `MaximumFlowAlgorithm`/`MinimumSTCutAlgorithm`.
+/// `MaximumFlowAlgorithm`/`MinimumStCutAlgorithm`.
 ///
 /// The runtime complexity of this class is $O((V-1)Q)$, where $Q$ is the runtime complexity of the
 /// algorithm used to compute $s-t$ cuts in the graph. By default, this class uses the
-/// `PushRelabelMFImpl` implementation to calculate minimum s-t cuts. This class has a runtime
+/// `PushRelabel` implementation to calculate minimum s-t cuts. This class has a runtime
 /// complexity of $O(V^3)$, resulting in a $O(V^4)$ runtime complexity for the overall algorithm.
 ///
 /// Note: this class performs calculations in a lazy manner. The GHT is not calculated until the
@@ -280,7 +280,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         Self::with_algorithm(
             network,
-            Box::new(PushRelabelMFImpl::with_epsilon(network, epsilon)?),
+            Box::new(PushRelabel::with_epsilon(network, epsilon)?),
         )
     }
 
@@ -518,7 +518,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MaximumFlowValueAlgorithm<G::
     }
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MinimumSTCutAlgorithm<G::Vertex, G::Edge>
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MinimumStCutAlgorithm<G::Vertex, G::Edge>
     for GusfieldGomoryHuCutTree<'g, G>
 {
     fn minimum_cut(

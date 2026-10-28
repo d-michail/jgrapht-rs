@@ -17,8 +17,8 @@ use std::borrow::Borrow;
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use jgrapht::alg::shortestpath::{
-    CHManyToManyShortestPaths, ContractionHierarchyPrecomputation, DefaultManyToManyShortestPaths,
-    Dijkstra, DijkstraManyToManyShortestPaths, DijkstraShortestPath, ManyToManyPaths,
+    ContractionHierarchyManyToManyShortestPaths, ContractionHierarchyPrecomputation,
+    DefaultManyToManyShortestPaths, Dijkstra, DijkstraManyToManyShortestPaths, ManyToManyPaths,
     ShortestPathAlgorithm, SingleSourcePaths,
 };
 use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
@@ -56,7 +56,8 @@ where
         Kind::ContractionHierarchy => {
             let hierarchy =
                 ContractionHierarchyPrecomputation::new(graph).compute_contraction_hierarchy()?;
-            CHManyToManyShortestPaths::new(&hierarchy).many_to_many(sources, targets)
+            ContractionHierarchyManyToManyShortestPaths::new(&hierarchy)
+                .many_to_many(sources, targets)
         }
     }
 }
@@ -254,7 +255,7 @@ fn assert_correct_paths<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingG
     sources: &HashSet<usize>,
     targets: &HashSet<usize>,
 ) {
-    let dijkstra = DijkstraShortestPath::new(graph);
+    let dijkstra = Dijkstra::new(graph);
     for source in sources {
         let expected = dijkstra.single_source(source).unwrap();
         for target in targets {
@@ -310,9 +311,7 @@ fn assert_single_source<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingG
     actual: &SingleSourcePaths<usize, DefaultEdge>,
     source: usize,
 ) {
-    let expected = DijkstraShortestPath::new(graph)
-        .single_source(&source)
-        .unwrap();
+    let expected = Dijkstra::new(graph).single_source(&source).unwrap();
     assert_eq!(actual.source(), &source);
     for target in graph.vertices() {
         let target = target.borrow();
@@ -660,7 +659,7 @@ mod contraction_hierarchy_many_to_many {
         let hierarchy = ContractionHierarchyPrecomputation::new(&graph)
             .compute_contraction_hierarchy()
             .unwrap();
-        let paths = CHManyToManyShortestPaths::new(&hierarchy)
+        let paths = ContractionHierarchyManyToManyShortestPaths::new(&hierarchy)
             .single_source(&1)
             .unwrap();
         assert_single_source(&graph, &paths, 1);

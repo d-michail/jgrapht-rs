@@ -15,7 +15,7 @@
 use super::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
 use crate::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
 use crate::alg::matching::{KuhnMunkresMinimalWeightBipartitePerfectMatching, MatchingAlgorithm};
-use crate::alg::shortestpath::{DijkstraShortestPath, ShortestPathAlgorithm};
+use crate::alg::shortestpath::{Dijkstra, ShortestPathAlgorithm};
 use crate::graph::IncidenceGraph;
 use crate::graph::{
     BaseGraph, Directed, Direction, Graph, GraphExt, GraphMut, GraphMutExt, Undirected,
@@ -110,7 +110,7 @@ impl ChinesePostman {
             }
         }
         let count = odd.len();
-        let shortest_path = DijkstraShortestPath::new(graph);
+        let shortest_path = Dijkstra::new(graph);
         let mut paths = vec![vec![None; count]; count];
         for source in 0..count.saturating_sub(1) {
             let from_source = shortest_path.single_source(&odd[source])?;
@@ -168,7 +168,7 @@ impl ChinesePostman {
             }
         }
 
-        let shortest_path = DijkstraShortestPath::new(graph);
+        let shortest_path = Dijkstra::new(graph);
         let mut paths = vec![vec![None; positive.len()]; negative.len()];
         for (source_index, (source, _)) in negative.iter().enumerate() {
             let from_source = shortest_path.single_source(source)?;

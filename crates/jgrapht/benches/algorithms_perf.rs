@@ -21,9 +21,7 @@ mod common;
 use common::*;
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use jgrapht::alg::clique::maximal_cliques;
-use jgrapht::alg::flow::{
-    DinicMFImpl, EdmondsKarpMFImpl, MaximumFlowValueAlgorithm, PushRelabelMFImpl,
-};
+use jgrapht::alg::flow::{Dinic, EdmondsKarp, MaximumFlowValueAlgorithm, PushRelabel};
 use jgrapht::alg::spanning::{kruskal, prim};
 use jgrapht::*;
 
@@ -34,7 +32,7 @@ fn maximum_flow(c: &mut Criterion) {
     group.bench_function("edmonds_karp", |b| {
         b.iter(|| {
             black_box(
-                EdmondsKarpMFImpl::new(&g)
+                EdmondsKarp::new(&g)
                     .unwrap()
                     .maximum_flow_value(&0, &(n - 1))
                     .unwrap(),
@@ -44,7 +42,7 @@ fn maximum_flow(c: &mut Criterion) {
     group.bench_function("dinic", |b| {
         b.iter(|| {
             black_box(
-                DinicMFImpl::new(&g)
+                Dinic::new(&g)
                     .unwrap()
                     .maximum_flow_value(&0, &(n - 1))
                     .unwrap(),
@@ -54,7 +52,7 @@ fn maximum_flow(c: &mut Criterion) {
     group.bench_function("push_relabel", |b| {
         b.iter(|| {
             black_box(
-                PushRelabelMFImpl::new(&g)
+                PushRelabel::new(&g)
                     .unwrap()
                     .maximum_flow_value(&0, &(n - 1))
                     .unwrap(),

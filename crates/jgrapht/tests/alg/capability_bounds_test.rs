@@ -260,8 +260,7 @@ mod cycles_isomorphism_trees {
 
 mod flow_matching_tours {
     use jgrapht::alg::flow::{
-        BoykovKolmogorovMFImpl, DinicMFImpl, EdmondsKarpMFImpl, MaximumFlowValueAlgorithm,
-        PushRelabelMFImpl,
+        BoykovKolmogorov, Dinic, EdmondsKarp, MaximumFlowValueAlgorithm, PushRelabel,
     };
     use jgrapht::alg::matching::{GreedyMaximumCardinalityMatching, MatchingAlgorithm};
     use jgrapht::graph::sparse::{
@@ -283,29 +282,26 @@ mod flow_matching_tours {
         let no = SparseIntDirectedWeightedGraph::<NoIncoming>::from_edges(4, &NETWORK).unwrap();
         let full = SparseIntDirectedWeightedGraph::<FullIncoming>::from_edges(4, &NETWORK).unwrap();
         let on_no = [
-            DinicMFImpl::new(&no)
+            Dinic::new(&no).unwrap().maximum_flow_value(&0, &3).unwrap(),
+            EdmondsKarp::new(&no)
                 .unwrap()
                 .maximum_flow_value(&0, &3)
                 .unwrap(),
-            EdmondsKarpMFImpl::new(&no)
-                .unwrap()
-                .maximum_flow_value(&0, &3)
-                .unwrap(),
-            BoykovKolmogorovMFImpl::new(&no)
+            BoykovKolmogorov::new(&no)
                 .unwrap()
                 .maximum_flow_value(&0, &3)
                 .unwrap(),
         ];
         let on_full = [
-            DinicMFImpl::new(&full)
+            Dinic::new(&full)
                 .unwrap()
                 .maximum_flow_value(&0, &3)
                 .unwrap(),
-            EdmondsKarpMFImpl::new(&full)
+            EdmondsKarp::new(&full)
                 .unwrap()
                 .maximum_flow_value(&0, &3)
                 .unwrap(),
-            BoykovKolmogorovMFImpl::new(&full)
+            BoykovKolmogorov::new(&full)
                 .unwrap()
                 .maximum_flow_value(&0, &3)
                 .unwrap(),
@@ -319,11 +315,11 @@ mod flow_matching_tours {
         let lazy = SparseIntDirectedWeightedGraph::<LazyIncoming>::from_edges(4, &NETWORK).unwrap();
         let full = SparseIntDirectedWeightedGraph::<FullIncoming>::from_edges(4, &NETWORK).unwrap();
         for value in [
-            PushRelabelMFImpl::new(&lazy)
+            PushRelabel::new(&lazy)
                 .unwrap()
                 .maximum_flow_value(&0, &3)
                 .unwrap(),
-            PushRelabelMFImpl::new(&full)
+            PushRelabel::new(&full)
                 .unwrap()
                 .maximum_flow_value(&0, &3)
                 .unwrap(),

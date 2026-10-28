@@ -42,29 +42,25 @@ mod transit_node_routing;
 mod tree_measurer;
 mod yen;
 
+pub use crate::alg::metrics::GraphMeasurer;
 pub use all_directed::{AllDirectedPaths, AllowAllPaths, PathValidator};
-pub use alt::ALTAdmissibleHeuristic;
-pub use astar::{AStar, AStarShortestPath};
-pub use bellman_ford::{
-    BellmanFord, BellmanFordError, BellmanFordShortestPath, NegativeCycleDetected,
-};
-pub use bfs::{BFSShortestPath, BfsShortestPath};
+pub use alt::AltAdmissibleHeuristic;
+pub use astar::AStar;
+pub use bellman_ford::{BellmanFord, BellmanFordError, NegativeCycleDetected};
+pub use bfs::BfsShortestPath;
 pub use bidirectional::{
     BidirectionalAStarShortestPath, BidirectionalDijkstra, BidirectionalDijkstraShortestPath,
 };
 pub use closest_first::DijkstraClosestFirstIterator;
 pub use contraction_hierarchy::{
-    CHManyToManyShortestPaths, ContractionEdge, ContractionHierarchy,
-    ContractionHierarchyBidirectionalDijkstra, ContractionHierarchyPrecomputation,
+    ContractionEdge, ContractionHierarchy, ContractionHierarchyBidirectionalDijkstra,
+    ContractionHierarchyManyToManyShortestPaths, ContractionHierarchyPrecomputation,
     ContractionVertex, ManyToManyPaths,
 };
 pub use dag_all_paths::DagAllPathsCounter;
 pub use delta_stepping::DeltaStepping;
 pub use delta_stepping_parallel::ParallelDeltaSteppingShortestPath;
-/// Alias of [`DeltaStepping`] under the name JGraphT uses.
-pub type DeltaSteppingShortestPath<'g, G> = DeltaStepping<'g, G>;
-pub use crate::alg::metrics::GraphMeasurer;
-pub use dijkstra::{Dijkstra, DijkstraShortestPath};
+pub use dijkstra::Dijkstra;
 pub use disjoint::{BhandariKDisjointShortestPaths, SuurballeKDisjointShortestPaths};
 pub use eppstein::{EppsteinKShortestPath, EppsteinShortestPathIterator};
 pub use floyd_warshall::FloydWarshallShortestPaths;
@@ -75,7 +71,7 @@ pub use many_to_many::{DefaultManyToManyShortestPaths, DijkstraManyToManyShortes
 pub use multi_objective::{
     LabelCorrectingMultiObjectiveShortestPath, MartinShortestPath, MultiObjectiveSingleSourcePaths,
 };
-pub use paths::{AllPairsPaths, ListSingleSourcePaths, SingleSourcePaths, TreeSingleSourcePaths};
+pub use paths::{AllPairsPaths, ListSingleSourcePaths, SingleSourcePaths};
 pub use transit_node_routing::{
     AccessVertex, AccessVertices, LocalityFilter, TransitNodeRouting,
     TransitNodeRoutingPrecomputation, TransitNodeRoutingShortestPath, VoronoiDiagram,

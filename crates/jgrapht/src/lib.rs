@@ -112,10 +112,9 @@ pub use error::{
     FlowProblem, GraphError, GraphProperty, ParameterRequirement, Result, WeightProblem,
 };
 pub use graph::{
-    BaseGraph, DefaultEdge, DiGraph, DirectedExt, DirectedGraph, FastutilMapGraph,
-    FastutilMapIntVertexGraph, Graph, GraphExt, GraphMut, GraphMutExt, IncidenceGraph,
-    IncomingGraph, OutgoingGraph, UGraph, UndirectedGraph, graph_equals, graph_hash,
-    graph_to_string,
+    BaseGraph, DefaultEdge, DiGraph, DirectedExt, DirectedGraph, Graph, GraphExt, GraphMut,
+    GraphMutExt, IncidenceGraph, IncomingGraph, IntMapGraph, MapGraph, OutgoingGraph, UGraph,
+    UndirectedGraph, graph_equals, graph_hash, graph_to_string,
 };
 pub use graph_type::GraphType;
 pub use view::{

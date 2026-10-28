@@ -199,8 +199,8 @@ pub trait MaximumFlowAlgorithm<V, E>: MaximumFlowValueAlgorithm<V> {
 ///
 /// # Rust notes
 ///
-/// `MinimumSTCutAlgorithm`: each call returns the whole [`MinimumCut`].
-pub trait MinimumSTCutAlgorithm<V, E> {
+/// `MinimumStCutAlgorithm`: each call returns the whole [`MinimumCut`].
+pub trait MinimumStCutAlgorithm<V, E> {
     /// Computes a minimum cut between `source` and `sink`.
     ///
     /// # Errors
@@ -537,7 +537,7 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     }
 }
 
-/// Implements [`MaximumFlowAlgorithm`] and [`MinimumSTCutAlgorithm`] for an algorithm struct with a
+/// Implements [`MaximumFlowAlgorithm`] and [`MinimumStCutAlgorithm`] for an algorithm struct with a
 /// `net: FlowNet` field and a `calculate(&mut self, &V, &V) -> Result<f64>` method.
 macro_rules! flow_algorithm_api {
     ($name:ident, $bound:path) => {
@@ -566,7 +566,7 @@ macro_rules! flow_algorithm_api {
             }
         }
 
-        impl<'g, G: $bound> $crate::alg::flow::MinimumSTCutAlgorithm<G::Vertex, G::Edge>
+        impl<'g, G: $bound> $crate::alg::flow::MinimumStCutAlgorithm<G::Vertex, G::Edge>
             for $name<'g, G>
         {
             fn minimum_cut(

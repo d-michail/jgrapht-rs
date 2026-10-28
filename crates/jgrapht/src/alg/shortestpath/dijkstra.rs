@@ -36,9 +36,6 @@ pub struct Dijkstra<'g, G, H = PairingHeap<OrderedF64, usize>> {
     _heap: PhantomData<fn() -> H>,
 }
 
-/// Java-compatible class name for [`Dijkstra`].
-pub type DijkstraShortestPath<'g, G, H = PairingHeap<OrderedF64, usize>> = Dijkstra<'g, G, H>;
-
 impl<'g, G: OutgoingGraph> Dijkstra<'g, G> {
     /// Constructs a new instance of the algorithm for a given graph. The constructed algorithm will
     /// use pairing heap as a default heap implementation.

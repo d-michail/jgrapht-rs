@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Fruchterman–Reingold force-directed layout, with and without a quad tree index
-//! (`FRLayoutAlgorithm2D`, `IndexedFRLayoutAlgorithm2D`, `FRQuadTree`).
+//! (`FrLayoutAlgorithm2D`, `IndexedFRLayoutAlgorithm2D`, `FrQuadTree`).
 
 use super::layouts::{Initializer, LayoutAlgorithm2D};
 use super::model::{Box2D, LayoutModel2D, MapLayoutModel2D, Point2D, boxes, points};
@@ -39,19 +39,19 @@ struct QNode {
     points: Option<Vec<Point2D>>,
 }
 
-/// Quad tree over points for Barnes–Hut style approximations (`FRQuadTree`).
+/// Quad tree over points for Barnes–Hut style approximations (`FrQuadTree`).
 #[derive(Debug, Clone)]
-pub struct FRQuadTree {
+pub struct FrQuadTree {
     nodes: Vec<QNode>,
 }
 
-/// Handle to a node of an [`FRQuadTree`].
+/// Handle to a node of an [`FrQuadTree`].
 pub type NodeId = usize;
 
-impl FRQuadTree {
+impl FrQuadTree {
     /// Create a new tree for a certain area.
     pub fn new(boxx: Box2D) -> Self {
-        FRQuadTree {
+        FrQuadTree {
             nodes: vec![QNode {
                 boxx,
                 total_points: 0,
@@ -232,10 +232,10 @@ pub fn inverse_linear_temperature(a: f64, b: f64) -> TemperatureModel {
 ///
 /// # Rust notes
 ///
-/// The Fruchterman–Reingold layout (`FRLayoutAlgorithm2D`); with a `theta` (see
+/// The Fruchterman–Reingold layout (`FrLayoutAlgorithm2D`); with a `theta` (see
 /// [`indexed`](Self::indexed)) repulsive forces are approximated through a quad tree
 /// (`IndexedFRLayoutAlgorithm2D`).
-pub struct FRLayoutAlgorithm2D<V, R> {
+pub struct FrLayoutAlgorithm2D<V, R> {
     rng: R,
     iterations: usize,
     normalization_factor: f64,
@@ -255,7 +255,7 @@ pub const DEFAULT_NORMALIZATION_FACTOR: f64 = 0.5;
 /// Default accuracy parameter of the Barnes-Hut approximation of the repulsive forces.
 pub const DEFAULT_THETA_FACTOR: f64 = 0.5;
 
-impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
+impl<V, R: RandomSource> FrLayoutAlgorithm2D<V, R> {
     /// Create a new layout algorithm
     pub fn new(iterations: usize, normalization_factor: f64, rng: R) -> Self {
         Self::with_tolerance(
@@ -278,7 +278,7 @@ impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
         rng: R,
         tolerance: f64,
     ) -> Result<Self> {
-        Ok(FRLayoutAlgorithm2D {
+        Ok(FrLayoutAlgorithm2D {
             rng,
             iterations,
             normalization_factor,
@@ -350,7 +350,7 @@ impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
     }
 }
 
-impl<V: Eq + std::hash::Hash + Clone, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
+impl<V: Eq + std::hash::Hash + Clone, R: RandomSource> FrLayoutAlgorithm2D<V, R> {
     fn repulsive_forces<G: Graph<Vertex = V>, M: LayoutModel2D<V>>(
         &mut self,
         graph: &G,
@@ -402,7 +402,7 @@ impl<V: Eq + std::hash::Hash + Clone, R: RandomSource> FRLayoutAlgorithm2D<V, R>
         origin: Point2D,
         theta: f64,
     ) -> HashMap<V, Point2D> {
-        let mut tree = FRQuadTree::new(model.drawable_area());
+        let mut tree = FrQuadTree::new(model.drawable_area());
         for v in graph.vertices() {
             let v = v.borrow();
             tree.insert(Self::position(model, v))
@@ -478,7 +478,7 @@ impl<V: Eq + std::hash::Hash + Clone, R: RandomSource> FRLayoutAlgorithm2D<V, R>
     }
 }
 
-impl<G: Graph, R: RandomSource> LayoutAlgorithm2D<G> for FRLayoutAlgorithm2D<G::Vertex, R> {
+impl<G: Graph, R: RandomSource> LayoutAlgorithm2D<G> for FrLayoutAlgorithm2D<G::Vertex, R> {
     /// Layout a graph.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()> {
         self.saved_comparisons = 0;

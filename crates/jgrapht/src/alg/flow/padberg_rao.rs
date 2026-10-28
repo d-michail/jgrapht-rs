@@ -12,8 +12,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use super::base::{MinimumCut, MinimumSTCutAlgorithm};
-use super::{DEFAULT_EPSILON, GusfieldGomoryHuCutTree, PushRelabelMFImpl};
+use super::base::{MinimumCut, MinimumStCutAlgorithm};
+use super::{DEFAULT_EPSILON, GusfieldGomoryHuCutTree, PushRelabel};
 use crate::alg::connectivity::ConnectivityInspector;
 use crate::error::{GraphError, Result};
 use crate::graph::IncidenceGraph;
@@ -74,7 +74,7 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         Self::with_algorithm(
             network,
-            Box::new(PushRelabelMFImpl::with_epsilon(network, epsilon)?),
+            Box::new(PushRelabel::with_epsilon(network, epsilon)?),
         )
     }
 
@@ -85,7 +85,7 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
     /// Errors of the graph operations it performs are propagated.
     pub fn with_algorithm(
         network: &'g G,
-        minimum_st_cut_algorithm: Box<dyn MinimumSTCutAlgorithm<G::Vertex, G::Edge> + 'g>,
+        minimum_st_cut_algorithm: Box<dyn MinimumStCutAlgorithm<G::Vertex, G::Edge> + 'g>,
     ) -> Result<Self> {
         Ok(PadbergRaoOddMinimumCutset {
             network,

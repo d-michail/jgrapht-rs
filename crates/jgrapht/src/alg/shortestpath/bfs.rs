@@ -30,9 +30,6 @@ use std::collections::{HashMap, VecDeque};
 /// Fewest-edges paths (edge weights are ignored; a path's weight is its edge count).
 pub struct BfsShortestPath<'g, G>(pub &'g G);
 
-/// Java-compatible spelling of [`BfsShortestPath`].
-pub type BFSShortestPath<'g, G> = BfsShortestPath<'g, G>;
-
 impl<'g, G> BfsShortestPath<'g, G> {
     /// Construct a new instance.
     pub fn new(graph: &'g G) -> Self {

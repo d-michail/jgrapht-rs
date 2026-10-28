@@ -61,15 +61,15 @@ fn matching_does_not_panic() {
 #[test]
 fn tours_do_not_panic() {
     sweep("tours", undirected, &POSITIVE, |g| {
-        let _ = RandomTourTSP::new().get_tour(g);
-        let _ = NearestNeighborHeuristicTSP::new().get_tour(g);
-        let _ = NearestInsertionHeuristicTSP::new().get_tour(g);
-        let _ = FarthestInsertionHeuristicTSP::new().get_tour(g);
-        let _ = GreedyHeuristicTSP.get_tour(g);
-        let _ = TwoApproxMetricTSP.get_tour(g);
-        let _ = ChristofidesThreeHalvesApproxMetricTSP.get_tour(g);
-        let _ = HeldKarpTSP.get_tour(g);
-        let _ = TwoOptHeuristicTSP::new().get_tour(g);
+        let _ = RandomTourTsp::new().get_tour(g);
+        let _ = NearestNeighborHeuristicTsp::new().get_tour(g);
+        let _ = NearestInsertionHeuristicTsp::new().get_tour(g);
+        let _ = FarthestInsertionHeuristicTsp::new().get_tour(g);
+        let _ = GreedyHeuristicTsp.get_tour(g);
+        let _ = TwoApproxMetricTsp.get_tour(g);
+        let _ = ChristofidesThreeHalvesApproxMetricTsp.get_tour(g);
+        let _ = HeldKarpTsp.get_tour(g);
+        let _ = TwoOptHeuristicTsp::new().get_tour(g);
         let _ = PalmerHamiltonianCycle.get_tour(g);
     });
 }
@@ -103,7 +103,7 @@ fn planarity_isomorphism_and_cuts_do_not_panic() {
         let _ = StoerWagnerMinimumCut::new(g).map(|c| c.min_cut_weight());
         let _ = GusfieldEquivalentFlowTree::new(g).and_then(|mut t| t.equivalent_flow_tree());
         let _ = GusfieldGomoryHuCutTree::new(g).and_then(|mut t| t.gomory_hu_tree());
-        let _ = AHUUnrootedTreeIsomorphismInspector::new(g, g).map(|i| i.mapping());
+        let _ = AhuUnrootedTreeIsomorphismInspector::new(g, g).map(|i| i.mapping());
         let _ = PadbergRaoOddMinimumCutset::new(g).and_then(|mut p| {
             let odd: indexmap::IndexSet<usize> = g.vertices_cloned().take(2).collect();
             p.minimum_odd_cut(odd, false)
@@ -175,6 +175,6 @@ mod regressions {
         g.add_vertices(0..2);
         g.add_edge(&0, &1).unwrap();
         g.add_edge(&0, &1).unwrap();
-        assert!(AHUUnrootedTreeIsomorphismInspector::new(&g, &g).is_err());
+        assert!(AhuUnrootedTreeIsomorphismInspector::new(&g, &g).is_err());
     }
 }

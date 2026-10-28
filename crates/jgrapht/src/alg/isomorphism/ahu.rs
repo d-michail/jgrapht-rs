@@ -153,16 +153,16 @@ fn mapping_from_indices<'g, G: IncidenceGraph>(
 /// the specified root.
 ///
 /// For an implementation that supports unrooted trees see
-/// `AHUUnrootedTreeIsomorphismInspector`.
-/// For an implementation that supports rooted forests see `AHUForestIsomorphismInspector`.
+/// `AhuUnrootedTreeIsomorphismInspector`.
+/// For an implementation that supports rooted forests see `AhuForestIsomorphismInspector`.
 ///
 /// Note: This inspector only returns a single mapping (chosen arbitrarily) rather than all possible
 /// mappings.
 ///
 /// # Rust notes
 ///
-/// `AHURootedTreeIsomorphismInspector`.
-pub struct AHURootedTreeIsomorphismInspector<'g, G: Graph> {
+/// `AhuRootedTreeIsomorphismInspector`.
+pub struct AhuRootedTreeIsomorphismInspector<'g, G: Graph> {
     tree1: &'g G,
     tree2: &'g G,
     root1: usize,
@@ -187,7 +187,7 @@ fn validate_tree<G: OutgoingGraph>(tree: &G, root: &G::Vertex) -> Result<()> {
     Ok(())
 }
 
-impl<'g, G: IncidenceGraph> AHURootedTreeIsomorphismInspector<'g, G> {
+impl<'g, G: IncidenceGraph> AhuRootedTreeIsomorphismInspector<'g, G> {
     /// Construct a new AHU rooted tree isomorphism inspector.
     ///
     /// Note: The constructor does NOT check if the input trees are valid.
@@ -201,7 +201,7 @@ impl<'g, G: IncidenceGraph> AHURootedTreeIsomorphismInspector<'g, G> {
         let (vs1, adj1) = adjacency(tree1);
         let (vs2, adj2) = adjacency(tree2);
         let index_of = |vs: &[G::Vertex], r: &G::Vertex| vs.iter().position(|v| v == r).unwrap();
-        Ok(AHURootedTreeIsomorphismInspector {
+        Ok(AhuRootedTreeIsomorphismInspector {
             tree1,
             tree2,
             root1: index_of(&vs1, root1),
@@ -229,7 +229,7 @@ impl<'g, G: IncidenceGraph> AHURootedTreeIsomorphismInspector<'g, G> {
 }
 
 impl<'g, G: IncidenceGraph> IsomorphismInspector<'g, G>
-    for AHURootedTreeIsomorphismInspector<'g, G>
+    for AhuRootedTreeIsomorphismInspector<'g, G>
 {
     /// Get an iterator over all calculated (isomorphic) mappings between two graphs.
     fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_> {
@@ -253,20 +253,20 @@ impl<'g, G: IncidenceGraph> IsomorphismInspector<'g, G>
 /// This implementation runs in linear time (in the number of vertices of the input trees) while
 /// using a linear amount of memory.
 ///
-/// For an implementation that supports rooted trees see `AHURootedTreeIsomorphismInspector`.
+/// For an implementation that supports rooted trees see `AhuRootedTreeIsomorphismInspector`.
 ///
-/// For an implementation that supports rooted forests see `AHUForestIsomorphismInspector`.
+/// For an implementation that supports rooted forests see `AhuForestIsomorphismInspector`.
 ///
 /// Note: This inspector only returns a single mapping (chosen arbitrarily) rather than all possible
 /// mappings.
 ///
 /// # Rust notes
 ///
-/// `AHUUnrootedTreeIsomorphismInspector`: roots both trees at their centers.
-pub struct AHUUnrootedTreeIsomorphismInspector<'g, G: Graph> {
+/// `AhuUnrootedTreeIsomorphismInspector`: roots both trees at their centers.
+pub struct AhuUnrootedTreeIsomorphismInspector<'g, G: Graph> {
     tree1: &'g G,
     tree2: &'g G,
-    result: OnceCell<Option<AHURootedTreeIsomorphismInspector<'g, G>>>,
+    result: OnceCell<Option<AhuRootedTreeIsomorphismInspector<'g, G>>>,
 }
 
 fn validate_unrooted<G: UndirectedGraph + OutgoingGraph>(tree: &G) -> Result<()> {
@@ -316,7 +316,7 @@ fn tree_center(adj: &[Vec<usize>]) -> Vec<usize> {
     }
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph> AHUUnrootedTreeIsomorphismInspector<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> AhuUnrootedTreeIsomorphismInspector<'g, G> {
     /// Construct a new AHU unrooted tree isomorphism inspector.
     ///
     /// Note: The constructor does NOT check if the input trees are valid.
@@ -327,20 +327,20 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> AHUUnrootedTreeIsomorphismInspecto
     pub fn new(tree1: &'g G, tree2: &'g G) -> Result<Self> {
         validate_unrooted(tree1)?;
         validate_unrooted(tree2)?;
-        Ok(AHUUnrootedTreeIsomorphismInspector {
+        Ok(AhuUnrootedTreeIsomorphismInspector {
             tree1,
             tree2,
             result: OnceCell::new(),
         })
     }
 
-    fn rooted(&self) -> &Option<AHURootedTreeIsomorphismInspector<'g, G>> {
+    fn rooted(&self) -> &Option<AhuRootedTreeIsomorphismInspector<'g, G>> {
         self.result.get_or_init(|| {
             let (vs1, adj1) = adjacency(self.tree1);
             let (vs2, adj2) = adjacency(self.tree2);
             let (c1, c2) = (tree_center(&adj1), tree_center(&adj2));
             let make = |a: usize, b: usize| {
-                AHURootedTreeIsomorphismInspector::new(self.tree1, &vs1[a], self.tree2, &vs2[b])
+                AhuRootedTreeIsomorphismInspector::new(self.tree1, &vs1[a], self.tree2, &vs2[b])
                     .expect("trees were validated")
             };
             let insp = match (c1.len(), c2.len()) {
@@ -366,7 +366,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> AHUUnrootedTreeIsomorphismInspecto
 }
 
 impl<'g, G: UndirectedGraph + IncidenceGraph> IsomorphismInspector<'g, G>
-    for AHUUnrootedTreeIsomorphismInspector<'g, G>
+    for AhuUnrootedTreeIsomorphismInspector<'g, G>
 {
     /// Get an iterator over all calculated (isomorphic) mappings between two graphs.
     fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_> {
@@ -390,8 +390,8 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> IsomorphismInspector<'g, G>
 /// This implementation runs in linear time (in the number of vertices of the input forests) while
 /// using a linear amount of memory.
 ///
-/// For an implementation that supports rooted trees see `AHURootedTreeIsomorphismInspector`
-/// and for one for unrooted trees see `AHUUnrootedTreeIsomorphismInspector`.
+/// For an implementation that supports rooted trees see `AhuRootedTreeIsomorphismInspector`
+/// and for one for unrooted trees see `AhuUnrootedTreeIsomorphismInspector`.
 ///
 /// Note: This implementation requires the input graphs to have valid vertex suppliers (see
 /// `Graph#getVertexSupplier()`).
@@ -401,8 +401,8 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> IsomorphismInspector<'g, G>
 ///
 /// # Rust notes
 ///
-/// `AHUForestIsomorphismInspector`: joins each forest's roots under a fresh root vertex.
-pub struct AHUForestIsomorphismInspector<'g, G: IncidenceGraph> {
+/// `AhuForestIsomorphismInspector`: joins each forest's roots under a fresh root vertex.
+pub struct AhuForestIsomorphismInspector<'g, G: IncidenceGraph> {
     forest1: &'g G,
     forest2: &'g G,
     roots1: Vec<G::Vertex>,
@@ -429,7 +429,7 @@ fn validate_forest<G: OutgoingGraph>(forest: &G, roots: &[G::Vertex]) -> Result<
     Ok(())
 }
 
-impl<'g, G: IncidenceGraph> AHUForestIsomorphismInspector<'g, G> {
+impl<'g, G: IncidenceGraph> AhuForestIsomorphismInspector<'g, G> {
     /// Construct a new AHU rooted forest isomorphism inspector.
     ///
     /// Note: The constructor does NOT check if the input forests are valid trees.
@@ -454,7 +454,7 @@ impl<'g, G: IncidenceGraph> AHUForestIsomorphismInspector<'g, G> {
         let roots2 = dedup(roots2.into_iter().collect());
         validate_forest(forest1, &roots1)?;
         validate_forest(forest2, &roots2)?;
-        Ok(AHUForestIsomorphismInspector {
+        Ok(AhuForestIsomorphismInspector {
             forest1,
             forest2,
             roots1,
@@ -486,7 +486,7 @@ impl<'g, G: IncidenceGraph> AHUForestIsomorphismInspector<'g, G> {
         self.result
             .get_or_init(|| {
                 if self.roots1.len() == 1 && self.roots2.len() == 1 {
-                    return AHURootedTreeIsomorphismInspector::new(
+                    return AhuRootedTreeIsomorphismInspector::new(
                         self.forest1,
                         &self.roots1[0],
                         self.forest2,
@@ -510,7 +510,7 @@ impl<'g, G: IncidenceGraph> AHUForestIsomorphismInspector<'g, G> {
     }
 }
 
-impl<'g, G: IncidenceGraph> IsomorphismInspector<'g, G> for AHUForestIsomorphismInspector<'g, G> {
+impl<'g, G: IncidenceGraph> IsomorphismInspector<'g, G> for AhuForestIsomorphismInspector<'g, G> {
     /// Get an iterator over all calculated (isomorphic) mappings between two graphs.
     fn mappings(&self) -> Box<dyn Iterator<Item = IsomorphicGraphMapping<'g, G>> + '_> {
         Box::new(self.mapping().into_iter())

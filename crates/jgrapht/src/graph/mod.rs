@@ -48,10 +48,7 @@ pub use ext::{
     DirectedExt, GraphExt, GraphMutExt, remove_vertex_and_preserve_connectivity,
     remove_vertices_and_preserve_connectivity,
 };
-pub use map::{
-    FastutilMapGraph, FastutilMapIntVertexGraph, FastutilMapIntVertexSpecifics,
-    FastutilMapSpecifics,
-};
+pub use map::{IntMapGraph, IntMapSpecifics, MapGraph, MapSpecifics};
 
 use crate::{GraphType, Result};
 use std::borrow::Borrow;
