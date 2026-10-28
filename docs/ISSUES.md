@@ -24,7 +24,7 @@ Review of 2026-10-27 on `master` (e8d4f07). Build and `cargo test --workspace` a
 
 **I-8. (resolved)** Done per [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md): capability traits, typed errors, result objects, `Option` for unreachable. About 95 `InvalidArgument(String)` sites remain as the documented fallback.
 
-**I-9. Sparse graphs borrow ids from an identity array** of `max(n, m)` elements because `Graph::vertices()` and `edges()` return references (about 20% of a full-incidence sparse graph; incidence and endpoint lookups already borrow from the stored arrays). Removing it needs a reference-or-value item type in `Graph` (`type VertexRef<'a>: Borrow<Self::Vertex>`), a library-wide change planned separately.
+**I-9. Sparse graphs borrow ids from an identity array** of `max(n, m)` elements because `Graph::vertices()` and `edges()` return references (about 20% of a full-incidence sparse graph; incidence and endpoint lookups already borrow from the stored arrays). Removing it needs a reference-or-value item type in `Graph` (`type VertexRef<'a>: Borrow<Self::Vertex>`), a library-wide change planned in [`REF_OR_VALUE_PLAN.md`](REF_OR_VALUE_PLAN.md).
 
 **I-10. `NeighborCache` returns snapshots, not live views**, and `AsSubgraph`/other views borrow their base, so Java's listener-based base-change tracking is absent by design. Document in the user guide to avoid surprises when porting Java code.
 
