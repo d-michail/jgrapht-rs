@@ -12,7 +12,7 @@ Review of 2026-10-27 on `master` (e8d4f07). Build and `cargo test --workspace` a
 
 **I-3. (resolved)** Shortest-path package (1i) is complete: all Java test classes are ported and contraction hierarchies, CH many-to-many and transit node routing follow the Java techniques (see `FIDELITY_ROADMAP.md` section G). What remains is `HashSet` iteration order in tie situations, documented there.
 
-**I-4. Unverified Java iteration order.** `BarabasiAlbert`, `DirectedScaleFree` and `RandomRegular` use approximations not checked against Java (Phase 0 note), and `PathGrowingWeightedMatching` starts from the first inserted vertex rather than Java's `HashSet` order. Tests pass; results can differ from Java for the same seed. Resolve with golden files from the Java oracle if exact reproducibility matters to users.
+**I-4. (accepted)** Exact Java reproducibility for seeded `BarabasiAlbert`, `DirectedScaleFree`, `RandomRegular` and `PathGrowingWeightedMatching` is not a goal; results are valid but may differ from Java for the same seed. Checked against the Java source: `BarabasiAlbert` already matches for default integer vertices.
 
 **I-5. Ignored tests (4).** Two Brown backtracking colouring cases (`insertions2_3Test`, `jeanTest`, very slow upstream too), the `ApBetweenness` overflow test (about a minute) and the `MaximumWeightBipartiteMatching` n = 1000 case. A weekly scheduled CI job runs them (`cargo test --release -- --ignored`).
 
