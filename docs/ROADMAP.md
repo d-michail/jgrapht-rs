@@ -10,7 +10,6 @@ Status on 2026-10-27 (reviewed against a clean build: `cargo test --workspace` g
 | core `alg/` | 312 files, 230 test files, **1509 tests** | class-by-class ports for 1a to 1h done (matching incl. Blossom V, planar, flow, tour, cycle, isomorphism); 1i (shortest paths) is done as well, including contraction hierarchies and transit node routing checked against the real Java output. The workspace runs 2383 tests, 0 failures, 4 ignored. See `FIDELITY_ROADMAP.md` for deviations from Java and `ISSUES.md` for open problems |
 | `jgrapht-io` (`nio`) | 62 files (about 14k loc), 28 test files, about 283 tests | done: all planned formats and the 13-class shared layer audited; 314 Rust integration tests pass |
 | `jgrapht::graph::{sparse,map}` | 22 files (about 2.5k loc), 4 test files | done: sparse CSR graphs plus `FastutilMapGraph` / `FastutilMapIntVertexGraph` as `BaseGraph` specifics with optional endpoint indexes (Phase 3b) |
-| other modules (ext, guava, unimi-dsi, osm, demo) | see "Out of scope" | no |
 
 The existing `alg/` is a *functional* port: one function per family (`maximal_cliques`, `simple_cycles`, `nearest_neighbor_tour`, ...). The Java test suite exercises the individual *classes* (every Bron–Kerbosch variant, every simple-cycle algorithm, every TSP heuristic, ...) and often depends on their exact tie-breaking. Porting the tests therefore means growing the algorithm layer class by class, and checking the results against Java.
 
@@ -22,7 +21,6 @@ The existing `alg/` is a *functional* port: one function per family (`maximal_cl
    error-type and panic work in [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md). This expands the old
    Phase 4 API pass and ISSUES I-6/I-8 into release-gated milestones.
 4. ~~Typed errors, real doc comments, `serde` feature~~ done (ISSUES I-7, I-8, I-13).
-5. **Publish**: README mapping table is done; `CHANGELOG.md` and the crates.io metadata are in place; remaining is the first `0.1.0` tag and `cargo publish`, once the user is ready.
 
 ## Principles (carried over)
 
@@ -121,15 +119,8 @@ These are graph storage implementations, not a separate integration boundary. Po
   panic-free public boundaries, naming consistency (`*_num` vs `*_count`), typed errors,
   `#[non_exhaustive]` auditing, docs for every public item and doc examples.
 - `benches/` (criterion) for the Java `perf/` tests (15), compared with the Java numbers. Started in `crates/jgrapht/benches/`: `graph_perf` (`GraphPerformanceTest`) and `shortestpath_perf` (`DijkstraShortestPathPerformanceTest` plus the `BaseGraph` vs sparse Dijkstra/BFS comparison from Phase 3b); `algorithms_perf` adds the flow, spanning-tree and maximal-clique tests. `structures_perf` adds LCA, tree dynamic connectivity, path-growing / Hopcroft–Karp matching and DAG Hamiltonian path. `pathsearch_perf` adds Yen / bounded-pruned Yen / Eppstein, delta stepping, `AllDirectedPaths`, DAG, Hamiltonian path and Blossom V. Not ported: the Java JMH-only variants (many-to-many, sandwich-prune, `GraphBuilders`) and the memory-footprint parts of the graph tests.
-- CI: **done** (`.github/workflows/ci.yml`: tests on stable and 1.88, clippy, nightly doc build with `-D warnings`, package check); `cargo fmt --check` is not a CI step yet. Publishing `jgrapht`/`jgrapht-io` to crates.io once the user is ready.
+- CI: **done** (`.github/workflows/ci.yml`: tests on stable and 1.88, clippy, nightly doc build with `-D warnings`, package check); `cargo fmt --check` is not a CI step yet.
 - Re-run the heap differential test against each `rheaps` release.
-
-## Out of scope for now (confirm)
-
-| Module | Size | Plan |
-|---|---|---|
-| `jgrapht-ext` | 3 files | JGraphX/Swing adapters: skip. |
-| `jgrapht-guava`, `jgrapht-unimi-dsi`, `jgrapht-osm`, `jgrapht-demo` | Java-library bridges, OSM import, demos | skip; Rust-native equivalents could come later. |
 
 ## Suggested order of work (historical; steps 1 to 6 are done except 1i, see "Next up" for what is left)
 

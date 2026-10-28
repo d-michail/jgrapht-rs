@@ -1,8 +1,7 @@
 # Plan: reference-or-value items in `Graph::vertices()` and `Graph::edges()`
 
 Status: phases 1 to 5 implemented (see `MIGRATION.md`). The sparse graphs yield `usize` by value and
-keep no identity array (`tests/sparse_memory.rs` measures it). Implicit graphs (grids, hypercubes)
-are possible but not yet shipped; incidence queries on them would still need `&Edge`.
+keep no identity array (`tests/sparse_memory.rs` measures it).
 
 ## Problem
 
@@ -97,8 +96,7 @@ concrete `BaseGraph<String, _>` it can be ambiguous (`Borrow<String>` vs `Borrow
    Benchmarks must show no regression for `BaseGraph`.
 3. **Sparse graphs:** return `usize` / by-value items, delete `identity_ids`, `ids` and the
    `max(n, m)` allocation; measure bytes per edge before and after.
-4. **Tests and `jgrapht-io`:** compile-driven fixes (~590 sites). Add a test graph that computes
-   its vertices (a grid) to prove implicit graphs work with the algorithms.
+4. **Tests and `jgrapht-io`:** compile-driven fixes (~590 sites).
 5. **Docs:** `MIGRATION.md`, user guide section, `ISSUES.md` I-9 closed, `STATUS.md`.
 
 Phases 2 and 3 are the risky ones; do them on their own PR with the benchmarks attached.
@@ -108,7 +106,6 @@ Phases 2 and 3 are the risky ones; do them on their own PR with the benchmarks a
 * `cargo test --workspace`, clippy `-D warnings` and rustdoc `-D warnings` green.
 * `graph_perf` and `shortestpath_perf` within noise of the baseline for `BaseGraph`.
 * Sparse directed graph: 24 bytes per edge (`NoIncoming`) and 32 (`FullIncoming`), measured.
-* One implicit graph (grid or hypercube) with O(1) memory passes BFS, Dijkstra and connectivity.
 * No algorithm signature mentions `&G::Vertex` iterators where an owned or `VertexRef` item is
   enough.
 
@@ -120,7 +117,5 @@ Phases 2 and 3 are the risky ones; do them on their own PR with the benchmarks a
    `graph/mod.rs`, `base.rs` and one algorithm before committing to the full flip.
 3. **Should `Vertex` be required to be `Copy` for by-value graphs?** Not needed: `Borrow` plus
    `Clone` is enough, and a non-`Copy` computed vertex (a `Vec<u8>` state) just allocates per item.
-4. **Edges by value too?** Needed for implicit graphs and for dropping the array when `m > n`;
-   adds the same machinery for `EdgeRef`. Recommended.
-5. **Implicit graphs and incidence:** `out_edges_of` still returns `&Edge`. A computed-edge graph
-   would need `EdgeRef` there too. Defer until a real use case exists.
+4. **Edges by value too?** Needed for dropping the array when `m > n`; adds the same machinery
+   for `EdgeRef`. Done.

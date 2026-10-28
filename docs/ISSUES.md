@@ -10,11 +10,9 @@ Review of 2026-10-28 on `master`. Targeted test runs are green (`alg` 1593, `gen
 
 ## Remaining fidelity gaps
 
-**I-3. (resolved)** Shortest-path package (1i) is complete: all Java test classes are ported and contraction hierarchies, CH many-to-many and transit node routing follow the Java techniques (see `FIDELITY_ROADMAP.md` section G). What remains is `HashSet` iteration order in tie situations, documented there.
+**I-3. (resolved)** Shortest-path package (1i) is complete: all Java test classes are ported and contraction hierarchies, CH many-to-many and transit node routing follow the Java techniques (see `FIDELITY_ROADMAP.md` section G).
 
 **I-4. (resolved)** `JavaRandom` was removed; seeded results are not expected to match Java, and the affected tests check properties (see `tests/STATUS.md`).
-
-**I-5. Ignored tests (4).** Two Brown backtracking colouring cases (`insertions2_3Test`, `jeanTest`, very slow upstream too), the `ApBetweenness` overflow test (about a minute) and the `MaximumWeightBipartiteMatching` n = 1000 case. A weekly scheduled CI job runs them (`cargo test --release -- --ignored`).
 
 ## API and robustness
 
