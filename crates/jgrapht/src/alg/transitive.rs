@@ -39,6 +39,14 @@ impl TransitiveClosure {
     /// Every iteration of the outer loop adds an edge between vertices that had a path of length
     /// two; at most `floor(log2 |V|) + 1` iterations are needed, and the loop stops earlier if
     /// nothing changes. Fails if the graph is not directed or allows loops or multiple edges.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn close_simple_directed_graph<G>(&self, graph: &mut G) -> Result<()>
     where
         G: DirectedGraph + GraphMut + OutgoingGraph,
@@ -89,6 +97,10 @@ impl TransitiveClosure {
     }
 
     /// Computes the transitive closure of a directed acyclic graph in `O(nm)`, in place.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn close_directed_acyclic_graph<G>(&self, graph: &mut G) -> Result<()>
     where
         G: DirectedGraph + GraphMut + IncidenceGraph,
@@ -134,12 +146,14 @@ impl BitSet {
         }
     }
 
+    /// Returns the get.
     pub fn get(&self, i: usize) -> bool {
         self.words
             .get(i / 64)
             .is_some_and(|w| w & (1 << (i % 64)) != 0)
     }
 
+    /// Updates the state for `set`.
     pub fn set(&mut self, i: usize, value: bool) {
         if value {
             self.words[i / 64] |= 1 << (i % 64);
@@ -234,6 +248,14 @@ impl TransitiveReduction {
     }
 
     /// Removes all transitive edges from the directed graph, in place.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn reduce<G: Graph + GraphMut>(&self, directed_graph: &mut G) -> Result<()> {
         props::require_directed(directed_graph)?;
 

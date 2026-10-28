@@ -30,6 +30,7 @@ pub struct LexBfs<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> LexBfs<'g, G> {
+    /// Creates a new instance.
     pub fn new(g: &'g G) -> Self {
         LexBfs {
             g,
@@ -66,6 +67,7 @@ pub struct MaximumCardinality<'g, G: Graph> {
 }
 
 impl<'g, G: Graph> MaximumCardinality<'g, G> {
+    /// Creates a new instance.
     pub fn new(g: &'g G) -> Self {
         MaximumCardinality {
             g,
@@ -103,6 +105,7 @@ pub struct DegeneracyOrdering<'g, G: Graph> {
 }
 
 impl<'g, G: IncidenceGraph> DegeneracyOrdering<'g, G> {
+    /// Creates a new instance.
     pub fn new(g: &'g G) -> Self {
         DegeneracyOrdering {
             g,

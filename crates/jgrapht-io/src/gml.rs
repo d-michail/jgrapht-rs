@@ -257,6 +257,10 @@ impl<V, E> GmlImporter<V, E> {
     /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
     /// example when it parses the identifier. Its error stops the import and is returned as
     /// [`IoError::Callback`] with the factory's error as the source.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn try_set_vertex_factory(
         &mut self,
         factory: impl FnMut(i64) -> std::result::Result<V, crate::CallbackError> + 'static,
@@ -268,6 +272,10 @@ impl<V, E> GmlImporter<V, E> {
     ///
     /// The consumer also receives each numeric node identifier under the
     /// attribute name `ID`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_vertex_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&V, &str, &Attribute) -> Result<()> + 'static,
@@ -276,6 +284,10 @@ impl<V, E> GmlImporter<V, E> {
     }
 
     /// Sets the consumer notified for every edge attribute.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_edge_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&E, &str, &Attribute) -> Result<()> + 'static,

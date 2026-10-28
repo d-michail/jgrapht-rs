@@ -26,6 +26,7 @@ use std::collections::{HashMap, HashSet};
 ///
 /// `EulerianCycleAlgorithm`.
 pub trait EulerianCycleAlgorithm<G: Graph> {
+    /// Returns the eulerian cycle.
     fn get_eulerian_cycle(&mut self, graph: &G) -> Result<GraphWalk<G::Vertex, G::Edge>>;
 }
 
@@ -243,11 +244,19 @@ impl HierholzerEulerianCycle {
 
     /// Whether the graph has an Eulerian cycle: balanced degrees and a single component with edges.
     /// The empty graph (no vertices) is not Eulerian.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn is_eulerian<G: IncidenceGraph>(&self, graph: &G) -> bool {
         self.try_is_eulerian(graph).unwrap()
     }
 
     /// Fallible form of [`HierholzerEulerianCycle::is_eulerian`].
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn try_is_eulerian<G: IncidenceGraph>(&self, graph: &G) -> Result<bool> {
         if graph.graph_type().mixed {
             return Ok(false);

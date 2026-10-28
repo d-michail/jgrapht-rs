@@ -69,6 +69,10 @@ pub fn connected_component_of<G: Graph>(g: &G, v: &G::Vertex) -> Option<Vec<G::V
 
 /// Strongly connected components (Tarjan, iterative). Components come out in reverse
 /// topological order of the condensation.
+///
+/// # Panics
+///
+/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn strongly_connected_components<G: DirectedGraph>(g: &G) -> Vec<Vec<G::Vertex>> {
     let ix = Indexed::new(g);
     let n = ix.n();
@@ -158,12 +162,17 @@ pub fn strongly_connected_components_kosaraju<G: DirectedGraph + IncidenceGraph>
     comps
 }
 
+/// Returns whether strongly connected.
 pub fn is_strongly_connected<G: DirectedGraph>(g: &G) -> bool {
     g.vertex_count() > 0 && strongly_connected_components(g).len() == 1
 }
 
 /// Condensation: one vertex per strongly connected component (its index in `components`),
 /// with an edge for every pair of components joined by at least one edge.
+///
+/// # Panics
+///
+/// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
 pub fn condensation<G: DirectedGraph>(g: &G) -> (DiGraph<usize>, Vec<Vec<G::Vertex>>) {
     let comps = strongly_connected_components(g);
     let comp_of: std::collections::HashMap<&G::Vertex, usize> = comps
@@ -188,7 +197,9 @@ pub fn condensation<G: DirectedGraph>(g: &G) -> (DiGraph<usize>, Vec<Vec<G::Vert
 /// Result of a biconnectivity analysis of an undirected graph.
 #[derive(Debug, Clone)]
 pub struct Biconnectivity<V, E> {
+    /// The articulation points.
     pub articulation_points: Vec<V>,
+    /// The bridges.
     pub bridges: Vec<E>,
     /// Each block (biconnected component) as its set of edges; isolated vertices have none.
     pub blocks: Vec<Vec<E>>,
@@ -284,11 +295,17 @@ pub fn is_biconnected<G: IncidenceGraph>(g: &G) -> bool {
 pub struct BlockCutTree<V> {
     /// Vertices of each block.
     pub blocks: Vec<Vec<V>>,
+    /// The cut vertices.
     pub cut_vertices: Vec<V>,
     /// `(block index, cut vertex index)` pairs.
     pub edges: Vec<(usize, usize)>,
 }
 
+/// Computes the block cut tree.
+///
+/// # Panics
+///
+/// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
 pub fn block_cut_tree<G: IncidenceGraph>(g: &G) -> BlockCutTree<G::Vertex> {
     let bc = biconnectivity(g);
     let mut blocks: Vec<Vec<G::Vertex>> = Vec::new();
@@ -421,6 +438,14 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
     }
 
     /// The connected set containing `v`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn connected_set_of<G: Graph<Vertex = V> + IncidenceGraph>(
         &mut self,
         g: &G,
@@ -453,6 +478,10 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
 
     /// Tests whether two vertices lay respectively in the same connected component (undirected
     /// graph), or in the same weakly connected component (directed graph).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn path_exists<G: Graph<Vertex = V> + IncidenceGraph>(
         &mut self,
         g: &G,
@@ -462,6 +491,7 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
         Ok(self.connected_set_of(g, s)?.contains(t))
     }
 
+    /// Called when vertex added.
     pub fn vertex_added(&mut self, v: &V) {
         if let Some(sets) = &mut self.connected_sets {
             self.vertex_to_set.insert(v.clone(), sets.len());
@@ -469,10 +499,16 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
         }
     }
 
+    /// Called when vertex removed.
     pub fn vertex_removed(&mut self, _v: &V) {
         self.init();
     }
 
+    /// Called when edge added.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn edge_added(&mut self, source: &V, target: &V) {
         let Some(sets) = &mut self.connected_sets else {
             self.partial.clear();
@@ -499,6 +535,7 @@ impl<V: Eq + Hash + Clone> ConnectivityInspector<V> {
         }
     }
 
+    /// Called when edge removed.
     pub fn edge_removed(&mut self, _source: &V, _target: &V) {
         self.init();
     }
@@ -556,6 +593,10 @@ pub struct GabowStrongConnectivityInspector<'g, G: DirectedGraph> {
 
 impl<'g, G: DirectedGraph> GabowStrongConnectivityInspector<'g, G> {
     /// Constructor
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(graph: &'g G) -> Self {
         let ix = Indexed::new(graph);
         let n = ix.n();
@@ -749,6 +790,10 @@ pub struct BiconnectivityInspector<'g, G: Graph> {
 
 impl<'g, G: IncidenceGraph> BiconnectivityInspector<'g, G> {
     /// Constructs a new BiconnectivityInspector
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(graph: &'g G) -> Self {
         let vs: Vec<G::Vertex> = graph.vertices().cloned().collect();
         let n = vs.len();
@@ -930,6 +975,10 @@ impl<'g, G: IncidenceGraph> BiconnectivityInspector<'g, G> {
     }
 
     /// The blocks containing `v`; a cutpoint lies in several.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn blocks_of(&self, v: &G::Vertex) -> Result<Vec<&HashSet<G::Vertex>>> {
         let ix = self
             .vertex_to_blocks
@@ -938,6 +987,7 @@ impl<'g, G: IncidenceGraph> BiconnectivityInspector<'g, G> {
         Ok(ix.iter().map(|&i| &self.blocks[i]).collect())
     }
 
+    /// Returns the block subgraphs.
     pub fn block_subgraphs(&self) -> Vec<AsSubgraph<&'g G>> {
         self.blocks
             .iter()
@@ -950,6 +1000,11 @@ impl<'g, G: IncidenceGraph> BiconnectivityInspector<'g, G> {
         &self.connected_sets
     }
 
+    /// Returns the connected component of.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn connected_component_of(&self, v: &G::Vertex) -> Result<&HashSet<G::Vertex>> {
         let i = self
             .vertex_to_component
@@ -1054,6 +1109,7 @@ impl<V: Eq + Hash + Clone> BlockCutpointGraph<V> {
         self.vertex_to_node.get(v).copied()
     }
 
+    /// Returns the block nodes.
     pub fn block_nodes(&self) -> std::ops::Range<usize> {
         0..self.block_count
     }
@@ -1139,6 +1195,7 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
         )
     }
 
+    /// Creates an instance with the given flow.
     pub fn with_flow(
         graph: &'g G,
         edge_flow: impl Fn(&crate::view::AsUnweighted<&'g G>, &G::Vertex, &G::Vertex) -> f64 + 'g,
@@ -1186,6 +1243,10 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
     }
 
     /// Computes the edge connectivity of the graph.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn edge_connectivity(&mut self) -> usize {
         if self.edge_connectivity.is_none() {
             self.edge_connectivity = Some(if self.graph.graph_type().directed {
@@ -1198,6 +1259,14 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
     }
 
     /// Vertex connectivity; an error for the empty graph.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn vertex_connectivity(&mut self) -> Result<usize> {
         if self.vertex_connectivity.is_none() {
             let m = self
@@ -1217,6 +1286,10 @@ impl<'g, G: IncidenceGraph> KConnectivityFlowAlgorithm<'g, G> {
     }
 
     /// Return if the graph is `k` vertex connected
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn is_k_vertex_connected(&mut self, k: usize) -> Result<bool> {
         Ok(k <= self.vertex_connectivity()?)
     }

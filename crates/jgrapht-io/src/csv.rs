@@ -199,6 +199,10 @@ impl CsvEventDrivenImporter {
     /// Sets the field delimiter.
     ///
     /// Carriage return, line feed, and double quote cannot be delimiters.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_delimiter(&mut self, delimiter: char) -> Result<()> {
         if !valid_delimiter(delimiter) {
             return Err(IoError::Import("invalid CSV delimiter".into()));
@@ -435,6 +439,10 @@ impl<V> CsvImporter<V> {
     /// Creates an importer for `format` using `delimiter`.
     ///
     /// Carriage return, line feed, and double quote cannot be delimiters.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn with_delimiter(format: CsvFormat, delimiter: char) -> Result<Self> {
         let mut importer = Self::new(format);
         importer.parser.set_delimiter(delimiter)?;
@@ -464,6 +472,10 @@ impl<V> CsvImporter<V> {
     /// Sets the field delimiter.
     ///
     /// Carriage return, line feed, and double quote cannot be delimiters.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_delimiter(&mut self, delimiter: char) -> Result<()> {
         self.parser.set_delimiter(delimiter)
     }
@@ -485,6 +497,10 @@ impl<V> CsvImporter<V> {
     /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
     /// example when it parses the identifier. Its error stops the import and is returned as
     /// [`IoError::Callback`] with the factory's error as the source.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn try_set_vertex_factory(
         &mut self,
         factory: impl FnMut(&str) -> std::result::Result<V, crate::CallbackError> + 'static,
@@ -557,6 +573,10 @@ where
     V: Clone + Eq + Hash + 'static,
 {
     /// Creates an exporter for `format` with integer vertex identifiers and a comma delimiter.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(format: CsvFormat) -> Self {
         let mut ids = IntegerIdProvider::new();
         Self::with_vertex_id_provider(move |vertex| ids.id(vertex), format, ',')
@@ -566,6 +586,10 @@ where
     /// Creates an exporter with the supplied vertex identifier provider.
     ///
     /// Carriage return, line feed, and double quote cannot be delimiters.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn with_vertex_id_provider(
         provider: impl FnMut(&V) -> String + 'static,
         format: CsvFormat,
@@ -609,6 +633,10 @@ where
     /// Sets the field delimiter.
     ///
     /// Carriage return, line feed, and double quote cannot be delimiters.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_delimiter(&mut self, delimiter: char) -> Result<()> {
         if !valid_delimiter(delimiter) {
             return Err(IoError::Export("invalid CSV delimiter".into()));

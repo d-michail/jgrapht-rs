@@ -25,6 +25,7 @@ use crate::graph::Graph;
 use rand::Rng;
 use std::collections::HashMap;
 
+/// The point type.
 pub type Point = (f64, f64);
 
 /// Vertices evenly spaced on a circle of the given radius centred at the origin.

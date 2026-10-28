@@ -15,10 +15,15 @@
 /// Receives traversal events (JGraphT's `TraversalListener`). All methods default to no-ops.
 #[allow(unused_variables)]
 pub trait TraversalListener<V, E> {
+    /// Updates the state for `connected component started`.
     fn connected_component_started(&mut self) {}
+    /// Called when connected component finished.
     fn connected_component_finished(&mut self) {}
+    /// Updates the state for `edge traversed`.
     fn edge_traversed(&mut self, e: &E) {}
+    /// Updates the state for `vertex traversed`.
     fn vertex_traversed(&mut self, v: &V) {}
+    /// Called when vertex finished.
     fn vertex_finished(&mut self, v: &V) {}
 }
 
@@ -38,17 +43,20 @@ impl<V, E> Default for TraversalListeners<'_, V, E> {
 }
 
 impl<'g, V, E> TraversalListeners<'g, V, E> {
+    /// Returns the add.
     pub fn add(&mut self, l: impl TraversalListener<V, E> + 'g) -> usize {
         let id = self.next_id;
         self.next_id += 1;
         self.list.push((id, Box::new(l)));
         id
     }
+    /// Returns the remove.
     pub fn remove(&mut self, id: usize) -> bool {
         let before = self.list.len();
         self.list.retain(|(i, _)| *i != id);
         before != self.list.len()
     }
+    /// Returns whether empty.
     pub fn is_empty(&self) -> bool {
         self.list.is_empty()
     }

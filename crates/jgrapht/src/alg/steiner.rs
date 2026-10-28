@@ -23,8 +23,11 @@ use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone)]
+/// The `SteinerTree` struct.
 pub struct SteinerTree<E> {
+    /// The edges.
     pub edges: Vec<E>,
+    /// The weight.
     pub weight: f64,
 }
 
@@ -47,6 +50,14 @@ fn check<G: Graph>(g: &G, terminals: &[G::Vertex]) -> Result<()> {
 
 /// Kou–Markowsky–Berman 2-approximation: MST of the terminal metric closure, expanded into
 /// graph paths, re-spanned and pruned of non-terminal leaves.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+///
+/// # Panics
+///
+/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn kmb_steiner_tree<G: OutgoingGraph>(
     g: &G,
     terminals: &[G::Vertex],
@@ -119,6 +130,10 @@ pub fn kmb_steiner_tree<G: OutgoingGraph>(
 
 /// Exact minimum Steiner tree weight by the Dreyfus–Wagner dynamic programme,
 /// `O(3^k n + 2^k n^2)`; limited to 16 terminals.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] if a numeric or collection parameter is out of range; the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
 pub fn dreyfus_wagner_weight<G: Graph>(g: &G, terminals: &[G::Vertex]) -> Result<f64> {
     check(g, terminals)?;
     let ix = Indexed::new(g);

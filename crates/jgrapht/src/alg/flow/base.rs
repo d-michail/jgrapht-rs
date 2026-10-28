@@ -243,6 +243,10 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     }
 
     /// The validation shared by the constructors: capacities must not be negative.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
     pub fn check_capacities(&self, epsilon: f64) -> Result<()> {
         if self
             .es
@@ -259,6 +263,10 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     }
 
     /// Checks that `source` and `sink` are distinct vertices of the network.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; source and sink coincide; errors of the underlying graph operations are propagated.
     pub fn resolve(&self, source: &G::Vertex, sink: &G::Vertex) -> Result<(usize, usize)> {
         let s = self
             .vertex_index(source)
@@ -275,6 +283,10 @@ impl<'g, G: OutgoingGraph> FlowNet<'g, G> {
     }
 
     /// `init` + `buildInternal`: rebuilds the residual network for a new computation.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn init(&mut self, source: usize, sink: usize) -> Result<()> {
         let n = self.vs.len();
         self.arcs = (0..self.es.len())

@@ -82,27 +82,35 @@ fn structure_of(mut gen_: impl GraphGenerator) -> Structure {
     }
 }
 
+/// Builds the generalized petersen graph.
 pub fn generalized_petersen(n: usize, k: usize) -> Structure {
     structure_of(GeneralizedPetersen { n, k })
 }
+/// Builds the petersen graph.
 pub fn petersen() -> Structure {
     generalized_petersen(5, 2)
 }
+/// Builds the durer graph.
 pub fn durer() -> Structure {
     generalized_petersen(6, 2)
 }
+/// Builds the dodecahedron graph.
 pub fn dodecahedron() -> Structure {
     generalized_petersen(10, 2)
 }
+/// Builds the desargues graph.
 pub fn desargues() -> Structure {
     generalized_petersen(10, 3)
 }
+/// Builds the nauru graph.
 pub fn nauru() -> Structure {
     generalized_petersen(12, 5)
 }
+/// Builds the mobius kantor graph.
 pub fn mobius_kantor() -> Structure {
     generalized_petersen(8, 3)
 }
+/// Builds the butterfly graph.
 pub fn butterfly() -> Structure {
     structure_of(Windmill {
         mode: WindmillMode::DutchWindmill,
@@ -110,14 +118,17 @@ pub fn butterfly() -> Structure {
         n: 3,
     })
 }
+/// Builds the claw graph.
 pub fn claw() -> Structure {
     structure_of(Star(4))
 }
 
+/// Builds the bull graph.
 pub fn bull() -> Structure {
     table(&[(0, 1), (1, 2), (2, 3), (1, 3), (3, 4)])
 }
 
+/// Builds the doyle graph.
 pub fn doyle() -> Structure {
     let hash = |u: i64, v: i64| u * 19 + v;
     let m = |u: i64, m: i64| u.rem_euclid(m);
@@ -133,6 +144,7 @@ pub fn doyle() -> Structure {
     renumber(e)
 }
 
+/// Builds the clebsch graph.
 pub fn clebsch() -> Structure {
     let mut e = Vec::new();
     let mut x = 0i64;
@@ -149,6 +161,7 @@ pub fn clebsch() -> Structure {
     renumber(e)
 }
 
+/// Builds the grotzsch graph.
 pub fn grotzsch() -> Structure {
     let mut e = Vec::new();
     for i in 1..6 {
@@ -167,6 +180,7 @@ pub fn grotzsch() -> Structure {
     renumber(e)
 }
 
+/// Builds the bucky ball graph.
 pub fn bucky_ball() -> Structure {
     table(&[
         (0, 2),
@@ -262,6 +276,7 @@ pub fn bucky_ball() -> Structure {
     ])
 }
 
+/// Builds the bidiakis cube graph.
 pub fn bidiakis_cube() -> Structure {
     table(&[
         (0, 1),
@@ -285,6 +300,7 @@ pub fn bidiakis_cube() -> Structure {
     ])
 }
 
+/// Builds the blanusa first snark graph.
 pub fn blanusa_first_snark() -> Structure {
     table(&[
         (0, 1),
@@ -317,6 +333,7 @@ pub fn blanusa_first_snark() -> Structure {
     ])
 }
 
+/// Builds the blanusa second snark graph.
 pub fn blanusa_second_snark() -> Structure {
     table(&[
         (0, 1),
@@ -349,6 +366,7 @@ pub fn blanusa_second_snark() -> Structure {
     ])
 }
 
+/// Builds the double star snark graph.
 pub fn double_star_snark() -> Structure {
     table(&[
         (0, 1),
@@ -399,6 +417,7 @@ pub fn double_star_snark() -> Structure {
     ])
 }
 
+/// Builds the brinkmann graph.
 pub fn brinkmann() -> Structure {
     table(&[
         (0, 2),
@@ -446,6 +465,7 @@ pub fn brinkmann() -> Structure {
     ])
 }
 
+/// Builds the gosset graph.
 pub fn gosset() -> Structure {
     table(&[
         (0, 1),
@@ -1207,6 +1227,7 @@ pub fn gosset() -> Structure {
     ])
 }
 
+/// Builds the chvatal graph.
 pub fn chvatal() -> Structure {
     table(&[
         (0, 1),
@@ -1236,6 +1257,7 @@ pub fn chvatal() -> Structure {
     ])
 }
 
+/// Builds the kittell graph.
 pub fn kittell() -> Structure {
     table(&[
         (0, 1),
@@ -1304,6 +1326,7 @@ pub fn kittell() -> Structure {
     ])
 }
 
+/// Builds the coxeter graph.
 pub fn coxeter() -> Structure {
     table(&[
         (0, 1),
@@ -1351,10 +1374,12 @@ pub fn coxeter() -> Structure {
     ])
 }
 
+/// Builds the diamond graph.
 pub fn diamond() -> Structure {
     table(&[(0, 1), (0, 2), (0, 3), (1, 2), (2, 3)])
 }
 
+/// Builds the ellingham horton54 graph.
 pub fn ellingham_horton54() -> Structure {
     table(&[
         (0, 1),
@@ -1441,6 +1466,7 @@ pub fn ellingham_horton54() -> Structure {
     ])
 }
 
+/// Builds the ellingham horton78 graph.
 pub fn ellingham_horton78() -> Structure {
     table(&[
         (0, 1),
@@ -1563,6 +1589,7 @@ pub fn ellingham_horton78() -> Structure {
     ])
 }
 
+/// Builds the errera graph.
 pub fn errera() -> Structure {
     table(&[
         (0, 1),
@@ -1613,6 +1640,7 @@ pub fn errera() -> Structure {
     ])
 }
 
+/// Builds the folkman graph.
 pub fn folkman() -> Structure {
     table(&[
         (0, 1),
@@ -1658,6 +1686,7 @@ pub fn folkman() -> Structure {
     ])
 }
 
+/// Builds the franklin graph.
 pub fn franklin() -> Structure {
     table(&[
         (0, 1),
@@ -1681,6 +1710,7 @@ pub fn franklin() -> Structure {
     ])
 }
 
+/// Builds the frucht graph.
 pub fn frucht() -> Structure {
     table(&[
         (0, 1),
@@ -1704,6 +1734,7 @@ pub fn frucht() -> Structure {
     ])
 }
 
+/// Builds the goldner harary graph.
 pub fn goldner_harary() -> Structure {
     table(&[
         (0, 1),
@@ -1736,6 +1767,7 @@ pub fn goldner_harary() -> Structure {
     ])
 }
 
+/// Builds the heawood graph.
 pub fn heawood() -> Structure {
     table(&[
         (0, 1),
@@ -1762,6 +1794,7 @@ pub fn heawood() -> Structure {
     ])
 }
 
+/// Builds the herschel graph.
 pub fn herschel() -> Structure {
     table(&[
         (0, 1),
@@ -1785,6 +1818,7 @@ pub fn herschel() -> Structure {
     ])
 }
 
+/// Builds the hoffman graph.
 pub fn hoffman() -> Structure {
     table(&[
         (0, 1),
@@ -1822,6 +1856,7 @@ pub fn hoffman() -> Structure {
     ])
 }
 
+/// Builds the krackhardt kite graph.
 pub fn krackhardt_kite() -> Structure {
     table(&[
         (0, 1),
@@ -1845,6 +1880,7 @@ pub fn krackhardt_kite() -> Structure {
     ])
 }
 
+/// Builds the klein3 regular graph.
 pub fn klein3_regular() -> Structure {
     table(&[
         (0, 3),
@@ -1934,6 +1970,7 @@ pub fn klein3_regular() -> Structure {
     ])
 }
 
+/// Builds the klein7 regular graph.
 pub fn klein7_regular() -> Structure {
     with_cycles(
         &[&[0, 1, 2, 3, 4, 5, 6]],
@@ -2020,6 +2057,7 @@ pub fn klein7_regular() -> Structure {
     )
 }
 
+/// Builds the moser spindle graph.
 pub fn moser_spindle() -> Structure {
     table(&[
         (0, 1),
@@ -2036,6 +2074,7 @@ pub fn moser_spindle() -> Structure {
     ])
 }
 
+/// Builds the pappus graph.
 pub fn pappus() -> Structure {
     table(&[
         (0, 1),
@@ -2068,6 +2107,7 @@ pub fn pappus() -> Structure {
     ])
 }
 
+/// Builds the poussin graph.
 pub fn poussin() -> Structure {
     with_cycles(
         &[&[0, 1, 2, 3, 4, 5, 6], &[9, 10, 11, 12, 13, 14]],
@@ -2102,6 +2142,7 @@ pub fn poussin() -> Structure {
     )
 }
 
+/// Builds the schlafli graph.
 pub fn schlafli() -> Structure {
     table(&[
         (0, 11),
@@ -2323,6 +2364,7 @@ pub fn schlafli() -> Structure {
     ])
 }
 
+/// Builds the tietze graph.
 pub fn tietze() -> Structure {
     with_cycles(
         &[&[0, 1, 2, 3, 4, 5, 6, 7, 8]],
@@ -2340,6 +2382,7 @@ pub fn tietze() -> Structure {
     )
 }
 
+/// Builds the thomsen graph.
 pub fn thomsen() -> Structure {
     table(&[
         (0, 3),
@@ -2354,6 +2397,7 @@ pub fn thomsen() -> Structure {
     ])
 }
 
+/// Builds the tutte graph.
 pub fn tutte() -> Structure {
     table(&[
         (0, 1),
@@ -2428,6 +2472,7 @@ pub fn tutte() -> Structure {
     ])
 }
 
+/// Builds the zachary karate club graph.
 pub fn zachary_karate_club() -> Structure {
     table(&[
         (0, 1),

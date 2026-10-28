@@ -83,6 +83,10 @@ pub struct JohnsonShortestPaths<'g, G: Graph> {
 
 impl<'g, G: OutgoingGraph> JohnsonShortestPaths<'g, G> {
     /// Construct a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(Self {
             graph,
@@ -96,6 +100,7 @@ impl<'g, G: OutgoingGraph> JohnsonShortestPaths<'g, G> {
         &self.paths
     }
 
+    /// Returns the graph.
     pub fn graph(&self) -> &G {
         self.graph
     }

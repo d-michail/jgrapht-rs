@@ -20,6 +20,10 @@ use crate::graph::IncidenceGraph;
 use crate::graph::{Graph, GraphExt, GraphMut, GraphMutExt};
 
 /// Complement: same vertices, an edge wherever `g` has none (no loops unless `loops`).
+///
+/// # Errors
+///
+/// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
 pub fn complement_into<G, T>(g: &G, target: &mut T, loops: bool) -> Result<()>
 where
     G: Graph,
@@ -45,6 +49,10 @@ where
 /// (undirected) or one ends where the other starts (directed). Follows JGraphT's
 /// `LineGraphConverter`: a self-loop of a directed graph becomes a loop of the line graph, so the
 /// target must allow loops in that case.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
 pub fn line_graph_into<G, T>(g: &G, target: &mut T) -> Result<()>
 where
     G: IncidenceGraph,
@@ -54,6 +62,10 @@ where
 }
 
 /// [`line_graph_into`] with the weight of each line-graph edge given by `weight(e1, e2)`.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
 pub fn line_graph_weighted_into<G, T>(
     g: &G,
     target: &mut T,
@@ -105,6 +117,14 @@ where
 
 /// Contracts `e` in place: its target is merged into its source, edges are re-attached
 /// (edges that would become loops are dropped unless the graph allows them).
+///
+/// # Errors
+///
+/// Returns a [`GraphError`](crate::GraphError) if an edge argument is not in the graph; errors of the underlying graph operations are propagated.
+///
+/// # Panics
+///
+/// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
 pub fn contract_edge<G: GraphMut + IncidenceGraph>(g: &mut G, e: &G::Edge) -> Result<()> {
     let (Some(s), Some(t)) = (g.edge_source(e).cloned(), g.edge_target(e).cloned()) else {
         return Err(crate::GraphError::EdgeNotFound);

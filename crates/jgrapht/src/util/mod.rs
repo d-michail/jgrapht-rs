@@ -52,6 +52,7 @@ pub struct UnionFind {
 }
 
 impl UnionFind {
+    /// Creates a new instance.
     pub fn new(n: usize) -> Self {
         UnionFind {
             parent: (0..n).collect(),
@@ -59,6 +60,7 @@ impl UnionFind {
             sets: n,
         }
     }
+    /// Returns the find.
     pub fn find(&mut self, mut x: usize) -> usize {
         while self.parent[x] != x {
             self.parent[x] = self.parent[self.parent[x]];
@@ -80,9 +82,11 @@ impl UnionFind {
         self.sets -= 1;
         true
     }
+    /// Returns the connected.
     pub fn connected(&mut self, a: usize, b: usize) -> bool {
         self.find(a) == self.find(b)
     }
+    /// Sets the count.
     pub fn set_count(&self) -> usize {
         self.sets
     }
@@ -97,6 +101,10 @@ pub struct VertexToIntegerMapping<V> {
 
 impl<V: Clone + Eq + std::hash::Hash> VertexToIntegerMapping<V> {
     /// Indexes the vertices in iteration order; duplicates are an error.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn new(vertices: impl IntoIterator<Item = V>) -> crate::Result<Self> {
         let mut vertex_map = std::collections::HashMap::new();
         let mut index_list = Vec::new();
@@ -113,9 +121,11 @@ impl<V: Clone + Eq + std::hash::Hash> VertexToIntegerMapping<V> {
             index_list,
         })
     }
+    /// Returns the vertex map.
     pub fn vertex_map(&self) -> &std::collections::HashMap<V, usize> {
         &self.vertex_map
     }
+    /// Returns the index list.
     pub fn index_list(&self) -> &[V] {
         &self.index_list
     }
@@ -193,7 +203,13 @@ pub struct ToleranceDoubleComparator {
 }
 
 impl ToleranceDoubleComparator {
+    /// The default epsilon constant.
     pub const DEFAULT_EPSILON: f64 = 1e-9;
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn new(epsilon: f64) -> crate::Result<Self> {
         if epsilon <= 0.0 {
             return Err(crate::GraphError::must_be_positive("tolerance"));
@@ -230,16 +246,19 @@ pub struct ElementsSequenceGenerator<T> {
 }
 
 impl<T> ElementsSequenceGenerator<T> {
+    /// Creates a new instance.
     pub fn new(elements: impl IntoIterator<Item = T>) -> Self {
         ElementsSequenceGenerator {
             elements: elements.into_iter().collect(),
         }
     }
 
+    /// Returns whether there is next.
     pub fn has_next(&self) -> bool {
         !self.elements.is_empty()
     }
 
+    /// Returns the next.
     pub fn next(&mut self, rng: &mut impl java::RandomSource) -> Option<T> {
         if self.elements.is_empty() {
             return None;
@@ -255,6 +274,7 @@ impl<T> ElementsSequenceGenerator<T> {
 pub struct HashableSet<T: Eq + std::hash::Hash>(pub std::collections::HashSet<T>);
 
 impl<T: Eq + std::hash::Hash> HashableSet<T> {
+    /// Creates a new instance.
     pub fn new() -> Self {
         HashableSet(std::collections::HashSet::new())
     }

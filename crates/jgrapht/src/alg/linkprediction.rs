@@ -36,19 +36,29 @@ fn nbrs<G: Graph>(ix: &Indexed<'_, G>) -> Vec<HashSet<usize>> {
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// The `Measure` enum.
 pub enum Measure {
+    /// The common neighbors variant.
     CommonNeighbors,
+    /// The total neighbors variant.
     TotalNeighbors,
+    /// The jaccard variant.
     Jaccard,
     /// Sørensen–Dice
     Sorensen,
     /// Salton (cosine)
     Salton,
+    /// The hub promoted variant.
     HubPromoted,
+    /// The hub depressed variant.
     HubDepressed,
+    /// The leicht holme newman variant.
     LeichtHolmeNewman,
+    /// The preferential attachment variant.
     PreferentialAttachment,
+    /// The adamic adar variant.
     AdamicAdar,
+    /// The resource allocation variant.
     ResourceAllocation,
 }
 
@@ -168,6 +178,7 @@ macro_rules! link_prediction {
         }
 
         impl<'g, G: Graph> $name<'g, G> {
+            /// Creates a new instance.
             pub fn new(graph: &'g G) -> Self {
                 $name { graph }
             }

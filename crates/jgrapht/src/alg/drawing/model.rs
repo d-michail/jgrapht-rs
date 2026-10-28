@@ -26,7 +26,9 @@ use std::hash::{Hash, Hasher};
 /// Java's `Double.doubleToLongBits`: `NaN == NaN` and `0.0 != -0.0`.
 #[derive(Debug, Clone, Copy)]
 pub struct Point2D {
+    /// The x.
     pub x: f64,
+    /// The y.
     pub y: f64,
 }
 
@@ -64,22 +66,31 @@ pub mod points {
     use super::Point2D;
     use crate::util::ToleranceDoubleComparator;
 
+    /// Computes the length.
     pub fn length(v: Point2D) -> f64 {
         (v.x * v.x + v.y * v.y).sqrt()
     }
+    /// Computes the add.
     pub fn add(a: Point2D, b: Point2D) -> Point2D {
         Point2D::of(a.x + b.x, a.y + b.y)
     }
+    /// Computes the subtract.
     pub fn subtract(a: Point2D, b: Point2D) -> Point2D {
         Point2D::of(a.x - b.x, a.y - b.y)
     }
+    /// Computes the negate.
     pub fn negate(a: Point2D) -> Point2D {
         scalar_multiply(a, -1.0)
     }
+    /// Computes the scalar multiply.
     pub fn scalar_multiply(a: Point2D, scalar: f64) -> Point2D {
         Point2D::of(a.x * scalar, a.y * scalar)
     }
     /// Equal up to a tolerance of `1e-9` in each coordinate.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn equals(p1: Point2D, p2: Point2D) -> bool {
         let c = ToleranceDoubleComparator::new(1e-9).expect("positive tolerance");
         c.compare(p1.x, p2.x) == 0 && c.compare(p1.y, p2.y) == 0
@@ -104,6 +115,7 @@ impl Box2D {
     pub fn of(width: f64, height: f64) -> Self {
         Self::at(0.0, 0.0, width, height)
     }
+    /// A box with its corner at `(x, y)`.
     pub fn at(x: f64, y: f64, width: f64, height: f64) -> Self {
         debug_assert!(width >= 0.0 && height >= 0.0);
         Box2D {
@@ -144,6 +156,7 @@ pub mod boxes {
     use super::{Box2D, Point2D};
     use std::cmp::Ordering;
 
+    /// Computes the contains point.
     pub fn contains_point(b: &Box2D, p: Point2D) -> bool {
         contains_point_with(b, p, |a, b| a.total_cmp(&b))
     }
@@ -186,17 +199,23 @@ pub mod boxes {
 ///
 /// Positions of vertices inside a drawable area (`LayoutModel2D`).
 pub trait LayoutModel2D<V> {
+    /// Returns the drawable area.
     fn drawable_area(&self) -> Box2D;
+    /// Sets the drawable area.
     fn set_drawable_area(&mut self, area: Box2D);
+    /// Returns the get.
     fn get(&self, v: &V) -> Option<Point2D>;
     /// Sets the position unless the vertex is fixed; returns the previous (or, for a fixed
     /// vertex, the current) position.
     fn put(&mut self, v: V, p: Point2D) -> Option<Point2D>;
+    /// Sets the fixed.
     fn set_fixed(&mut self, v: V, fixed: bool);
+    /// Returns whether fixed.
     fn is_fixed(&self, v: &V) -> bool;
     /// All positions in insertion order.
     fn entries(&self) -> Vec<(V, Point2D)>;
 
+    /// Returns the collect.
     fn collect(&self) -> IndexMap<V, Point2D>
     where
         V: Eq + Hash,
@@ -314,6 +333,7 @@ impl<V, M: LayoutModel2D<V>> ListenableLayoutModel2D<V, M> {
         self.listeners.retain(|(i, _)| *i != id);
         before != self.listeners.len()
     }
+    /// Consumes the value and returns inner.
     pub fn into_inner(self) -> M {
         self.model
     }

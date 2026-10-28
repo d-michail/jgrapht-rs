@@ -56,10 +56,19 @@ pub struct PushRelabelMFImpl<'g, G: IncidenceGraph> {
 
 impl<'g, G: IncidenceGraph> PushRelabelMFImpl<'g, G> {
     /// Construct a new push-relabel algorithm.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
 
+    /// Creates an instance with the given epsilon.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         let net = FlowNet::new(network, epsilon)?;
         let n = net.vs.len();
@@ -77,6 +86,10 @@ impl<'g, G: IncidenceGraph> PushRelabelMFImpl<'g, G> {
     }
 
     /// Computes the flow and returns its value (`calculateMaximumFlow`).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn calculate_maximum_flow(&mut self, source: &G::Vertex, sink: &G::Vertex) -> Result<f64> {
         self.calculate(source, sink)
     }

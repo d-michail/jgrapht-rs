@@ -37,6 +37,11 @@ pub struct RandomWalkVertexIterator<'g, G: Graph + 'g, R> {
 impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, R: RandomSource>
     RandomWalkVertexIterator<'g, G, R>
 {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn new(
         g: &'g G,
         start: &'g G::Vertex,

@@ -285,6 +285,7 @@ impl<G: Graph> FarthestInsertionHeuristicTSP<G> {
         Self::default()
     }
 
+    /// Creates an instance with the given subtour.
     pub fn with_subtour(subtour: GraphWalk<G::Vertex, G::Edge>) -> Self {
         FarthestInsertionHeuristicTSP {
             initial_subtour: Some(subtour),

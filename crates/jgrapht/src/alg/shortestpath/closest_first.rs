@@ -40,10 +40,19 @@ impl<'g, G: Graph> DijkstraClosestFirstIterator<'g, G> {
     /// Creates a new iterator for the specified graph. Iteration will start at the specified start
     /// vertex and will be limited to the connected component that includes that vertex. This
     /// iterator will use pairing heap as a default heap implementation.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G, source: &G::Vertex) -> Result<Self> {
         Self::with_radius(graph, source, f64::INFINITY)
     }
 
+    /// Creates an instance with the given radius.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; an edge weight is negative, NaN or otherwise unusable; a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn with_radius(graph: &'g G, source: &G::Vertex, radius: f64) -> Result<Self> {
         if radius.is_nan() || radius < 0.0 {
             return Err(GraphError::must_be_non_negative("radius"));

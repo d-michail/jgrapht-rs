@@ -102,6 +102,11 @@ impl<'g, G: IncidenceGraph> BidirectionalDijkstraShortestPath<'g, G> {
         }
     }
 
+    /// Creates an instance with the given radius.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn with_radius(graph: &'g G, radius: f64) -> Result<Self> {
         if radius.is_nan() || radius < 0.0 {
             return Err(GraphError::must_be_non_negative("radius"));
@@ -159,6 +164,7 @@ pub struct BidirectionalAStarShortestPath<'g, G, F> {
 impl<'g, G: IncidenceGraph, F: Fn(&G::Vertex, &G::Vertex) -> f64>
     BidirectionalAStarShortestPath<'g, G, F>
 {
+    /// Creates a new instance.
     pub fn new(graph: &'g G, heuristic: F) -> Self {
         Self { graph, heuristic }
     }
@@ -430,6 +436,14 @@ impl<G: IncidenceGraph> BidirectionalDijkstra<'_, G> {
     /// Java's bidirectional Dijkstra: the frontiers are scanned alternately, the best path is
     /// updated whenever an edge reaches a vertex seen by the other frontier, and the search stops
     /// when the sum of the two minimum keys reaches the best path.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn path(
         &self,
         s: &G::Vertex,

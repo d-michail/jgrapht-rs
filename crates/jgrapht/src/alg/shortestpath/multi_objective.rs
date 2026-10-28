@@ -21,16 +21,19 @@ use std::cmp::Reverse;
 use std::collections::{BinaryHeap, HashMap, VecDeque};
 
 #[derive(Debug, Clone)]
+/// The `MultiObjectiveSingleSourcePaths` struct.
 pub struct MultiObjectiveSingleSourcePaths<V, E> {
     source: V,
     paths: HashMap<V, Vec<GraphWalk<V, E>>>,
 }
 
 impl<V: Clone + Eq + std::hash::Hash, E: Clone> MultiObjectiveSingleSourcePaths<V, E> {
+    /// Returns the source.
     pub fn source(&self) -> &V {
         &self.source
     }
 
+    /// Returns the paths.
     pub fn paths(&self, target: &V) -> &[GraphWalk<V, E>] {
         self.paths.get(target).map_or(&[], Vec::as_slice)
     }
@@ -138,10 +141,16 @@ pub struct MartinShortestPath<'g, G: Graph, F> {
 }
 
 impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>> MartinShortestPath<'g, G, F> {
+    /// Creates a new instance.
     pub fn new(graph: &'g G, edge_weight: F) -> Self {
         Self { graph, edge_weight }
     }
 
+    /// Returns the paths.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -190,6 +199,11 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>> MartinShortestPath<'g, G, F> {
         Ok(build_paths(&indexed, source, &labels, &node_labels))
     }
 
+    /// Returns the paths between.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn get_paths_between(
         &self,
         source: &G::Vertex,
@@ -238,6 +252,7 @@ pub struct LabelCorrectingMultiObjectiveShortestPath<'g, G: Graph, F> {
 impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
     LabelCorrectingMultiObjectiveShortestPath<'g, G, F>
 {
+    /// Creates a new instance.
     pub fn new(graph: &'g G, edge_weight: F) -> Self {
         Self {
             graph,
@@ -246,6 +261,11 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
         }
     }
 
+    /// Creates an instance with the given epsilon.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn with_epsilon(graph: &'g G, edge_weight: F, epsilon: f64) -> Result<Self> {
         if epsilon.is_nan() || epsilon < 0.0 {
             return Err(GraphError::must_be_non_negative("epsilon"));
@@ -257,6 +277,11 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
         })
     }
 
+    /// Returns the paths.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -304,6 +329,11 @@ impl<'g, G: Graph, F: Fn(&G::Edge) -> Vec<f64>>
         Ok(build_paths(&indexed, source, &labels, &node_labels))
     }
 
+    /// Returns the paths between.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn get_paths_between(
         &self,
         source: &G::Vertex,

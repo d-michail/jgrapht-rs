@@ -38,10 +38,12 @@ pub struct GraphOrdering<'g, G: Graph> {
 }
 
 impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
+    /// Creates a new instance.
     pub fn new(graph: &'g G) -> Self {
         Self::with_options(graph, false, true)
     }
 
+    /// Creates an instance with the given options.
     pub fn with_options(graph: &'g G, order_by_degree: bool, cache_edges: bool) -> Self {
         let mut vertices: Vec<&'g G::Vertex> = graph.vertices().collect();
         if order_by_degree {
@@ -72,6 +74,7 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
         }
     }
 
+    /// Returns the vertex count.
     pub fn vertex_count(&self) -> usize {
         self.vertices.len()
     }
@@ -110,6 +113,7 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
         }
     }
 
+    /// Returns whether there is edge.
     pub fn has_edge(&self, v1: usize, v2: usize) -> bool {
         if self.cache_edges {
             let i = v1 * self.vertices.len() + v2;
@@ -134,6 +138,7 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
         self.vertices[v]
     }
 
+    /// Returns the edge.
     pub fn edge(&self, v1: usize, v2: usize) -> Option<&'g G::Edge> {
         if self.cache_edges {
             self.has_edge(v1, v2);
@@ -143,16 +148,22 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
         }
     }
 
+    /// Returns the vertex number.
     pub fn vertex_number(&self, v: &G::Vertex) -> usize {
         self.order[v]
     }
 
     /// Numbers of the source and target of `e`.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn edge_numbers(&self, e: &G::Edge) -> [usize; 2] {
         let (s, t) = (self.graph.edge_source(e), self.graph.edge_target(e));
         [self.order[s.unwrap()], self.order[t.unwrap()]]
     }
 
+    /// Returns the graph.
     pub fn graph(&self) -> &'g G {
         self.graph
     }

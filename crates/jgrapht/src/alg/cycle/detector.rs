@@ -147,6 +147,10 @@ impl<'g, G: DirectedGraph + 'g + OutgoingGraph> CycleDetector<'g, G> {
     }
 
     /// All vertices on some cycle: the non-trivial strongly connected components and self-loops.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn find_cycles(&self) -> IndexSet<G::Vertex> {
         let inspector = KosarajuStrongConnectivityInspector::new(self.graph);
         let mut set = IndexSet::new();
@@ -179,6 +183,10 @@ impl<'g, G: DirectedGraph + 'g + OutgoingGraph> CycleDetector<'g, G> {
 
 /// `Cycles.simpleCycleToGraphPath`: orders the edges of a simple cycle into a closed walk.
 /// `None` for an empty cycle; an error if the edges are not a simple cycle.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] if an argument violates a precondition; an edge argument is not in the graph; errors of the underlying graph operations are propagated.
 pub fn simple_cycle_to_graph_path<G: Graph>(
     graph: &G,
     cycle: &[G::Edge],

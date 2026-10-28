@@ -55,20 +55,31 @@ use std::hash::Hash;
 /// * [`Graph::edges_between`] is empty if either vertex is absent, and incidence queries return
 ///   nothing for an absent vertex.
 pub trait Graph {
+    /// The vertex type.
     type Vertex: Clone + Eq + Hash;
+    /// The edge type.
     type Edge: Clone + Eq + Hash;
 
+    /// Returns the graph type.
     fn graph_type(&self) -> GraphType;
 
+    /// Returns the vertices.
     fn vertices(&self) -> impl Iterator<Item = &Self::Vertex>;
+    /// Returns the edges.
     fn edges(&self) -> impl Iterator<Item = &Self::Edge>;
+    /// Returns the vertex count.
     fn vertex_count(&self) -> usize;
+    /// Returns the edge count.
     fn edge_count(&self) -> usize;
 
+    /// Returns the contains vertex.
     fn contains_vertex(&self, v: &Self::Vertex) -> bool;
+    /// Returns the contains edge.
     fn contains_edge(&self, e: &Self::Edge) -> bool;
 
+    /// Returns the edge source.
     fn edge_source(&self, e: &Self::Edge) -> Option<&Self::Vertex>;
+    /// Returns the edge target.
     fn edge_target(&self, e: &Self::Edge) -> Option<&Self::Vertex>;
     /// Weight of the edge; `1.0` for unweighted graphs. `None` if the edge does not exist.
     fn edge_weight(&self, e: &Self::Edge) -> Option<f64>;
@@ -85,9 +96,11 @@ pub trait Graph {
     fn is_edge_directed(&self, _e: &Self::Edge) -> bool {
         self.graph_type().directed
     }
+    /// Returns the edge.
     fn get_edge<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> Option<&'a Self::Edge> {
         self.edges_between(u, v).next()
     }
+    /// Returns the contains edge between.
     fn contains_edge_between<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> bool {
         self.get_edge(u, v).is_some()
     }
@@ -111,6 +124,7 @@ pub trait GraphMut: Graph {
     fn add_edge_with(&mut self, u: &Self::Vertex, v: &Self::Vertex, e: Self::Edge) -> Result<bool>;
     /// Removes an edge, returning `false` if it was absent.
     fn remove_edge(&mut self, e: &Self::Edge) -> bool;
+    /// Sets the edge weight.
     fn set_edge_weight(&mut self, e: &Self::Edge, w: f64) -> Result<()>;
     /// Produces a fresh edge object from the graph's edge factory.
     fn new_edge(&mut self) -> Result<Self::Edge>;
@@ -163,6 +177,10 @@ where
 
 /// Hash consistent with [`graph_equals`] (insertion-order independent; edge direction matters
 /// only for directed graphs).
+///
+/// # Panics
+///
+/// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
 pub fn graph_hash<G: Graph>(g: &G) -> u64 {
     use std::hash::Hasher;
     fn h<T: Hash>(t: &T) -> u64 {
@@ -188,6 +206,10 @@ pub fn graph_hash<G: Graph>(g: &G) -> u64 {
 
 /// JGraphT's `AbstractGraph.toString`: `([v1, v2], [(v1,v2)])` — directed edges render as
 /// `(s,t)`, others as `{s,t}`; edges other than [`DefaultEdge`] are prefixed with `label=`.
+///
+/// # Panics
+///
+/// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
 pub fn graph_to_string<G>(g: &G) -> String
 where
     G: Graph,

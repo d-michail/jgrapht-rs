@@ -78,6 +78,10 @@ pub struct MaximumWeightBipartiteMatching<'g, G: Graph> {
 
 impl<'g, G: UndirectedGraph + IncidenceGraph> MaximumWeightBipartiteMatching<'g, G> {
     /// Fails if the graph is not undirected.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(
         graph: &'g G,
         partition1: IndexSet<G::Vertex>,

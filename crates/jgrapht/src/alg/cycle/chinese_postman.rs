@@ -70,6 +70,10 @@ impl ChinesePostman {
     }
 
     /// Returns a minimum-weight closed walk which visits every edge at least once.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
     pub fn get_cpp_solution<G: IncidenceGraph>(
         &mut self,
         graph: &G,

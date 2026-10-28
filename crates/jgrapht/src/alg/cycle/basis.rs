@@ -32,6 +32,7 @@ pub struct CycleBasis<E> {
 }
 
 impl<E: Clone + Eq + std::hash::Hash> CycleBasis<E> {
+    /// Creates a new instance.
     pub fn new(cycles: IndexSet<Vec<E>>, length: usize, weight: f64) -> Self {
         CycleBasis {
             cycles,
@@ -40,10 +41,12 @@ impl<E: Clone + Eq + std::hash::Hash> CycleBasis<E> {
         }
     }
 
+    /// Computes the empty.
     pub fn empty() -> Self {
         Self::new(IndexSet::new(), 0, 0.0)
     }
 
+    /// Returns the cycles.
     pub fn cycles(&self) -> &IndexSet<Vec<E>> {
         &self.cycles
     }
@@ -59,6 +62,10 @@ impl<E: Clone + Eq + std::hash::Hash> CycleBasis<E> {
     }
 
     /// The cycles as closed walks of `graph`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn cycles_as_graph_paths<G: Graph<Edge = E>>(
         &self,
         graph: &G,
@@ -85,6 +92,7 @@ impl<E: Clone + Eq + std::hash::Hash> CycleBasis<E> {
 ///
 /// `CycleBasisAlgorithm`.
 pub trait CycleBasisAlgorithm<E> {
+    /// Returns the cycle basis.
     fn get_cycle_basis(&mut self) -> Result<CycleBasis<E>>;
 }
 
@@ -174,6 +182,10 @@ macro_rules! fundamental_basis {
 
         impl<'g, G: $crate::graph::IncidenceGraph> $name<'g, G> {
             /// Fails for mixed graphs.
+            ///
+            /// # Errors
+            ///
+            /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
             pub fn new(graph: &'g G) -> Result<Self> {
                 require_directed_or_undirected(graph)?;
                 Ok($name { graph })
@@ -248,6 +260,10 @@ pub struct PatonCycleBase<'g, G: Graph> {
 
 impl<'g, G: UndirectedGraph + IncidenceGraph> PatonCycleBase<'g, G> {
     /// Cycle basis of an undirected graph.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(PatonCycleBase { graph })
     }

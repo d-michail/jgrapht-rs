@@ -45,6 +45,14 @@ impl DagAllPathsCounter {
     /// 1.
     /// - If there is no path from `source` to `target`, returns
     ///   `BigInteger#ZERO`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`](crate::Graph) (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn count_all_paths<G: DirectedGraph + IncidenceGraph>(
         graph: &G,
         source: &G::Vertex,

@@ -57,10 +57,19 @@ pub struct PadbergRaoOddMinimumCutset<'g, G: Graph> {
 
 impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g, G> {
     /// Creates a new instance of the PadbergRaoOddMinimumCutset algorithm.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
 
+    /// Creates an instance with the given epsilon.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         Self::with_algorithm(
             network,
@@ -69,6 +78,10 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> PadbergRaoOddMinimumCutset<'g
     }
 
     /// Uses `minimum_st_cut_algorithm` for the cut computations.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_algorithm(
         network: &'g G,
         minimum_st_cut_algorithm: Box<dyn MinimumSTCutAlgorithm<G::Vertex, G::Edge> + 'g>,

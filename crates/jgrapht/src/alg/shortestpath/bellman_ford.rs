@@ -111,10 +111,20 @@ impl<'g, G> BellmanFord<'g, G> {
         }
     }
 
+    /// Creates an instance with the given epsilon.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_epsilon(graph: &'g G, epsilon: f64) -> Result<Self> {
         Self::with_options(graph, epsilon, usize::MAX)
     }
 
+    /// Creates an instance with the given options.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn with_options(graph: &'g G, epsilon: f64, max_hops: usize) -> Result<Self> {
         if epsilon <= 0.0 {
             return Err(GraphError::must_be_positive("tolerance"));
@@ -178,6 +188,10 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
     }
 
     /// Compute all shortest paths starting from a single source vertex.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; a negative-weight cycle is reachable; errors of the underlying graph operations are propagated.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -255,6 +269,10 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
     }
 
     /// Get a shortest path from a source vertex to a sink vertex.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn get_path(
         &self,
         source: &G::Vertex,

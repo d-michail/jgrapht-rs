@@ -27,12 +27,16 @@ use std::vec::IntoIter;
 
 /// State shared between the engine and its strategy.
 pub struct Core<'g, G: OutgoingGraph + 'g, D> {
+    /// The g.
     pub g: &'g G,
+    /// The seen.
     pub seen: HashMap<&'g G::Vertex, D>,
+    /// The listeners.
     pub listeners: TraversalListeners<'g, G::Vertex, G::Edge>,
 }
 
 impl<'g, G: OutgoingGraph + 'g, D> Core<'g, G, D> {
+    /// Updates the state for `finish vertex`.
     pub fn finish_vertex(&mut self, v: &'g G::Vertex) {
         self.listeners.vertex_finished(v);
     }
@@ -40,21 +44,25 @@ impl<'g, G: OutgoingGraph + 'g, D> Core<'g, G, D> {
 
 /// How a concrete traversal orders vertices (the abstract methods of `CrossComponentIterator`).
 pub trait Strategy<'g, G: OutgoingGraph + 'g>: Sized {
+    /// The data type.
     type Data;
     /// True if the current component has nothing left to visit (may fire finish events).
     fn is_exhausted(&mut self, c: &mut Core<'g, G, Self::Data>) -> bool;
+    /// Performs `encounter`.
     fn encounter(
         &mut self,
         c: &mut Core<'g, G, Self::Data>,
         v: &'g G::Vertex,
         e: Option<&'g G::Edge>,
     );
+    /// Performs `encounter again`.
     fn encounter_again(
         &mut self,
         c: &mut Core<'g, G, Self::Data>,
         v: &'g G::Vertex,
         e: &'g G::Edge,
     );
+    /// Returns the provide next.
     fn provide_next(&mut self, c: &mut Core<'g, G, Self::Data>) -> &'g G::Vertex;
 
     /// What the iterator yields: the vertex itself for a strategy that cannot fail, or a
@@ -99,6 +107,10 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>>
     CrossComponentIterator<'g, G, S>
 {
     /// `starts == None` means "whole graph" (cross-component traversal).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn with_strategy(
         g: &'g G,
         starts: Option<Vec<&'g G::Vertex>>,
@@ -144,34 +156,43 @@ impl<'g, G: OutgoingGraph + 'g + OutgoingGraph, S: Strategy<'g, G>>
             .get_or_insert_with(|| g.vertices().collect::<Vec<_>>().into_iter())
     }
 
+    /// Returns the graph.
     pub fn graph(&self) -> &'g G {
         self.core.g
     }
+    /// Returns whether cross component traversal.
     pub fn is_cross_component_traversal(&self) -> bool {
         self.cross
     }
+    /// Sets the cross component traversal.
     pub fn set_cross_component_traversal(&mut self, cross: bool) {
         self.cross = cross;
     }
+    /// Returns the strategy.
     pub fn strategy(&self) -> &S {
         &self.strategy
     }
+    /// Consumes the value and returns strategy.
     pub fn into_strategy(self) -> S {
         self.strategy
     }
 
+    /// Returns the strategy mut.
     pub fn strategy_mut(&mut self) -> &mut S {
         &mut self.strategy
     }
+    /// Returns the seen data.
     pub fn seen_data(&self, v: &G::Vertex) -> Option<&S::Data> {
         self.core.seen.get(v)
     }
+    /// Adds traversal listener.
     pub fn add_traversal_listener(
         &mut self,
         l: impl TraversalListener<G::Vertex, G::Edge> + 'g,
     ) -> usize {
         self.core.listeners.add(l)
     }
+    /// Removes traversal listener.
     pub fn remove_traversal_listener(&mut self, id: usize) -> bool {
         self.core.listeners.remove(id)
     }
@@ -240,6 +261,10 @@ impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> CrossComponentIterator<'g, G
     ///
     /// Strategies that cannot fail never return `Err`, so [`Iterator::next`] on them yields
     /// vertices directly; this is the fallible form for generic code.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn try_next(&mut self) -> Result<Option<&'g G::Vertex>> {
         if self.failed {
             return Ok(None);
@@ -282,7 +307,9 @@ impl<'g, G: OutgoingGraph + 'g, S: Strategy<'g, G>> Iterator for CrossComponentI
 /// Per-vertex BFS bookkeeping: the spanning-tree edge and the depth.
 #[derive(Debug, Clone, Copy)]
 pub struct BfsData<'g, E> {
+    /// The edge.
     pub edge: Option<&'g E>,
+    /// The depth.
     pub depth: usize,
 }
 
@@ -324,10 +351,15 @@ impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for BfsStrategy<'g, G> {
     }
 }
 
+/// The breadth first iterator type.
 pub type BreadthFirstIterator<'g, G> = CrossComponentIterator<'g, G, BfsStrategy<'g, G>>;
 
 impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
     /// Visits the whole graph, component by component.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(g: &'g G) -> Self {
         Self::with_strategy(
             g,
@@ -339,9 +371,18 @@ impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
         .expect("no start vertex to validate")
     }
     /// Starts at `start`; call `set_cross_component_traversal(true)` to continue in other components.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_start(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
         Self::from_starts(g, [start])
     }
+    /// Computes the from starts.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_starts(g: &'g G, starts: impl IntoIterator<Item = &'g G::Vertex>) -> Result<Self> {
         Self::with_strategy(
             g,
@@ -356,9 +397,11 @@ impl<'g, G: OutgoingGraph + 'g> BreadthFirstIterator<'g, G> {
         let e = self.seen_data(v)?.edge?;
         self.graph().opposite_vertex(e, v)
     }
+    /// Returns the spanning tree edge.
     pub fn spanning_tree_edge(&self, v: &G::Vertex) -> Option<&'g G::Edge> {
         self.seen_data(v)?.edge
     }
+    /// Returns the depth.
     pub fn depth(&self, v: &G::Vertex) -> Option<usize> {
         self.seen_data(v).map(|d| d.depth)
     }
@@ -379,11 +422,13 @@ enum StackEntry<'g, V> {
     Sentinel,
 }
 
+/// The `DfsStrategy` struct.
 pub struct DfsStrategy<'g, G: OutgoingGraph + 'g> {
     stack: VecDeque<StackEntry<'g, G::Vertex>>,
 }
 
 impl<'g, G: OutgoingGraph + 'g> DfsStrategy<'g, G> {
+    /// Creates a new instance.
     pub fn new() -> Self {
         DfsStrategy {
             stack: VecDeque::new(),
@@ -464,9 +509,15 @@ impl<'g, G: OutgoingGraph + 'g> Strategy<'g, G> for DfsStrategy<'g, G> {
     }
 }
 
+/// The depth first iterator type.
 pub type DepthFirstIterator<'g, G> = CrossComponentIterator<'g, G, DfsStrategy<'g, G>>;
 
 impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
+    /// Creates a new instance.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(g: &'g G) -> Self {
         Self::with_strategy(
             g,
@@ -477,9 +528,19 @@ impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
         )
         .expect("no start vertex to validate")
     }
+    /// Computes the from start.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_start(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
         Self::from_starts(g, [start])
     }
+    /// Computes the from starts.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_starts(g: &'g G, starts: impl IntoIterator<Item = &'g G::Vertex>) -> Result<Self> {
         Self::with_strategy(
             g,
@@ -489,6 +550,7 @@ impl<'g, G: OutgoingGraph + 'g> DepthFirstIterator<'g, G> {
             },
         )
     }
+    /// Returns the color.
     pub fn color(&self, v: &G::Vertex) -> Option<VisitColor> {
         self.seen_data(v).copied()
     }
@@ -621,16 +683,36 @@ pub type ClosestFirstIterator<'g, G, H = PairingHeap<OrderedF64, &'g <G as Graph
     CrossComponentIterator<'g, G, ClosestFirstStrategy<'g, G, H>>;
 
 impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
+    /// Creates a new instance.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(g: &'g G) -> Self {
         Self::build(g, None, f64::INFINITY, PairingHeap::new())
             .expect("no radius with cross-component traversal")
     }
+    /// Computes the from start.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_start(g: &'g G, start: &'g G::Vertex) -> Result<Self> {
         Self::build(g, Some(vec![start]), f64::INFINITY, PairingHeap::new())
     }
+    /// Computes the from start with radius.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_start_with_radius(g: &'g G, start: &'g G::Vertex, radius: f64) -> Result<Self> {
         Self::build(g, Some(vec![start]), radius, PairingHeap::new())
     }
+    /// Computes the from starts.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_starts(g: &'g G, starts: impl IntoIterator<Item = &'g G::Vertex>) -> Result<Self> {
         Self::build(
             g,
@@ -639,6 +721,11 @@ impl<'g, G: OutgoingGraph + 'g> ClosestFirstIterator<'g, G> {
             PairingHeap::new(),
         )
     }
+    /// Performs `from starts with radius`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_starts_with_radius(
         g: &'g G,
         starts: impl IntoIterator<Item = &'g G::Vertex>,
@@ -660,6 +747,10 @@ where
 {
     /// Full constructor with an explicit heap. A finite radius is incompatible with
     /// cross-component traversal (`starts == None`).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn build(
         g: &'g G,
         starts: Option<Vec<&'g G::Vertex>>,
@@ -701,6 +792,7 @@ where
     pub fn shortest_path_length(&self, v: &G::Vertex) -> Option<f64> {
         self.seen_data(v).map(|d| d.key)
     }
+    /// Returns the spanning tree edge.
     pub fn spanning_tree_edge(&self, v: &G::Vertex) -> Option<&'g G::Edge> {
         self.seen_data(v).and_then(|d| d.edge)
     }

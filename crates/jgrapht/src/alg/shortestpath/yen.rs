@@ -75,12 +75,21 @@ pub struct YenShortestPathIterator<'g, G: Graph, P = AllowAllPaths> {
 impl<'g, G: OutgoingGraph> YenShortestPathIterator<'g, G, AllowAllPaths> {
     /// Constructs an instance of the algorithm for given `graph`, `source` and
     /// `sink`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G, source: &G::Vertex, sink: &G::Vertex) -> Result<Self> {
         Self::with_validator(graph, source, sink, AllowAllPaths)
     }
 }
 
 impl<'g, G: OutgoingGraph, P: PathValidator<G>> YenShortestPathIterator<'g, G, P> {
+    /// Creates an instance with the given validator.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn with_validator(
         graph: &'g G,
         source: &G::Vertex,
@@ -263,6 +272,7 @@ impl<'g, G: Graph> YenKShortestPath<'g, G, AllowAllPaths> {
 }
 
 impl<'g, G: OutgoingGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, P> {
+    /// Creates an instance with the given validator.
     pub fn with_validator(graph: &'g G, validator: P) -> Self {
         Self { graph, validator }
     }
@@ -270,6 +280,10 @@ impl<'g, G: OutgoingGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, 
     /// Computes `k` shortest loopless paths between `source` and `sink`. If the
     /// overall number of such paths is denoted by $n$, the method returns $m = min\{k, n\}$ such
     /// paths. The paths are produced in sorted order by weights.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -296,16 +310,25 @@ impl<'g, G: OutgoingGraph, P: PathValidator<G> + Clone> YenKShortestPath<'g, G, 
 /// Statistics collected by [`BoundedPrunedYenKShortestPath`].
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct BoundedPrunedYenStats {
+    /// The shortest path calls.
     pub shortest_path_calls: usize,
+    /// The spur tasks created.
     pub spur_tasks_created: usize,
+    /// The spur tasks materialized.
     pub spur_tasks_materialized: usize,
+    /// The materialized candidates.
     pub materialized_candidates: usize,
+    /// The deferred tasks left.
     pub deferred_tasks_left: usize,
+    /// The candidate heap pushes.
     pub candidate_heap_pushes: usize,
+    /// The candidate heap pops.
     pub candidate_heap_pops: usize,
+    /// The unreachable spurs.
     pub unreachable_spurs: usize,
     /// Vertices expanded by spur engines which expose their settled-vertex count.
     pub expanded_vertices: usize,
+    /// The skipped impossible spur tasks.
     pub skipped_impossible_spur_tasks: usize,
     candidate_ordinal: u64,
 }
@@ -328,6 +351,7 @@ pub trait SpurShortestPathEngine: spur_engine_private::Sealed + Copy {
 pub struct DijkstraSpurEngine;
 
 impl DijkstraSpurEngine {
+    /// Creates a new instance.
     pub fn new() -> Self {
         Self
     }
@@ -350,6 +374,7 @@ impl SpurShortestPathEngine for DijkstraSpurEngine {
 pub struct AStarSpurEngine;
 
 impl AStarSpurEngine {
+    /// Creates a new instance.
     pub fn new() -> Self {
         Self
     }
@@ -514,12 +539,21 @@ impl<'g, G: IncidenceGraph> BoundedPrunedYenKShortestPath<'g, G> {
         }
     }
 
+    /// Returns the stats.
     pub fn stats(&self) -> BoundedPrunedYenStats {
         self.stats.borrow().clone()
     }
 
     /// Get a list of k-shortest paths from a source vertex to a sink vertex. If no such paths exist
     /// this method returns an empty list.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_paths(
         &self,
         source: &G::Vertex,

@@ -34,6 +34,10 @@ fn simple_edges<G: Graph>(ix: &Indexed<'_, G>) -> Vec<(usize, usize)> {
 }
 
 /// Charikar's greedy peeling: a 1/2-approximation of the densest subgraph.
+///
+/// # Panics
+///
+/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn greedy_densest_subgraph<G: Graph>(g: &G) -> (Vec<G::Vertex>, f64) {
     let ix = Indexed::new(g);
     let n = ix.n();
@@ -123,6 +127,10 @@ where
     G::Vertex: 'static,
 {
     /// Edge density: sum of edge weights over the number of vertices.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G, s: G::Vertex, t: G::Vertex, epsilon: f64) -> Result<Self> {
         Self::build(
             graph,
@@ -136,6 +144,10 @@ where
     }
 
     /// Edge density plus vertex weights `node_weight`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_node_weights(
         graph: &'g G,
         s: G::Vertex,
@@ -155,6 +167,10 @@ where
     }
 
     /// Sum of edge weights per unit of vertex weight.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_node_weight_per_edge_weight(
         graph: &'g G,
         s: G::Vertex,
@@ -325,6 +341,14 @@ where
     }
 
     /// The densest subgraph (induced).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn calculate_densest(&mut self) -> Result<crate::AsSubgraph<&'g G>> {
         if self.densest.is_none() {
             while self.upper - self.lower >= self.epsilon {
@@ -348,6 +372,10 @@ where
     }
 
     /// Density of the densest subgraph.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn density(&mut self) -> Result<f64> {
         let sub = self.calculate_densest()?;
         let denominator = self.denominator(&sub);

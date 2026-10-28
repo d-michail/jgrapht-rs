@@ -52,6 +52,11 @@ pub struct GnpRandomGraphGenerator<R> {
     create_loops: bool,
 }
 impl<R: RandomSource> GnpRandomGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: usize, p: f64, rng: R, create_loops: bool) -> Result<Self> {
         Ok(GnpRandomGraphGenerator {
             n,
@@ -104,6 +109,11 @@ pub struct GnmRandomGraphGenerator<R> {
     multiple_edges: bool,
 }
 impl<R: RandomSource> GnmRandomGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: usize, m: usize, rng: R, loops: bool, multiple_edges: bool) -> Result<Self> {
         Ok(GnmRandomGraphGenerator {
             n,
@@ -208,6 +218,11 @@ pub struct BarabasiAlbertGraphGenerator<R> {
     rng: R,
 }
 impl<R: RandomSource> BarabasiAlbertGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(m0: usize, m: usize, n: usize, rng: R) -> Result<Self> {
         if m0 < 1 {
             return invalid(format!("invalid initial nodes ({m0} < 1)"));
@@ -270,6 +285,11 @@ pub struct BarabasiAlbertForestGenerator<R> {
     rng: R,
 }
 impl<R: RandomSource> BarabasiAlbertForestGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(t: usize, n: usize, rng: R) -> Result<Self> {
         if t < 1 {
             return invalid(format!("invalid number of trees ({t} < 1)"));
@@ -313,6 +333,11 @@ pub struct ScaleFreeGraphGenerator<R> {
     rng: R,
 }
 impl<R: RandomSource> ScaleFreeGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(size: i64, rng: R) -> Result<Self> {
         if size < 0 {
             return invalid(format!("invalid size: {size} (must be non-negative)"));
@@ -370,6 +395,11 @@ pub struct DirectedScaleFreeGraphGenerator<R> {
     allowing_self_loops: bool,
 }
 impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(
         alpha: f32,
         gamma: f32,
@@ -405,12 +435,15 @@ impl<R: RandomSource> DirectedScaleFreeGraphGenerator<R> {
             allowing_self_loops: true,
         })
     }
+    /// Sets the allowing multiple edges.
     pub fn set_allowing_multiple_edges(&mut self, allow: bool) {
         self.allowing_multiple_edges = allow;
     }
+    /// Sets the allowing self loops.
     pub fn set_allowing_self_loops(&mut self, allow: bool) {
         self.allowing_self_loops = allow;
     }
+    /// Sets the max failures.
     pub fn set_max_failures(&mut self, max: usize) {
         self.max_failures = max;
     }
@@ -551,6 +584,11 @@ pub struct WattsStrogatzGraphGenerator<R> {
     rng: R,
 }
 impl<R: RandomSource> WattsStrogatzGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: usize, k: usize, p: f64, add_instead_of_rewire: bool, rng: R) -> Result<Self> {
         if n < 3 {
             return invalid("number of vertices must be at least 3");
@@ -623,6 +661,10 @@ pub struct PruferTreeGenerator<R> {
 }
 impl<R: RandomSource> PruferTreeGenerator<R> {
     /// A random tree with `n` vertices.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: usize, rng: R) -> Result<Self> {
         if n == 0 {
             return invalid("n must be greater than 0");
@@ -636,6 +678,10 @@ impl<R: RandomSource> PruferTreeGenerator<R> {
 }
 impl PruferTreeGenerator<rand::rngs::StdRng> {
     /// The tree with the given Prüfer sequence (`n = sequence.len() + 2` vertices).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_sequence(sequence: &[usize]) -> Result<Self> {
         let n = sequence.len() + 2;
         if sequence.iter().any(|&x| x >= n) {
@@ -717,6 +763,11 @@ pub struct RandomRegularGraphGenerator<R> {
     rng: R,
 }
 impl<R: RandomSource> RandomRegularGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: usize, d: usize, rng: R) -> Result<Self> {
         if d > n {
             return invalid("degree of nodes must be smaller than or equal to number of nodes");
@@ -856,6 +907,11 @@ pub struct PlantedPartitionGraphGenerator<R> {
     fired: bool,
 }
 impl<R: RandomSource> PlantedPartitionGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(l: usize, k: usize, p: f64, q: f64, rng: R, self_loops: bool) -> Result<Self> {
         if !(0.0..=1.0).contains(&p) {
             return invalid("invalid probability p");
@@ -875,6 +931,10 @@ impl<R: RandomSource> PlantedPartitionGraphGenerator<R> {
     }
 
     /// Generates and returns the planted communities, in group order.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn generate_communities<G: GraphMut>(
         &mut self,
         target: &mut G,
@@ -941,6 +1001,11 @@ pub struct KleinbergSmallWorldGraphGenerator<R> {
     rng: R,
 }
 impl<R: RandomSource> KleinbergSmallWorldGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: i64, p: i64, q: i64, r: i64, rng: R) -> Result<Self> {
         if n < 1 {
             return invalid("parameter n must be positive");
@@ -1041,6 +1106,11 @@ pub struct LinearizedChordDiagramGraphGenerator<R> {
     rng: R,
 }
 impl<R: RandomSource> LinearizedChordDiagramGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n: usize, m: usize, rng: R) -> Result<Self> {
         if n == 0 {
             return invalid("invalid number of nodes: must be positive");
@@ -1081,10 +1151,15 @@ pub struct GnmRandomBipartiteGraphGenerator<R> {
     rng: R,
 }
 impl<R: RandomSource> GnmRandomBipartiteGraphGenerator<R> {
+    /// Creates a new instance.
     pub fn new(n1: usize, n2: usize, m: usize, rng: R) -> Self {
         GnmRandomBipartiteGraphGenerator { n1, n2, m, rng }
     }
     /// Generates and returns the two partitions `(A, B)` as created (A first).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn generate_partitions<G: GraphMut>(
         &mut self,
         target: &mut G,
@@ -1153,6 +1228,11 @@ pub struct GnpRandomBipartiteGraphGenerator<R> {
     rng: R,
 }
 impl<R: RandomSource> GnpRandomBipartiteGraphGenerator<R> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(n1: usize, n2: usize, p: f64, rng: R) -> Result<Self> {
         Ok(GnpRandomBipartiteGraphGenerator {
             n1,
@@ -1161,6 +1241,11 @@ impl<R: RandomSource> GnpRandomBipartiteGraphGenerator<R> {
             rng,
         })
     }
+    /// Generates partitions.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn generate_partitions<G: GraphMut>(
         &mut self,
         target: &mut G,

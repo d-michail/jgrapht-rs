@@ -45,6 +45,10 @@ impl<'f, G: Graph> AsWeighted<'f, G> {
     }
 
     /// Weights from a map with explicit write-through; requires a weighted base if enabled.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_write_through(
         graph: G,
         weights: HashMap<G::Edge, f64>,
@@ -64,6 +68,10 @@ impl<'f, G: Graph> AsWeighted<'f, G> {
 
     /// Weights from a function; with `cache` the computed weights are remembered (and may be
     /// overwritten by `set_edge_weight`).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_function(
         graph: G,
         function: impl Fn(&G::Edge) -> f64 + 'f,
@@ -83,6 +91,10 @@ impl<'f, G: Graph> AsWeighted<'f, G> {
     }
 
     /// Records a weight in the overlay only (never in the base), usable on read-only bases.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph does not support the operation; errors of the underlying graph operations are propagated.
     pub fn set_overlay_weight(&self, e: G::Edge, w: f64) -> Result<()> {
         if self.function.is_some() && !self.cache {
             return Err(GraphError::Unsupported(
@@ -94,6 +106,7 @@ impl<'f, G: Graph> AsWeighted<'f, G> {
         Ok(())
     }
 
+    /// Returns the base.
     pub fn base(&self) -> &G {
         &self.graph
     }

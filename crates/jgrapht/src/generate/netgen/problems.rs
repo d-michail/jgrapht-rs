@@ -40,33 +40,40 @@ impl<V, E> NetworkInfo<V, E> {
     fn range(&self, from: i32, to: i32) -> &[V] {
         &self.vertices[from as usize..to as usize]
     }
+    /// Returns the pure sources.
     pub fn pure_sources(&self) -> &[V] {
         self.range(0, self.config.pure_source_num())
     }
+    /// Returns the transshipment sources.
     pub fn transshipment_sources(&self) -> &[V] {
         self.range(self.config.pure_source_num(), self.config.source_num())
     }
+    /// Returns the sources.
     pub fn sources(&self) -> &[V] {
         self.range(0, self.config.source_num())
     }
+    /// Returns the transshipment nodes.
     pub fn transshipment_nodes(&self) -> &[V] {
         self.range(
             self.config.source_num(),
             self.config.source_num() + self.config.transship_node_num(),
         )
     }
+    /// Returns the pure sinks.
     pub fn pure_sinks(&self) -> &[V] {
         self.range(
             self.config.node_num() - self.config.pure_sink_num(),
             self.config.node_num(),
         )
     }
+    /// Returns the transshipment sinks.
     pub fn transshipment_sinks(&self) -> &[V] {
         self.range(
             self.config.node_num() - self.config.sink_num(),
             self.config.node_num() - self.config.pure_sink_num(),
         )
     }
+    /// Returns the sinks.
     pub fn sinks(&self) -> &[V] {
         self.range(
             self.config.node_num() - self.config.sink_num(),
@@ -82,20 +89,30 @@ impl<V, E> NetworkInfo<V, E> {
 /// Bipartite matching / assignment problem: partitions are the sources and the sinks.
 #[derive(Debug, Clone)]
 pub struct BipartiteMatchingProblem<V, E> {
+    /// The partition1.
     pub partition1: HashSet<V>,
+    /// The partition2.
     pub partition2: HashSet<V>,
+    /// The costs.
     pub costs: HashMap<E, f64>,
+    /// The weighted.
     pub weighted: bool,
 }
 
 impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> BipartiteMatchingProblem<V, E> {
+    /// Returns the cost.
     pub fn cost(&self, e: &E) -> f64 {
         self.costs[e]
     }
+    /// Returns whether weighted.
     pub fn is_weighted(&self) -> bool {
         self.weighted
     }
     /// Stores the costs as the edge weights of `graph`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn dump_costs<G: GraphMut<Vertex = V, Edge = E>>(&self, graph: &mut G) -> Result<()> {
         let edges: Vec<E> = graph.edges().cloned().collect();
         for e in edges {
@@ -108,26 +125,45 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> BipartiteMatchingProblem<V, E> 
 /// Maximum flow problem with (possibly several) sources and sinks.
 #[derive(Debug, Clone)]
 pub struct MaximumFlowProblem<V, E> {
+    /// The sources.
     pub sources: HashSet<V>,
+    /// The sinks.
     pub sinks: HashSet<V>,
+    /// The capacities.
     pub capacities: HashMap<E, f64>,
 }
 
 impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> MaximumFlowProblem<V, E> {
+    /// Returns the capacity.
     pub fn capacity(&self, e: &E) -> f64 {
         self.capacities[e]
     }
+    /// Returns the source.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn source(&self) -> &V {
         self.sources.iter().next().expect("no source")
     }
+    /// Returns the sink.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn sink(&self) -> &V {
         self.sinks.iter().next().expect("no sink")
     }
+    /// Returns whether single source single sink problem.
     pub fn is_single_source_single_sink_problem(&self) -> bool {
         self.sources.len() == 1 && self.sinks.len() == 1
     }
 
     /// Stores the capacities as the edge weights of `graph`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn dump_capacities<G: GraphMut<Vertex = V, Edge = E>>(&self, graph: &mut G) -> Result<()> {
         let edges: Vec<E> = graph.edges().cloned().collect();
         for e in edges {
@@ -138,6 +174,10 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> MaximumFlowProblem<V, E> {
 
     /// Adds a super source / super sink to `graph` when there are several, connected with
     /// [`CAPACITY_INF`] arcs.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn to_single_source_single_sink_problem<G: GraphMut<Vertex = V, Edge = E>>(
         &self,
         graph: &mut G,

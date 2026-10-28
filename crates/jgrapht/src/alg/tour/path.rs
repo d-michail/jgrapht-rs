@@ -24,8 +24,11 @@ use std::collections::{HashMap, HashSet, VecDeque};
 /// `HamiltonianPathSearchResult.Status`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SearchStatus {
+    /// The path found variant.
     PathFound,
+    /// The proven absent variant.
     ProvenAbsent,
+    /// The aborted variant.
     Aborted,
 }
 
@@ -373,7 +376,9 @@ pub struct HeldKarpHamiltonianPath {
 }
 
 impl HeldKarpHamiltonianPath {
+    /// The default max vertices constant.
     pub const DEFAULT_MAX_VERTICES: usize = 20;
+    /// The hard max vertices constant.
     pub const HARD_MAX_VERTICES: usize = 30;
     const UNVISITED: i8 = -1;
     const START_SENTINEL: i8 = -2;
@@ -387,6 +392,11 @@ impl HeldKarpHamiltonianPath {
         }
     }
 
+    /// Creates an instance with the given max vertices.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn with_max_vertices(max_vertices: usize) -> Result<Self> {
         if max_vertices < 1 {
             return Err(GraphError::InvalidParameter {
@@ -614,6 +624,10 @@ impl BacktrackingHamiltonianPath {
 
     /// Like [`get_path`](HamiltonianPathAlgorithm::get_path) but gives up after `max_states`
     /// states with an `Aborted` result.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn search_with_state_limit<G: IncidenceGraph>(
         &mut self,
         graph: &G,

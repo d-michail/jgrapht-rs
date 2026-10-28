@@ -13,12 +13,15 @@ The classification below is by family. It has not been checked site by site.
 | Validated at construction | `scoring.rs` ("operands are non-negative"), `traverse/cross.rs` ("no start vertex to validate") | The constructor returns `Err` for the bad input; the later `expect` restates it. |
 | Infallible by type | `.expect("breadth-first traversal cannot fail")` | The strategy's `Output` is `Infallible` for that traversal. |
 
-Not done, so I-6 and I-8 stay open:
+Documentation state after the final pass:
 
-- Per-site records and `debug_assert!` conversion for the expensive Blossom checks.
-- `# Errors` / `# Panics` sections on every public fallible API.
-- `#![warn(missing_docs)]` for `jgrapht`: 686 public items are undocumented (304 methods, 169 associated
-  functions, 81 struct fields, 66 functions, 25 variants; the largest groups are `generate/named.rs`,
-  `traverse/cross.rs`, `generate/netgen/*`, `alg/interfaces.rs`). Enabling the lint before the backlog
-  is cleared would break `clippy -D warnings` in CI.
-- `clippy::indexing_slicing` has not been triaged.
+- `#![deny(missing_docs)]` is on in both crates.
+- Every public function returning `Result` has an `# Errors` section, and every public function whose
+  body can `unwrap`, `expect`, `panic!` or `assert!` has a `# Panics` section. Both were added by a
+  script from the function body, so the text names the error variants the body mentions and the
+  panic class above rather than the exact condition. Trait methods without `pub` were not covered.
+- `clippy::indexing_slicing` reports 4597 sites in `jgrapht`, mostly in `blossom/*`, `planar.rs`,
+  `scoring.rs`, `color.rs` and `connectivity.rs`. They index dense arrays by an `Indexed` position
+  or a vertex number that the same routine produced, so they belong to the internal-invariant class.
+  They were not individually reviewed.
+- Converting expensive internal checks to `debug_assert!` was not done.

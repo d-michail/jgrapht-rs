@@ -12,6 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
+#![deny(missing_docs)]
 //! Graph import and export support for [`jgrapht`].
 //!
 //! Format implementations will live in modules such as `dimacs`, `dot`, and

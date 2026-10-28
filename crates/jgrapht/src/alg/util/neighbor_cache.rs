@@ -59,12 +59,15 @@ impl<V: Eq + Hash + Clone> Neighbors<V> {
     pub fn iter(&self) -> impl Iterator<Item = &V> {
         self.counts.keys()
     }
+    /// Returns the len.
     pub fn len(&self) -> usize {
         self.counts.len()
     }
+    /// Returns whether empty.
     pub fn is_empty(&self) -> bool {
         self.counts.is_empty()
     }
+    /// Returns the contains.
     pub fn contains(&self, v: &V) -> bool {
         self.counts.contains_key(v)
     }
@@ -131,6 +134,10 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
 
     /// Returns the unique predecessors of the given vertex if it exists in the cache, otherwise it
     /// is initialized.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn predecessors_of<G: Graph<Vertex = V> + IncomingGraph>(
         &mut self,
         g: &G,
@@ -149,6 +156,10 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
 
     /// Returns the unique successors of the given vertex if it exists in the cache, otherwise it is
     /// initialized.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn successors_of<G: Graph<Vertex = V> + OutgoingGraph>(
         &mut self,
         g: &G,
@@ -167,6 +178,10 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
 
     /// Returns the unique neighbors of the given vertex if it exists in the cache, otherwise it is
     /// initialized.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn neighbors_of<G: Graph<Vertex = V> + IncidenceGraph>(
         &mut self,
         g: &G,
@@ -184,6 +199,10 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
     }
 
     /// Neighbours repeated once per parallel edge.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn neighbor_list_of<G: Graph<Vertex = V> + IncidenceGraph>(
         &mut self,
         g: &G,
@@ -209,6 +228,10 @@ impl<V: Eq + Hash + Clone> NeighborCache<V> {
     }
 
     /// Notifies that an edge has been removed from the graph.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn edge_removed(&mut self, source: &V, target: &V) -> Result<()> {
         if let Some(n) = self.successors.get_mut(source) {
             n.remove(target)?;

@@ -30,6 +30,7 @@ pub trait DirectedSimpleCycles<V> {
     /// first one).
     fn find_simple_cycles_with(&mut self, consumer: &mut dyn FnMut(Vec<V>)) -> Result<()>;
 
+    /// Returns the find simple cycles.
     fn find_simple_cycles(&mut self) -> Result<Vec<Vec<V>>> {
         let mut result = Vec::new();
         self.find_simple_cycles_with(&mut |c| result.push(c))?;
@@ -74,14 +75,17 @@ macro_rules! cycles_algorithm {
                 Self::default()
             }
 
+            /// Creates an instance with the given graph.
             pub fn with_graph(graph: &'g G) -> Self {
                 $name { graph: Some(graph) }
             }
 
+            /// Returns the graph.
             pub fn graph(&self) -> Option<&'g G> {
                 self.graph
             }
 
+            /// Sets the graph.
             pub fn set_graph(&mut self, graph: &'g G) {
                 self.graph = Some(graph);
             }
@@ -341,6 +345,10 @@ pub struct JohnsonSimpleCycles<'g, G: DirectedGraph> {
 
 impl<'g, G: DirectedGraph + OutgoingGraph> JohnsonSimpleCycles<'g, G> {
     /// Fails when the graph has parallel edges.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
         if has_multiple_edges(graph) {
             return Err(GraphError::InvalidGraph(
@@ -723,6 +731,10 @@ impl<'g, G: DirectedGraph + OutgoingGraph> HawickJamesSimpleCycles<'g, G> {
     }
 
     /// The number of simple cycles, without materializing them.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn count_simple_cycles(&self) -> Result<u64> {
         let Some(graph) = self.graph else {
             return no_graph();

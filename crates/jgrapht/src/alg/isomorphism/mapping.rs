@@ -78,6 +78,7 @@ impl<'g, G: IncidenceGraph> IsomorphicGraphMapping<'g, G> {
         }
     }
 
+    /// Performs `from maps`.
     pub fn from_maps(
         forward: IndexMap<G::Vertex, G::Vertex>,
         backward: IndexMap<G::Vertex, G::Vertex>,
@@ -143,10 +144,12 @@ impl<'g, G: IncidenceGraph> IsomorphicGraphMapping<'g, G> {
         self.edge_correspondence(e, true).is_some()
     }
 
+    /// Returns the graph1.
     pub fn graph1(&self) -> &'g G {
         self.graph1
     }
 
+    /// Returns the graph2.
     pub fn graph2(&self) -> &'g G {
         self.graph2
     }

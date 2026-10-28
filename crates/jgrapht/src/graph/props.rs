@@ -20,6 +20,10 @@ use crate::{GraphError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// `Ok(g)` if the graph is weighted, otherwise `InvalidGraph(GraphProperty::Weighted)`.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
 pub fn require_weighted<G: Graph>(g: &G) -> Result<&G> {
     if g.graph_type().weighted {
         Ok(g)
@@ -28,6 +32,10 @@ pub fn require_weighted<G: Graph>(g: &G) -> Result<&G> {
     }
 }
 /// `Ok(g)` if the graph is directed, otherwise `InvalidGraph(GraphProperty::Directed)`.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
 pub fn require_directed<G: Graph>(g: &G) -> Result<&G> {
     if g.graph_type().directed {
         Ok(g)
@@ -36,6 +44,10 @@ pub fn require_directed<G: Graph>(g: &G) -> Result<&G> {
     }
 }
 /// `Ok(g)` if the graph is undirected, otherwise `InvalidGraph(GraphProperty::Undirected)`.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
 pub fn require_undirected<G: Graph>(g: &G) -> Result<&G> {
     if !g.graph_type().directed {
         Ok(g)
@@ -49,10 +61,12 @@ pub fn is_empty<G: Graph>(g: &G) -> bool {
     g.edge_count() == 0
 }
 
+/// Returns whether there is self loops.
 pub fn has_self_loops<G: Graph>(g: &G) -> bool {
     g.graph_type().self_loops && g.edges().any(|e| g.edge_source(e) == g.edge_target(e))
 }
 
+/// Returns whether there is multiple edges.
 pub fn has_multiple_edges<G: OutgoingGraph>(g: &G) -> bool {
     if !g.graph_type().multiple_edges {
         return false;
@@ -103,6 +117,7 @@ pub fn is_connected<G: IncidenceGraph>(g: &G) -> bool {
     seen.len() == g.vertex_count()
 }
 
+/// Returns whether weakly connected.
 pub fn is_weakly_connected<G: IncidenceGraph>(g: &G) -> bool {
     is_connected(g)
 }
@@ -259,6 +274,7 @@ pub fn is_triangle_free<G: Graph>(g: &G) -> bool {
     crate::alg::scoring::count_triangles(g) == 0
 }
 
+/// Returns whether bipartite.
 pub fn is_bipartite<G: Graph>(g: &G) -> bool {
     crate::alg::partition::is_bipartite(g)
 }
@@ -285,14 +301,17 @@ pub fn is_bipartite_partition<G: IncidenceGraph>(
     crate::alg::partition::BipartitePartitioning::new(g).is_valid_partitioning(&p)
 }
 
+/// Returns whether biconnected.
 pub fn is_biconnected<G: IncidenceGraph>(g: &G) -> bool {
     crate::alg::connectivity::is_biconnected(g)
 }
 
+/// Returns whether eulerian.
 pub fn is_eulerian<G: IncidenceGraph>(g: &G) -> bool {
     crate::alg::cycle::HierholzerEulerianCycle::new().is_eulerian(g)
 }
 
+/// Returns whether chordal.
 pub fn is_chordal<G: UndirectedGraph + IncidenceGraph>(g: &G) -> bool {
     crate::alg::cycle::ChordalityInspector::new(g).is_chordal()
 }
@@ -307,6 +326,7 @@ pub fn is_perfect<G: Graph>(g: &G) -> bool {
     crate::alg::holes::is_perfect(g)
 }
 
+/// Returns whether planar.
 pub fn is_planar<G: IncidenceGraph>(g: &G) -> bool {
     crate::alg::planar::BoyerMyrvoldPlanarityInspector::new(g).is_planar()
 }
@@ -388,6 +408,7 @@ pub fn is_k5_subdivision<G: IncidenceGraph>(g: &G) -> bool {
     })
 }
 
+/// Returns whether kuratowski subdivision.
 pub fn is_kuratowski_subdivision<G: IncidenceGraph>(g: &G) -> bool {
     is_k33_subdivision(g) || is_k5_subdivision(g)
 }

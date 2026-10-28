@@ -163,6 +163,10 @@ pub struct KolmogorovWeightedPerfectMatching<'g, G: Graph> {
 
 impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     /// Constructs a minimum-weight perfect-matching algorithm with default options.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G) -> Result<Self> {
         Self::with_options_and_objective(
             graph,
@@ -172,16 +176,28 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     }
 
     /// Constructs an algorithm with default options and the requested objective.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_objective(graph: &'g G, objective_sense: ObjectiveSense) -> Result<Self> {
         Self::with_options_and_objective(graph, BlossomVOptions::default(), objective_sense)
     }
 
     /// Constructs a minimum-weight algorithm with custom options.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_options(graph: &'g G, options: BlossomVOptions) -> Result<Self> {
         Self::with_options_and_objective(graph, options, ObjectiveSense::Minimize)
     }
 
     /// Constructs an algorithm with custom initialization, dual updates, and objective.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the problem has no feasible solution; errors of the underlying graph operations are propagated.
     pub fn with_options_and_objective(
         graph: &'g G,
         options: BlossomVOptions,
@@ -208,11 +224,23 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     }
 
     /// Returns whether dual feasibility and complementary slackness hold within the tolerance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn test_optimality(&mut self) -> Result<bool> {
         Ok(self.get_error()? < BLOSSOM_V_EPSILON)
     }
 
     /// Returns the accumulated numerical error in the dual and complementary-slackness checks.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_error(&mut self) -> Result<f64> {
         self.compute()?;
         let state = self.state.as_ref().expect("computed state");
@@ -245,6 +273,14 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     }
 
     /// Returns the non-zero dual variables of the computed solution.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_dual_solution(&mut self) -> Result<BlossomVDualSolution<'g, G>> {
         self.compute()?;
         let state = self.state.as_ref().expect("computed state");

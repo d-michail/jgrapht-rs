@@ -78,6 +78,10 @@ impl<'g, G: 'g + IncidenceGraph> DefaultManyToManyShortestPaths<'g, G> {
 
     /// Computes shortest paths from all vertices in `sources` to all vertices in
     /// `targets`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn get_many_to_many_paths(
         &self,
         sources: impl IntoIterator<Item = G::Vertex>,
@@ -171,6 +175,10 @@ impl<'g, G: IncomingGraph + OutgoingGraph> DijkstraManyToManyShortestPaths<'g, G
 
     /// Computes shortest paths from all vertices in `sources` to all vertices in
     /// `targets`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn get_many_to_many_paths(
         &self,
         sources: impl IntoIterator<Item = G::Vertex>,
@@ -204,6 +212,11 @@ impl<'g, G: IncomingGraph + OutgoingGraph> DijkstraManyToManyShortestPaths<'g, G
         Ok(ManyToManyPaths::from_parts(sources, targets, paths))
     }
 
+    /// Performs `single source`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn single_source(
         &self,
         source: &G::Vertex,

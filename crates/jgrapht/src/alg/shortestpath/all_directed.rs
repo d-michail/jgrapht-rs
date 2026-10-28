@@ -32,6 +32,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 /// This is the Rust counterpart of JGraphT's `PathValidator`. The validator is deliberately not
 /// called for zero-length paths.
 pub trait PathValidator<G: Graph> {
+    /// Returns whether valid path.
     fn is_valid_path(&self, partial_path: &GraphWalk<G::Vertex, G::Edge>, edge: &G::Edge) -> bool;
 }
 
@@ -46,6 +47,7 @@ where
 }
 
 #[derive(Debug, Clone, Copy, Default)]
+/// The `AllowAllPaths` struct.
 pub struct AllowAllPaths;
 
 impl<G: Graph> PathValidator<G> for AllowAllPaths {
@@ -90,6 +92,7 @@ impl<'g, G: DirectedGraph> AllDirectedPaths<'g, G, AllowAllPaths> {
         }
     }
 
+    /// Creates an instance with the given validator.
     pub fn with_validator<P>(graph: &'g G, path_validator: P) -> AllDirectedPaths<'g, G, P>
     where
         P: PathValidator<G>,
@@ -129,6 +132,10 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>>
     }
 
     /// Calculate (and return) all paths from the source vertex to the target vertex.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn get_all_paths(
         &self,
         source: &G::Vertex,
@@ -144,6 +151,11 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>>
         )
     }
 
+    /// Returns the all paths between.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn get_all_paths_between<'a>(
         &self,
         source_vertices: impl IntoIterator<Item = &'a G::Vertex>,

@@ -1159,6 +1159,10 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// `containsPyramid`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn contains_pyramid<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
@@ -1168,6 +1172,10 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// `containsJewel`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn contains_jewel<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
@@ -1177,6 +1185,10 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// `containsCleanShortestOddHole`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn contains_clean_shortest_odd_hole<G: Graph<Vertex = V>>(
         &mut self,
         g: &G,
@@ -1189,6 +1201,10 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// `hasConfigurationType1`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn has_configuration_type1<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
@@ -1198,6 +1214,10 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// `hasConfigurationType2`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn has_configuration_type2<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
@@ -1207,6 +1227,10 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// `hasConfigurationType3`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn has_configuration_type3<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         let (h, vs) = Self::convert(g)?;
         self.core.on_complement = false;
@@ -1226,6 +1250,10 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// `routine3` of the algorithm: the candidate sets `X` for the shortest odd hole search.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn routine3<G: Graph<Vertex = V>>(&self, g: &G) -> Result<Vec<Vec<V>>> {
         let (h, vs) = Self::convert(g)?;
         Ok(Core::routine3(&h)
@@ -1248,12 +1276,20 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     /// if `computeCertificate` is `true`.
     ///
     /// Running this method takes $O(|V|^9)$, and computing the certificate takes $O(|V|^5)$.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn is_berge<G: Graph<Vertex = V>>(&mut self, g: &G) -> Result<bool> {
         self.is_berge_with_certificate(g, false)
     }
 
     /// Whether `g` is a Berge graph; with `compute_certificate` an odd hole or odd antihole is
     /// kept for [`get_certificate`](Self::get_certificate) when it is not.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn is_berge_with_certificate<G: Graph<Vertex = V>>(
         &mut self,
         g: &G,

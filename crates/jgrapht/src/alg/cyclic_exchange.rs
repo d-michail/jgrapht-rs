@@ -85,6 +85,10 @@ where
     G::Vertex: Eq + Hash,
 {
     /// Constructs an algorithm with given inputs
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn new(
         graph: &'g G,
         length_bound: usize,
@@ -115,6 +119,10 @@ where
 
     /// A negative cycle (first improving one, or the best one when `best_improvement`). If there
     /// is none the walk is empty with weight `f64::MAX`.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`](crate::Graph) (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn local_augmentation_cycle(&self) -> GraphWalk<G::Vertex, G::Edge> {
         let g = self.graph;
         let label = |v: &G::Vertex| self.label_map[v];

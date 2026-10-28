@@ -18,6 +18,7 @@ use super::ToleranceDoubleComparator;
 use super::java::RandomSource;
 use crate::{GraphError, Result};
 
+/// The `AliasMethodSampler` struct.
 pub struct AliasMethodSampler {
     comparator: ToleranceDoubleComparator,
     prob: Vec<f64>,
@@ -25,10 +26,24 @@ pub struct AliasMethodSampler {
 }
 
 impl AliasMethodSampler {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(p: &[f64]) -> Result<Self> {
         Self::with_epsilon(p, ToleranceDoubleComparator::DEFAULT_EPSILON)
     }
 
+    /// Creates an instance with the given epsilon.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn with_epsilon(p: &[f64], epsilon: f64) -> Result<Self> {
         let comparator = ToleranceDoubleComparator::new(epsilon)?;
         let bad = || GraphError::InvalidArgument("Non valid probability distribution".into());

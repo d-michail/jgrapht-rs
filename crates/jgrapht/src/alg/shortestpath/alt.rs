@@ -63,6 +63,10 @@ pub struct ALTAdmissibleHeuristic<'g, G: Graph> {
 
 impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
     /// Constructs a new `AStarAdmissibleHeuristic` using a set of landmarks.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; a vertex argument is not in the graph; an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
     pub fn new<I>(graph: &'g G, landmarks: I) -> Result<Self>
     where
         I: IntoIterator<Item = G::Vertex>,
@@ -109,6 +113,7 @@ impl<'g, G: IncidenceGraph> ALTAdmissibleHeuristic<'g, G> {
         })
     }
 
+    /// Returns the graph.
     pub fn graph(&self) -> &G {
         self.graph
     }

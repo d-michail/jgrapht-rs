@@ -17,6 +17,7 @@
 use super::{DirectedGraph, Graph, GraphMut, IncidenceGraph, IncomingGraph, OutgoingGraph};
 use crate::Result;
 
+/// The `GraphExt` trait.
 pub trait GraphExt: Graph {
     /// `(source, target)` of an edge.
     fn edge_endpoints(&self, e: &Self::Edge) -> Option<(&Self::Vertex, &Self::Vertex)> {
@@ -129,12 +130,14 @@ pub trait GraphExt: Graph {
         self.edges().filter_map(|e| self.edge_weight(e)).sum()
     }
 
+    /// Returns whether empty.
     fn is_empty(&self) -> bool {
         self.vertex_count() == 0
     }
 }
 impl<G: Graph + ?Sized> GraphExt for G {}
 
+/// The `DirectedExt` trait.
 pub trait DirectedExt: DirectedGraph {
     /// Successors reached by outgoing edges.
     fn successors_of<'a>(&'a self, v: &'a Self::Vertex) -> impl Iterator<Item = &'a Self::Vertex>
@@ -229,6 +232,7 @@ pub trait DirectedExt: DirectedGraph {
 }
 impl<G: DirectedGraph + ?Sized> DirectedExt for G {}
 
+/// The `GraphMutExt` trait.
 pub trait GraphMutExt: GraphMut {
     /// Adds both endpoints if missing, then the edge (`Graphs.addEdgeWithVertices`).
     fn add_edge_with_vertices(
@@ -255,6 +259,7 @@ pub trait GraphMutExt: GraphMut {
         Ok(e)
     }
 
+    /// Adds vertices.
     fn add_vertices(&mut self, vs: impl IntoIterator<Item = Self::Vertex>) -> bool {
         vs.into_iter().fold(false, |ch, v| self.add_vertex(v) | ch)
     }
@@ -347,6 +352,7 @@ pub trait GraphMutExt: GraphMut {
         Some(es)
     }
 
+    /// Removes edges between.
     fn remove_edges_between(&mut self, u: &Self::Vertex, v: &Self::Vertex) -> bool {
         let es: Vec<_> = self.edges_between(u, v).cloned().collect();
         es.iter().fold(false, |ch, e| self.remove_edge(e) | ch)
@@ -356,6 +362,10 @@ impl<G: GraphMut + ?Sized> GraphMutExt for G {}
 
 /// Removes `v` but reconnects every predecessor to every successor
 /// (`Graphs.removeVertexAndPreserveConnectivity`). Returns `false` if `v` is absent.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
 pub fn remove_vertex_and_preserve_connectivity<G: GraphMut + DirectedGraph + IncidenceGraph>(
     g: &mut G,
     v: &G::Vertex,
@@ -374,6 +384,10 @@ pub fn remove_vertex_and_preserve_connectivity<G: GraphMut + DirectedGraph + Inc
 }
 
 /// Applies [`remove_vertex_and_preserve_connectivity`] to each vertex in turn.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
 pub fn remove_vertices_and_preserve_connectivity<G: GraphMut + DirectedGraph + IncidenceGraph>(
     g: &mut G,
     vs: impl IntoIterator<Item = G::Vertex>,

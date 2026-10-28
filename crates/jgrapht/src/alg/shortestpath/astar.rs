@@ -59,6 +59,7 @@ pub struct AStar<'g, G, F, H = PairingHeap<OrderedF64, usize>> {
 pub type AStarShortestPath<'g, G, F, H = PairingHeap<OrderedF64, usize>> = AStar<'g, G, F, H>;
 
 impl<'g, G: Graph, F: Fn(&G::Vertex, &G::Vertex) -> f64> AStar<'g, G, F> {
+    /// Creates a new instance.
     pub fn new(g: &'g G, heuristic: F) -> Self {
         AStar {
             g,
@@ -75,6 +76,7 @@ impl<
     H: DecreaseKeyHeap<OrderedF64, usize> + Default,
 > AStar<'g, G, F, H>
 {
+    /// Creates an instance with the given heap.
     pub fn with_heap(g: &'g G, heuristic: F) -> Self {
         AStar {
             g,
@@ -83,6 +85,11 @@ impl<
         }
     }
 
+    /// Performs `path`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn path(
         &self,
         s: &G::Vertex,

@@ -22,13 +22,18 @@ use crate::graph::{Graph, GraphExt};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// The `EliminationHeuristic` enum.
 pub enum EliminationHeuristic {
+    /// The min degree variant.
     MinDegree,
+    /// The min fill variant.
     MinFill,
 }
 
 #[derive(Debug, Clone)]
+/// The `TreeDecomposition` struct.
 pub struct TreeDecomposition<V> {
+    /// The bags.
     pub bags: Vec<Vec<V>>,
     /// Edges between bag indices; together they form a tree (or a path of trees' roots).
     pub tree_edges: Vec<(usize, usize)>,
@@ -47,6 +52,10 @@ impl<V> TreeDecomposition<V> {
 }
 
 /// Tree decomposition from a greedy elimination ordering (direction ignored).
+///
+/// # Panics
+///
+/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn tree_decomposition<G: Graph>(
     g: &G,
     heuristic: EliminationHeuristic,
@@ -190,11 +199,19 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
     /// tree.
     ///
     /// Note: The constructor will NOT check if the input graph is a valid tree.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(tree: &'g G, root: G::Vertex) -> Result<Self> {
         Self::with_roots(tree, [root])
     }
 
     /// One root per tree of the forest; every vertex of a tree is reachable from its root.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_roots(forest: &'g G, roots: impl IntoIterator<Item = G::Vertex>) -> Result<Self> {
         let mapping = VertexToIntegerMapping::new(forest.vertices().cloned())?;
         let n = forest.vertex_count();
@@ -340,6 +357,10 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
     }
 
     /// The paths as walks (with their vertex count as weight, like JGraphT).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn path_decomposition(&self) -> Result<PathDecomposition<G::Vertex, G::Edge>> {
         let walks = self
             .paths
@@ -354,12 +375,15 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
         let i = *self.vertex_map.get(v)?;
         self.parent[i].map(|p| &self.index_list[p])
     }
+    /// Returns the depth of.
     pub fn depth_of(&self, v: &G::Vertex) -> Option<usize> {
         self.depth[*self.vertex_map.get(v)?]
     }
+    /// Returns the subtree size of.
     pub fn subtree_size_of(&self, v: &G::Vertex) -> usize {
         self.vertex_map.get(v).map_or(0, |&i| self.size_subtree[i])
     }
+    /// Returns the component of.
     pub fn component_of(&self, v: &G::Vertex) -> Option<usize> {
         self.component[*self.vertex_map.get(v)?]
     }
@@ -434,7 +458,9 @@ use crate::view::EdgeReversed;
 /// Result of a Dulmage–Mendelsohn decomposition.
 #[derive(Debug, Clone)]
 pub struct DmDecomposition<V> {
+    /// The partition1 dominated.
     pub partition1_dominated: HashSet<V>,
+    /// The partition2 dominated.
     pub partition2_dominated: HashSet<V>,
     /// Sets of the perfectly matched core (several when `fine`).
     pub perfect_matched_sets: Vec<HashSet<V>>,
@@ -498,6 +524,10 @@ where
     }
 
     /// Decomposes along a maximum matching; `fine` splits the core into its strongly connected parts.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn decomposition(&self, fine: bool) -> Result<DmDecomposition<G::Vertex>> {
         let matching = HopcroftKarpMaximumCardinalityBipartiteMatching::new(
             self.graph,
@@ -509,6 +539,14 @@ where
     }
 
     /// Perform the decomposition, using a pre-calculated bipartite matching
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn decompose(
         &self,
         matching: &Matching<G::Vertex, G::Edge>,

@@ -49,6 +49,7 @@ fn invalid<T>(msg: impl Into<String>) -> Result<T> {
 }
 
 impl NetworkGeneratorConfigBuilder {
+    /// Creates a new instance.
     pub fn new() -> Self {
         NetworkGeneratorConfigBuilder {
             node_num: 0,
@@ -74,6 +75,11 @@ impl NetworkGeneratorConfigBuilder {
         }
     }
 
+    /// Returns the build.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn build(&self) -> Result<NetworkGeneratorConfig> {
         if let Some(e) = &self.error {
             return invalid(e.clone());
@@ -157,6 +163,7 @@ impl NetworkGeneratorConfigBuilder {
     }
 
     #[allow(clippy::too_many_arguments)]
+    /// Sets the params.
     pub fn set_params(
         self,
         node_num: i32,
@@ -193,6 +200,7 @@ impl NetworkGeneratorConfigBuilder {
         self.set_maximum_flow_problem_params_cap(node_num, arc_num, supply, 1, 1)
     }
 
+    /// Sets the maximum flow problem params cap.
     pub fn set_maximum_flow_problem_params_cap(
         self,
         node_num: i32,
@@ -206,6 +214,7 @@ impl NetworkGeneratorConfigBuilder {
         )
     }
 
+    /// Sets the maximum flow problem params sources.
     pub fn set_maximum_flow_problem_params_sources(
         self,
         node_num: i32,
@@ -222,6 +231,7 @@ impl NetworkGeneratorConfigBuilder {
     }
 
     #[allow(clippy::too_many_arguments)]
+    /// Sets the maximum flow problem params full.
     pub fn set_maximum_flow_problem_params_full(
         self,
         node_num: i32,
@@ -250,10 +260,12 @@ impl NetworkGeneratorConfigBuilder {
         )
     }
 
+    /// Sets the bipartite matching problem params.
     pub fn set_bipartite_matching_problem_params(self, node_num: i32, arc_num: i32) -> Self {
         self.set_bipartite_matching_problem_params_cost(node_num, arc_num, 1, 1)
     }
 
+    /// Sets the bipartite matching problem params cost.
     pub fn set_bipartite_matching_problem_params_cost(
         self,
         node_num: i32,
@@ -264,6 +276,7 @@ impl NetworkGeneratorConfigBuilder {
         self.set_bipartite_matching_problem_params_full(node_num, arc_num, min_cost, max_cost, 0)
     }
 
+    /// Sets the bipartite matching problem params full.
     pub fn set_bipartite_matching_problem_params_full(
         mut self,
         node_num: i32,
@@ -293,6 +306,7 @@ impl NetworkGeneratorConfigBuilder {
         )
     }
 
+    /// Sets the node num.
     pub fn set_node_num(mut self, node_num: i32) -> Self {
         if node_num <= 0 {
             self.fail("Number of nodes must be positive");
@@ -301,6 +315,7 @@ impl NetworkGeneratorConfigBuilder {
         }
         self
     }
+    /// Sets the arc num.
     pub fn set_arc_num(mut self, arc_num: i32) -> Self {
         if arc_num > MAX_ARC_NUM {
             self.fail(format!("Number of arcs must not exceed {arc_num}"));
@@ -309,6 +324,7 @@ impl NetworkGeneratorConfigBuilder {
         }
         self
     }
+    /// Sets the source num.
     pub fn set_source_num(mut self, source_num: i32) -> Self {
         if source_num <= 0 {
             self.fail("Number of sources must be positive");
@@ -317,6 +333,7 @@ impl NetworkGeneratorConfigBuilder {
         }
         self
     }
+    /// Sets the sink num.
     pub fn set_sink_num(mut self, sink_num: i32) -> Self {
         if sink_num <= 0 {
             self.fail("Number of sinks must be positive");
@@ -325,6 +342,7 @@ impl NetworkGeneratorConfigBuilder {
         }
         self
     }
+    /// Sets the tsource num.
     pub fn set_tsource_num(mut self, tsource_num: i32) -> Self {
         if tsource_num < 0 {
             self.fail("Number of transshipment sources must be non-negative");
@@ -333,6 +351,7 @@ impl NetworkGeneratorConfigBuilder {
         }
         self
     }
+    /// Sets the tsink num.
     pub fn set_tsink_num(mut self, tsink_num: i32) -> Self {
         if tsink_num < 0 {
             self.fail("Number of transshipment sinks must be non-negative");
@@ -341,6 +360,7 @@ impl NetworkGeneratorConfigBuilder {
         }
         self
     }
+    /// Sets the total supply.
     pub fn set_total_supply(mut self, total_supply: i32) -> Self {
         if total_supply > MAX_SUPPLY {
             self.fail(format!("Total supply must not exceed {MAX_NODE_NUM}"));
@@ -349,6 +369,7 @@ impl NetworkGeneratorConfigBuilder {
         }
         self
     }
+    /// Sets the min cap.
     pub fn set_min_cap(mut self, min_cap: i32) -> Self {
         if min_cap < 0 {
             self.fail("Minimum arc capacity must be non-negative");
@@ -357,6 +378,7 @@ impl NetworkGeneratorConfigBuilder {
         }
         self
     }
+    /// Sets the max cap.
     pub fn set_max_cap(mut self, max_cap: i32) -> Self {
         if max_cap < 0 {
             self.fail("Maximum arc capacity must be non-negative");
@@ -365,14 +387,17 @@ impl NetworkGeneratorConfigBuilder {
         }
         self
     }
+    /// Sets the min cost.
     pub fn set_min_cost(mut self, min_cost: i32) -> Self {
         self.min_cost = self.check_capacity_cost_constraint(min_cost);
         self
     }
+    /// Sets the max cost.
     pub fn set_max_cost(mut self, max_cost: i32) -> Self {
         self.max_cost = self.check_capacity_cost_constraint(max_cost);
         self
     }
+    /// Sets the percent capacitated.
     pub fn set_percent_capacitated(mut self, p: i32) -> Self {
         if !(0..=100).contains(&p) {
             self.fail("Percent of capacitated arcs must be between 0 and 100 inclusive");
@@ -381,6 +406,7 @@ impl NetworkGeneratorConfigBuilder {
         }
         self
     }
+    /// Sets the percent with inf cost.
     pub fn set_percent_with_inf_cost(mut self, p: i32) -> Self {
         if !(0..=100).contains(&p) {
             self.fail("Percent of arcs with infinite cost must be between 0 and 100 inclusive");

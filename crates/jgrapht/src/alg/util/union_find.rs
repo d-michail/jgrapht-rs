@@ -53,6 +53,10 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     }
 
     /// Adds a new element to the data structure in its own set.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn add_element(&mut self, element: T) -> Result<()> {
         if self.contains(&element) {
             return Err(GraphError::InvalidArgument(
@@ -71,6 +75,10 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     }
 
     /// Representative of the set containing `element`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn find(&mut self, element: &T) -> Result<T> {
         if !self.contains(element) {
             return Err(GraphError::InvalidArgument(
@@ -98,6 +106,10 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     /// Merges the sets which contain element1 and element2. No guarantees are given as to which
     /// element becomes the representative of the resulting (merged) set: this can be either
     /// find(element1) or find(element2).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn union(&mut self, element1: &T, element2: &T) -> Result<()> {
         if !self.contains(element1) || !self.contains(element2) {
             return Err(GraphError::InvalidArgument(
@@ -123,6 +135,10 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
     }
 
     /// Tests whether two elements are contained in the same set.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn in_same_set(&mut self, element1: &T, element2: &T) -> Result<bool> {
         Ok(self.find(element1)? == self.find(element2)?)
     }
@@ -133,10 +149,12 @@ impl<T: Eq + Hash + Clone> UnionFind<T> {
         self.count
     }
 
+    /// Returns the len.
     pub fn len(&self) -> usize {
         self.parent.len()
     }
 
+    /// Returns whether empty.
     pub fn is_empty(&self) -> bool {
         self.parent.is_empty()
     }
@@ -176,6 +194,10 @@ impl<T: Eq + Hash + Clone + Display> Display for UnionFind<T> {
 
 impl<T: Eq + Hash + Clone + Debug> UnionFind<T> {
     /// The current partition, sets in order of first appearance.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn sets(&mut self) -> Vec<Vec<T>> {
         let keys: Vec<T> = self.parent.keys().cloned().collect();
         let mut sets: IndexMap<T, Vec<T>> = IndexMap::new();

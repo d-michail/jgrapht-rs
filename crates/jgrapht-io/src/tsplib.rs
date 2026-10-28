@@ -163,6 +163,10 @@ impl<V> TsplibImporter<V> {
     /// section is present, this returns `None`. Metadata parsed from the tour
     /// file becomes the importer's current metadata while the reference node
     /// mapping and distinctness results are retained.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn import_tour<R: Read>(
         &mut self,
         reference: &TsplibMetadata<V>,

@@ -553,6 +553,10 @@ impl<V, E> JsonImporter<V, E> {
     /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
     /// example when it parses the identifier. Its error stops the import and is returned as
     /// [`IoError::Callback`] with the factory's error as the source.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn try_set_vertex_factory(
         &mut self,
         mut factory: impl FnMut(&str) -> std::result::Result<V, crate::CallbackError> + 'static,

@@ -23,6 +23,7 @@ use std::collections::{BinaryHeap, HashMap};
 
 /// Integer types accepted by [`IntVertexDijkstraShortestPath`].
 pub trait IntVertex: Copy + Eq + std::hash::Hash {
+    /// Returns the dense index.
     fn dense_index(self, vertex_count: usize) -> Option<usize>;
 }
 

@@ -48,10 +48,19 @@ pub struct DinicMFImpl<'g, G: OutgoingGraph> {
 impl<'g, G: OutgoingGraph> DinicMFImpl<'g, G> {
     /// Constructor. Constructs a new network on which we will calculate the maximum flow, using
     /// Dinic algorithm.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
 
+    /// Creates an instance with the given epsilon.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         if epsilon <= 0.0 {
             return Err(GraphError::must_be_positive("epsilon"));

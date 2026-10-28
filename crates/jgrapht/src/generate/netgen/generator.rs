@@ -26,9 +26,13 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::collections::{HashMap, HashSet};
 
+/// The max node num constant.
 pub const MAX_NODE_NUM: i32 = 100 * 1000 * 1000;
+/// The max supply constant.
 pub const MAX_SUPPLY: i32 = 200 * 1000 * 1000;
+/// The max arc num constant.
 pub const MAX_ARC_NUM: i32 = 2 * 1000 * 1000 * 1000;
+/// The capacity cost bound constant.
 pub const CAPACITY_COST_BOUND: i32 = 2 * 1000 * 1000 * 1000;
 
 fn invalid<T>(msg: impl Into<String>) -> Result<T> {
@@ -76,12 +80,14 @@ pub struct NetworkGenerator<V, E, R = StdRng> {
 }
 
 impl<V, E> NetworkGenerator<V, E, StdRng> {
+    /// Creates a new instance.
     pub fn new(config: NetworkGeneratorConfig, seed: u64) -> Self {
         Self::with_rng(config, StdRng::seed_from_u64(seed))
     }
 }
 
 impl<V, E, R: RandomSource> NetworkGenerator<V, E, R> {
+    /// Creates an instance with the given rng.
     pub fn with_rng(config: NetworkGeneratorConfig, rng: R) -> Self {
         NetworkGenerator {
             config,
@@ -102,6 +108,15 @@ where
     E: Clone + Eq + std::hash::Hash,
     R: RandomSource,
 {
+    /// Generates bipartite matching problem.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn generate_bipartite_matching_problem<
         G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph,
     >(
@@ -122,6 +137,15 @@ where
         })
     }
 
+    /// Generates max flow problem.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn generate_max_flow_problem<G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph>(
         &mut self,
         graph: &mut G,
@@ -143,6 +167,11 @@ where
         })
     }
 
+    /// Generates minimum cost flow problem.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn generate_minimum_cost_flow_problem<
         'g,
         G: GraphMut<Vertex = V, Edge = E> + OutgoingGraph,

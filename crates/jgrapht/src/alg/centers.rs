@@ -31,6 +31,14 @@ use std::hash::Hash;
 
 /// Gonzalez' farthest-first traversal: a 2-approximation of the k-center problem under
 /// shortest-path distances. Returns the centers and the covering radius.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
+///
+/// # Panics
+///
+/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn greedy_k_center<G: Graph>(g: &G, k: usize, weighted: bool) -> Result<(Vec<G::Vertex>, f64)> {
     let ix = Indexed::new(g);
     let n = ix.n();

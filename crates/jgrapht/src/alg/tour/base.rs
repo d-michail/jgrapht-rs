@@ -50,6 +50,7 @@ pub trait HamiltonianCycleAlgorithm<G: Graph> {
 ///
 /// `HamiltonianCycleImprovementAlgorithm`: improves an existing tour.
 pub trait HamiltonianCycleImprovementAlgorithm<G: Graph> {
+    /// Performs `improve tour`.
     fn improve_tour(
         &mut self,
         graph: &G,

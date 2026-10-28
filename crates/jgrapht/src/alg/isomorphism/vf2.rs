@@ -551,11 +551,19 @@ macro_rules! vf2_inspector {
 
         impl<'g, G: $crate::graph::IncidenceGraph> $name<'g, G> {
             /// Fails for multigraphs, mixed graphs and a directed/undirected pair.
+            ///
+            /// # Errors
+            ///
+            /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
             pub fn new(graph1: &'g G, graph2: &'g G) -> Result<Self> {
                 Self::with_options(graph1, graph2, None, None, true)
             }
 
             /// `cache_edges` trades `O(n²)` memory for faster adjacency queries.
+            ///
+            /// # Errors
+            ///
+            /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
             pub fn with_options(
                 graph1: &'g G,
                 graph2: &'g G,

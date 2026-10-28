@@ -62,14 +62,28 @@ impl<'g, G: IncidenceGraph> PathGrowingWeightedMatching<'g, G> {
     /// Construct a new instance of the path growing algorithm. Floating point values are compared
     /// using `DEFAULT_EPSILON` tolerance. By default two additional linear time heuristics
     /// are used in order to improve the quality of the matchings.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G) -> Result<Self> {
         Self::with_options(graph, DEFAULT_USE_HEURISTICS, DEFAULT_EPSILON)
     }
 
+    /// Creates an instance with the given heuristics.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_heuristics(graph: &'g G, use_heuristics: bool) -> Result<Self> {
         Self::with_options(graph, use_heuristics, DEFAULT_EPSILON)
     }
 
+    /// Creates an instance with the given options.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_options(graph: &'g G, use_heuristics: bool, epsilon: f64) -> Result<Self> {
         Ok(PathGrowingWeightedMatching {
             graph,
@@ -254,6 +268,11 @@ pub struct DynamicProgrammingPathSolver {
 impl DynamicProgrammingPathSolver {
     const WORK_ARRAY_INITIAL_SIZE: usize = 256;
 
+    /// Returns the maximum weight matching.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_maximum_weight_matching<G: Graph>(
         &mut self,
         g: &G,

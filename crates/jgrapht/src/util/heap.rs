@@ -39,6 +39,7 @@ pub struct JavaPairingHandle {
     generation: u32,
 }
 
+/// The `JavaPairingHeap` struct.
 pub struct JavaPairingHeap<K, V> {
     nodes: Vec<Node<K, V>>,
     free: Vec<usize>,
@@ -58,6 +59,7 @@ impl<K, V> Default for JavaPairingHeap<K, V> {
 }
 
 impl<K: Ord, V> JavaPairingHeap<K, V> {
+    /// Creates a new instance.
     pub fn new() -> Self {
         Self::default()
     }

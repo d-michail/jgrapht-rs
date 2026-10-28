@@ -26,7 +26,9 @@ use std::collections::{HashSet, VecDeque};
 /// A vertex cover with its total vertex weight.
 #[derive(Debug, Clone)]
 pub struct VertexCover<V> {
+    /// The vertices.
     pub vertices: Vec<V>,
+    /// The weight.
     pub weight: f64,
 }
 
@@ -142,6 +144,14 @@ pub fn clarkson_vertex_cover<G: Graph>(
 }
 
 /// Exact minimum vertex cover of a bipartite graph (König's theorem).
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+///
+/// # Panics
+///
+/// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
 pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(
     g: &G,
 ) -> Result<VertexCover<G::Vertex>> {
@@ -202,6 +212,10 @@ pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(
 }
 
 /// Whether every edge has an endpoint in `vs`.
+///
+/// # Panics
+///
+/// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
 pub fn is_vertex_cover<G: Graph>(g: &G, vs: &[G::Vertex]) -> bool {
     let set: HashSet<_> = vs.iter().collect();
     g.edges()
@@ -313,9 +327,19 @@ macro_rules! weighted_cover_class {
         }
 
         impl<'g, G: IncidenceGraph> $name<'g, G> {
+            /// Creates a new instance.
+            ///
+            /// # Errors
+            ///
+            /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
             pub fn new(graph: &'g G) -> Result<Self> {
                 Ok($name { graph, weights: unit_weights(graph) })
             }
+            /// Creates an instance with the given weights.
+            ///
+            /// # Errors
+            ///
+            /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
             pub fn with_weights(graph: &'g G, weights: HashMap<G::Vertex, f64>) -> Result<Self> {
                 Ok($name { graph, weights })
             }
@@ -394,6 +418,11 @@ pub struct EdgeBasedTwoApproxVcImpl<'g, G: Graph> {
 }
 
 impl<'g, G: UndirectedGraph + IncidenceGraph> EdgeBasedTwoApproxVcImpl<'g, G> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(EdgeBasedTwoApproxVcImpl { graph })
     }

@@ -118,6 +118,7 @@ impl<'g, G: OutgoingGraph> Dfs<'g, G> {
             rest: Vec::new().into_iter(),
         })
     }
+    /// Computes the all.
     pub fn all(g: &'g G) -> Self {
         Dfs {
             g,
@@ -177,6 +178,7 @@ impl<'g, G: OutgoingGraph> DfsPostOrder<'g, G> {
         s.push(start);
         Ok(s)
     }
+    /// Computes the all.
     pub fn all(g: &'g G) -> Self {
         DfsPostOrder {
             g,
@@ -235,6 +237,7 @@ pub struct TopologicalOrder<'g, G: DirectedGraph> {
 }
 
 impl<'g, G: DirectedGraph + IncidenceGraph> TopologicalOrder<'g, G> {
+    /// Creates a new instance.
     pub fn new(g: &'g G) -> Self {
         let indeg: HashMap<_, _> = g.vertices().map(|v| (v, g.in_degree_of(v))).collect();
         let queue = g.vertices().filter(|v| indeg[v] == 0).collect();

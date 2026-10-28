@@ -22,8 +22,11 @@ use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
 #[derive(Debug, Clone)]
+/// The `Coloring` struct.
 pub struct Coloring<V> {
+    /// The colors.
     pub colors: HashMap<V, usize>,
+    /// The count.
     pub count: usize,
 }
 
@@ -81,6 +84,10 @@ pub fn largest_degree_first_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
 }
 
 /// Matula–Beck: greedy in reverse of the repeated-minimum-degree removal order.
+///
+/// # Panics
+///
+/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn smallest_degree_last_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
     let ix = Indexed::new(g);
     let nb = neighbor_lists(&ix);
@@ -103,6 +110,10 @@ pub fn smallest_degree_last_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
 }
 
 /// Brélaz' DSATUR heuristic: colour the vertex with most distinct neighbour colours next.
+///
+/// # Panics
+///
+/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn saturation_degree_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
     let ix = Indexed::new(g);
     let nb = neighbor_lists(&ix);
@@ -129,6 +140,10 @@ pub fn saturation_degree_coloring<G: Graph>(g: &G) -> Coloring<G::Vertex> {
 }
 
 /// Whether `colors` assigns a colour to every vertex with no monochromatic edge.
+///
+/// # Panics
+///
+/// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
 pub fn is_proper_coloring<G: Graph>(g: &G, colors: &HashMap<G::Vertex, usize>) -> bool {
     g.vertices().all(|v| colors.contains_key(v))
         && g.edges().all(|e| {
@@ -634,6 +649,10 @@ impl BrownState<'_> {
 
 impl<V: Clone + Eq + Hash> BrownBacktrackColoring<V> {
     /// Construct a new Brown backtracking algorithm.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new<G: Graph<Vertex = V> + IncidenceGraph>(graph: &G) -> Self {
         let vertex_list: Vec<V> = graph.vertices().cloned().collect();
         let index: HashMap<&V, usize> = vertex_list
@@ -739,6 +758,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphColoring<'g, G> {
         Self::with_order(graph, IterationOrder::Mcs)
     }
 
+    /// Creates an instance with the given order.
     pub fn with_order(graph: &'g G, iteration_order: IterationOrder) -> Self {
         ChordalGraphColoring {
             graph,
@@ -1008,6 +1028,10 @@ impl<'g, G: Graph> ColorRefinementAlgorithm<'g, G> {
     }
 
     /// Starts from `alpha`, which must colour every vertex with colours `0..alpha.count` (all used).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn with_alpha(graph: &'g G, alpha: Coloring<G::Vertex>) -> Result<Self> {
         let used: HashSet<usize> = alpha.colors.values().copied().collect();
         let consistent = alpha.colors.len() == graph.vertex_count()

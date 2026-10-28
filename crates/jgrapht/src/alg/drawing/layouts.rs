@@ -36,6 +36,7 @@ use std::hash::Hash;
 ///
 /// A layout algorithm (`LayoutAlgorithm2D`).
 pub trait LayoutAlgorithm2D<G: Graph> {
+    /// Returns the layout.
     fn layout<M: LayoutModel2D<G::Vertex>>(&mut self, graph: &G, model: &mut M) -> Result<()>;
 }
 
@@ -72,11 +73,16 @@ fn tolerance() -> ToleranceDoubleComparator {
 pub struct CircularLayoutAlgorithm2D<V> {
     radius: f64,
     vertex_comparator: Option<Box<dyn Fn(&V, &V) -> Ordering>>,
+    /// The initializer.
     pub initializer: Option<Initializer<V>>,
 }
 
 impl<V> CircularLayoutAlgorithm2D<V> {
     /// Create a new layout algorithm
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn new(radius: f64) -> Result<Self> {
         if tolerance().compare(radius, 0.0) <= 0 {
             return Err(GraphError::must_be_positive("radius"));
@@ -188,6 +194,10 @@ pub struct RescaleLayoutAlgorithm2D {
 
 impl RescaleLayoutAlgorithm2D {
     /// Create a new layout algorithm
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn new(scale: f64) -> Result<Self> {
         if scale <= 0.0 {
             return Err(GraphError::must_be_positive("scale"));
@@ -294,12 +304,14 @@ impl<V> TwoLayeredBipartiteLayout2D<V> {
     pub fn new() -> Self {
         Self::default()
     }
+    /// Computes the median greedy.
     pub fn median_greedy() -> Self {
         TwoLayeredBipartiteLayout2D {
             order: SecondLayerOrder::MedianGreedy,
             ..Self::default()
         }
     }
+    /// Computes the barycenter greedy.
     pub fn barycenter_greedy() -> Self {
         TwoLayeredBipartiteLayout2D {
             order: SecondLayerOrder::BarycenterGreedy,

@@ -22,8 +22,11 @@ use rheaps::AddressableHeap;
 use rheaps::tree::PairingHeap;
 
 #[derive(Debug, Clone, PartialEq)]
+/// The `SpanningTree` struct.
 pub struct SpanningTree<E> {
+    /// The edges.
     pub edges: Vec<E>,
+    /// The weight.
     pub weight: f64,
 }
 
@@ -48,6 +51,10 @@ pub fn kruskal<G: Graph>(g: &G) -> SpanningTree<G::Edge> {
 }
 
 /// Prim's algorithm with a decrease-key heap. Returns a minimum spanning forest.
+///
+/// # Panics
+///
+/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn prim<G: Graph>(g: &G) -> SpanningTree<G::Edge> {
     let ix = Indexed::new(g);
     let n = ix.n();
@@ -193,6 +200,10 @@ fn chu_liu(n: usize, root: usize, edges: &[(usize, usize, f64)]) -> Option<Vec<u
 
 /// Minimum-weight spanning arborescence rooted at `root` (Chu–Liu/Edmonds).
 /// Fails if some vertex is unreachable from the root.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
 pub fn minimum_arborescence<G: DirectedGraph>(
     g: &G,
     root: &G::Vertex,
@@ -201,6 +212,10 @@ pub fn minimum_arborescence<G: DirectedGraph>(
 }
 
 /// Maximum-weight spanning arborescence rooted at `root`.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
 pub fn maximum_arborescence<G: DirectedGraph>(
     g: &G,
     root: &G::Vertex,
@@ -234,6 +249,7 @@ fn arborescence<G: DirectedGraph>(
 ///
 /// An algorithm computing a spanning tree or forest (`SpanningTreeAlgorithm`).
 pub trait SpanningTreeAlgorithm<G: Graph> {
+    /// Returns the spanning tree.
     fn spanning_tree(&self) -> SpanningTree<G::Edge>;
 }
 
@@ -244,6 +260,7 @@ macro_rules! mst_algorithm {
             graph: &'g G,
         }
         impl<'g, G: Graph> $name<'g, G> {
+            /// Creates a new instance.
             pub fn new(graph: &'g G) -> Self {
                 $name { graph }
             }

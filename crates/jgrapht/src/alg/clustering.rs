@@ -81,6 +81,14 @@ pub fn label_propagation<G: Graph>(
 
 /// k-spanning-tree clustering: build a minimum spanning forest and cut its heaviest edges
 /// until `k` clusters remain.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+///
+/// # Panics
+///
+/// Panics only if an internal invariant is violated, which indicates a bug in this library.
 pub fn k_spanning_tree_clustering<G: Graph>(g: &G, k: usize) -> Result<Vec<Vec<G::Vertex>>> {
     let ix = Indexed::new(g);
     if k == 0 || k > ix.n() {
@@ -155,6 +163,14 @@ pub struct UndirectedModularityMeasurer<'g, G: Graph> {
 
 impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G> {
     /// Construct a new measurer
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(graph: &'g G) -> Result<Self> {
         let mut degrees = HashMap::new();
         let m;
@@ -179,6 +195,14 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> UndirectedModularityMeasurer<'g, G
     }
 
     /// The modularity of `partitions`, which must cover every vertex.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn modularity(&self, partitions: &[HashSet<G::Vertex>]) -> Result<f64> {
         const INVALID: &str = "Invalid partition of vertices";
         let total = partitions.len();
@@ -240,10 +264,19 @@ pub struct GirvanNewmanClustering<'g, G: Graph> {
 
 impl<'g, G: Graph> GirvanNewmanClustering<'g, G> {
     /// Create a new clustering algorithm.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         Self::with_options(graph, k, OverflowStrategy::ThrowExceptionOnOverflow, None)
     }
 
+    /// Creates an instance with the given options.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn with_options(
         graph: &'g G,
         k: usize,
@@ -321,6 +354,10 @@ pub struct KSpanningTreeClustering<'g, G: Graph> {
 
 impl<'g, G: UndirectedGraph> KSpanningTreeClustering<'g, G> {
     /// Create a new clustering algorithm.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         if k < 1 || k > graph.vertex_count() {
             return Err(GraphError::InvalidArgument(
@@ -379,6 +416,10 @@ pub struct NaiveGreedyModularityAlgorithm<'g, G: Graph> {
 
 impl<'g, G: UndirectedGraph> NaiveGreedyModularityAlgorithm<'g, G> {
     /// Create a new Naive Greedy clustering algorithm.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(NaiveGreedyModularityAlgorithm { graph })
     }
@@ -699,6 +740,10 @@ pub struct LabelPropagationClustering<'g, G: Graph, R> {
 
 impl<'g, G: UndirectedGraph, R: RandomSource> LabelPropagationClustering<'g, G, R> {
     /// `max_iterations == 0` means no limit.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G, max_iterations: usize, rng: R) -> Result<Self> {
         Ok(LabelPropagationClustering {
             graph,

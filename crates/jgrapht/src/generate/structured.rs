@@ -120,7 +120,9 @@ impl GraphGenerator for Star {
 
 /// Wheel: a ring of `n - 1` rim vertices (created first) and a hub (`"Hub Vertex"`) created last.
 pub struct Wheel {
+    /// The n.
     pub n: usize,
+    /// The inward spokes.
     pub inward_spokes: bool,
 }
 impl GraphGenerator for Wheel {
@@ -206,6 +208,10 @@ impl GraphGenerator for CompleteBipartite {
 
 impl CompleteBipartite {
     /// Connects every vertex of `a` to every vertex of `b` (both non-empty, already in the target).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn between<G: GraphMut>(target: &mut G, a: &[G::Vertex], b: &[G::Vertex]) -> Result<()> {
         if a.is_empty() || b.is_empty() {
             return invalid("partitions must be non-empty");
@@ -222,7 +228,9 @@ impl CompleteBipartite {
 /// `rows x cols` grid (both at least 2); `"Corner Vertex 1..4"` in the result map. Every adjacent
 /// pair gets edges in both directions (the second is skipped in undirected graphs).
 pub struct Grid {
+    /// The rows.
     pub rows: usize,
+    /// The cols.
     pub cols: usize,
 }
 impl GraphGenerator for Grid {
@@ -294,7 +302,9 @@ impl GraphGenerator for Hypercube {
 /// Generalized Petersen graph `GP(n, k)`; vertices alternate outer (`"regular"`) and inner
 /// (`"star"`) in the result map.
 pub struct GeneralizedPetersen {
+    /// The n.
     pub n: usize,
+    /// The k.
     pub k: usize,
 }
 impl GraphGenerator for GeneralizedPetersen {
@@ -330,6 +340,7 @@ impl GraphGenerator for GeneralizedPetersen {
 
 #[non_exhaustive]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// The `WindmillMode` enum.
 pub enum WindmillMode {
     /// `m` copies of the complete graph `K_n` sharing one vertex.
     Windmill,
@@ -339,8 +350,11 @@ pub enum WindmillMode {
 
 /// Windmill and Dutch windmill graphs; the first vertex is the shared centre.
 pub struct Windmill {
+    /// The mode.
     pub mode: WindmillMode,
+    /// The m.
     pub m: usize,
+    /// The n.
     pub n: usize,
 }
 impl GraphGenerator for Windmill {
@@ -390,6 +404,15 @@ pub struct Complement<V> {
 }
 
 impl<V: Clone + Eq + Hash> Complement<V> {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new<G: Graph<Vertex = V>>(graph: &G, generate_self_loops: bool) -> Result<Self> {
         require_directed_or_undirected(&graph.graph_type())?;
         let vertices: Vec<V> = graph.vertices().cloned().collect();
@@ -416,6 +439,10 @@ impl<V: Clone + Eq + Hash> Complement<V> {
     }
 
     /// Adds the source's vertices and the complement edges to `target`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn generate_into<G: GraphMut<Vertex = V>>(&self, target: &mut G) -> Result<()> {
         target.add_vertices(self.vertices.iter().cloned());
         let n = self.vertices.len();
@@ -463,17 +490,25 @@ impl<V: Clone + Eq + Hash> Default for SimpleWeightedGraphMatrixGenerator<V> {
 }
 
 impl<V: Clone + Eq + Hash> SimpleWeightedGraphMatrixGenerator<V> {
+    /// Creates a new instance.
     pub fn new() -> Self {
         Self::default()
     }
+    /// Sets the vertices and returns the builder.
     pub fn vertices(mut self, vertices: Vec<V>) -> Self {
         self.vertices = Some(vertices);
         self
     }
+    /// Sets the weights and returns the builder.
     pub fn weights(mut self, weights: Vec<Vec<f64>>) -> Self {
         self.weights = Some(weights);
         self
     }
+    /// Generates into.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn generate_into<G: GraphMut<Vertex = V>>(&self, target: &mut G) -> Result<()> {
         let weights = self.weights.as_ref().ok_or_else(|| {
             GraphError::InvalidArgument(
@@ -519,21 +554,30 @@ impl<V: Clone + Eq + Hash> Default for SimpleWeightedBipartiteGraphMatrixGenerat
 }
 
 impl<V: Clone + Eq + Hash> SimpleWeightedBipartiteGraphMatrixGenerator<V> {
+    /// Creates a new instance.
     pub fn new() -> Self {
         Self::default()
     }
+    /// Sets the first and returns the builder.
     pub fn first(mut self, first: Vec<V>) -> Self {
         self.first = Some(first);
         self
     }
+    /// Sets the second and returns the builder.
     pub fn second(mut self, second: Vec<V>) -> Self {
         self.second = Some(second);
         self
     }
+    /// Sets the weights and returns the builder.
     pub fn weights(mut self, weights: Vec<Vec<f64>>) -> Self {
         self.weights = Some(weights);
         self
     }
+    /// Generates into.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn generate_into<G: GraphMut<Vertex = V>>(&self, target: &mut G) -> Result<()> {
         let weights = self.weights.as_ref().ok_or_else(|| {
             GraphError::InvalidArgument(

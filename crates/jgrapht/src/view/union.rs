@@ -18,15 +18,22 @@ use crate::graph::{DirectedGraph, Graph, UndirectedGraph};
 /// How to merge the weights of an edge present in both graphs of a union.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WeightCombiner {
+    /// The sum variant.
     Sum,
+    /// The mult variant.
     Mult,
+    /// The min variant.
     Min,
+    /// The max variant.
     Max,
+    /// The first variant.
     First,
+    /// The second variant.
     Second,
 }
 
 impl WeightCombiner {
+    /// Returns the combine.
     pub fn combine(self, a: f64, b: f64) -> f64 {
         match self {
             WeightCombiner::Sum => a + b,
@@ -56,6 +63,7 @@ where
     pub fn new(a: A, b: B) -> Self {
         Self::with_combiner(a, b, WeightCombiner::Sum)
     }
+    /// Creates an instance with the given combiner.
     pub fn with_combiner(a: A, b: B, combiner: WeightCombiner) -> Self {
         GraphUnion { a, b, combiner }
     }

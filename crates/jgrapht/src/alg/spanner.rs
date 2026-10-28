@@ -24,6 +24,10 @@ use std::collections::BinaryHeap;
 /// Greedy `(2k-1)`-spanner of an undirected weighted graph (Althöfer et al.): scan edges by
 /// increasing weight and keep an edge only if the spanner built so far offers no path of
 /// length at most `(2k-1) * w`. Returns the kept edges.
+///
+/// # Errors
+///
+/// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
 pub fn greedy_spanner<G: Graph>(g: &G, k: usize) -> Result<Vec<G::Edge>> {
     if g.graph_type().directed {
         return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
@@ -76,7 +80,9 @@ pub fn greedy_spanner<G: Graph>(g: &G, k: usize) -> Result<Vec<G::Edge>> {
 /// The result of a spanner algorithm (`SpannerAlgorithm.Spanner`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct Spanner<E: Eq + std::hash::Hash> {
+    /// The edges.
     pub edges: indexmap::IndexSet<E>,
+    /// The weight.
     pub weight: f64,
 }
 
@@ -113,6 +119,10 @@ impl<'g, G: Graph> GreedyMultiplicativeSpanner<'g, G> {
     const MAX_K: usize = 1 << 29;
 
     /// Constructs instance to compute a $(2k-1)$-spanner of an undirected graph.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn new(graph: &'g G, k: usize) -> Result<Self> {
         if graph.graph_type().directed {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));
@@ -127,6 +137,10 @@ impl<'g, G: Graph> GreedyMultiplicativeSpanner<'g, G> {
     }
 
     /// Computes a graph spanner.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
     pub fn spanner(&self) -> Result<Spanner<G::Edge>> {
         let weighted = self.graph.graph_type().weighted;
         let ix = Indexed::new(self.graph);

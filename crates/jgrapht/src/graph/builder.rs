@@ -29,6 +29,7 @@ pub struct GraphBuilder<G: GraphMut> {
 }
 
 impl<G: GraphMut> GraphBuilder<G> {
+    /// Creates a new instance.
     pub fn new(graph: G) -> Self {
         GraphBuilder { graph, error: None }
     }
@@ -39,10 +40,12 @@ impl<G: GraphMut> GraphBuilder<G> {
         }
     }
 
+    /// Adds vertex.
     pub fn add_vertex(mut self, v: G::Vertex) -> Self {
         self.graph.add_vertex(v);
         self
     }
+    /// Adds vertices.
     pub fn add_vertices(mut self, vs: impl IntoIterator<Item = G::Vertex>) -> Self {
         self.graph.add_vertices(vs);
         self
@@ -69,6 +72,7 @@ impl<G: GraphMut> GraphBuilder<G> {
         self.record(r);
         self
     }
+    /// Adds weighted edge with.
     pub fn add_weighted_edge_with(
         mut self,
         u: G::Vertex,
@@ -103,10 +107,12 @@ impl<G: GraphMut> GraphBuilder<G> {
         self.record(r);
         self
     }
+    /// Removes vertex.
     pub fn remove_vertex(mut self, v: &G::Vertex) -> Self {
         self.graph.remove_vertex(v);
         self
     }
+    /// Removes vertices.
     pub fn remove_vertices<'a>(mut self, vs: impl IntoIterator<Item = &'a G::Vertex>) -> Self
     where
         G::Vertex: 'a,
@@ -121,16 +127,27 @@ impl<G: GraphMut> GraphBuilder<G> {
         self.graph.remove_edge_between(u, v);
         self
     }
+    /// Removes edge.
     pub fn remove_edge(mut self, e: &G::Edge) -> Self {
         self.graph.remove_edge(e);
         self
     }
+    /// Returns the build.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn build(self) -> Result<G> {
         match self.error {
             Some(e) => Err(e),
             None => Ok(self.graph),
         }
     }
+    /// Returns the build as unmodifiable.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn build_as_unmodifiable(self) -> Result<Unmodifiable<G>> {
         self.build().map(Unmodifiable)
     }
@@ -147,11 +164,13 @@ pub struct GraphTypeBuilder<V, E, D> {
 }
 
 impl<V, E> GraphTypeBuilder<V, E, Directed> {
+    /// Computes the directed.
     pub fn directed() -> Self {
         Self::start()
     }
 }
 impl<V, E> GraphTypeBuilder<V, E, Undirected> {
+    /// Computes the undirected.
     pub fn undirected() -> Self {
         Self::start()
     }
@@ -178,32 +197,39 @@ impl<V, E, D: Direction> GraphTypeBuilder<V, E, D> {
             _d: PhantomData,
         }
     }
+    /// Sets the allowing multiple edges and returns the builder.
     pub fn allowing_multiple_edges(mut self, allow: bool) -> Self {
         self.ty.multiple_edges = allow;
         self
     }
+    /// Sets the allowing self loops and returns the builder.
     pub fn allowing_self_loops(mut self, allow: bool) -> Self {
         self.ty.self_loops = allow;
         self
     }
+    /// Sets the weighted and returns the builder.
     pub fn weighted(mut self, weighted: bool) -> Self {
         self.ty.weighted = weighted;
         self
     }
+    /// Sets the edge supplier and returns the builder.
     pub fn edge_supplier(mut self, f: fn(u64) -> E) -> Self {
         self.edge_factory = Some(f);
         self
     }
+    /// Sets the vertex supplier and returns the builder.
     pub fn vertex_supplier(mut self, f: fn(u64) -> V) -> Self {
         self.vertex_factory = Some(f);
         self
     }
+    /// Returns the graph type.
     pub fn graph_type(&self) -> GraphType {
         self.ty
     }
 }
 
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, D: Direction> GraphTypeBuilder<V, E, D> {
+    /// Returns the build graph.
     pub fn build_graph(self) -> BaseGraph<V, E, D> {
         let g = match self.edge_factory {
             Some(f) => BaseGraph::<V, E, D, DefaultGraphSpecifics>::with_edge_factory(self.ty, f),
@@ -223,6 +249,7 @@ impl<V> GraphTypeBuilder<V, crate::DefaultEdge, Directed> {
     }
 }
 impl<V> GraphTypeBuilder<V, crate::DefaultEdge, Undirected> {
+    /// Returns the default edges.
     pub fn default_edges(self) -> Self {
         self.edge_supplier(crate::DefaultEdge::from_id)
     }

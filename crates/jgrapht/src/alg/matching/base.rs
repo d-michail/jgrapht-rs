@@ -33,6 +33,11 @@ pub struct Matching<V, E> {
 }
 
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> Matching<V, E> {
+    /// Creates a new instance.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new<G: Graph<Vertex = V, Edge = E>>(graph: &G, edges: IndexSet<E>, weight: f64) -> Self {
         let mut matched_vertices = HashSet::with_capacity(2 * edges.len());
         for e in &edges {
@@ -58,14 +63,17 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> Matching<V, E> {
         self.weight
     }
 
+    /// Returns the len.
     pub fn len(&self) -> usize {
         self.edges.len()
     }
 
+    /// Returns whether empty.
     pub fn is_empty(&self) -> bool {
         self.edges.is_empty()
     }
 
+    /// Returns the iter.
     pub fn iter(&self) -> indexmap::set::Iter<'_, E> {
         self.edges.iter()
     }

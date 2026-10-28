@@ -197,6 +197,10 @@ impl<'g, G: DirectedGraph + 'g + IncomingGraph + OutgoingGraph + IncidenceGraph>
         Self::build(g, Queue::Fifo(VecDeque::new()))
     }
     /// Ready vertices are taken in `cmp` order (negative = first).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_comparator(
         g: &'g G,
         cmp: impl Fn(&G::Vertex, &G::Vertex) -> i32 + 'g,

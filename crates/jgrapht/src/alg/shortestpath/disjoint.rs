@@ -355,6 +355,10 @@ impl<'g, G: DirectedGraph + OutgoingGraph> SuurballeKDisjointShortestPaths<'g, G
     }
 
     /// Returns the $k$ shortest simple paths in increasing order of weight.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn get_paths(
         &self,
         source: &G::Vertex,
@@ -392,6 +396,10 @@ impl<'g, G: DirectedGraph + OutgoingGraph> BhandariKDisjointShortestPaths<'g, G>
     }
 
     /// Returns the $k$ shortest simple paths in increasing order of weight.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn get_paths(
         &self,
         source: &G::Vertex,

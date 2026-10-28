@@ -101,10 +101,19 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     GusfieldEquivalentFlowTree<'g, G>
 {
     /// Constructs a new GusfieldEquivalentFlowTree instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
 
+    /// Creates an instance with the given epsilon.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         Self::with_algorithm(
             network,
@@ -113,6 +122,10 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     }
 
     /// Uses `minimum_st_cut_algorithm` for the cut computations.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_algorithm(
         network: &'g G,
         minimum_st_cut_algorithm: CutAlgorithm<'g, G>,
@@ -165,6 +178,10 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     }
 
     /// The equivalent flow tree: an edge `(i, neighbor(i))` weighted with their maximum flow value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn equivalent_flow_tree(&mut self) -> Result<UGraph<G::Vertex>> {
         if self.p.is_none() {
             self.calculate_equivalent_flow_tree()?;
@@ -246,10 +263,19 @@ pub struct GusfieldGomoryHuCutTree<'g, G: Graph> {
 
 impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomoryHuCutTree<'g, G> {
     /// Constructs a new GusfieldEquivalentFlowTree instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
 
+    /// Creates an instance with the given epsilon.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         Self::with_algorithm(
             network,
@@ -258,6 +284,10 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
     }
 
     /// Uses `minimum_st_cut_algorithm` for the cut computations.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_algorithm(
         network: &'g G,
         minimum_st_cut_algorithm: CutAlgorithm<'g, G>,
@@ -318,6 +348,14 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
     }
 
     /// The Gomory–Hu tree: an edge `(i, p(i))` weighted with the cut value `fl(i)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn gomory_hu_tree(&mut self) -> Result<UGraph<G::Vertex>> {
         if self.p.is_none() {
             self.calculate_gomory_hu_tree()?;
@@ -332,6 +370,14 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> GusfieldGomo
     }
 
     /// A global minimum cut: the minimum $s$-$t$ cut for the endpoints of the cheapest tree edge.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn global_minimum_cut(&mut self) -> Result<MinimumCut<G::Vertex, G::Edge>> {
         if self.gomory_hu_tree.is_none() {
             self.gomory_hu_tree = Some(self.gomory_hu_tree()?);

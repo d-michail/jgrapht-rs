@@ -47,12 +47,20 @@ pub struct GraphMeasurer<V> {
 impl<V: Clone + Eq + std::hash::Hash> GraphMeasurer<V> {
     /// Constructs a new instance of GraphMeasurer. `FloydWarshallShortestPaths` is used as the
     /// default shortest path algorithm.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn new<G: Graph<Vertex = V> + OutgoingGraph>(g: &G) -> crate::Result<Self> {
         Self::with_algorithm(g, &FloydWarshallShortestPaths::new(g)?)
     }
 
     /// Constructs a new instance of GraphMeasurer which uses the provided shortest path algorithm
     /// for all distance queries.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_algorithm<G: Graph<Vertex = V>, A: ShortestPathAlgorithm<G>>(
         g: &G,
         algorithm: &A,

@@ -36,6 +36,10 @@ impl<'g, G: OutgoingGraph> TreeMeasurer<'g, G> {
     /// center of a graph is the set of vertices of graph eccentricity equal to the graph radius.
     ///
     /// Note: The input graph must be undirected.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
     pub fn graph_center(&self) -> Result<Vec<G::Vertex>> {
         if self.graph.graph_type().directed {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Undirected));

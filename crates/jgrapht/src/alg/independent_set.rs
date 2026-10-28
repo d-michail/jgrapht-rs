@@ -52,6 +52,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphIndependentSetFinder<'
         Self::with_order(graph, IterationOrder::Mcs)
     }
 
+    /// Creates an instance with the given order.
     pub fn with_order(graph: &'g G, iteration_order: IterationOrder) -> Self {
         ChordalGraphIndependentSetFinder {
             graph,

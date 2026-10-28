@@ -78,6 +78,14 @@ impl FRQuadTree {
     }
 
     /// Insert a new point.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn insert(&mut self, p: Point2D) -> Result<()> {
         let mut cur = 0;
         loop {
@@ -137,6 +145,7 @@ impl FRQuadTree {
         self.nodes[n].points.is_some()
     }
 
+    /// Returns the box of.
     pub fn box_of(&self, n: NodeId) -> Box2D {
         self.nodes[n].boxx
     }
@@ -170,6 +179,14 @@ impl FRQuadTree {
     }
 
     /// Get the centroid of all points contained in this node.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn centroid(&self, n: NodeId) -> Result<Point2D> {
         match &self.nodes[n].points {
             Some(p) => {
@@ -229,15 +246,23 @@ pub struct FRLayoutAlgorithm2D<V, R> {
     theta: Option<f64>,
     saved_comparisons: u64,
     optimal_distance: f64,
+    /// The initializer.
     pub initializer: Option<Initializer<V>>,
 }
 
+/// The default iterations constant.
 pub const DEFAULT_ITERATIONS: usize = 100;
+/// The default normalization factor constant.
 pub const DEFAULT_NORMALIZATION_FACTOR: f64 = 0.5;
+/// The default theta factor constant.
 pub const DEFAULT_THETA_FACTOR: f64 = 0.5;
 
 impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
     /// Create a new layout algorithm
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(iterations: usize, normalization_factor: f64, rng: R) -> Self {
         Self::with_tolerance(
             iterations,
@@ -248,6 +273,11 @@ impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
         .unwrap()
     }
 
+    /// Creates an instance with the given tolerance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_tolerance(
         iterations: usize,
         normalization_factor: f64,
@@ -271,6 +301,10 @@ impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
     }
 
     /// The indexed variant: `theta` in `[0, 1]` trades accuracy for speed (0 is exact).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn indexed(
         iterations: usize,
         theta: f64,
@@ -285,6 +319,7 @@ impl<V, R: RandomSource> FRLayoutAlgorithm2D<V, R> {
         Ok(alg)
     }
 
+    /// Creates an instance with the given temperature model.
     pub fn with_temperature_model(
         mut self,
         supplier: impl Fn(&Box2D, usize) -> TemperatureModel + 'static,

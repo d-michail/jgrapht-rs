@@ -30,6 +30,7 @@ const MULTIPLIER: u64 = 0x5DEECE66D;
 const MASK: u64 = (1 << 48) - 1;
 
 impl JavaRandom {
+    /// Creates a new instance.
     pub fn new(seed: i64) -> Self {
         JavaRandom {
             seed: (seed as u64 ^ MULTIPLIER) & MASK,
@@ -42,6 +43,7 @@ impl JavaRandom {
             .map_or(0, |d| d.as_nanos() as i64);
         Self::new(t)
     }
+    /// Sets the seed.
     pub fn set_seed(&mut self, seed: i64) {
         self.seed = (seed as u64 ^ MULTIPLIER) & MASK;
     }
@@ -49,10 +51,15 @@ impl JavaRandom {
         self.seed = (self.seed.wrapping_mul(MULTIPLIER).wrapping_add(0xB)) & MASK;
         (self.seed >> (48 - bits)) as i64 as i32
     }
+    /// Returns the next int.
     pub fn next_int(&mut self) -> i32 {
         self.next(32)
     }
     /// `nextInt(bound)`: uniform in `[0, bound)`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `bound` is not positive.
     pub fn next_int_bound(&mut self, bound: i32) -> i32 {
         assert!(bound > 0, "bound must be positive");
         let mut r = self.next(31);
@@ -71,16 +78,20 @@ impl JavaRandom {
             r
         }
     }
+    /// Returns the next long.
     pub fn next_long(&mut self) -> i64 {
         ((self.next(32) as i64) << 32).wrapping_add(self.next(32) as i64)
     }
+    /// Returns the next boolean.
     pub fn next_boolean(&mut self) -> bool {
         self.next(1) != 0
     }
+    /// Returns the next double.
     pub fn next_double(&mut self) -> f64 {
         let hi = (self.next(26) as i64) << 27;
         (hi + self.next(27) as i64) as f64 * (1.0 / (1u64 << 53) as f64)
     }
+    /// Returns the next float.
     pub fn next_float(&mut self) -> f32 {
         self.next(24) as f32 / (1 << 24) as f32
     }
@@ -106,6 +117,7 @@ pub trait RandomSource {
     fn next_int_bound(&mut self, bound: usize) -> usize;
     /// Uniform in `[0, 1)`.
     fn next_double(&mut self) -> f64;
+    /// Returns the next boolean.
     fn next_boolean(&mut self) -> bool;
     /// Uniform in `[0, 1)` with float precision.
     fn next_float(&mut self) -> f32;
@@ -163,21 +175,26 @@ pub struct JavaPriorityQueue<T, C: Fn(&T, &T) -> i32> {
 }
 
 impl<T, C: Fn(&T, &T) -> i32> JavaPriorityQueue<T, C> {
+    /// Creates a new instance.
     pub fn new(cmp: C) -> Self {
         JavaPriorityQueue {
             queue: Vec::new(),
             cmp,
         }
     }
+    /// Returns the len.
     pub fn len(&self) -> usize {
         self.queue.len()
     }
+    /// Returns whether empty.
     pub fn is_empty(&self) -> bool {
         self.queue.is_empty()
     }
+    /// Returns the peek.
     pub fn peek(&self) -> Option<&T> {
         self.queue.first()
     }
+    /// Updates the state for `offer`.
     pub fn offer(&mut self, x: T) {
         let mut k = self.queue.len();
         self.queue.push(x);
@@ -191,6 +208,7 @@ impl<T, C: Fn(&T, &T) -> i32> JavaPriorityQueue<T, C> {
             k = parent;
         }
     }
+    /// Returns the poll.
     pub fn poll(&mut self) -> Option<T> {
         let n = self.queue.len();
         if n == 0 {

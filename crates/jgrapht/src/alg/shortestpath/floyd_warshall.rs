@@ -100,6 +100,10 @@ pub struct FloydWarshallShortestPaths<'g, G: Graph> {
 
 impl<'g, G: OutgoingGraph> FloydWarshallShortestPaths<'g, G> {
     /// Create a new instance of the Floyd-Warshall all-pairs shortest path algorithm.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G) -> Result<Self> {
         Ok(Self {
             graph,

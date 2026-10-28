@@ -174,11 +174,20 @@ pub struct SparseIntUndirectedGraph {
 }
 
 impl SparseIntUndirectedGraph {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(num_vertices: usize, edges: &[(usize, usize)]) -> Result<Self> {
         Self::from_iter(num_vertices, edges.len(), edges.iter().copied())
     }
 
     /// Builds the graph from an edge stream that must yield exactly `num_edges` pairs.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_iter(
         num_vertices: usize,
         num_edges: usize,
@@ -202,10 +211,20 @@ pub struct SparseIntUndirectedWeightedGraph {
 }
 
 impl SparseIntUndirectedWeightedGraph {
+    /// Creates a new instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(num_vertices: usize, edges: &[(usize, usize, f64)]) -> Result<Self> {
         Self::from_iter(num_vertices, edges.len(), edges.iter().copied())
     }
 
+    /// Performs `from iter`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_iter(
         num_vertices: usize,
         num_edges: usize,
@@ -224,6 +243,10 @@ impl SparseIntUndirectedWeightedGraph {
     }
 
     /// `setEdgeWeight`: the one mutation these graphs allow.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an edge argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn set_edge_weight(&mut self, e: usize, weight: f64) -> Result<()> {
         *self.weights.get_mut(e).ok_or(GraphError::EdgeNotFound)? = weight;
         Ok(())

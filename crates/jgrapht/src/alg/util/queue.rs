@@ -32,6 +32,10 @@ pub struct FixedSizeIntegerQueue {
 
 impl FixedSizeIntegerQueue {
     /// Create a queue of fixed size.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `capacity` is zero.
     pub fn new(capacity: usize) -> Self {
         assert!(capacity > 0);
         FixedSizeIntegerQueue {
@@ -41,6 +45,10 @@ impl FixedSizeIntegerQueue {
         }
     }
     /// Add an element to the queue.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the queue is already full.
     pub fn enqueue(&mut self, e: usize) {
         assert!(self.n < self.vs.len(), "queue capacity exceeded");
         self.vs[self.n] = e;
@@ -58,6 +66,7 @@ impl FixedSizeIntegerQueue {
     pub fn is_empty(&self) -> bool {
         self.i == self.n
     }
+    /// Returns the len.
     pub fn len(&self) -> usize {
         self.n - self.i
     }

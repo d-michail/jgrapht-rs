@@ -387,6 +387,10 @@ impl<V, E> GraphMlImporter<V, E> {
     /// Like [`set_vertex_factory`](Self::set_vertex_factory) for a factory that can fail, for
     /// example when it parses the identifier. Its error stops the import and is returned as
     /// [`IoError::Callback`] with the factory's error as the source.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn try_set_vertex_factory(
         &mut self,
         mut factory: impl FnMut(&str) -> std::result::Result<V, crate::CallbackError> + 'static,
@@ -430,6 +434,10 @@ impl<V, E> GraphMlImporter<V, E> {
         self.schema_validation
     }
     /// Sets the consumer notified for every graph attribute.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_graph_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&str, &Attribute) -> Result<()> + 'static,
@@ -440,6 +448,10 @@ impl<V, E> GraphMlImporter<V, E> {
     ///
     /// The consumer also receives the GraphML vertex identifier under the
     /// attribute name `ID`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_vertex_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&V, &str, &Attribute) -> Result<()> + 'static,
@@ -450,6 +462,10 @@ impl<V, E> GraphMlImporter<V, E> {
     ///
     /// When present, the GraphML edge identifier is also reported under the
     /// attribute name `ID`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_edge_attribute_consumer(
         &mut self,
         consumer: impl FnMut(&E, &str, &Attribute) -> Result<()> + 'static,
@@ -681,6 +697,10 @@ where
     ///
     /// Returns an error if the name is already registered as a regular
     /// GraphML attribute.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_vertex_label_attribute_name(&mut self, name: impl Into<String>) -> Result<()> {
         let name = name.into();
         self.ensure_not_registered(&name)?;
@@ -691,6 +711,10 @@ where
     ///
     /// Returns an error if the name is already registered as a regular
     /// GraphML attribute.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_edge_label_attribute_name(&mut self, name: impl Into<String>) -> Result<()> {
         let name = name.into();
         self.ensure_not_registered(&name)?;
@@ -701,6 +725,10 @@ where
     ///
     /// Returns an error if the name is already registered as a regular
     /// GraphML attribute.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn set_edge_weight_attribute_name(&mut self, name: impl Into<String>) -> Result<()> {
         let name = name.into();
         self.ensure_not_registered(&name)?;
@@ -726,6 +754,10 @@ where
     /// `category` controls where the attribute is valid, `kind` is written as
     /// its GraphML `attr.type`, and `default` suppresses values equal to that
     /// default. Registering a reserved label or weight name returns an error.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn register_attribute(
         &mut self,
         name: impl Into<String>,
@@ -756,6 +788,10 @@ where
     ///
     /// Removing a name which was not registered is a no-op. Reserved label and
     /// weight names cannot be unregistered.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`IoError`] if reading or writing fails, if the input is malformed, or if a user callback fails.
     pub fn unregister_attribute(&mut self, name: &str) -> Result<()> {
         if self.reserved(name) {
             return Err(IoError::Export(format!(

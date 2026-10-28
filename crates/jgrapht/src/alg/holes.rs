@@ -32,6 +32,7 @@ pub fn find_weak_chordality_certificate<G: IncidenceGraph>(g: &G) -> Option<Vec<
     Some(vertices)
 }
 
+/// Returns whether weakly chordal.
 pub fn is_weakly_chordal<G: IncidenceGraph>(g: &G) -> bool {
     WeakChordalityInspector::new(g).is_weakly_chordal()
 }

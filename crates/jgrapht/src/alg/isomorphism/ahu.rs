@@ -189,6 +189,14 @@ impl<'g, G: IncidenceGraph> AHURootedTreeIsomorphismInspector<'g, G> {
     /// Construct a new AHU rooted tree isomorphism inspector.
     ///
     /// Note: The constructor does NOT check if the input trees are valid.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(tree1: &'g G, root1: &G::Vertex, tree2: &'g G, root2: &G::Vertex) -> Result<Self> {
         validate_tree(tree1, root1)?;
         validate_tree(tree2, root2)?;
@@ -312,6 +320,10 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> AHUUnrootedTreeIsomorphismInspecto
     /// Construct a new AHU unrooted tree isomorphism inspector.
     ///
     /// Note: The constructor does NOT check if the input trees are valid.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(tree1: &'g G, tree2: &'g G) -> Result<Self> {
         validate_unrooted(tree1)?;
         validate_unrooted(tree2)?;
@@ -419,6 +431,10 @@ impl<'g, G: IncidenceGraph> AHUForestIsomorphismInspector<'g, G> {
     /// Construct a new AHU rooted forest isomorphism inspector.
     ///
     /// Note: The constructor does NOT check if the input forests are valid trees.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(
         forest1: &'g G,
         roots1: impl IntoIterator<Item = G::Vertex>,

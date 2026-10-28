@@ -50,6 +50,10 @@ impl<'g, G: Graph> ParallelDeltaSteppingShortestPath<'g, G> {
     }
 
     /// Explicit delta (`0.0` selects the automatic one); fails if `delta` is negative or NaN.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn with_delta(g: &'g G, delta: f64, parallelism: usize) -> Result<Self> {
         if delta.is_nan() || delta < 0.0 {
             return Err(GraphError::must_be_non_negative("delta"));

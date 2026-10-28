@@ -4,9 +4,9 @@ Review of 2026-10-27 on `master` (e8d4f07). Build and `cargo test --workspace` a
 
 ## Blocking CI
 
-**I-1. Clippy error in the `graph` test target.** `crates/jgrapht/tests/graph/map_graph_test.rs:25` derives `Hash` while implementing `PartialEq` by hand (`clippy::derived_hash_with_manual_eq`, deny by default). `cargo clippy --workspace --all-targets`, which CI runs, fails. Fix: implement `Hash` manually consistent with `eq`, or derive both.
+**I-1. (resolved)** Fixed: the counting `PartialEq` carries a documented `allow`; CI runs Clippy with `-D warnings`.
 
-**I-2. 128 clippy warnings in the `jgrapht` lib, 40 more in tests/benches.** 116 are `doc list item without indentation` and 12 `overindented`, all from the Javadoc port (`<ul>`/numbered lists turned into Markdown). Others: 21 unnecessary `as u64` literal casts, loops indexing by counter (`needless_range_loop`, Floyd–Warshall and Johnson tests), `type_complexity`, excessive float precision. Not CI-fatal (warnings), but `-D warnings` is impossible until fixed. Mostly machine-fixable with `cargo clippy --fix` plus manual list reindentation.
+**I-2. (resolved)** Fixed: all warnings are gone and `cargo fmt --check` plus `clippy -D warnings` run in CI.
 
 ## Remaining fidelity gaps
 
@@ -18,11 +18,11 @@ Review of 2026-10-27 on `master` (e8d4f07). Build and `cargo test --workspace` a
 
 ## API and robustness
 
-**I-6. Panics in library code.** About 950 `unwrap`/`expect`/`panic!` sites in `crates/jgrapht/src` (concentrated in `alg/matching/blossom/*`, about 270, then `clustering.rs` 33 and `connectivity.rs` 24) and 19 in `jgrapht-io`. Many are internal invariants of the Blossom V port, but public entry points still hide iterator failures or rely on stateful sentinels. Caller-reachable unwraps of incidence errors are gone (roadmap step 6: incidence is a compile-time capability). The correction plan and acceptance criteria are R0-R9 in [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md).
+**I-6. (resolved)** Caller-reachable panics are gone: incidence is a compile-time capability, fallible iterators yield `Result`, exporters and importers return `IoError`. The remaining 747 `unwrap`/`expect` sites are classified in [`PANIC_AUDIT.md`](PANIC_AUDIT.md) and every public function that can reach one has a `# Panics` section.
 
-**I-7. Public API is undocumented in `jgrapht`.** 729 public items lack docs (`-W missing_docs`); `jgrapht-io` already has `#![deny(missing_docs)]`. Enabling the lint crate-wide is the Phase 4 target.
+**I-7. (resolved)** Fixed: both crates have `#![deny(missing_docs)]`, public fallible functions have `# Errors` sections, and `lib.rs` has doctests for `Option`, `Result<Option<_>>`, fallible iterators and capability bounds. Many of the 686 added doc lines are short name-derived summaries; improve them as the APIs are touched.
 
-**I-8. API consistency not yet reviewed.** Phase 4 items still open: capability bounds are in place but many algorithms still ask for `IncidenceGraph` where a narrower trait would do, `Result`/`Option` policy, fallible iterators, stateful result objects, numeric sentinels, `*_num` versus `*_count` naming, `#[non_exhaustive]` on public enums, and error type uniformity between `jgrapht::GraphError` and per-module errors. Typed `GraphError` variants exist for parameters, weights and graph properties (about 100 sites converted); roughly 150 `InvalidArgument(String)` sites remain. Tracked in detail by [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md). Final-audit remainder: [`PANIC_AUDIT.md`](PANIC_AUDIT.md).
+**I-8. (resolved)** Done per [`RUST_API_ROADMAP.md`](RUST_API_ROADMAP.md): capability traits, typed errors, result objects, `Option` for unreachable. About 95 `InvalidArgument(String)` sites remain as the documented fallback.
 
 **I-9. Sparse graphs borrow ids from an identity array** of `max(n, m)` elements because `Graph` returns references (documented in `STATUS.md`). Costs memory proportional to the larger of `n` and `m`; revisit if the `Graph` trait ever returns owned ids.
 

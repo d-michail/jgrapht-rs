@@ -76,6 +76,10 @@ fn union_successors<G: OutgoingGraph>(g1: &G, g2: &G) -> Vec<Vec<usize>> {
 
 impl<'g, G: IncidenceGraph> ColorRefinementIsomorphismInspector<'g, G> {
     /// Fails for multigraphs, mixed graphs and a directed/undirected pair.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn new(graph1: &'g G, graph2: &'g G) -> Result<Self> {
         check_types(graph1, graph2)?;
         Ok(ColorRefinementIsomorphismInspector {
@@ -150,6 +154,14 @@ impl<'g, G: IncidenceGraph> ColorRefinementIsomorphismInspector<'g, G> {
     }
 
     /// Whether the graphs are isomorphic; fails when colour refinement cannot decide.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn isomorphism_exists(&mut self) -> std::result::Result<bool, IsomorphismUndecidable> {
         if self.outcome.is_none() {
             self.execute();

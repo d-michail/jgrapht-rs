@@ -28,6 +28,7 @@ pub struct MaskSubgraph<G, FV, FE> {
 }
 
 impl<G: Graph, FV: Fn(&G::Vertex) -> bool, FE: Fn(&G::Edge) -> bool> MaskSubgraph<G, FV, FE> {
+    /// Creates a new instance.
     pub fn new(graph: G, vertex_mask: FV, edge_mask: FE) -> Self {
         MaskSubgraph {
             graph,
@@ -208,6 +209,7 @@ impl<G: Graph> AsSubgraph<G> {
             Some(edges.into_iter().collect()),
         )
     }
+    /// Returns the base.
     pub fn base(&self) -> &G {
         &self.base
     }

@@ -35,6 +35,7 @@ fn invalid<T>(msg: impl Into<String>) -> Result<T> {
 }
 
 impl<'a, K> Distributor<'a, K> {
+    /// Creates a new instance.
     pub fn new() -> Self {
         Distributor {
             lower_bounds: Vec::new(),
@@ -42,10 +43,12 @@ impl<'a, K> Distributor<'a, K> {
         }
     }
 
+    /// Adds upper bound.
     pub fn add_upper_bound(&mut self, f: impl Fn(&K) -> i32 + 'a) {
         self.upper_bounds.push(Box::new(f));
     }
 
+    /// Adds lower bound.
     pub fn add_lower_bound(&mut self, f: impl Fn(&K) -> i32 + 'a) {
         self.lower_bounds.push(Box::new(f));
     }
@@ -80,6 +83,10 @@ impl<'a, K> Distributor<'a, K> {
 
 impl<K: std::fmt::Debug> Distributor<'_, K> {
     /// One value per key, summing to `value_num`, each within its bounds.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn get_distribution(
         &self,
         rng: &mut impl RandomSource,

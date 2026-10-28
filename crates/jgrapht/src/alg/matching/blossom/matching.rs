@@ -42,6 +42,10 @@ pub struct KolmogorovWeightedMatching<'g, G: Graph> {
 
 impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     /// Constructs a maximum-weight matching algorithm with default Blossom V options.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G) -> Result<Self> {
         Self::with_options_and_objective(
             graph,
@@ -51,16 +55,28 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     }
 
     /// Constructs an algorithm with default options and the requested objective.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_objective(graph: &'g G, objective_sense: ObjectiveSense) -> Result<Self> {
         Self::with_options_and_objective(graph, BlossomVOptions::default(), objective_sense)
     }
 
     /// Constructs a maximum-weight matching algorithm with custom Blossom V options.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_options(graph: &'g G, options: BlossomVOptions) -> Result<Self> {
         Self::with_options_and_objective(graph, options, ObjectiveSense::Maximize)
     }
 
     /// Constructs an algorithm with custom options and objective.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_options_and_objective(
         graph: &'g G,
         options: BlossomVOptions,
@@ -76,11 +92,23 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     }
 
     /// Returns whether the reduced perfect matching satisfies the optimality conditions.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn test_optimality(&mut self) -> Result<bool> {
         Ok(self.get_error()? < BLOSSOM_V_EPSILON)
     }
 
     /// Returns the numerical optimality error of the reduced perfect matching.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_error(&mut self) -> Result<f64> {
         self.compute()?;
         Ok(self.error.expect("computed error"))

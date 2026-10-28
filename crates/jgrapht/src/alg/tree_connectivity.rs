@@ -88,6 +88,7 @@ impl<T: Eq + Hash + Clone> Default for TreeDynamicConnectivity<T> {
 }
 
 impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
+    /// Creates a new instance.
     pub fn new() -> Self {
         TreeDynamicConnectivity {
             trees: SequenceArena::new(),
@@ -98,6 +99,7 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
         }
     }
 
+    /// Returns the contains.
     pub fn contains(&self, element: &T) -> bool {
         self.node_map.contains_key(element)
     }
@@ -121,6 +123,10 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
     }
 
     /// Removes an element, cutting all its incident edges first.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn remove(&mut self, element: &T) -> bool {
         let Some(&node) = self.node_map.get(element) else {
             return false;
@@ -149,6 +155,10 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
     }
 
     /// Joins two trees. Missing elements are inserted; an edge that would create a cycle is not.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn link(&mut self, first: T, second: T) -> bool {
         // Preserve the existing Rust public behaviour for a self-link.
         if first == second {
@@ -201,6 +211,10 @@ impl<T: Eq + Hash + Clone> TreeDynamicConnectivity<T> {
     }
 
     /// Removes an edge. A connected but non-adjacent pair is an invalid argument, as before.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn cut(&mut self, first: &T, second: &T) -> Result<bool> {
         if !self.connected(first, second) {
             return Ok(false);

@@ -26,6 +26,10 @@ pub struct CsrBooleanMatrix {
 impl CsrBooleanMatrix {
     /// Builds the matrix from `(row, column)` entries. Entries are sorted lexicographically, as
     /// in Java, in `O(k log k)`; the offsets come from a prefix sum over per-row counts.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn new(rows: usize, columns: usize, entries: &[(usize, usize)]) -> Result<Self> {
         let mut sorted = entries.to_vec();
         sorted.sort_unstable();
@@ -56,10 +60,12 @@ impl CsrBooleanMatrix {
         })
     }
 
+    /// Returns the columns.
     pub fn columns(&self) -> usize {
         self.columns
     }
 
+    /// Returns the rows.
     pub fn rows(&self) -> usize {
         self.row_offsets.len() - 1
     }

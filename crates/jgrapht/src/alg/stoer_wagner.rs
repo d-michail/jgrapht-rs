@@ -207,6 +207,14 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
     ///
     /// Fails if the graph is not undirected, has fewer than 2 vertices, has an edge of negative
     /// weight, or has a self-loop.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; an edge weight is negative, NaN or otherwise unusable; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`](crate::Graph) (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new<G: UndirectedGraph<Vertex = V>>(graph: &G) -> Result<Self> {
         if graph.vertex_count() < 2 {
             return Err(GraphError::InvalidGraph(
@@ -360,6 +368,10 @@ impl<V: Clone + Eq + std::hash::Hash> StoerWagnerMinimumCut<V> {
     }
 
     /// The vertices on one side of the minimum cut.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn min_cut(&self) -> &IndexSet<V> {
         &self.members[self.best_cut.expect("cut computed")]
     }

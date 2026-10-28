@@ -143,6 +143,10 @@ pub struct WeakChordalityInspector<'g, G: Graph> {
 
 impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
     /// Creates a weak chordality inspector for the `graph`
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn new(graph: &'g G) -> Self {
         let vertices: Vec<G::Vertex> = graph.vertices().cloned().collect();
         let index: std::collections::HashMap<&G::Vertex, usize> =

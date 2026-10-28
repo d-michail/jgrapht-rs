@@ -69,6 +69,7 @@ pub(crate) fn add_edge<G: GraphMut>(
     g.add_edge(u, v)
 }
 
+/// The `GraphGenerator` trait.
 pub trait GraphGenerator {
     /// Generates into `target`, creating vertices with the target's vertex factory. Named vertices
     /// are stored in `result` when given.
@@ -151,8 +152,11 @@ impl<G: GraphMut, F: FnMut(usize) -> G::Vertex> GraphMut for WithVertexFactory<'
 /// Index-based description of a named graph (vertex count plus edges in insertion order).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Structure {
+    /// The vertex count.
     pub vertex_count: usize,
+    /// The edges.
     pub edges: Vec<(usize, usize)>,
+    /// The groups.
     pub groups: std::collections::BTreeMap<&'static str, Vec<usize>>,
 }
 

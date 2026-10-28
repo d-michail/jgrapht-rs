@@ -87,10 +87,19 @@ pub struct BoykovKolmogorovMFImpl<'g, G: OutgoingGraph> {
 impl<'g, G: OutgoingGraph> BoykovKolmogorovMFImpl<'g, G> {
     /// Creates a new algorithm instance with the specified `network`. The created algorithm
     /// uses default epsilon.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn new(network: &'g G) -> Result<Self> {
         Self::with_epsilon(network, DEFAULT_EPSILON)
     }
 
+    /// Creates an instance with the given epsilon.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_epsilon(network: &'g G, epsilon: f64) -> Result<Self> {
         Ok(BoykovKolmogorovMFImpl {
             net: FlowNet::new(network, epsilon)?,

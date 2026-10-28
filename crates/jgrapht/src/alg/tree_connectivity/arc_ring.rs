@@ -276,6 +276,14 @@ impl<T> ArcRingArena<T> {
     }
 
     /// Moves all nodes from `moved` before `index`, preserving their handles and order.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn move_from(&mut self, list: RingId, index: usize, moved: RingId) -> Result<()> {
         if list == moved {
             return Err(GraphError::InvalidArgument(

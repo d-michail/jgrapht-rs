@@ -69,24 +69,48 @@ impl<'a, G: 'a + OutgoingGraph + UndirectedGraph> TwoOptHeuristicTSP<'a, G> {
         Self::with_passes(1)
     }
 
+    /// Creates an instance with the given passes.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn with_passes(passes: usize) -> Self {
         Self::with_all(passes, Box::new(RandomTourTSP::new()), 1e-8).expect("one pass at least")
     }
 
+    /// Creates an instance with the given seed.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_seed(passes: usize, seed: u64) -> Result<Self> {
         use rand::SeedableRng;
         Self::with_rng(passes, rand::rngs::StdRng::seed_from_u64(seed))
     }
 
+    /// Creates an instance with the given rng.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn with_rng(passes: usize, rng: impl RandomSource + 'a) -> Result<Self> {
         Self::with_all(passes, Box::new(RandomTourTSP::with_rng(rng)), 1e-8)
     }
 
+    /// Creates an instance with the given initializer.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn with_initializer(initializer: impl HamiltonianCycleAlgorithm<G> + 'a) -> Self {
         Self::with_all(1, Box::new(initializer), 1e-8).expect("one pass at least")
     }
 
     /// `minCostImprovement`: a move must shorten the tour by more than this (absolute value).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a numeric or collection parameter is out of range; errors of the underlying graph operations are propagated.
     pub fn with_all(
         passes: usize,
         initializer: Box<dyn HamiltonianCycleAlgorithm<G> + 'a>,

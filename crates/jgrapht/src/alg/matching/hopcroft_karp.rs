@@ -69,6 +69,10 @@ impl<'g, G: UndirectedGraph + IncidenceGraph>
 {
     /// `partition1` and `partition2` are the two sides of the bipartition. Fails if the graph is
     /// not undirected.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn new(
         graph: &'g G,
         partition1: impl IntoIterator<Item = G::Vertex>,

@@ -33,18 +33,23 @@ pub struct Partitioning<V: Eq + Hash> {
 }
 
 impl<V: Eq + Hash> Partitioning<V> {
+    /// Creates a new instance.
     pub fn new(partitions: Vec<IndexSet<V>>) -> Self {
         Partitioning { partitions }
     }
+    /// Returns the number partitions.
     pub fn number_partitions(&self) -> usize {
         self.partitions.len()
     }
+    /// Returns the partition.
     pub fn partition(&self, index: usize) -> &IndexSet<V> {
         &self.partitions[index]
     }
+    /// Returns the partitions.
     pub fn partitions(&self) -> &[IndexSet<V>] {
         &self.partitions
     }
+    /// Returns the iter.
     pub fn iter(&self) -> impl Iterator<Item = &IndexSet<V>> {
         self.partitions.iter()
     }
@@ -61,6 +66,7 @@ where
 {
     /// The partitioning, or `None` if the algorithm finds none.
     fn partitioning(&mut self) -> Option<&Partitioning<G::Vertex>>;
+    /// Returns whether valid partitioning.
     fn is_valid_partitioning(&self, partitioning: &Partitioning<G::Vertex>) -> bool;
 }
 
@@ -130,6 +136,7 @@ pub struct PathDecomposition<V, E> {
 }
 
 impl<V, E> PathDecomposition<V, E> {
+    /// Creates a new instance.
     pub fn new(edges: HashSet<E>, paths: Vec<GraphWalk<V, E>>) -> Self {
         PathDecomposition { edges, paths }
     }
@@ -137,9 +144,11 @@ impl<V, E> PathDecomposition<V, E> {
     pub fn edges(&self) -> &HashSet<E> {
         &self.edges
     }
+    /// Returns the paths.
     pub fn paths(&self) -> &[GraphWalk<V, E>] {
         &self.paths
     }
+    /// Returns the number of paths.
     pub fn number_of_paths(&self) -> usize {
         self.paths.len()
     }
@@ -155,6 +164,7 @@ pub trait LowestCommonAncestorAlgorithm<V: Eq + Hash + Clone> {
     /// they lie in different trees). An error if a vertex is not in the graph.
     fn lca(&self, a: &V, b: &V) -> Result<Option<V>>;
 
+    /// Returns the batch lca.
     fn batch_lca(&self, queries: &[(V, V)]) -> Result<Vec<Option<V>>> {
         queries.iter().map(|(a, b)| self.lca(a, b)).collect()
     }
@@ -200,6 +210,7 @@ pub trait LinkPredictionAlgorithm<V: Clone> {
     /// undefined for it.
     fn predict(&self, u: &V, v: &V) -> Result<f64>;
 
+    /// Returns the predict all.
     fn predict_all(&self, queries: &[(V, V)]) -> Result<Vec<(V, V, f64)>> {
         queries
             .iter()
@@ -239,6 +250,7 @@ pub trait MaximalCliqueEnumerationAlgorithm<V: Eq + Hash + Clone> {
 ///
 /// Computes a vertex cover (`VertexCoverAlgorithm`).
 pub trait VertexCoverAlgorithm<V: Clone> {
+    /// Returns the vertex cover.
     fn vertex_cover(&self) -> Result<VertexCover<V>>;
 }
 
@@ -248,6 +260,7 @@ pub trait VertexCoverAlgorithm<V: Clone> {
 ///
 /// Computes a proper vertex coloring (`VertexColoringAlgorithm`).
 pub trait VertexColoringAlgorithm<V: Clone + Eq + Hash> {
+    /// Returns the coloring.
     fn coloring(&self) -> Result<Coloring<V>>;
 }
 
@@ -258,15 +271,19 @@ pub struct Clustering<V: Eq + Hash> {
 }
 
 impl<V: Eq + Hash> Clustering<V> {
+    /// Creates a new instance.
     pub fn new(clusters: Vec<IndexSet<V>>) -> Self {
         Clustering { clusters }
     }
+    /// Returns the number clusters.
     pub fn number_clusters(&self) -> usize {
         self.clusters.len()
     }
+    /// Returns the clusters.
     pub fn clusters(&self) -> &[IndexSet<V>] {
         &self.clusters
     }
+    /// Returns the iter.
     pub fn iter(&self) -> impl Iterator<Item = &IndexSet<V>> {
         self.clusters.iter()
     }
@@ -278,6 +295,7 @@ impl<V: Eq + Hash> Clustering<V> {
 ///
 /// An algorithm that clusters the vertices of a graph (`ClusteringAlgorithm`).
 pub trait ClusteringAlgorithm<V: Eq + Hash + Clone> {
+    /// Returns the clustering.
     fn clustering(&self) -> Result<Clustering<V>>;
 }
 
@@ -288,12 +306,15 @@ pub trait ClusteringAlgorithm<V: Eq + Hash + Clone> {
 /// Algorithms computing the strongly connected components of a directed graph
 /// (`StrongConnectivityAlgorithm`). Results are computed when the algorithm is constructed.
 pub trait StrongConnectivityAlgorithm {
+    /// The g type.
     type G: crate::graph::DirectedGraph;
 
+    /// Returns the graph.
     fn graph(&self) -> &Self::G;
     /// The vertex sets of the strongly connected components.
     fn strongly_connected_sets(&self) -> &[HashSet<<Self::G as Graph>::Vertex>];
 
+    /// Returns whether strongly connected.
     fn is_strongly_connected(&self) -> bool {
         self.strongly_connected_sets().len() == 1
     }
@@ -340,6 +361,7 @@ pub struct Embedding<V: Eq + Hash, E> {
 }
 
 impl<V: Eq + Hash, E> Embedding<V, E> {
+    /// Creates a new instance.
     pub fn new(map: IndexMap<V, Vec<E>>) -> Self {
         Embedding { map }
     }
@@ -347,6 +369,7 @@ impl<V: Eq + Hash, E> Embedding<V, E> {
     pub fn edges_around(&self, v: &V) -> Option<&[E]> {
         self.map.get(v).map(|l| l.as_slice())
     }
+    /// Returns the iter.
     pub fn iter(&self) -> impl Iterator<Item = (&V, &[E])> {
         self.map.iter().map(|(v, l)| (v, l.as_slice()))
     }

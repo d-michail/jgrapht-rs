@@ -92,21 +92,27 @@ impl<V, E> GraphWalk<V, E> {
             weight,
         }
     }
+    /// Returns the start vertex.
     pub fn start_vertex(&self) -> Option<&V> {
         self.vertices.first()
     }
+    /// Returns the end vertex.
     pub fn end_vertex(&self) -> Option<&V> {
         self.vertices.last()
     }
+    /// Returns the vertex list.
     pub fn vertex_list(&self) -> &[V] {
         &self.vertices
     }
+    /// Returns the edge list.
     pub fn edge_list(&self) -> &[E] {
         &self.edges
     }
+    /// Returns the weight.
     pub fn weight(&self) -> f64 {
         self.weight
     }
+    /// Sets the weight.
     pub fn set_weight(&mut self, weight: f64) {
         self.weight = weight;
     }
@@ -114,6 +120,7 @@ impl<V, E> GraphWalk<V, E> {
     pub fn length(&self) -> usize {
         self.edges.len()
     }
+    /// Returns whether empty.
     pub fn is_empty(&self) -> bool {
         self.vertices.is_empty()
     }
@@ -170,6 +177,14 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     /// `new GraphWalk(graph, start, end, vertexList, edgeList, weight)` followed by `verify()`:
     /// at least one of the two lists must be given and a missing one is derived from the graph.
     /// `start`/`end` must both be given or both absent (an absent pair denotes the empty walk).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn try_new<G>(
         g: &G,
         start: Option<V>,
@@ -276,6 +291,10 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     }
 
     /// `new GraphWalk(graph, vertexList, weight)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_vertex_list<G>(g: &G, vertices: Vec<V>, weight: f64) -> Result<Self>
     where
         G: Graph<Vertex = V, Edge = E>,
@@ -285,6 +304,10 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     }
 
     /// `new GraphWalk(graph, start, end, edgeList, weight)`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn from_edge_list<G>(g: &G, start: V, end: V, edges: Vec<E>, weight: f64) -> Result<Self>
     where
         G: Graph<Vertex = V, Edge = E>,
@@ -293,6 +316,10 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     }
 
     /// Checks that the walk really exists in `g` (`GraphWalk.verify`).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an edge argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn verify<G>(&self, g: &G) -> Result<()>
     where
         G: Graph<Vertex = V, Edge = E>,
@@ -341,6 +368,10 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
 
     /// The reversed walk; `weight` computes the new weight (default: the reversed edges' weights,
     /// or the old weight in undirected graphs). Directed walks need the reverse arcs to exist.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an edge argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn reverse<G>(&self, g: &G, weight: Option<&dyn Fn(&Self) -> f64>) -> Result<Self>
     where
         G: Graph<Vertex = V, Edge = E>,
@@ -389,6 +420,10 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash> GraphWalk<V, E> {
     }
 
     /// Appends `extension`, which must start where this walk ends; `weight` computes the new weight.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn concat(&self, extension: &Self, weight: &dyn Fn(&Self) -> f64) -> Result<Self> {
         if self.is_empty() {
             return Err(GraphError::InvalidArgument(
@@ -490,26 +525,33 @@ impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, V2: Clone + Eq + Hash, E2: Clon
 impl<V: Clone + Eq + Hash, E: Clone + Eq + Hash, V2: Clone + Eq + Hash, E2: Clone + Eq + Hash>
     GraphMapping<V, E, V2, E2>
 {
+    /// Creates a new instance.
     pub fn new() -> Self {
         Self::default()
     }
+    /// Updates the state for `map vertex`.
     pub fn map_vertex(&mut self, from: V, to: V2) {
         self.vertex_forward.insert(from.clone(), to.clone());
         self.vertex_backward.insert(to, from);
     }
+    /// Updates the state for `map edge`.
     pub fn map_edge(&mut self, from: E, to: E2) {
         self.edge_forward.insert(from.clone(), to.clone());
         self.edge_backward.insert(to, from);
     }
+    /// Returns the vertex.
     pub fn vertex(&self, from: &V) -> Option<&V2> {
         self.vertex_forward.get(from)
     }
+    /// Returns the vertex inverse.
     pub fn vertex_inverse(&self, to: &V2) -> Option<&V> {
         self.vertex_backward.get(to)
     }
+    /// Returns the edge.
     pub fn edge(&self, from: &E) -> Option<&E2> {
         self.edge_forward.get(from)
     }
+    /// Returns the edge inverse.
     pub fn edge_inverse(&self, to: &E2) -> Option<&E> {
         self.edge_backward.get(to)
     }

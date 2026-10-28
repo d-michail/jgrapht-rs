@@ -269,6 +269,10 @@ impl<'g, G: Graph> ContractionHierarchyPrecomputation<'g, G> {
     }
 
     /// Computes contraction hierarchy for `graph`. Negative and NaN weights are rejected.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn compute_contraction_hierarchy(&self) -> Result<ContractionHierarchy<'g, G>> {
         let (mut core, originals) = Core::fill(self.graph)?;
         let mut randoms: Vec<_> = (0..self.parallelism)
@@ -942,6 +946,14 @@ impl<'h, 'g, G: Graph> ContractionHierarchyBidirectionalDijkstra<'h, 'g, G> {
     }
 
     /// Computes a shortest path between `source` and `sink` using the hierarchy.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn path(
         &self,
         source: &G::Vertex,
@@ -1169,6 +1181,10 @@ impl<'h, 'g, G: Graph> CHManyToManyShortestPaths<'h, 'g, G> {
     }
 
     /// Computes shortest paths from all vertices in `sources` to all vertices in `targets`.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if a vertex argument is not in the graph; errors of the underlying graph operations are propagated.
     pub fn many_to_many<I, J>(
         &self,
         sources: I,

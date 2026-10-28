@@ -68,6 +68,7 @@ impl<'g, G: Graph> DeltaStepping<'g, G> {
     pub fn new(g: &'g G) -> Self {
         DeltaStepping { g, delta: None }
     }
+    /// Creates an instance with the given delta.
     pub fn with_delta(g: &'g G, delta: f64) -> Self {
         DeltaStepping {
             g,

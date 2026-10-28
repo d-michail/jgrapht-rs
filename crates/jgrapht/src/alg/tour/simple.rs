@@ -62,6 +62,7 @@ impl Default for RandomTourTSP<StdRng> {
 }
 
 impl<R: RandomSource> RandomTourTSP<R> {
+    /// Creates an instance with the given rng.
     pub fn with_rng(rng: R) -> Self {
         RandomTourTSP { rng }
     }
@@ -125,6 +126,7 @@ impl<V> NearestNeighborHeuristicTSP<V, StdRng> {
         Self::with_rng(StdRng::from_os_rng())
     }
 
+    /// Creates an instance with the given seed.
     pub fn with_seed(seed: u64) -> Self {
         Self::with_rng(StdRng::seed_from_u64(seed))
     }
@@ -150,6 +152,7 @@ impl<V> Default for NearestNeighborHeuristicTSP<V, StdRng> {
 }
 
 impl<V, R> NearestNeighborHeuristicTSP<V, R> {
+    /// Creates an instance with the given rng.
     pub fn with_rng(rng: R) -> Self {
         NearestNeighborHeuristicTSP {
             rng,

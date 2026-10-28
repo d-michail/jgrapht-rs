@@ -41,12 +41,18 @@ pub struct CapacitatedSpanningTree<V: Eq + Hash, E: Eq + Hash> {
     pub labels: IndexMap<V, usize>,
     /// For each label the vertices of the subset and their total demand.
     pub partition: IndexMap<usize, Pair<IndexSet<V>, f64>>,
+    /// The edges.
     pub edges: IndexSet<E>,
+    /// The weight.
     pub weight: f64,
 }
 
 impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> CapacitatedSpanningTree<V, E> {
     /// Checks the tree against the problem data (`isCapacitatedSpanningTree`).
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn is_capacitated_spanning_tree<G: IncidenceGraph<Vertex = V, Edge = E>>(
         &self,
         graph: &G,
@@ -120,6 +126,7 @@ impl<V: Eq + Hash + Clone, E: Eq + Hash + Clone> CapacitatedSpanningTree<V, E> {
 ///
 /// An algorithm computing a capacitated spanning tree (`CapacitatedSpanningTreeAlgorithm`).
 pub trait CapacitatedSpanningTreeAlgorithm<V: Eq + Hash, E: Eq + Hash> {
+    /// Returns the capacitated spanning tree.
     fn capacitated_spanning_tree(&mut self) -> Result<CapacitatedSpanningTree<V, E>>;
 }
 
@@ -296,6 +303,10 @@ impl<V: Eq + Hash + Clone> Solution<V> {
 
     /// Splits the vertices of `vertex_subset` (a subset of the partition set `label`) into one
     /// part per subtree below the root of their minimum spanning tree; returns the new labels.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn partition_subtrees_of_subset<G: IncidenceGraph<Vertex = V>>(
         &mut self,
         problem: &Problem<'_, G>,
@@ -409,6 +420,10 @@ pub struct EsauWilliamsCapacitatedMinimumSpanningTree<'g, G: IncidenceGraph> {
 
 impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
     /// Constructs an Esau-Williams GRASP algorithm instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(
         graph: &'g G,
         root: G::Vertex,
@@ -425,6 +440,7 @@ impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
         })
     }
 
+    /// Creates an instance with the given seed.
     pub fn with_seed(mut self, seed: u64) -> Self {
         self.rng = StdRng::seed_from_u64(seed);
         self
@@ -639,10 +655,15 @@ pub struct AhujaOrlinSharmaOptions {
     pub best_improvement: bool,
     /// Number of best moves of the initial Esau–Williams solution (ignored with a given start).
     pub number_of_operations: usize,
+    /// The use vertex operation.
     pub use_vertex_operation: bool,
+    /// The use subtree operation.
     pub use_subtree_operation: bool,
+    /// The use tabu search.
     pub use_tabu_search: bool,
+    /// The tabu time.
     pub tabu_time: usize,
+    /// The upper limit tabu exchanges.
     pub upper_limit_tabu_exchanges: usize,
 }
 
@@ -697,6 +718,10 @@ type PartitionTrees<E> = HashMap<usize, SpanningTree<E>>;
 
 impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G> {
     /// Starts from an Esau–Williams solution with default options.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(
         graph: &'g G,
         root: G::Vertex,
@@ -718,6 +743,11 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
         )
     }
 
+    /// Creates an instance with the given options.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn with_options(
         graph: &'g G,
         root: G::Vertex,
@@ -744,6 +774,10 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
     }
 
     /// Starts from the given capacitated spanning tree.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if an argument violates a precondition; errors of the underlying graph operations are propagated.
     pub fn with_initial_solution(
         initial_solution: CapacitatedSpanningTree<G::Vertex, G::Edge>,
         graph: &'g G,

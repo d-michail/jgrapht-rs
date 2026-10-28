@@ -36,13 +36,18 @@ use std::collections::{HashMap, HashSet};
 /// `MinimumCostFlowProblem`: a directed network with node supplies and arc capacity bounds and
 /// costs.
 pub trait MinimumCostFlowProblem {
+    /// The graph type.
     type Graph: Graph;
 
+    /// Returns the graph.
     fn graph(&self) -> &Self::Graph;
     /// Supply of a vertex (negative for a demand).
     fn node_supply(&self, v: &<Self::Graph as Graph>::Vertex) -> i32;
+    /// Returns the arc capacity lower bound.
     fn arc_capacity_lower_bound(&self, e: &<Self::Graph as Graph>::Edge) -> i32;
+    /// Returns the arc capacity upper bound.
     fn arc_capacity_upper_bound(&self, e: &<Self::Graph as Graph>::Edge) -> i32;
+    /// Returns the arc cost.
     fn arc_cost(&self, e: &<Self::Graph as Graph>::Edge) -> f64;
 }
 
@@ -85,6 +90,7 @@ impl<'g, G: Graph> MinimumCostFlowProblemImpl<'g, G> {
         )
     }
 
+    /// Creates an instance with the given costs.
     pub fn with_costs(
         graph: &'g G,
         node_supplies: impl Fn(&G::Vertex) -> i32 + 'g,
@@ -125,11 +131,14 @@ impl<'g, G: Graph> MinimumCostFlowProblem for MinimumCostFlowProblemImpl<'g, G> 
 /// `MinimumCostFlowAlgorithm.MinimumCostFlow`: the cost and the flow on every edge.
 #[derive(Debug, Clone)]
 pub struct MinimumCostFlow<E> {
+    /// The cost.
     pub cost: f64,
+    /// The flow map.
     pub flow_map: HashMap<E, f64>,
 }
 
 impl<E: Eq + std::hash::Hash> MinimumCostFlow<E> {
+    /// Returns the flow.
     pub fn flow(&self, edge: &E) -> Option<f64> {
         self.flow_map.get(edge).copied()
     }
@@ -172,11 +181,13 @@ impl<V: Eq + std::hash::Hash, E: Eq + std::hash::Hash> MinimumCostSolution<V, E>
 ///
 /// `MinimumCostFlowAlgorithm`.
 pub trait MinimumCostFlowAlgorithm<V, E> {
+    /// Returns the minimum cost flow.
     fn minimum_cost_flow<P>(&mut self, problem: &P) -> Result<MinimumCostFlow<E>>
     where
         P: MinimumCostFlowProblem,
         P::Graph: Graph<Vertex = V, Edge = E>;
 
+    /// Returns the flow cost.
     fn flow_cost<P>(&mut self, problem: &P) -> Result<f64>
     where
         P: MinimumCostFlowProblem,
@@ -195,6 +206,7 @@ pub trait MinimumCostFlowAlgorithm<V, E> {
 pub const CAP_INF: i32 = 1000 * 1000 * 1000;
 /// Cost of the artificial arcs.
 pub const COST_INF: f64 = 1e9;
+/// The default scaling factor constant.
 pub const DEFAULT_SCALING_FACTOR: i32 = 8;
 
 struct Node {
@@ -433,10 +445,12 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash> Default
 impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
     CapacityScalingMinimumCostFlow<V, E>
 {
+    /// Creates a new instance.
     pub fn new() -> Self {
         Self::with_scaling_factor(DEFAULT_SCALING_FACTOR)
     }
 
+    /// Creates an instance with the given scaling factor.
     pub fn with_scaling_factor(scaling_factor: i32) -> Self {
         CapacityScalingMinimumCostFlow {
             scaling_factor,
@@ -456,6 +470,10 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
     /// Solves `problem` and returns the flow together with its dual solution (the node potentials)
     /// and the data needed to certify optimality, in one value (`getMinimumCostFlow`,
     /// `getFlowCost`, `getDualSolution` and `testOptimality` of the Java class).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn solve<P>(&mut self, problem: &P) -> Result<MinimumCostSolution<V, E>>
     where
         P: MinimumCostFlowProblem,
@@ -481,6 +499,14 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
     }
 
     /// Solves `problem` (`getMinimumCostFlow`).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_minimum_cost_flow<P>(&mut self, problem: &P) -> Result<MinimumCostFlow<E>>
     where
         P: MinimumCostFlowProblem,

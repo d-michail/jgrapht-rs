@@ -21,21 +21,29 @@ use crate::{GraphError, Result};
 use std::hash::Hash;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// The `OperationType` enum.
 pub enum OperationType {
+    /// The insert variant.
     Insert,
+    /// The remove variant.
     Remove,
+    /// The change variant.
     Change,
 }
 
 /// One step of an edit script. `Insert` and `Remove` have no second operand.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EditOperation<V> {
+    /// The ty.
     pub ty: OperationType,
+    /// The first.
     pub first: V,
+    /// The second.
     pub second: Option<V>,
 }
 
 impl<V> EditOperation<V> {
+    /// Creates a new instance.
     pub fn new(ty: OperationType, first: V, second: Option<V>) -> Self {
         EditOperation { ty, first, second }
     }
@@ -210,6 +218,10 @@ where
     G::Vertex: Eq + Hash,
 {
     /// Unit costs for inserting, removing and changing (0 for equal vertices).
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] propagated from the underlying graph operations or from validating the input.
     pub fn new(tree1: &'a G, root1: G::Vertex, tree2: &'a G, root2: G::Vertex) -> Result<Self> {
         Self::with_costs(
             tree1,
@@ -222,6 +234,11 @@ where
         )
     }
 
+    /// Creates an instance with the given costs.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`] if the graph lacks a property the algorithm requires; errors of the underlying graph operations are propagated.
     pub fn with_costs(
         tree1: &'a G,
         root1: G::Vertex,
@@ -258,6 +275,7 @@ where
         self.tree_distances[self.tree1.vertex_count() - 1][self.tree2.vertex_count() - 1]
     }
 
+    /// Returns the edit operations.
     pub fn edit_operations(&mut self) -> &[EditOperation<G::Vertex>] {
         self.run();
         self.edit_operation_lists[self.tree1.vertex_count() - 1][self.tree2.vertex_count() - 1]

@@ -412,12 +412,20 @@ pub struct SparseEdmondsMaximumCardinalityMatching<'g, G: Graph> {
 impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinalityMatching<'g, G> {
     /// Uses `GreedyMaximumCardinalityMatching` (unsorted) as the initializer. Fails if the graph is
     /// not undirected.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn new(graph: &'g G) -> Result<Self> {
         let initializer = GreedyMaximumCardinalityMatching::new(graph, false)?;
         Self::with_initializer(graph, Some(Box::new(initializer)))
     }
 
     /// Fails if the graph is not undirected. `None` starts from the empty matching.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
     pub fn with_initializer(
         graph: &'g G,
         initializer: Option<Box<dyn MatchingAlgorithm<G::Vertex, G::Edge> + 'g>>,
@@ -431,12 +439,24 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinali
     }
 
     /// The odd set cover that certifies the optimality of the matching.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`GraphError`](crate::GraphError) propagated from the underlying graph operations or from validating the input.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if an internal invariant is violated, which indicates a bug in this library.
     pub fn get_odd_set_cover(&mut self) -> Result<&HashMap<G::Vertex, i64>> {
         self.get_matching()?;
         Ok(self.odd_set_cover.as_ref().expect("computed"))
     }
 
     /// Checks that `matching` is a matching and that `odd_set_cover` proves it maximum.
+    ///
+    /// # Panics
+    ///
+    /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
     pub fn is_optimal_matching(
         graph: &G,
         matching: &IndexSet<G::Edge>,
