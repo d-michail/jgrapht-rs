@@ -170,12 +170,9 @@ The benchmark files are in `crates/jgrapht/benches/` (`graph_perf`, `shortestpat
 
 ## Cite
 
-jgrapht-rs is a port of JGraphT and builds on its design and algorithms. If you use this library
-please cite the following paper:
+If you use this library please cite the following paper:
 
-* D. Michail, J. Kinable, B. Naveh, J. V. Sichi. JGraphT—A Java Library for Graph Data Structures
-  and Algorithms. ACM Journal of Experimental Algorithmics, 24(1), 2019.
-  [web](https://doi.org/10.1145/3350513)
+* D. Michail, J. Kinable, B. Naveh, J. V. Sichi. **JGraphT—A Java Library for Graph Data Structures and Algorithms.** ACM Journal of Experimental Algorithmics, 24(1), 2019. [web](https://doi.org/10.1145/3350513)
 
 ```
 @article{michail2019jgrapht,
@@ -191,12 +188,7 @@ please cite the following paper:
 }
 ```
 
-To refer to this implementation specifically, also cite the repository
-(<https://github.com/d-michail/jgrapht-rs>) with the version or commit you used.
-
-Citing software is just as important as citing any other important sources in your research. If
-you're not sure whether or not to cite something,
-[Shouldacite](https://mr-c.github.io/shouldacite/index.html) can help you decide if you should.
+Citing software is just as important as citing any other important sources in your research. If you're not sure whether or not to cite something, [Shouldacite](https://mr-c.github.io/shouldacite/index.html) can help you decide if you should.
 
 ## License
 
