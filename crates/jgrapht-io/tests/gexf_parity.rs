@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use indexmap::IndexMap;
-use jgrapht::{DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
+use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
 use jgrapht_io::gexf::{
     GexfAttributeCategory, GexfAttributeType, GexfEventDrivenImporter, GexfExporter, GexfImporter,
     GexfParameter, SimpleGexfEventDrivenImporter, SimpleGexfImporter,
@@ -223,5 +223,28 @@ mod exporter_test {
                 && xml.contains("weight=\"13.5\"")
                 && xml.contains("type=\"undirected\"")
         );
+    }
+    #[test]
+    fn custom_vertex_and_edge_ids() {
+        let mut g = UGraph::<String>::pseudo();
+        g.add_vertices(["v1".into(), "v2".into(), "v3".into()]);
+        g.add_edge(&"v1".into(), &"v2".into()).unwrap();
+        g.add_edge(&"v3".into(), &"v1".into()).unwrap();
+        let mut e = GexfExporter::new();
+        e.set_vertex_id_provider(|v: &String| format!("node-{v}"));
+        e.set_edge_id_provider(|edge: &DefaultEdge| format!("link-{}", edge.0 % 1_000_000));
+        let xml = e.export_to_string(&g).unwrap();
+        assert!(xml.contains("<node id=\"node-v1\""));
+        assert!(xml.contains("source=\"node-v1\" target=\"node-v2\""));
+        assert!(xml.contains("id=\"link-"));
+        assert!(!xml.contains("id=\"1\""));
+    }
+    #[test]
+    fn empty_custom_vertex_id_is_an_error() {
+        let mut g = UGraph::<String>::pseudo();
+        g.add_vertex("v1".into());
+        let mut e = GexfExporter::new();
+        e.set_vertex_id_provider(|_: &String| String::new());
+        assert!(e.export_to_string(&g).is_err());
     }
 }

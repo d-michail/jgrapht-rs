@@ -699,6 +699,18 @@ where
             next_edge_attribute: 0,
         }
     }
+    /// Replaces the provider of vertex identifiers (by default consecutive integers from one).
+    ///
+    /// The identifiers must be distinct; an empty identifier is an export error.
+    pub fn set_vertex_id_provider(&mut self, provider: impl FnMut(&V) -> String + 'static) {
+        self.base.set_vertex_id_provider(provider);
+    }
+
+    /// Replaces the provider of edge identifiers (by default consecutive integers from zero).
+    pub fn set_edge_id_provider(&mut self, provider: impl FnMut(&E) -> String + 'static) {
+        self.base.set_edge_id_provider(provider);
+    }
+
     /// Enables or disables exporting graph edge weights.
     ///
     /// This is a convenience wrapper for [`GexfParameter::ExportEdgeWeights`].
