@@ -56,8 +56,8 @@ type VertexFn<'g, G> = Box<dyn Fn(&<G as Graph>::Vertex) -> i32 + 'g>;
 type EdgeIntFn<'g, G> = Box<dyn Fn(&<G as Graph>::Edge) -> i32 + 'g>;
 type EdgeCostFn<'g, G> = Box<dyn Fn(&<G as Graph>::Edge) -> f64 + 'g>;
 
-/// `MinimumCostFlowProblemImpl`.
-pub struct MinimumCostFlowProblemImpl<'g, G: Graph> {
+/// `MinimumCostFlowNetwork`.
+pub struct MinimumCostFlowNetwork<'g, G: Graph> {
     graph: &'g G,
     node_supplies: VertexFn<'g, G>,
     arc_capacity_upper_bounds: EdgeIntFn<'g, G>,
@@ -65,7 +65,7 @@ pub struct MinimumCostFlowProblemImpl<'g, G: Graph> {
     arc_costs: EdgeCostFn<'g, G>,
 }
 
-impl<'g, G: Graph> MinimumCostFlowProblemImpl<'g, G> {
+impl<'g, G: Graph> MinimumCostFlowNetwork<'g, G> {
     /// Lower bounds are zero and the costs are the edge weights.
     pub fn new(
         graph: &'g G,
@@ -99,7 +99,7 @@ impl<'g, G: Graph> MinimumCostFlowProblemImpl<'g, G> {
         arc_capacity_lower_bounds: impl Fn(&G::Edge) -> i32 + 'g,
         arc_costs: impl Fn(&G::Edge) -> f64 + 'g,
     ) -> Self {
-        MinimumCostFlowProblemImpl {
+        MinimumCostFlowNetwork {
             graph,
             node_supplies: Box::new(node_supplies),
             arc_capacity_upper_bounds: Box::new(arc_capacity_upper_bounds),
@@ -109,7 +109,7 @@ impl<'g, G: Graph> MinimumCostFlowProblemImpl<'g, G> {
     }
 }
 
-impl<'g, G: Graph> MinimumCostFlowProblem for MinimumCostFlowProblemImpl<'g, G> {
+impl<'g, G: Graph> MinimumCostFlowProblem for MinimumCostFlowNetwork<'g, G> {
     type Graph = G;
 
     fn graph(&self) -> &G {
@@ -489,7 +489,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         P: MinimumCostFlowProblem,
         P::Graph: Graph<Vertex = V, Edge = E>,
     {
-        let flow = self.get_minimum_cost_flow(problem)?;
+        let flow = self.solve_flow(problem)?;
         let dual_solution = (0..self.n)
             .map(|i| (self.graph_vertices[i].clone(), self.net.nodes[i].potential))
             .collect();
@@ -515,7 +515,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
     /// Returns [`GraphError::InvalidGraph`] if the graph is not directed; [`GraphError::Internal`]
     /// if an internal invariant of the library is broken (a bug). Errors of the graph operations it
     /// performs are propagated.
-    pub fn get_minimum_cost_flow<P>(&mut self, problem: &P) -> Result<MinimumCostFlow<E>>
+    pub fn solve_flow<P>(&mut self, problem: &P) -> Result<MinimumCostFlow<E>>
     where
         P: MinimumCostFlowProblem,
         P::Graph: Graph<Vertex = V, Edge = E>,
@@ -828,7 +828,7 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone + Eq + std::hash::Hash>
         P: MinimumCostFlowProblem,
         P::Graph: Graph<Vertex = V, Edge = E>,
     {
-        self.get_minimum_cost_flow(problem)
+        self.solve_flow(problem)
     }
 
     fn flow_map(&self) -> Option<&HashMap<E, f64>> {

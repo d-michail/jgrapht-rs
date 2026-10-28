@@ -13,7 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 //! Capacitated minimum spanning trees: shared representation and the Esau–Williams heuristic
-//! (`AbstractCapacitatedMinimumSpanningTree`, `EsauWilliamsCapacitatedMinimumSpanningTree`).
+//! (`AbstractCapacitatedMinimumSpanningTree`, `EsauWilliams`).
 //!
 //! The vertices other than the root are partitioned into subsets whose total demand does not
 //! exceed the capacity; every subset hangs below the root as one or more subtrees. Hash sets and
@@ -237,7 +237,7 @@ impl<V: Eq + Hash + Clone> Solution<V> {
         s
     }
 
-    pub fn calculate_resulting_spanning_tree<G: IncidenceGraph<Vertex = V>>(
+    pub fn resulting_spanning_tree<G: IncidenceGraph<Vertex = V>>(
         &self,
         problem: &Problem<'_, G>,
     ) -> CapacitatedSpanningTree<V, G::Edge> {
@@ -402,11 +402,11 @@ impl<V: Eq + Hash + Clone> Solution<V> {
 ///
 /// # Rust notes
 ///
-/// The Esau–Williams savings heuristic (`EsauWilliamsCapacitatedMinimumSpanningTree`).
+/// The Esau–Williams savings heuristic (`EsauWilliams`).
 ///
 /// `number_of_operations` best moves are kept per round and one of them is picked at random;
 /// use [`with_seed`](Self::with_seed) for a reproducible run.
-pub struct EsauWilliamsCapacitatedMinimumSpanningTree<'g, G: IncidenceGraph> {
+pub struct EsauWilliams<'g, G: IncidenceGraph> {
     problem: Problem<'g, G>,
     number_of_operations: usize,
     best: Solution<G::Vertex>,
@@ -414,7 +414,7 @@ pub struct EsauWilliamsCapacitatedMinimumSpanningTree<'g, G: IncidenceGraph> {
     rng: StdRng,
 }
 
-impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
+impl<'g, G: IncidenceGraph> EsauWilliams<'g, G> {
     /// Constructs an Esau-Williams GRASP algorithm instance.
     ///
     /// # Errors
@@ -427,7 +427,7 @@ impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
         demands: HashMap<G::Vertex, f64>,
         number_of_operations: usize,
     ) -> Result<Self> {
-        Ok(EsauWilliamsCapacitatedMinimumSpanningTree {
+        Ok(EsauWilliams {
             problem: Problem::new(graph, root, capacity, demands)?,
             number_of_operations,
             best: Solution::empty(),
@@ -598,7 +598,7 @@ impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
     }
 
     fn distance(&self, a: &G::Vertex, b: &G::Vertex) -> f64 {
-        match self.problem.graph.get_edge(a, b) {
+        match self.problem.graph.edge_between(a, b) {
             None => f64::MAX,
             Some(e) => self.problem.graph.weight_of(e),
         }
@@ -606,15 +606,15 @@ impl<'g, G: IncidenceGraph> EsauWilliamsCapacitatedMinimumSpanningTree<'g, G> {
 }
 
 impl<'g, G: IncidenceGraph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
-    for EsauWilliamsCapacitatedMinimumSpanningTree<'g, G>
+    for EsauWilliams<'g, G>
 {
     /// Computes a capacitated spanning tree.
     fn capacitated_spanning_tree(&mut self) -> Result<CapacitatedSpanningTree<G::Vertex, G::Edge>> {
         if self.executed {
-            return Ok(self.best.calculate_resulting_spanning_tree(&self.problem));
+            return Ok(self.best.resulting_spanning_tree(&self.problem));
         }
         self.best = self.solution();
-        let cmst = self.best.calculate_resulting_spanning_tree(&self.problem);
+        let cmst = self.best.resulting_spanning_tree(&self.problem);
         self.executed = true;
         let p = &self.problem;
         if !cmst.is_capacitated_spanning_tree(p.graph, &p.root, p.capacity, &p.demands) {
@@ -628,7 +628,7 @@ impl<'g, G: IncidenceGraph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
 // Ahuja–Orlin–Sharma
 // ---------------------------------------------------------------------------------------------
 
-use super::cyclic_exchange::AhujaOrlinSharmaCyclicExchangeLocalAugmentation;
+use super::cyclic_exchange::AhujaOrlinSharmaCyclicExchange;
 use super::spanning::SpanningTree;
 use crate::{DiGraph, GraphMut, GraphMutExt};
 
@@ -645,7 +645,7 @@ type Iv = Pair<usize, Kind>;
 
 const ORIGIN_LABEL: i64 = -1;
 
-/// Options of [`AhujaOrlinSharmaCapacitatedMinimumSpanningTree`].
+/// Options of [`AhujaOrlinSharma`].
 #[derive(Debug, Clone, Copy)]
 pub struct AhujaOrlinSharmaOptions {
     /// Search for the best improving cycle instead of the first one.
@@ -700,8 +700,8 @@ impl Default for AhujaOrlinSharmaOptions {
 /// # Rust notes
 ///
 /// Local search with cyclic exchanges of vertices and subtrees between the parts of the
-/// partition, with optional tabu search (`AhujaOrlinSharmaCapacitatedMinimumSpanningTree`).
-pub struct AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G: IncidenceGraph> {
+/// partition, with optional tabu search (`AhujaOrlinSharma`).
+pub struct AhujaOrlinSharma<'g, G: IncidenceGraph> {
     problem: Problem<'g, G>,
     length_bound: usize,
     options: AhujaOrlinSharmaOptions,
@@ -713,7 +713,7 @@ pub struct AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G: IncidenceGraph>
 type Subtrees<V> = HashMap<V, (IndexSet<V>, f64)>;
 type PartitionTrees<E> = HashMap<usize, SpanningTree<E>>;
 
-impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G> {
+impl<'g, G: IncidenceGraph> AhujaOrlinSharma<'g, G> {
     /// Starts from an Esau–Williams solution with default options.
     ///
     /// # Errors
@@ -761,7 +761,7 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
                 requirement: crate::ParameterRequirement::Consistent,
             });
         }
-        Ok(AhujaOrlinSharmaCapacitatedMinimumSpanningTree {
+        Ok(AhujaOrlinSharma {
             problem,
             length_bound,
             options,
@@ -802,7 +802,7 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
     fn initial(&self) -> Solution<G::Vertex> {
         match &self.initial_solution {
             Some(s) => Solution::new(s.labels.clone(), s.partition.clone()),
-            None => EsauWilliamsCapacitatedMinimumSpanningTree {
+            None => EsauWilliams {
                 problem: self.problem.clone(),
                 number_of_operations: self.options.number_of_operations,
                 best: Solution::empty(),
@@ -846,7 +846,7 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
                 &tabu_list,
             )?;
             let labels = ig.label_map(&o, &current);
-            let cycle = AhujaOrlinSharmaCyclicExchangeLocalAugmentation::new(
+            let cycle = AhujaOrlinSharmaCyclicExchange::new(
                 &ig.graph,
                 self.length_bound,
                 &labels,
@@ -1036,7 +1036,7 @@ impl<'g, G: IncidenceGraph> AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G
 }
 
 impl<'g, G: IncidenceGraph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
-    for AhujaOrlinSharmaCapacitatedMinimumSpanningTree<'g, G>
+    for AhujaOrlinSharma<'g, G>
 {
     /// Computes a capacitated spanning tree.
     fn capacitated_spanning_tree(&mut self) -> Result<CapacitatedSpanningTree<G::Vertex, G::Edge>> {
@@ -1044,7 +1044,7 @@ impl<'g, G: IncidenceGraph> CapacitatedSpanningTreeAlgorithm<G::Vertex, G::Edge>
             self.best = self.run()?;
             self.executed = true;
         }
-        Ok(self.best.calculate_resulting_spanning_tree(&self.problem))
+        Ok(self.best.resulting_spanning_tree(&self.problem))
     }
 }
 
@@ -1119,7 +1119,7 @@ impl<V: Eq + Hash + Clone> ImprovementGraph<V> {
     }
 
     fn set_edge(graph: &mut DiGraph<Iv>, a: Iv, b: Iv, w: f64) -> Result<()> {
-        let e = match graph.get_edge(&a, &b) {
+        let e = match graph.edge_between(&a, &b) {
             Some(e) => *e,
             None => graph.add_edge(&a, &b)?.ok_or(GraphError::Internal(
                 "improvement graph edge could not be added",

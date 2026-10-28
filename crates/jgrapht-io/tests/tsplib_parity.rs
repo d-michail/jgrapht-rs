@@ -56,7 +56,7 @@ fn assert_distances(input: &str, expected: [f64; 6], locations: bool, distances:
     for ((source, target), expected) in pairs.into_iter().zip(expected) {
         let source = vertex_number(&metadata, source);
         let target = vertex_number(&metadata, target);
-        let edge = graph.get_edge(&source, &target).unwrap();
+        let edge = graph.edge_between(&source, &target).unwrap();
         assert_eq!(graph.edge_weight(edge), Some(expected));
     }
     assert_eq!(metadata.has_distinct_node_locations(), locations);
@@ -254,11 +254,9 @@ fn geographical_distance_cases() {
         ([1.48, 113.24], [-6.36, -65.24], 19488),
     ];
     for (first, second, expected) in cases {
-        let actual = TsplibImporter::<usize>::compute_2d_geographical_distance(
-            &node(&first),
-            &node(&second),
-        )
-        .unwrap();
+        let actual =
+            TsplibImporter::<usize>::geographical_distance_2d(&node(&first), &node(&second))
+                .unwrap();
         assert!((actual - expected).abs() <= 1, "{actual} != {expected}");
     }
 }
@@ -270,8 +268,8 @@ fn geographical_distance_needs_two_coordinates() {
         coordinates: coordinates.to_vec(),
     };
     for (a, b) in [(&[][..], &[1.0, 2.0][..]), (&[1.0][..], &[1.0, 2.0][..])] {
-        let error = TsplibImporter::<usize>::compute_2d_geographical_distance(&node(a), &node(b))
-            .unwrap_err();
+        let error =
+            TsplibImporter::<usize>::geographical_distance_2d(&node(a), &node(b)).unwrap_err();
         assert!(matches!(error, IoError::Import(_)), "{error}");
     }
 }

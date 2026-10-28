@@ -117,7 +117,7 @@ fn test_non_simple_path() {
     let vertex_list = vec![0, 1, 2, 3, 2, 3, 4];
     let edge_list: Vec<DefaultEdge> = vertex_list
         .windows(2)
-        .map(|w| *complete.get_edge(&w[0], &w[1]).unwrap())
+        .map(|w| *complete.edge_between(&w[0], &w[1]).unwrap())
         .collect();
 
     let p1 = W::from_edge_list(&complete, 0, 4, edge_list.clone(), 10.0).unwrap();

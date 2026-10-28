@@ -22,9 +22,7 @@ use common::*;
 use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use jgrapht::alg::interfaces::LowestCommonAncestorAlgorithm;
 use jgrapht::alg::lca::{BinaryLiftingLcaFinder, EulerTourRmqLcaFinder, HeavyPathLcaFinder};
-use jgrapht::alg::matching::{
-    HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm, PathGrowingWeightedMatching,
-};
+use jgrapht::alg::matching::{HopcroftKarp, MatchingAlgorithm, PathGrowingWeightedMatching};
 use jgrapht::alg::tour::{DagHamiltonianPath, HamiltonianPathAlgorithm};
 use jgrapht::alg::tree_connectivity::TreeDynamicConnectivity;
 use jgrapht::*;
@@ -111,7 +109,7 @@ fn matching(c: &mut Criterion) {
             black_box(
                 PathGrowingWeightedMatching::new(&g)
                     .unwrap()
-                    .get_matching()
+                    .matching()
                     .unwrap()
                     .weight(),
             )
@@ -129,9 +127,9 @@ fn matching(c: &mut Criterion) {
     c.bench_function("matching/hopcroft_karp", |b| {
         b.iter(|| {
             black_box(
-                HopcroftKarpMaximumCardinalityBipartiteMatching::new(&bip, 0..half, half..n)
+                HopcroftKarp::new(&bip, 0..half, half..n)
                     .unwrap()
-                    .get_matching()
+                    .matching()
                     .unwrap()
                     .edges()
                     .len(),
@@ -151,7 +149,7 @@ fn dag_hamiltonian_path(c: &mut Criterion) {
         }
     }
     c.bench_function("tour/dag_hamiltonian_path", |b| {
-        b.iter(|| black_box(DagHamiltonianPath::new().get_path(&g).unwrap()))
+        b.iter(|| black_box(DagHamiltonianPath::new().path(&g).unwrap()))
     });
 }
 

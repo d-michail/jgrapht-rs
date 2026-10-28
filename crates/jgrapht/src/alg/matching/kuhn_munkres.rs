@@ -37,22 +37,22 @@ fn is_positive_zero(x: f64) -> bool {
 ///
 /// # Rust notes
 ///
-/// `KuhnMunkresMinimalWeightBipartitePerfectMatching`: a perfect matching of minimum weight in a
+/// `KuhnMunkres`: a perfect matching of minimum weight in a
 /// complete bipartite graph with equally sized partitions, by the Hungarian method in `O(n^3)`.
-pub struct KuhnMunkresMinimalWeightBipartitePerfectMatching<'g, G: Graph> {
+pub struct KuhnMunkres<'g, G: Graph> {
     graph: &'g G,
     partition1: IndexSet<G::Vertex>,
     partition2: IndexSet<G::Vertex>,
 }
 
-impl<'g, G: Graph> KuhnMunkresMinimalWeightBipartitePerfectMatching<'g, G> {
+impl<'g, G: Graph> KuhnMunkres<'g, G> {
     /// Construct a new instance of the algorithm.
     pub fn new(
         graph: &'g G,
         partition1: IndexSet<G::Vertex>,
         partition2: IndexSet<G::Vertex>,
     ) -> Self {
-        KuhnMunkresMinimalWeightBipartitePerfectMatching {
+        KuhnMunkres {
             graph,
             partition1,
             partition2,
@@ -60,10 +60,8 @@ impl<'g, G: Graph> KuhnMunkresMinimalWeightBipartitePerfectMatching<'g, G> {
     }
 }
 
-impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
-    for KuhnMunkresMinimalWeightBipartitePerfectMatching<'_, G>
-{
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for KuhnMunkres<'_, G> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         if self.partition1.len() != self.partition2.len() {
             return Err(GraphError::InvalidGraph(
@@ -102,7 +100,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
         let mut weight = 0.0;
         for (i, &j) in matching.iter().enumerate() {
             let e = graph
-                .get_edge(first_partition[i], second_partition[j])
+                .edge_between(first_partition[i], second_partition[j])
                 .expect("complete bipartite graph");
             weight += graph.weight_of(e);
             edge_set.insert(e.clone());
@@ -131,7 +129,7 @@ impl KuhnMunkresMatrixImplementation {
                     continue;
                 }
                 cost_matrix[i][j] = g.weight_of(
-                    g.get_edge(source, target)
+                    g.edge_between(source, target)
                         .expect("complete bipartite graph"),
                 );
             }

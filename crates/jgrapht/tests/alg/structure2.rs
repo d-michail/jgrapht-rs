@@ -62,7 +62,7 @@ fn densest_subgraph() {
             plain.add_edge(u, v).unwrap();
         }
         let mut goldberg = GoldbergMaximumDensitySubgraph::new(&plain, 100, 101, 1e-9).unwrap();
-        let set = goldberg.calculate_densest().unwrap();
+        let set = goldberg.densest_subgraph().unwrap();
         let d = goldberg.density().unwrap();
         assert!((d - best).abs() < 1e-6, "exact {d} vs brute {best}");
         assert!(set.vertex_count() > 0);

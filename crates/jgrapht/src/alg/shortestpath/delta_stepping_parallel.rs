@@ -20,7 +20,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-/// Parallel Δ-stepping (Java `DeltaSteppingShortestPath`): the same bucket structure as the Java class
+/// Parallel Δ-stepping (Java `DeltaStepping`): the same bucket structure as the Java class
 /// (`ceil(maxWeight / delta) + 1` circular buckets, bucket of `d` is `round(d / delta)`), with the
 /// light and heavy relaxation phases of a bucket split across `parallelism` worker threads.
 /// Distances and predecessors are updated under a per-vertex lock, buckets are ordered sets

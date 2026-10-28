@@ -128,7 +128,7 @@ two_approx_tests!(
 );
 two_approx_tests!(
     edge_based_two_approx_vc_impl_test,
-    EdgeBasedTwoApproxVcImpl,
+    EdgeBasedTwoApproxVertexCover,
     weighted = false
 );
 

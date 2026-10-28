@@ -32,7 +32,7 @@ graph [
     importer.set_vertex_factory(|id| id as usize);
     importer.import_str(&mut graph, input).unwrap();
     assert_eq!(graph.vertex_count(), 2);
-    let edge = graph.get_edge(&1, &2).unwrap();
+    let edge = graph.edge_between(&1, &2).unwrap();
     assert_eq!(graph.edge_weight(edge), Some(2.5));
 
     let mut exporter: GmlExporter<usize, DefaultEdge> = GmlExporter::new();

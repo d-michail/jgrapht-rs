@@ -35,10 +35,10 @@ fn weights(paths: &[jgrapht::GraphWalk<u32, jgrapht::DefaultEdge>]) -> Vec<f64> 
 
 fn assert_matches(graph: &DiGraph<u32>, source: u32, sink: u32, k: usize) {
     let expected = YenKShortestPath::new(graph)
-        .get_paths(&source, &sink, k)
+        .paths(&source, &sink, k)
         .unwrap();
     let bounded = BoundedPrunedYenKShortestPath::new(graph);
-    let actual = bounded.get_paths(&source, &sink, k).unwrap();
+    let actual = bounded.paths(&source, &sink, k).unwrap();
     assert_eq!(weights(&actual), weights(&expected));
     assert!(
         actual
@@ -50,19 +50,16 @@ fn assert_matches(graph: &DiGraph<u32>, source: u32, sink: u32, k: usize) {
 fn assert_matches_both(graph: &DiGraph<u32>, source: u32, sink: u32, k: usize) {
     let expected = weights(
         &YenKShortestPath::new(graph)
-            .get_paths(&source, &sink, k)
+            .paths(&source, &sink, k)
             .unwrap(),
     );
     let dijkstra = BoundedPrunedYenKShortestPath::with_engine(graph, DijkstraSpurEngine::new());
     let astar = BoundedPrunedYenKShortestPath::with_engine(graph, AStarSpurEngine::new());
     assert_eq!(
-        weights(&dijkstra.get_paths(&source, &sink, k).unwrap()),
+        weights(&dijkstra.paths(&source, &sink, k).unwrap()),
         expected
     );
-    assert_eq!(
-        weights(&astar.get_paths(&source, &sink, k).unwrap()),
-        expected
-    );
+    assert_eq!(weights(&astar.paths(&source, &sink, k).unwrap()), expected);
     assert_eq!(dijkstra.engine_name(), "Dijkstra");
     assert_eq!(astar.engine_name(), "AStar");
     if source != sink && !expected.is_empty() {
@@ -205,7 +202,7 @@ fn source_sink_and_zero_k_edge_cases_match_yen() {
     assert_matches(&graph, 1, 2, 5);
     assert!(
         BoundedPrunedYenKShortestPath::new(&graph)
-            .get_paths(&1, &2, 0)
+            .paths(&1, &2, 0)
             .unwrap()
             .is_empty()
     );
@@ -215,7 +212,7 @@ fn source_sink_and_zero_k_edge_cases_match_yen() {
 fn unreachable_sink_is_empty() {
     let graph = graph(1..=2, &[]);
     let bounded = BoundedPrunedYenKShortestPath::new(&graph);
-    assert!(bounded.get_paths(&1, &2, 5).unwrap().is_empty());
+    assert!(bounded.paths(&1, &2, 5).unwrap().is_empty());
     assert_eq!(bounded.stats().shortest_path_calls, 1);
 }
 
@@ -225,7 +222,7 @@ fn path_chain_skips_every_impossible_spur() {
     let edges: Vec<_> = (0..n - 1).map(|v| (v, v + 1, 1.0)).collect();
     let graph = graph(0..=n - 1, &edges);
     let bounded = BoundedPrunedYenKShortestPath::new(&graph);
-    let paths = bounded.get_paths(&0, &(n - 1), 5).unwrap();
+    let paths = bounded.paths(&0, &(n - 1), 5).unwrap();
     assert_eq!(paths.len(), 1);
     let stats = bounded.stats();
     assert_eq!(stats.spur_tasks_created, 0);
@@ -269,7 +266,7 @@ fn layered_dags_match_for_several_k_and_have_coherent_stats() {
         assert_matches(&graph, 0, sink, k);
     }
     let bounded = BoundedPrunedYenKShortestPath::new(&graph);
-    bounded.get_paths(&0, &sink, 25).unwrap();
+    bounded.paths(&0, &sink, 25).unwrap();
     let stats = bounded.stats();
     assert!(stats.shortest_path_calls > 0);
     assert!(stats.spur_tasks_materialized <= stats.spur_tasks_created);
@@ -281,7 +278,7 @@ fn negative_weight_reachable_to_sink_is_rejected() {
     let graph = graph(1..=2, &[(1, 2, -1.0)]);
     assert!(
         BoundedPrunedYenKShortestPath::new(&graph)
-            .get_paths(&1, &2, 1)
+            .paths(&1, &2, 1)
             .is_err()
     );
 }
@@ -308,7 +305,7 @@ fn astar_engine_matches_standard_yen_and_counts_expansions() {
 fn weights_are_non_decreasing() {
     let graph = layered_dag(6, 4, 1);
     let paths = BoundedPrunedYenKShortestPath::new(&graph)
-        .get_paths(&0, &25, 30)
+        .paths(&0, &25, 30)
         .unwrap();
     assert!(
         paths

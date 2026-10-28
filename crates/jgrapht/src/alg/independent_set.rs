@@ -71,7 +71,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphIndependentSetFinder<'
             let mut is: HashSet<G::Vertex> = HashSet::new();
             let perfect_elimination_order = self
                 .chordality_inspector
-                .get_perfect_elimination_order()
+                .perfect_elimination_order()
                 .expect("chordal graph");
             for previous in perfect_elimination_order.iter().rev() {
                 if !restricted.contains(previous) {

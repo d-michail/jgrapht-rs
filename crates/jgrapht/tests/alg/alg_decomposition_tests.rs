@@ -22,7 +22,7 @@ use jgrapht::alg::connectivity::connected_component_of;
 use jgrapht::alg::decomposition::{
     DmDecomposition, DulmageMendelsohnDecomposition, HeavyPathDecomposition,
 };
-use jgrapht::alg::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
+use jgrapht::alg::matching::{HopcroftKarp, MatchingAlgorithm};
 use jgrapht::generate::*;
 use jgrapht::traverse::BreadthFirstIterator;
 use jgrapht::view::AsSubgraph;
@@ -68,11 +68,10 @@ mod dulmage_mendelsohn_decomposition_test {
             }
         }
         let sub = AsSubgraph::induced(graph, all_perfect.iter().copied());
-        let perfect =
-            HopcroftKarpMaximumCardinalityBipartiteMatching::new(&sub, p1_perfect, p2_perfect)
-                .unwrap()
-                .get_matching()
-                .unwrap();
+        let perfect = HopcroftKarp::new(&sub, p1_perfect, p2_perfect)
+            .unwrap()
+            .matching()
+            .unwrap();
         assert!(
             perfect.is_perfect(),
             "Core of decomposition must perfectly match"
@@ -162,7 +161,7 @@ mod heavy_path_decomposition_test {
             if in_path.contains(v) {
                 let (mut cnt, mut cur) = (0, v.clone());
                 while let Some(u) = d.parent_of(&cur) {
-                    let edge = graph.get_edge(u, &cur).unwrap();
+                    let edge = graph.edge_between(u, &cur).unwrap();
                     if d.light_edges().contains(edge) {
                         cnt += 1;
                     }

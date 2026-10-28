@@ -1436,8 +1436,8 @@ mod scale_free_kleinberg_lcd {
 
     #[test]
     fn lcd_bad_parameters() {
-        assert!(LinearizedChordDiagramGraphGenerator::new(0, 10, rng(1)).is_err());
-        assert!(LinearizedChordDiagramGraphGenerator::new(5, 0, rng(1)).is_err());
+        assert!(LinearizedChordDiagramGenerator::new(0, 10, rng(1)).is_err());
+        assert!(LinearizedChordDiagramGenerator::new(5, 0, rng(1)).is_err());
     }
 
     #[test]
@@ -1447,7 +1447,7 @@ mod scale_free_kleinberg_lcd {
             graph(GraphType::simple(), 1),
         ] {
             assert!(
-                LinearizedChordDiagramGraphGenerator::new(10, 2, rng(5))
+                LinearizedChordDiagramGenerator::new(10, 2, rng(5))
                     .unwrap()
                     .generate_default(&mut g)
                     .is_err()
@@ -1458,7 +1458,7 @@ mod scale_free_kleinberg_lcd {
             graph(GraphType::simple(), 1),
         ] {
             assert!(
-                LinearizedChordDiagramGraphGenerator::new(10, 2, rng(5))
+                LinearizedChordDiagramGenerator::new(10, 2, rng(5))
                     .unwrap()
                     .generate_default(&mut g)
                     .is_err()
@@ -1470,14 +1470,14 @@ mod scale_free_kleinberg_lcd {
     fn lcd_pseudographs() {
         for m in [1, 2] {
             let mut g = pseudo_u(1);
-            LinearizedChordDiagramGraphGenerator::new(20, m, rng(5))
+            LinearizedChordDiagramGenerator::new(20, m, rng(5))
                 .unwrap()
                 .generate_default(&mut g)
                 .unwrap();
             assert_eq!(g.vertex_count(), 20);
         }
         let mut g = pseudo_d(1);
-        LinearizedChordDiagramGraphGenerator::new(20, 1, rng(5))
+        LinearizedChordDiagramGenerator::new(20, 1, rng(5))
             .unwrap()
             .generate_default(&mut g)
             .unwrap();

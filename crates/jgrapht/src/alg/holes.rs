@@ -26,7 +26,7 @@ use crate::graph::IncidenceGraph;
 /// without the repeated closing vertex, if any.
 pub fn find_weak_chordality_certificate<G: IncidenceGraph>(g: &G) -> Option<Vec<G::Vertex>> {
     let mut inspector = WeakChordalityInspector::new(g);
-    let certificate = inspector.get_certificate()?;
+    let certificate = inspector.certificate()?;
     let mut vertices = certificate.vertex_list().to_vec();
     vertices.pop();
     Some(vertices)
@@ -44,7 +44,7 @@ pub fn find_odd_hole_or_antihole<G: Graph>(g: &G) -> Option<Vec<G::Vertex>> {
     if inspector.is_berge_with_certificate(g, true).unwrap_or(true) {
         return None;
     }
-    let mut vertices = inspector.get_certificate()?.vertex_list().to_vec();
+    let mut vertices = inspector.certificate()?.vertex_list().to_vec();
     vertices.pop();
     Some(vertices)
 }

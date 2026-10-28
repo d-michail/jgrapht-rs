@@ -141,10 +141,7 @@ mod christofides_three_halves_approx_metric_tsp_test {
 
     fn run_tour(edges: &[(i32, i32, f64)]) -> (Ug, GraphWalk<i32, DefaultEdge>) {
         let graph = graph(edges);
-        let tour = ChristofidesThreeHalvesApproxMetricTSP::new()
-            .get_tour(&graph)
-            .unwrap()
-            .unwrap();
+        let tour = Christofides::new().tour(&graph).unwrap().unwrap();
         (graph, tour)
     }
 
@@ -156,19 +153,11 @@ mod christofides_three_halves_approx_metric_tsp_test {
 
     #[test]
     fn rejects_directed_empty_and_incomplete_graphs() {
-        assert!(
-            ChristofidesThreeHalvesApproxMetricTSP::new()
-                .get_tour(&Ug::simple().weighted())
-                .is_err()
-        );
+        assert!(Christofides::new().tour(&Ug::simple().weighted()).is_err());
 
         let mut incomplete = Ug::simple().weighted();
         incomplete.add_vertices([0, 1]);
-        assert!(
-            ChristofidesThreeHalvesApproxMetricTSP::new()
-                .get_tour(&incomplete)
-                .is_err()
-        );
+        assert!(Christofides::new().tour(&incomplete).is_err());
     }
 
     #[test]
@@ -385,7 +374,7 @@ fn assert_proven_absent<V, E>(result: &HamiltonianPathSearchResult<V, E>) {
 }
 
 fn bt<G: IncidenceGraph>(graph: &G) -> HamiltonianPathSearchResult<G::Vertex, G::Edge> {
-    BacktrackingHamiltonianPath::new().get_path(graph).unwrap()
+    BacktrackingHamiltonianPath::new().path(graph).unwrap()
 }
 
 fn random_undirected(n: i32, p: f64, rnd: &mut StdRng) -> Ug {
@@ -426,7 +415,7 @@ mod dag_hamiltonian_path_test {
     fn dag<G: IncidenceGraph>(
         graph: &G,
     ) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
-        DagHamiltonianPath::new().get_path(graph)
+        DagHamiltonianPath::new().path(graph)
     }
 
     #[test]
@@ -527,7 +516,7 @@ mod held_karp_hamiltonian_path_test {
     use super::*;
 
     fn dp<G: IncidenceGraph>(graph: &G) -> Result<HamiltonianPathSearchResult<G::Vertex, G::Edge>> {
-        HeldKarpHamiltonianPath::new().get_path(graph)
+        HeldKarpHamiltonianPath::new().path(graph)
     }
 
     fn cross_check<G: IncidenceGraph>(graph: &G)
@@ -578,8 +567,8 @@ mod held_karp_hamiltonian_path_test {
     fn custom_max_vertices_accepted() {
         let mut small = HeldKarpHamiltonianPath::with_max_vertices(4).unwrap();
         let ok = path_graph(4);
-        assert_hamiltonian_path(&ok, &small.get_path(&ok).unwrap());
-        assert!(small.get_path(&ug(5, &[])).is_err());
+        assert_hamiltonian_path(&ok, &small.path(&ok).unwrap());
+        assert!(small.path(&ug(5, &[])).is_err());
     }
 
     #[test]
@@ -692,7 +681,7 @@ mod backtracking_hamiltonian_path_test {
     fn empty_graph_throws() {
         assert!(
             BacktrackingHamiltonianPath::new()
-                .get_path(&Ug::simple())
+                .path(&Ug::simple())
                 .is_err()
         );
     }
@@ -854,7 +843,7 @@ mod backtracking_hamiltonian_path_test {
                 (2, 10),
             ],
         );
-        assert_proven_absent(&HeldKarpHamiltonianPath::new().get_path(&g).unwrap());
+        assert_proven_absent(&HeldKarpHamiltonianPath::new().path(&g).unwrap());
         assert_proven_absent(&bt(&g));
     }
 
@@ -934,7 +923,7 @@ mod backtracking_hamiltonian_path_test {
         let hard = complete_graph(12);
         let bounded = algo.search_with_state_limit(&hard, 2).unwrap();
         assert_eq!(SearchStatus::Aborted, bounded.status());
-        let unbounded = algo.get_path(&hard).unwrap();
+        let unbounded = algo.path(&hard).unwrap();
         assert_hamiltonian_path(&hard, &unbounded);
     }
 
@@ -1078,7 +1067,7 @@ mod two_approx_metric_tsp_test {
     #[test]
     fn wiki_example_symmetric_4_cities() {
         let g = wiki_four_cities();
-        let tour = TwoApproxMetricTSP::new().get_tour(&g).unwrap().unwrap();
+        let tour = TwoApproxMetricTsp::new().tour(&g).unwrap().unwrap();
         assert_hamiltonian(&g, &tour);
         assert!(2.0 * mst_weight(&g) >= tour.weight());
     }
@@ -1087,7 +1076,7 @@ mod two_approx_metric_tsp_test {
     fn complete() {
         for i in 1..50 {
             let g = unweighted_complete(i);
-            let tour = TwoApproxMetricTSP::new().get_tour(&g).unwrap().unwrap();
+            let tour = TwoApproxMetricTsp::new().tour(&g).unwrap().unwrap();
             assert_hamiltonian(&g, &tour);
             assert!(2.0 * mst_weight(&g) >= tour.weight());
         }
@@ -1096,7 +1085,7 @@ mod two_approx_metric_tsp_test {
     #[test]
     fn star() {
         let g = star_graph();
-        let tour = TwoApproxMetricTSP::new().get_tour(&g).unwrap().unwrap();
+        let tour = TwoApproxMetricTsp::new().tour(&g).unwrap().unwrap();
         assert_hamiltonian(&g, &tour);
         assert!(2.0 * mst_weight(&g) >= tour.weight());
     }
@@ -1104,7 +1093,7 @@ mod two_approx_metric_tsp_test {
     #[test]
     fn invalid_instance_not_complete() {
         let g = weighted_str(&["A", "B", "C"], &[("A", "B", 20.0), ("A", "C", 42.0)]);
-        assert!(TwoApproxMetricTSP::new().get_tour(&g).is_err());
+        assert!(TwoApproxMetricTsp::new().tour(&g).is_err());
     }
 }
 
@@ -1116,7 +1105,7 @@ mod two_opt_heuristic_tsp_test {
     #[test]
     fn wiki_example_symmetric_4_cities() {
         let g = wiki_four_cities();
-        let tour = TwoOptHeuristicTSP::new().get_tour(&g).unwrap().unwrap();
+        let tour = TwoOptHeuristicTsp::new().tour(&g).unwrap().unwrap();
         assert_hamiltonian(&g, &tour);
     }
 
@@ -1124,7 +1113,7 @@ mod two_opt_heuristic_tsp_test {
     fn complete() {
         for i in 1..50 {
             let g = unweighted_complete(i);
-            let tour = TwoOptHeuristicTSP::new().get_tour(&g).unwrap().unwrap();
+            let tour = TwoOptHeuristicTsp::new().tour(&g).unwrap().unwrap();
             assert_hamiltonian(&g, &tour);
         }
     }
@@ -1132,7 +1121,7 @@ mod two_opt_heuristic_tsp_test {
     #[test]
     fn star() {
         let g = star_graph();
-        let tour = TwoOptHeuristicTSP::new().get_tour(&g).unwrap().unwrap();
+        let tour = TwoOptHeuristicTsp::new().tour(&g).unwrap().unwrap();
         assert_hamiltonian(&g, &tour);
         assert!(2.0 * mst_weight(&g) >= tour.weight());
     }
@@ -1140,13 +1129,13 @@ mod two_opt_heuristic_tsp_test {
     #[test]
     fn invalid_instance_not_complete() {
         let g = weighted_str(&["A", "B", "C"], &[("A", "B", 20.0), ("A", "C", 42.0)]);
-        assert!(TwoOptHeuristicTSP::new().get_tour(&g).is_err());
+        assert!(TwoOptHeuristicTsp::new().tour(&g).is_err());
     }
 
     struct Fixed(GraphWalk<i32, DefaultEdge>);
 
     impl HamiltonianCycleAlgorithm<Ug> for Fixed {
-        fn get_tour(&mut self, _graph: &Ug) -> Result<Option<GraphWalk<i32, DefaultEdge>>> {
+        fn tour(&mut self, _graph: &Ug) -> Result<Option<GraphWalk<i32, DefaultEdge>>> {
             Ok(Some(self.0.clone()))
         }
     }
@@ -1178,9 +1167,9 @@ mod two_opt_heuristic_tsp_test {
                     2.0 * large_weight + 1.0,
                 )
                 .unwrap();
-                let mut algorithm = TwoOptHeuristicTSP::with_initializer(Fixed(initial.clone()));
+                let mut algorithm = TwoOptHeuristicTsp::with_initializer(Fixed(initial.clone()));
                 let improved = if construct_tour {
-                    algorithm.get_tour(&graph).unwrap().unwrap()
+                    algorithm.tour(&graph).unwrap().unwrap()
                 } else {
                     algorithm.improve_tour(&graph, &initial).unwrap()
                 };
@@ -1211,7 +1200,7 @@ mod held_karp_tsp_test {
     where
         G::Vertex: std::fmt::Debug,
     {
-        let tour = HeldKarpTSP::new().get_tour(g).unwrap().expect("a tour");
+        let tour = HeldKarpTsp::new().tour(g).unwrap().expect("a tour");
         assert_hamiltonian(g, &tour);
         assert!(
             (tour.weight() - weight).abs() <= 1e-9,
@@ -1337,7 +1326,7 @@ mod held_karp_tsp_test {
                 ("0", "2", 311063.0),
             ],
         );
-        assert!(HeldKarpTSP::new().get_tour(&g).unwrap().is_none());
+        assert!(HeldKarpTsp::new().tour(&g).unwrap().is_none());
     }
 
     #[test]
@@ -1346,14 +1335,14 @@ mod held_karp_tsp_test {
             &["0", "1", "2", "3"],
             &[("0", "1", 1.0), ("0", "2", 1.0), ("0", "3", 1.0)],
         );
-        assert!(HeldKarpTSP::new().get_tour(&g).unwrap().is_none());
+        assert!(HeldKarpTsp::new().tour(&g).unwrap().is_none());
     }
 
     #[test]
     fn invalid_instance_empty() {
         assert!(
-            HeldKarpTSP::new()
-                .get_tour(&DiGraph::<String>::simple())
+            HeldKarpTsp::new()
+                .tour(&DiGraph::<String>::simple())
                 .is_err()
         );
     }
@@ -1362,7 +1351,7 @@ mod held_karp_tsp_test {
     fn one_vertex_graph() {
         let mut g = UGraph::<String>::simple().weighted();
         g.add_vertex(s("A"));
-        let tour = HeldKarpTSP::new().get_tour(&g).unwrap().unwrap();
+        let tour = HeldKarpTsp::new().tour(&g).unwrap().unwrap();
         assert_hamiltonian(&g, &tour);
     }
 
@@ -1388,7 +1377,7 @@ mod held_karp_tsp_test {
                     g.add_edge(&u.to_string(), &v.to_string()).unwrap();
                 }
             }
-            let tour = HeldKarpTSP::new().get_tour(&g).unwrap().expect("a tour");
+            let tour = HeldKarpTsp::new().tour(&g).unwrap().expect("a tour");
             assert_hamiltonian(&g, &tour);
         }
     }
@@ -1411,21 +1400,14 @@ mod palmer_hamiltonian_cycle_test {
         for (a, b) in [("A", "B"), ("A", "C"), ("B", "D"), ("C", "D")] {
             graph.add_edge(&s(a), &s(b)).unwrap();
         }
-        let tour = PalmerHamiltonianCycle::new()
-            .get_tour(&graph)
-            .unwrap()
-            .unwrap();
+        let tour = PalmerHamiltonianCycle::new().tour(&graph).unwrap().unwrap();
         assert_hamiltonian(&graph, &tour);
     }
 
     #[test]
     fn line_graph() {
         let edges: Vec<(i32, i32)> = (0..10).map(|i| (i, (i + 1) % 10)).collect();
-        assert!(
-            PalmerHamiltonianCycle::new()
-                .get_tour(&ug(10, &edges))
-                .is_err()
-        );
+        assert!(PalmerHamiltonianCycle::new().tour(&ug(10, &edges)).is_err());
     }
 
     fn add_until_ore(graph: &mut Ug, n: i32, random: &mut StdRng) {
@@ -1453,10 +1435,7 @@ mod palmer_hamiltonian_cycle_test {
             let n = 3 + random.random_range(0..40);
             let mut graph = ug(n, &[]);
             add_until_ore(&mut graph, n, &mut random);
-            let tour = PalmerHamiltonianCycle::new()
-                .get_tour(&graph)
-                .unwrap()
-                .unwrap();
+            let tour = PalmerHamiltonianCycle::new().tour(&graph).unwrap().unwrap();
             assert_hamiltonian(&graph, &tour);
         }
     }
@@ -1486,10 +1465,7 @@ mod palmer_hamiltonian_cycle_test {
                     break;
                 }
             }
-            let tour = PalmerHamiltonianCycle::new()
-                .get_tour(&graph)
-                .unwrap()
-                .unwrap();
+            let tour = PalmerHamiltonianCycle::new().tour(&graph).unwrap().unwrap();
             assert_hamiltonian(&graph, &tour);
         }
     }
@@ -1501,10 +1477,7 @@ mod palmer_hamiltonian_cycle_test {
         let mut big = ug(n, &[]);
         add_until_ore(&mut big, n, &mut random);
         assert!(has_ore_property(&big));
-        let tour = PalmerHamiltonianCycle::new()
-            .get_tour(&big)
-            .unwrap()
-            .unwrap();
+        let tour = PalmerHamiltonianCycle::new().tour(&big).unwrap().unwrap();
         assert_hamiltonian(&big, &tour);
     }
 }
@@ -1517,7 +1490,7 @@ mod farthest_insertion_heuristic_tsp_test {
     #[test]
     fn empty_graph() {
         let g = Ug::with_loops().weighted();
-        assert!(FarthestInsertionHeuristicTSP::new().get_tour(&g).is_err());
+        assert!(FarthestInsertionHeuristicTsp::new().tour(&g).is_err());
     }
 
     #[test]
@@ -1525,7 +1498,7 @@ mod farthest_insertion_heuristic_tsp_test {
         let mut g = Ug::with_loops().weighted();
         g.add_vertex(0);
         g.add_vertex(1);
-        assert!(FarthestInsertionHeuristicTSP::new().get_tour(&g).is_err());
+        assert!(FarthestInsertionHeuristicTsp::new().tour(&g).is_err());
     }
 
     fn weighted_edges(edges: &[(i32, i32, f64)]) -> Ug {
@@ -1541,8 +1514,8 @@ mod farthest_insertion_heuristic_tsp_test {
     #[test]
     fn get_tour1() {
         let g = weighted_edges(&[(1, 2, 5.0)]);
-        let tour = FarthestInsertionHeuristicTSP::new()
-            .get_tour(&g)
+        let tour = FarthestInsertionHeuristicTsp::new()
+            .tour(&g)
             .unwrap()
             .unwrap();
         assert_hamiltonian(&g, &tour);
@@ -1552,8 +1525,8 @@ mod farthest_insertion_heuristic_tsp_test {
     #[test]
     fn get_tour2() {
         let g = weighted_edges(&[(1, 2, 5.0), (1, 3, 5.0), (2, 3, 9.0)]);
-        let tour = FarthestInsertionHeuristicTSP::new()
-            .get_tour(&g)
+        let tour = FarthestInsertionHeuristicTsp::new()
+            .tour(&g)
             .unwrap()
             .unwrap();
         assert_hamiltonian(&g, &tour);
@@ -1573,8 +1546,8 @@ mod farthest_insertion_heuristic_tsp_test {
     #[test]
     fn dummy_graph5() {
         let g = dist5();
-        let tour = FarthestInsertionHeuristicTSP::new()
-            .get_tour(&g)
+        let tour = FarthestInsertionHeuristicTsp::new()
+            .tour(&g)
             .unwrap()
             .unwrap();
         assert!((30.0 - tour.weight()).abs() <= 1e-9);
@@ -1585,8 +1558,8 @@ mod farthest_insertion_heuristic_tsp_test {
     fn dummy_graph5_with_subtour() {
         let g = dist5();
         let subtour = GraphWalk::from_vertex_list(&g, vec![3, 2, 0, 4], -1.0).unwrap();
-        let tour = FarthestInsertionHeuristicTSP::with_subtour(subtour)
-            .get_tour(&g)
+        let tour = FarthestInsertionHeuristicTsp::with_subtour(subtour)
+            .tour(&g)
             .unwrap()
             .unwrap();
         assert!((30.0 - tour.weight()).abs() <= 1e-9);
@@ -1607,8 +1580,8 @@ mod farthest_insertion_heuristic_tsp_test {
             &[8, 16, 23, 29, 34, 38, 41, 43, 0, 45],
             &[9, 17, 24, 30, 35, 39, 42, 44, 45, 0],
         ]);
-        let tour = FarthestInsertionHeuristicTSP::new()
-            .get_tour(&g)
+        let tour = FarthestInsertionHeuristicTsp::new()
+            .tour(&g)
             .unwrap()
             .unwrap();
         assert!((210.0 - tour.weight()).abs() <= 1e-9);
@@ -1623,8 +1596,8 @@ mod farthest_insertion_heuristic_tsp_test {
             &[-3, -5, 0, -1],
             &[-2, -4, -1, 0],
         ]);
-        let tour = FarthestInsertionHeuristicTSP::new()
-            .get_tour(&g)
+        let tour = FarthestInsertionHeuristicTsp::new()
+            .tour(&g)
             .unwrap()
             .unwrap();
         assert_hamiltonian(&g, &tour);
@@ -1633,8 +1606,8 @@ mod farthest_insertion_heuristic_tsp_test {
     #[test]
     fn negative_edge_weights_all_negative() {
         let g = matrix_graph(&[&[0, -3, -2], &[-3, 0, -1], &[-2, -1, 0]]);
-        let tour = FarthestInsertionHeuristicTSP::new()
-            .get_tour(&g)
+        let tour = FarthestInsertionHeuristicTsp::new()
+            .tour(&g)
             .unwrap()
             .unwrap();
         assert_hamiltonian(&g, &tour);
@@ -1657,17 +1630,17 @@ mod farthest_insertion_heuristic_tsp_test {
             &[9, 17, 24, 30, 35, 39, 42, 44, 45, 0],
         ]);
 
-        let mut reused = FarthestInsertionHeuristicTSP::new();
-        reused.get_tour(&first).unwrap();
-        let reused_tour = reused.get_tour(&second).unwrap().unwrap();
+        let mut reused = FarthestInsertionHeuristicTsp::new();
+        reused.tour(&first).unwrap();
+        let reused_tour = reused.tour(&second).unwrap().unwrap();
 
         let retained = GraphWalk::from_vertex_list(&second, vec![0, 4], -1.0).unwrap();
-        let expected = FarthestInsertionHeuristicTSP::with_subtour(retained)
-            .get_tour(&second)
+        let expected = FarthestInsertionHeuristicTsp::with_subtour(retained)
+            .tour(&second)
             .unwrap()
             .unwrap();
-        let fresh = FarthestInsertionHeuristicTSP::new()
-            .get_tour(&second)
+        let fresh = FarthestInsertionHeuristicTsp::new()
+            .tour(&second)
             .unwrap()
             .unwrap();
 
@@ -1740,10 +1713,10 @@ mod nearest_neighbor_heuristic_tsp_test {
         let g = geometric_graph(&locs);
         let tours = g.vertex_count();
         let mut test_rnd = StdRng::seed_from_u64(0);
-        let mut alg = NearestNeighborHeuristicTSP::with_rng(StdRng::seed_from_u64(0));
+        let mut alg = NearestNeighborHeuristicTsp::with_rng(StdRng::seed_from_u64(0));
         for _ in 0..tours {
             let expected_start = locs[test_rnd.random_range(0..tours)];
-            let tour = alg.get_tour(&g).unwrap().unwrap();
+            let tour = alg.tour(&g).unwrap().unwrap();
             assert_eq!(Some(&expected_start), tour.start_vertex());
         }
     }
@@ -1752,8 +1725,8 @@ mod nearest_neighbor_heuristic_tsp_test {
     fn constructor_with_first() {
         let locs = locations();
         let g = geometric_graph(&locs);
-        let mut alg = NearestNeighborHeuristicTSP::with_first(locs[2]);
-        let tour = alg.get_tour(&g).unwrap().unwrap();
+        let mut alg = NearestNeighborHeuristicTsp::with_first(locs[2]);
+        let tour = alg.tour(&g).unwrap().unwrap();
         assert_eq!(Some(&locs[2]), tour.start_vertex());
     }
 
@@ -1766,15 +1739,15 @@ mod nearest_neighbor_heuristic_tsp_test {
             &mut initial,
             &mut StdRng::seed_from_u64(0x004A_4772_6170_6854),
         );
-        let mut alg = NearestNeighborHeuristicTSP::with_initial_vertices(initial.clone());
+        let mut alg = NearestNeighborHeuristicTsp::with_initial_vertices(initial.clone());
         for expected in &initial {
-            let tour = alg.get_tour(&g).unwrap().unwrap();
+            let tour = alg.tour(&g).unwrap().unwrap();
             assert_eq!(Some(expected), tour.start_vertex());
         }
     }
 
     #[test]
-    fn get_tour() {
+    fn tour() {
         let locs = locations();
         let g = geometric_graph(&locs);
         let expected: [[usize; 10]; 10] = [
@@ -1790,8 +1763,8 @@ mod nearest_neighbor_heuristic_tsp_test {
             [9, 2, 1, 0, 5, 8, 4, 7, 3, 6],
         ];
         for (i, start) in locs.iter().enumerate() {
-            let tour = NearestNeighborHeuristicTSP::with_first(*start)
-                .get_tour(&g)
+            let tour = NearestNeighborHeuristicTsp::with_first(*start)
+                .tour(&g)
                 .unwrap()
                 .unwrap();
             let mut vertices: Vec<Vector2D> = expected[i].iter().map(|&k| locs[k]).collect();
@@ -1820,40 +1793,40 @@ mod geometric_tsp_test {
 
     fn test_with(mut algorithm: impl HamiltonianCycleAlgorithm<UGraph<Vector2D>>) {
         for g in graphs() {
-            let tour = algorithm.get_tour(&g).unwrap().unwrap();
+            let tour = algorithm.tour(&g).unwrap().unwrap();
             assert_hamiltonian(&g, &tour);
         }
     }
 
     #[test]
     fn greedy() {
-        test_with(GreedyHeuristicTSP::new());
+        test_with(GreedyHeuristicTsp::new());
     }
 
     #[test]
     fn nearest_insertion_heuristic() {
-        test_with(NearestInsertionHeuristicTSP::new());
+        test_with(NearestInsertionHeuristicTsp::new());
     }
 
     #[test]
     fn nearest_neighbour_heuristic() {
-        test_with(NearestNeighborHeuristicTSP::new());
+        test_with(NearestNeighborHeuristicTsp::new());
     }
 
     #[test]
     fn random() {
-        test_with(RandomTourTSP::new());
+        test_with(RandomTourTsp::new());
     }
 
     #[test]
     fn two_opt_nearest_neighbour() {
-        test_with(TwoOptHeuristicTSP::with_initializer(
-            NearestNeighborHeuristicTSP::new(),
+        test_with(TwoOptHeuristicTsp::with_initializer(
+            NearestNeighborHeuristicTsp::new(),
         ));
     }
 
     #[test]
     fn two_opt1() {
-        test_with(TwoOptHeuristicTSP::with_passes(1));
+        test_with(TwoOptHeuristicTsp::with_passes(1));
     }
 }

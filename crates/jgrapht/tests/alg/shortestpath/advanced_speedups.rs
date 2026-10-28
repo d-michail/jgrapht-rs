@@ -14,7 +14,7 @@
 
 use jgrapht::GraphExt;
 use jgrapht::alg::shortestpath::{
-    CHManyToManyShortestPaths, ContractionHierarchyBidirectionalDijkstra,
+    ContractionHierarchyBidirectionalDijkstra, ContractionHierarchyManyToMany,
     ContractionHierarchyPrecomputation, Dijkstra, ShortestPathAlgorithm,
     TransitNodeRoutingPrecomputation, TransitNodeRoutingShortestPath,
 };
@@ -46,7 +46,7 @@ fn directed_sample() -> DiGraph<u32> {
 fn contraction_hierarchy_preserves_paths() {
     let graph = directed_sample();
     let hierarchy = ContractionHierarchyPrecomputation::new(&graph)
-        .compute_contraction_hierarchy()
+        .contraction_hierarchy()
         .unwrap();
     assert_eq!(hierarchy.vertices().len(), graph.vertex_count());
     let query = ContractionHierarchyBidirectionalDijkstra::new(&hierarchy);
@@ -67,7 +67,7 @@ fn contraction_hierarchy_turns_undirected_edges_into_two_arcs() {
     graph.add_weighted_edge(&1, &2, 1.0).unwrap();
     graph.add_weighted_edge(&2, &3, 1.0).unwrap();
     let hierarchy = ContractionHierarchyPrecomputation::new(&graph)
-        .compute_contraction_hierarchy()
+        .contraction_hierarchy()
         .unwrap();
     assert!(
         hierarchy
@@ -94,9 +94,9 @@ fn contraction_hierarchy_turns_undirected_edges_into_two_arcs() {
 fn ch_many_to_many_materializes_requested_product() {
     let graph = directed_sample();
     let hierarchy = ContractionHierarchyPrecomputation::new(&graph)
-        .compute_contraction_hierarchy()
+        .contraction_hierarchy()
         .unwrap();
-    let paths = CHManyToManyShortestPaths::new(&hierarchy)
+    let paths = ContractionHierarchyManyToMany::new(&hierarchy)
         .many_to_many([1, 7, 9], [3, 5])
         .unwrap();
     assert_eq!(paths.weight(&1, &3), Some(2.0));
@@ -122,7 +122,7 @@ fn contraction_hierarchy_matches_dijkstra_on_random_graphs() {
                 .unwrap();
         }
         let hierarchy = ContractionHierarchyPrecomputation::new(&graph)
-            .compute_contraction_hierarchy()
+            .contraction_hierarchy()
             .unwrap();
         let query = ContractionHierarchyBidirectionalDijkstra::new(&hierarchy);
         for source in 0..18 {
@@ -154,12 +154,12 @@ fn transit_node_routing_uses_highest_level_and_matches_hierarchy() {
     graph.add_weighted_edge(&3, &2, 2.0).unwrap();
 
     let hierarchy = ContractionHierarchyPrecomputation::new(&graph)
-        .compute_contraction_hierarchy()
+        .contraction_hierarchy()
         .unwrap();
     let routing = TransitNodeRoutingPrecomputation::new(&hierarchy)
         .with_transit_vertex_count(1)
         .unwrap()
-        .compute_transit_node_routing()
+        .transit_node_routing()
         .unwrap();
     assert_eq!(routing.transit_vertices().len(), 1);
     assert!(routing.transit_vertices().contains(&2));

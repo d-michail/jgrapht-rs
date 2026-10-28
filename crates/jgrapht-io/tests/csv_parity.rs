@@ -81,7 +81,7 @@ fn assert_standard_graph(graph: &DiGraph<String>) {
 fn assert_weight(graph: &DiGraph<String>, source: &str, target: &str, weight: f64) {
     let source = source.to_owned();
     let target = target.to_owned();
-    let edge = graph.get_edge(&source, &target).unwrap();
+    let edge = graph.edge_between(&source, &target).unwrap();
     assert_eq!(graph.edge_weight(edge), Some(weight));
 }
 
@@ -279,8 +279,8 @@ mod csv_exporter_test {
     #[test]
     fn directed_matrix_no_node_id_zero_missing_edges_weighted() {
         let mut graph = graph_with_edges(&EDGES, true);
-        let e13 = *graph.get_edge(&1, &3).unwrap();
-        let e53 = *graph.get_edge(&5, &3).unwrap();
+        let e13 = *graph.edge_between(&1, &3).unwrap();
+        let e53 = *graph.edge_between(&5, &3).unwrap();
         graph.set_edge_weight(&e13, 13.0).unwrap();
         graph.set_edge_weight(&e53, 53.0).unwrap();
         let mut csv = exporter(CsvFormat::Matrix);
@@ -295,8 +295,8 @@ mod csv_exporter_test {
     #[test]
     fn directed_matrix_no_node_id_weighted() {
         let mut graph = graph_with_edges(&EDGES, true);
-        let e13 = *graph.get_edge(&1, &3).unwrap();
-        let e53 = *graph.get_edge(&5, &3).unwrap();
+        let e13 = *graph.edge_between(&1, &3).unwrap();
+        let e53 = *graph.edge_between(&5, &3).unwrap();
         graph.set_edge_weight(&e13, 13.0).unwrap();
         graph.set_edge_weight(&e53, 53.0).unwrap();
         let mut csv = exporter(CsvFormat::Matrix);

@@ -92,7 +92,7 @@ fn parallel_edges_are_each_yielded() {
 mod base_graph_parity {
     use jgrapht::GraphExt;
     use jgrapht::graph::capability::{IncidenceGraph, IncomingGraph, OutgoingGraph};
-    use jgrapht::graph::{DiGraph, FastutilMapGraph, GraphMut, UGraph};
+    use jgrapht::graph::{DiGraph, GraphMut, MapGraph, UGraph};
     use jgrapht::graph::{Directed, Undirected};
     use std::borrow::Borrow;
 
@@ -190,13 +190,13 @@ mod base_graph_parity {
 
     #[test]
     fn map_backed_graphs() {
-        let mut d = FastutilMapGraph::<i32, _, Directed>::with_graph_type_and_lookup(
+        let mut d = MapGraph::<i32, _, Directed>::with_graph_type_and_lookup(
             jgrapht::GraphType::pseudograph().directed(true),
             true,
         );
         populate(&mut d);
         check(&d, 99);
-        let mut u = FastutilMapGraph::<i32, _, Undirected>::with_graph_type_and_lookup(
+        let mut u = MapGraph::<i32, _, Undirected>::with_graph_type_and_lookup(
             jgrapht::GraphType::pseudograph(),
             false,
         );

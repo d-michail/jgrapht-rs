@@ -204,7 +204,7 @@ impl<V> TsplibImporter<V> {
     /// # Errors
     ///
     /// [`IoError::Import`] if a node has fewer than two coordinates.
-    pub fn compute_2d_geographical_distance(a: &TsplibNode, b: &TsplibNode) -> Result<i32> {
+    pub fn geographical_distance_2d(a: &TsplibNode, b: &TsplibNode) -> Result<i32> {
         Ok(geographical_distance(a, b)? as i32)
     }
 }

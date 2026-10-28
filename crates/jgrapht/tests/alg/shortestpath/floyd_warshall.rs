@@ -13,9 +13,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use jgrapht::GraphExt;
-use jgrapht::alg::shortestpath::{
-    DijkstraShortestPath, FloydWarshallShortestPaths, ShortestPathAlgorithm,
-};
+use jgrapht::alg::shortestpath::{Dijkstra, FloydWarshallShortestPaths, ShortestPathAlgorithm};
 use jgrapht::generate::{GnmRandomGraphGenerator, GnpRandomGraphGenerator, GraphGenerator};
 use jgrapht::graph::{IncidenceGraph, OutgoingGraph};
 use jgrapht::{DefaultEdge, DiGraph, Graph, GraphMut, GraphMutExt, UGraph};
@@ -27,7 +25,7 @@ fn verify_all_pairs<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingGraph
     check_hops: bool,
 ) {
     let floyd_warshall = FloydWarshallShortestPaths::new(graph).unwrap();
-    let dijkstra = DijkstraShortestPath::new(graph);
+    let dijkstra = Dijkstra::new(graph);
     for source in graph.vertices() {
         let source = source.borrow();
         for target in graph.vertices() {
@@ -254,9 +252,7 @@ where
     let floyd_warshall = FloydWarshallShortestPaths::new(&graph).unwrap();
     for source in graph.vertices() {
         let source = source.borrow();
-        let dijkstra = DijkstraShortestPath::new(&graph)
-            .single_source(source)
-            .unwrap();
+        let dijkstra = Dijkstra::new(&graph).single_source(source).unwrap();
         let floyd_paths = floyd_warshall.single_source(source).unwrap();
         for target in graph.vertices() {
             let target = target.borrow();

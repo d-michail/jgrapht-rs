@@ -14,8 +14,8 @@
 
 use super::{EulerianCycleAlgorithm, HierholzerEulerianCycle};
 use crate::alg::matching::blossom::KolmogorovWeightedPerfectMatching;
-use crate::alg::matching::{KuhnMunkresMinimalWeightBipartitePerfectMatching, MatchingAlgorithm};
-use crate::alg::shortestpath::{DijkstraShortestPath, ShortestPathAlgorithm};
+use crate::alg::matching::{KuhnMunkres, MatchingAlgorithm};
+use crate::alg::shortestpath::{Dijkstra, ShortestPathAlgorithm};
 use crate::graph::IncidenceGraph;
 use crate::graph::{
     BaseGraph, Directed, Direction, Graph, GraphExt, GraphMut, GraphMutExt, Undirected,
@@ -77,7 +77,7 @@ impl ChinesePostman {
     /// Returns [`GraphError::InvalidGraph`] if the graph is not not mixed;
     /// [`GraphError::InvalidGraph`] if the graph is not connected. Errors of the graph operations
     /// it performs are propagated.
-    pub fn get_cpp_solution<G: IncidenceGraph>(
+    pub fn cpp_solution<G: IncidenceGraph>(
         &mut self,
         graph: &G,
     ) -> Result<GraphWalk<G::Vertex, G::Edge>> {
@@ -85,7 +85,7 @@ impl ChinesePostman {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::NotMixed));
         }
         if graph.vertex_count() == 0 || graph.edge_count() == 0 {
-            return HierholzerEulerianCycle::new().get_eulerian_cycle(graph);
+            return HierholzerEulerianCycle::new().eulerian_cycle(graph);
         }
         if !crate::graph::props::is_strongly_connected(graph) {
             return Err(GraphError::InvalidGraph(crate::GraphProperty::Connected));
@@ -110,7 +110,7 @@ impl ChinesePostman {
             }
         }
         let count = odd.len();
-        let shortest_path = DijkstraShortestPath::new(graph);
+        let shortest_path = Dijkstra::new(graph);
         let mut paths = vec![vec![None; count]; count];
         for source in 0..count.saturating_sub(1) {
             let from_source = shortest_path.single_source(&odd[source])?;
@@ -135,7 +135,7 @@ impl ChinesePostman {
             }
         }
         let mut matching = KolmogorovWeightedPerfectMatching::new(&auxiliary)?;
-        let matching = matching.get_matching()?;
+        let matching = matching.matching()?;
         let mut shortcuts = Vec::with_capacity(matching.len());
         for edge in matching.edges() {
             let (source, target) = auxiliary
@@ -168,7 +168,7 @@ impl ChinesePostman {
             }
         }
 
-        let shortest_path = DijkstraShortestPath::new(graph);
+        let shortest_path = Dijkstra::new(graph);
         let mut paths = vec![vec![None; positive.len()]; negative.len()];
         for (source_index, (source, _)) in negative.iter().enumerate() {
             let from_source = shortest_path.single_source(source)?;
@@ -213,12 +213,12 @@ impl ChinesePostman {
             }
         }
 
-        let mut matching = KuhnMunkresMinimalWeightBipartitePerfectMatching::new(
+        let mut matching = KuhnMunkres::new(
             &auxiliary,
             negative_partition.clone(),
             positive_partition.clone(),
         );
-        let matching = matching.get_matching()?;
+        let matching = matching.matching()?;
         let mut shortcuts = Vec::with_capacity(matching.len());
         for edge in matching.edges() {
             let (first, second) = auxiliary
@@ -264,7 +264,7 @@ impl ChinesePostman {
             edge_map.push(AugmentedEdge::Shortcut(path));
         }
 
-        let augmented = HierholzerEulerianCycle::new().get_eulerian_cycle(&euler_graph)?;
+        let augmented = HierholzerEulerianCycle::new().eulerian_cycle(&euler_graph)?;
         let mut vertices = vec![augmented.vertices[0].clone()];
         let mut edges = Vec::new();
         for (step, synthetic) in augmented.edges.iter().enumerate() {

@@ -35,7 +35,7 @@ fn transforms() {
     line_graph_into(&ring, &mut lg).unwrap();
     assert_eq!((lg.vertex_count(), lg.edge_count()), (5, 5));
     let mut path = build(UGraph::<usize>::simple(), Linear(4));
-    let e = *path.get_edge(&1, &2).unwrap();
+    let e = *path.edge_between(&1, &2).unwrap();
     contract_edge(&mut path, &e).unwrap();
     assert_eq!((path.vertex_count(), path.edge_count()), (3, 2));
     let mut d = build(DiGraph::<usize>::simple(), Linear(3));
@@ -112,7 +112,7 @@ fn tours() {
             g.add_weighted_edge(&i, &j, w).unwrap();
         }
     }
-    let opt = HeldKarpTSP::new().get_tour(&g).unwrap().unwrap();
+    let opt = HeldKarpTsp::new().tour(&g).unwrap().unwrap();
     assert!(opt.is_valid(&g));
     assert_eq!(
         (
@@ -123,29 +123,29 @@ fn tours() {
         (8, Some(0), Some(0))
     );
     for t in [
-        NearestNeighborHeuristicTSP::with_first(0)
-            .get_tour(&g)
+        NearestNeighborHeuristicTsp::with_first(0)
+            .tour(&g)
             .unwrap()
             .unwrap(),
-        NearestInsertionHeuristicTSP::new()
-            .get_tour(&g)
+        NearestInsertionHeuristicTsp::new()
+            .tour(&g)
             .unwrap()
             .unwrap(),
-        FarthestInsertionHeuristicTSP::new()
-            .get_tour(&g)
+        FarthestInsertionHeuristicTsp::new()
+            .tour(&g)
             .unwrap()
             .unwrap(),
-        TwoApproxMetricTSP::new().get_tour(&g).unwrap().unwrap(),
+        TwoApproxMetricTsp::new().tour(&g).unwrap().unwrap(),
     ] {
         assert!(t.is_valid(&g));
         assert_eq!(t.length(), 8);
         assert!(t.weight() >= opt.weight() - 1e-9);
-        let improved = TwoOptHeuristicTSP::new().improve_tour(&g, &t).unwrap();
+        let improved = TwoOptHeuristicTsp::new().improve_tour(&g, &t).unwrap();
         assert!(improved.weight() <= t.weight() + 1e-9 && improved.weight() >= opt.weight() - 1e-9);
     }
     assert!(
-        HeldKarpTSP::new()
-            .get_tour(&build(UGraph::<usize>::simple(), Linear(4)))
+        HeldKarpTsp::new()
+            .tour(&build(UGraph::<usize>::simple(), Linear(4)))
             .unwrap()
             .is_none()
     );

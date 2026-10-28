@@ -14,9 +14,9 @@
 
 //! Maximum flow, minimum cut and minimum-cost flow.
 //!
-//! The maximum-flow classes ([`EdmondsKarpMFImpl`], [`DinicMFImpl`], [`PushRelabelMFImpl`],
-//! [`BoykovKolmogorovMFImpl`]) take the network (edge weights are capacities) and answer
-//! `calculate_maximum_flow(source, sink)`; a computation that also needs the flow on each edge or the
+//! The maximum-flow classes ([`EdmondsKarp`], [`Dinic`], [`PushRelabel`],
+//! [`BoykovKolmogorov`]) take the network (edge weights are capacities) and answer
+//! `maximum_flow_value(source, sink)`; a computation that also needs the flow on each edge or the
 //! cut returns a [`MaximumFlow`] result object. [`GusfieldEquivalentFlowTree`] and
 //! [`GusfieldGomoryHuCutTree`] answer all-pairs minimum cuts, and [`PadbergRaoOddMinimumCutset`] finds
 //! minimum odd cuts. [`CapacityScalingMinimumCostFlow`] solves minimum-cost flow problems described by
@@ -35,18 +35,18 @@ mod padberg_rao;
 mod push_relabel;
 
 pub use base::{
-    MaximumFlow, MaximumFlowAlgorithm, MaximumFlowValueAlgorithm, MinimumCut, MinimumSTCutAlgorithm,
+    MaximumFlow, MaximumFlowAlgorithm, MaximumFlowValueAlgorithm, MinimumCut, MinimumStCutAlgorithm,
 };
-pub use boykov_kolmogorov::BoykovKolmogorovMFImpl;
-pub use dinic::DinicMFImpl;
-pub use edmonds_karp::EdmondsKarpMFImpl;
+pub use boykov_kolmogorov::BoykovKolmogorov;
+pub use dinic::Dinic;
+pub use edmonds_karp::EdmondsKarp;
 pub use gusfield::{GusfieldEquivalentFlowTree, GusfieldGomoryHuCutTree};
 pub use mincost::{
     CapacityScalingMinimumCostFlow, MinimumCostFlow, MinimumCostFlowAlgorithm,
-    MinimumCostFlowProblem, MinimumCostFlowProblemImpl, MinimumCostSolution,
+    MinimumCostFlowNetwork, MinimumCostFlowProblem, MinimumCostSolution,
 };
 pub use padberg_rao::PadbergRaoOddMinimumCutset;
-pub use push_relabel::PushRelabelMFImpl;
+pub use push_relabel::PushRelabel;
 
 /// `MaximumFlowAlgorithmBase.DEFAULT_EPSILON`.
 pub const DEFAULT_EPSILON: f64 = 1e-9;

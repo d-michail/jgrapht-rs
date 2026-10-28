@@ -405,13 +405,13 @@ impl<'a, 'g, G: IncidenceGraph> Vf2<'a, 'g, G> {
 
 /// `VF2GraphMappingIterator` / `VF2SubgraphMappingIterator`: lazily enumerates the mappings of
 /// the second graph's vertices into the first graph's by depth-first search over VF2 states.
-pub struct VF2MappingIterator<'a, 'g, G: IncidenceGraph> {
+pub struct Vf2MappingIterator<'a, 'g, G: IncidenceGraph> {
     vf2: Vf2<'a, 'g, G>,
     next_mapping: Option<IsomorphicGraphMapping<'g, G>>,
     had_one_mapping: bool,
 }
 
-impl<'a, 'g, G: IncidenceGraph> VF2MappingIterator<'a, 'g, G> {
+impl<'a, 'g, G: IncidenceGraph> Vf2MappingIterator<'a, 'g, G> {
     fn new(
         g1: &'a GraphOrdering<'g, G>,
         g2: &'a GraphOrdering<'g, G>,
@@ -420,7 +420,7 @@ impl<'a, 'g, G: IncidenceGraph> VF2MappingIterator<'a, 'g, G> {
         kind: Kind,
     ) -> Self {
         let (n1, n2) = (g1.vertex_count(), g2.vertex_count());
-        VF2MappingIterator {
+        Vf2MappingIterator {
             vf2: Vf2 {
                 g1,
                 g2,
@@ -513,7 +513,7 @@ impl<'a, 'g, G: IncidenceGraph> VF2MappingIterator<'a, 'g, G> {
     }
 }
 
-impl<'a, 'g, G: IncidenceGraph> Iterator for VF2MappingIterator<'a, 'g, G> {
+impl<'a, 'g, G: IncidenceGraph> Iterator for Vf2MappingIterator<'a, 'g, G> {
     type Item = IsomorphicGraphMapping<'g, G>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -581,8 +581,8 @@ macro_rules! vf2_inspector {
             }
 
             /// The lazy iterator over all mappings.
-            pub fn iter(&self) -> VF2MappingIterator<'_, 'g, G> {
-                VF2MappingIterator::new(
+            pub fn iter(&self) -> Vf2MappingIterator<'_, 'g, G> {
+                Vf2MappingIterator::new(
                     &self.ordering1,
                     &self.ordering2,
                     self.vertex_comparator.as_ref(),

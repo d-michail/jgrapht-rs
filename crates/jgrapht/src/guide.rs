@@ -299,7 +299,7 @@
 //! assert!(g.contains_vertex(&3));
 //!
 //! // Edges between two vertices, endpoints and weights of an edge.
-//! let e = *g.get_edge(&1, &3).unwrap();
+//! let e = *g.edge_between(&1, &3).unwrap();
 //! assert_eq!(g.edge_endpoints(&e), Some((&1, &3)));
 //! assert_eq!(g.edge_weight(&e), Some(4.0));
 //! assert_eq!(g.edges_between(&1, &3).count(), 1);
@@ -502,7 +502,7 @@
 //! Shortest paths, spanning trees and flows:
 //!
 //! ```
-//! use jgrapht::alg::flow::EdmondsKarpMFImpl;
+//! use jgrapht::alg::flow::EdmondsKarp;
 //! use jgrapht::alg::shortestpath::{BellmanFord, Dijkstra, ShortestPathAlgorithm};
 //! use jgrapht::alg::spanning::kruskal;
 //! use jgrapht::*;
@@ -523,7 +523,7 @@
 //! assert_eq!(paths.weight(&'b'), Some(2.0));
 //!
 //! // The edge weights are capacities in a flow problem.
-//! let flow = EdmondsKarpMFImpl::new(&g)?.calculate_maximum_flow(&'s', &'t')?;
+//! let flow = EdmondsKarp::new(&g)?.maximum_flow_value(&'s', &'t')?;
 //! assert_eq!(flow, 5.0);
 //!
 //! // Spanning trees treat the graph as undirected.
@@ -638,7 +638,7 @@
 //!
 //! Dijkstra, Bellman-Ford, BFS, Floyd-Warshall, Johnson and delta-stepping implement
 //! [`ShortestPathAlgorithm`](crate::alg::shortestpath::ShortestPathAlgorithm) (A* and Yen have their
-//! own `path` and `get_paths` methods): `path(s, t)` gives the walk, `path_weight(s, t)` only its weight, `single_source(s)` all
+//! own `path` and `paths` methods): `path(s, t)` gives the walk, `path_weight(s, t)` only its weight, `single_source(s)` all
 //! distances from `s` at once. Choose the algorithm by the graph: Dijkstra for non-negative
 //! weights, Bellman-Ford when weights can be negative (a negative cycle is
 //! [`GraphError::NegativeCycle`](crate::GraphError::NegativeCycle)), A* when you have a heuristic,
@@ -680,7 +680,7 @@
 //! assert_eq!(astar.weight(), 6.0);
 //!
 //! // The three best paths from start to goal, cheapest first.
-//! let best = YenKShortestPath::new(&g).get_paths(&start, &goal, 3)?;
+//! let best = YenKShortestPath::new(&g).paths(&start, &goal, 3)?;
 //! assert_eq!(best.len(), 3);
 //! assert!(best[0].weight() <= best[1].weight() && best[1].weight() <= best[2].weight());
 //! # Ok::<(), GraphError>(())
@@ -689,16 +689,16 @@
 //! ## Maximum flow and minimum cut
 //!
 //! A flow network is a directed graph whose edge weights are capacities. Every maximum-flow class
-//! ([`EdmondsKarpMFImpl`](crate::alg::flow::EdmondsKarpMFImpl),
-//! [`DinicMFImpl`](crate::alg::flow::DinicMFImpl),
-//! [`PushRelabelMFImpl`](crate::alg::flow::PushRelabelMFImpl),
-//! [`BoykovKolmogorovMFImpl`](crate::alg::flow::BoykovKolmogorovMFImpl)) answers
+//! ([`EdmondsKarp`](crate::alg::flow::EdmondsKarp),
+//! [`Dinic`](crate::alg::flow::Dinic),
+//! [`PushRelabel`](crate::alg::flow::PushRelabel),
+//! [`BoykovKolmogorov`](crate::alg::flow::BoykovKolmogorov)) answers
 //! `maximum_flow(source, sink)` with a [`MaximumFlow`](crate::alg::flow::MaximumFlow): the value,
 //! the flow on every edge and the minimum cut that proves it is maximal. Constructors reject
 //! negative capacities, and a source equal to the sink is an error.
 //!
 //! ```
-//! use jgrapht::alg::flow::{DinicMFImpl, MaximumFlowAlgorithm};
+//! use jgrapht::alg::flow::{Dinic, MaximumFlowAlgorithm};
 //! use jgrapht::*;
 //!
 //! let mut net = DiGraph::<&str>::simple().weighted();
@@ -712,7 +712,7 @@
 //! let at = edge("a", "t", 5.0)?;
 //! let bt = edge("b", "t", 10.0)?;
 //!
-//! let flow = DinicMFImpl::new(&net)?.maximum_flow(&"s", &"t")?;
+//! let flow = Dinic::new(&net)?.maximum_flow(&"s", &"t")?;
 //! assert_eq!(flow.value(), 15.0);
 //! assert_eq!(flow.flow(&sa), Some(10.0));
 //! assert_eq!(flow.flow(&at).unwrap() + flow.flow(&bt).unwrap(), 15.0);

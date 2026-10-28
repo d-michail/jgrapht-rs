@@ -43,7 +43,8 @@ fn edge_between<S: Graph<Vertex = usize, Edge = DefaultEdge>>(
     a: usize,
     b: usize,
 ) -> DefaultEdge {
-    *g.get_edge(&a, &b).expect("edge between adjacent vertices")
+    *g.edge_between(&a, &b)
+        .expect("edge between adjacent vertices")
 }
 
 /// The complement graph (`ComplementGraphGenerator`): an edge for every non-adjacent pair.
@@ -1285,7 +1286,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// Whether `g` is a Berge graph; with `compute_certificate` an odd hole or odd antihole is
-    /// kept for [`get_certificate`](Self::get_certificate) when it is not.
+    /// kept for [`certificate`](Self::certificate) when it is not.
     ///
     /// # Errors
     ///
@@ -1330,7 +1331,7 @@ impl<V: Clone + Eq + std::hash::Hash> BergeGraphInspector<V> {
     }
 
     /// The odd hole or odd antihole found by the last run with `compute_certificate`, if any.
-    pub fn get_certificate(&self) -> Option<&BergeCertificate<V>> {
+    pub fn certificate(&self) -> Option<&BergeCertificate<V>> {
         self.certificate.as_ref()
     }
 }

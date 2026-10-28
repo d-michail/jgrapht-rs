@@ -207,7 +207,7 @@ impl<V: Eq + Hash + Clone, R: RandomSource> CentersLocationAlgorithm<V> for GonH
         }
         let weight = |a: &V, b: &V| -> f64 {
             graph
-                .get_edge(a, b)
+                .edge_between(a, b)
                 .and_then(|e| graph.edge_weight(e))
                 .unwrap_or(1.0)
         };

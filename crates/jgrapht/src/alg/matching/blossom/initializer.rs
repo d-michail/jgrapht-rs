@@ -1052,7 +1052,7 @@ mod tests {
             )
             .unwrap();
             assert_eq!(
-                algorithm.get_matching().unwrap().weight(),
+                algorithm.matching().unwrap().weight(),
                 expected,
                 "Java fractional case {}",
                 index + 1

@@ -14,7 +14,7 @@
 
 //! Densest subgraph (density = edges / vertices, direction and multiplicity ignored).
 
-use super::flow::{MinimumSTCutAlgorithm, PushRelabelMFImpl};
+use super::flow::{MinimumStCutAlgorithm, PushRelabel};
 use super::util::Indexed;
 use crate::Result;
 use crate::graph::OutgoingGraph;
@@ -74,13 +74,13 @@ pub fn greedy_densest_subgraph<G: Graph>(g: &G) -> (Vec<G::Vertex>, f64) {
 pub type DensityNetwork<V> = crate::BaseGraph<V, crate::DefaultEdge, crate::graph::Directed>;
 
 /// Computes the source side of a minimum `s`-`t` cut of a [`DensityNetwork`] (edge weights are
-/// the capacities). This plays the role of JGraphT's `MinimumSTCutAlgorithm` factory argument.
+/// the capacities). This plays the role of JGraphT's `MinimumStCutAlgorithm` factory argument.
 pub type MinCutFn<V> = Box<dyn Fn(&DensityNetwork<V>, &V, &V) -> Result<HashSet<V>>>;
 
 /// The default min-cut used by the Goldberg algorithms (max-flow based).
 pub fn default_min_cut<V: Clone + Eq + std::hash::Hash + 'static>() -> MinCutFn<V> {
     Box::new(|net, s, t| {
-        let mut push_relabel = PushRelabelMFImpl::new_allowing_negative_capacities(net)?;
+        let mut push_relabel = PushRelabel::new_allowing_negative_capacities(net)?;
         let cut = push_relabel.minimum_cut(s, t)?;
         Ok(cut.source_partition().iter().cloned().collect())
     })
@@ -318,9 +318,9 @@ where
         let vertices: Vec<G::Vertex> = self.graph.vertices_cloned().collect();
         for v in &vertices {
             let (sw, tw) = (self.source_weight(v), self.sink_weight(v));
-            let to_sink = self.network.get_edge(v, &self.t).cloned().unwrap();
+            let to_sink = self.network.edge_between(v, &self.t).cloned().unwrap();
             self.network.set_edge_weight(&to_sink, tw)?;
-            let from_source = self.network.get_edge(&self.s, v).cloned().unwrap();
+            let from_source = self.network.edge_between(&self.s, v).cloned().unwrap();
             self.network.set_edge_weight(&from_source, sw)?;
         }
         if self.check_weights {
@@ -329,8 +329,8 @@ where
                 .iter()
                 .flat_map(|v| {
                     [
-                        self.network.get_edge(v, &self.t).cloned(),
-                        self.network.get_edge(&self.s, v).cloned(),
+                        self.network.edge_between(v, &self.t).cloned(),
+                        self.network.edge_between(&self.s, v).cloned(),
                     ]
                 })
                 .flatten()
@@ -340,8 +340,8 @@ where
             if min < 0.0 {
                 for v in &vertices {
                     for e in [
-                        self.network.get_edge(v, &self.t).cloned().unwrap(),
-                        self.network.get_edge(&self.s, v).cloned().unwrap(),
+                        self.network.edge_between(v, &self.t).cloned().unwrap(),
+                        self.network.edge_between(&self.s, v).cloned().unwrap(),
                     ] {
                         let w = self
                             .network
@@ -361,7 +361,7 @@ where
     ///
     /// Returns [`GraphError::Internal`](crate::GraphError::Internal) if an internal invariant of the library is broken (a bug).
     /// Errors of the graph operations it performs are propagated.
-    pub fn calculate_densest(&mut self) -> Result<crate::AsSubgraph<&'g G>> {
+    pub fn densest_subgraph(&mut self) -> Result<crate::AsSubgraph<&'g G>> {
         if self.densest.is_none() {
             while self.upper - self.lower >= self.epsilon {
                 self.guess = self.lower + (self.upper - self.lower) / 2.0;
@@ -395,7 +395,7 @@ where
     ///
     /// Errors of the graph operations it performs are propagated.
     pub fn density(&mut self) -> Result<f64> {
-        let sub = self.calculate_densest()?;
+        let sub = self.densest_subgraph()?;
         let denominator = self.denominator(&sub);
         Ok(if denominator != 0.0 {
             self.numerator(&sub) / denominator

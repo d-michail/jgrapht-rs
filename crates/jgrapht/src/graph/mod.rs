@@ -48,10 +48,7 @@ pub use ext::{
     DirectedExt, GraphExt, GraphMutExt, remove_vertex_and_preserve_connectivity,
     remove_vertices_and_preserve_connectivity,
 };
-pub use map::{
-    FastutilMapGraph, FastutilMapIntVertexGraph, FastutilMapIntVertexSpecifics,
-    FastutilMapSpecifics,
-};
+pub use map::{IntMapGraph, IntMapSpecifics, MapGraph, MapSpecifics};
 
 use crate::{GraphType, Result};
 use std::borrow::Borrow;
@@ -130,12 +127,16 @@ pub trait Graph {
         self.graph_type().directed
     }
     /// Some edge from `u` to `v` (either direction for undirected graphs), or `None` if there is none or either vertex is absent. With parallel edges the first one in graph order is returned.
-    fn get_edge<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> Option<&'a Self::Edge> {
+    fn edge_between<'a>(
+        &'a self,
+        u: &'a Self::Vertex,
+        v: &'a Self::Vertex,
+    ) -> Option<&'a Self::Edge> {
         self.edges_between(u, v).next()
     }
     /// Whether at least one edge joins `u` and `v` (direction matters only for directed graphs).
     fn contains_edge_between<'a>(&'a self, u: &'a Self::Vertex, v: &'a Self::Vertex) -> bool {
-        self.get_edge(u, v).is_some()
+        self.edge_between(u, v).is_some()
     }
 }
 

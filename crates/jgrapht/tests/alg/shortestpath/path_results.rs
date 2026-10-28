@@ -13,8 +13,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use jgrapht::alg::shortestpath::{
-    ALTAdmissibleHeuristic, AStarShortestPath, BidirectionalDijkstraShortestPath,
-    DijkstraShortestPath, ListSingleSourcePaths, ShortestPathAlgorithm, TreeSingleSourcePaths,
+    AStar, AltAdmissibleHeuristic, BidirectionalDijkstraShortestPath, Dijkstra,
+    ListSingleSourcePaths, ShortestPathAlgorithm, SingleSourcePaths,
 };
 use jgrapht::*;
 use rand::rngs::StdRng;
@@ -64,7 +64,7 @@ fn list_single_source_paths_test_paths() {
     let mut random = StdRng::seed_from_u64(0x5eed);
     let graph = java_directed_gnp(&mut random, 50, 0.7, false);
 
-    let dijkstra = DijkstraShortestPath::new(&graph);
+    let dijkstra = Dijkstra::new(&graph);
     let expected: Vec<_> = (1..50)
         .map(|target| dijkstra.path(&0, &target).unwrap().unwrap())
         .collect();
@@ -101,7 +101,7 @@ fn tree_single_source_paths_test_paths() {
     let e34 = [-100.0, 100.0, 1.0]
         .map(|weight| graph.add_weighted_edge(&3, &4, weight).unwrap().unwrap());
 
-    let paths = TreeSingleSourcePaths {
+    let paths = SingleSourcePaths {
         source: 1,
         dist: HashMap::from([(1, 0.0), (2, -5.0), (3, -10.0), (4, -110.0)]),
         pred: HashMap::from([(2, (e12[0], 1)), (3, (e23[2], 2)), (4, (e34[0], 3))]),
@@ -136,11 +136,11 @@ fn all_pairs_shortest_paths(seed: i64) {
         while landmark_set.len() < 2 {
             landmark_set.insert(random.random_range(0..20));
         }
-        let heuristic = ALTAdmissibleHeuristic::new(&graph, landmark_set).unwrap();
-        let dijkstra = DijkstraShortestPath::new(&graph);
+        let heuristic = AltAdmissibleHeuristic::new(&graph, landmark_set).unwrap();
+        let dijkstra = Dijkstra::new(&graph);
         let bidirectional = BidirectionalDijkstraShortestPath::new(&graph);
-        let astar = AStarShortestPath::new(&graph, |_: &i32, _: &i32| 0.0);
-        let alt_astar = AStarShortestPath::new(&graph, |source, target| {
+        let astar = AStar::new(&graph, |_: &i32, _: &i32| 0.0);
+        let alt_astar = AStar::new(&graph, |source, target| {
             heuristic.cost_estimate(source, target)
         });
 

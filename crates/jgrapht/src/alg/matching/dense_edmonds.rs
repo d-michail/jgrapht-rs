@@ -127,7 +127,7 @@ impl SimpleMatching {
 /// This algorithm will return a perfect matching if one exists. If no perfect matching exists, then
 /// the largest (non-perfect) matching is returned instead. This algorithm does NOT compute a maximum
 /// weight matching. In the special case that the input graph is bipartite, consider using
-/// `HopcroftKarpMaximumCardinalityBipartiteMatching` instead.
+/// `HopcroftKarp` instead.
 ///
 /// To compute a maximum cardinality matching, at most $n$ augmenting path computations are
 /// performed. Each augmenting path computation takes $O(m \alpha(m,n))$ time, where $\alpha(m,n)$ is
@@ -167,10 +167,10 @@ impl SimpleMatching {
 ///
 /// # Rust notes
 ///
-/// `DenseEdmondsMaximumCardinalityMatching`: Edmonds' blossom algorithm for a maximum cardinality
+/// `DenseEdmonds`: Edmonds' blossom algorithm for a maximum cardinality
 /// matching in a general graph, in `O(V^3)` time (Gabow's variant with a union-find structure for
 /// the blossoms), best for dense graphs.
-pub struct DenseEdmondsMaximumCardinalityMatching<'g, G: Graph> {
+pub struct DenseEdmonds<'g, G: Graph> {
     graph: &'g G,
     /// (Heuristic) matching algorithm used to compute an initial feasible solution.
     initializer: Option<Box<dyn MatchingAlgorithm<G::Vertex, G::Edge> + 'g>>,
@@ -192,9 +192,7 @@ pub struct DenseEdmondsMaximumCardinalityMatching<'g, G: Graph> {
     w_ancestors: HashSet<usize>,
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
-    DenseEdmondsMaximumCardinalityMatching<'g, G>
-{
+impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph> DenseEdmonds<'g, G> {
     /// Uses `GreedyMaximumCardinalityMatching` (unsorted) as the initializer. Fails if the graph is
     /// not undirected.
     ///
@@ -215,7 +213,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
         graph: &'g G,
         initializer: Option<Box<dyn MatchingAlgorithm<G::Vertex, G::Edge> + 'g>>,
     ) -> Result<Self> {
-        Ok(DenseEdmondsMaximumCardinalityMatching {
+        Ok(DenseEdmonds {
             graph,
             initializer,
             vertices: Vec::new(),
@@ -270,7 +268,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
     fn warm_start(&mut self) -> Result<()> {
         let graph = self.graph;
         if let Some(initializer) = self.initializer.as_mut() {
-            let initial_solution = initializer.get_matching()?;
+            let initial_solution = initializer.matching()?;
             for e in initial_solution.edges() {
                 let e = e.borrow();
                 let (u, v) = graph
@@ -502,9 +500,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g + IncidenceGraph>
 }
 
 impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MatchingAlgorithm<G::Vertex, G::Edge>
-    for DenseEdmondsMaximumCardinalityMatching<'g, G>
+    for DenseEdmonds<'g, G>
 {
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         self.init();
         self.warm_start()?;
@@ -521,7 +519,9 @@ impl<'g, G: UndirectedGraph + IncidenceGraph + 'g> MatchingAlgorithm<G::Vertex, 
             }
             let v = &self.vertices[vx];
             let w = &self.vertices[self.matching.opposite(vx)];
-            let edge = graph.get_edge(v, w).expect("matched vertices are adjacent");
+            let edge = graph
+                .edge_between(v, w)
+                .expect("matched vertices are adjacent");
             edges.insert(edge.clone());
             cost += 0.5 * graph.weight_of(edge);
         }

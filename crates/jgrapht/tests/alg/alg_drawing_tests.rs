@@ -503,7 +503,7 @@ mod fr {
     #[test]
     fn test_graph_1() {
         let g = star_pair(0);
-        let mut alg = FRLayoutAlgorithm2D::new(100, 0.5, StdRng::seed_from_u64(17));
+        let mut alg = FrLayoutAlgorithm2D::new(100, 0.5, StdRng::seed_from_u64(17));
         let mut model = MapLayoutModel2D::new(Box2D::of(100.0, 100.0));
         alg.layout(&g, &mut model).unwrap();
         assert_orientation(&model.collect());
@@ -512,7 +512,7 @@ mod fr {
     #[test]
     fn test_initializer_same_position() {
         let g = star_pair(0);
-        let mut alg = FRLayoutAlgorithm2D::new(100, 0.5, StdRng::seed_from_u64(17));
+        let mut alg = FrLayoutAlgorithm2D::new(100, 0.5, StdRng::seed_from_u64(17));
         let rng = RefCell::new(StdRng::seed_from_u64(17));
         alg.initializer = Some(Box::new(move |u: &String| {
             if u == "1" || u == "2" {
@@ -530,7 +530,7 @@ mod fr {
     #[test]
     fn test_graph_with_isolated_vertex() {
         let g = star_pair(1);
-        let mut alg = FRLayoutAlgorithm2D::new(100, 0.5, StdRng::seed_from_u64(17));
+        let mut alg = FrLayoutAlgorithm2D::new(100, 0.5, StdRng::seed_from_u64(17));
         let mut model = MapLayoutModel2D::new(Box2D::of(100.0, 100.0));
         alg.layout(&g, &mut model).unwrap();
         assert_isolated_vertex_inside(&model.collect());
@@ -540,7 +540,7 @@ mod fr {
     fn indexed_test_graph_1() {
         let g = star_pair(0);
         let mut alg =
-            FRLayoutAlgorithm2D::indexed(100, 0.5, 0.5, StdRng::seed_from_u64(17)).unwrap();
+            FrLayoutAlgorithm2D::indexed(100, 0.5, 0.5, StdRng::seed_from_u64(17)).unwrap();
         let mut model = MapLayoutModel2D::new(Box2D::of(100.0, 100.0));
         alg.layout(&g, &mut model).unwrap();
         assert_orientation(&model.collect());
@@ -551,7 +551,7 @@ mod fr {
     fn indexed_test_graph_zero_theta() {
         let g = star_pair(0);
         let mut alg =
-            FRLayoutAlgorithm2D::indexed(100, 0.0, 0.5, StdRng::seed_from_u64(17)).unwrap();
+            FrLayoutAlgorithm2D::indexed(100, 0.0, 0.5, StdRng::seed_from_u64(17)).unwrap();
         let mut model = MapLayoutModel2D::new(Box2D::of(100.0, 100.0));
         alg.layout(&g, &mut model).unwrap();
         assert_orientation(&model.collect());
@@ -562,7 +562,7 @@ mod fr {
     fn indexed_test_graph_with_isolated_vertex() {
         let g = star_pair(1);
         let mut alg =
-            FRLayoutAlgorithm2D::indexed(100, 0.0, 0.5, StdRng::seed_from_u64(17)).unwrap();
+            FrLayoutAlgorithm2D::indexed(100, 0.0, 0.5, StdRng::seed_from_u64(17)).unwrap();
         let mut model = MapLayoutModel2D::new(Box2D::of(100.0, 100.0));
         alg.layout(&g, &mut model).unwrap();
         assert_isolated_vertex_inside(&model.collect());
@@ -571,7 +571,7 @@ mod fr {
     #[test]
     fn indexed_rejects_bad_theta() {
         assert!(
-            FRLayoutAlgorithm2D::<String, _>::indexed(10, 1.5, 0.5, StdRng::seed_from_u64(1))
+            FrLayoutAlgorithm2D::<String, _>::indexed(10, 1.5, 0.5, StdRng::seed_from_u64(1))
                 .is_err()
         );
     }
@@ -579,7 +579,7 @@ mod fr {
     #[test]
     fn test_quad_tree() {
         let (width, height, count) = (100.0, 100.0, 10000);
-        let mut tree = FRQuadTree::new(Box2D::of(width, height));
+        let mut tree = FrQuadTree::new(Box2D::of(width, height));
         let mut rng = StdRng::seed_from_u64(17);
         for _ in 0..count {
             tree.insert(Point2D::of(

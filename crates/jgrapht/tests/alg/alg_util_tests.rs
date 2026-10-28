@@ -219,7 +219,7 @@ mod neighbor_cache_test {
     }
 
     fn remove_between<G: GraphMut>(g: &mut G, a: &G::Vertex, b: &G::Vertex) {
-        let e = g.get_edge(a, b).cloned().unwrap();
+        let e = g.edge_between(a, b).cloned().unwrap();
         g.remove_edge(&e);
     }
 

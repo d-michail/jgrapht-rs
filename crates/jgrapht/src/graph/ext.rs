@@ -387,7 +387,7 @@ pub trait GraphMutExt: GraphMut {
 
     /// Removes one edge between `u` and `v` and returns it (`removeEdge(u, v)`).
     fn remove_edge_between(&mut self, u: &Self::Vertex, v: &Self::Vertex) -> Option<Self::Edge> {
-        let e = self.get_edge(u, v).cloned()?;
+        let e = self.edge_between(u, v).cloned()?;
         self.remove_edge(&e);
         Some(e)
     }

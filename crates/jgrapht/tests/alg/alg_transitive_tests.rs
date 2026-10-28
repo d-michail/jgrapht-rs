@@ -40,7 +40,7 @@ fn test_linear_graph() {
     assert_eq!(n * (n - 1) / 2, graph.edge_count());
     for i in 0..n as i64 {
         for j in i + 1..n as i64 {
-            assert!(graph.get_edge(&i, &j).is_some());
+            assert!(graph.edge_between(&i, &j).is_some());
         }
     }
 }
@@ -56,7 +56,7 @@ fn test_ring_graph() {
     assert_eq!(n * (n - 1), graph.edge_count());
     for i in 0..n as i64 {
         for j in 0..n as i64 {
-            assert!(i == j || graph.get_edge(&i, &j).is_some());
+            assert!(i == j || graph.edge_between(&i, &j).is_some());
         }
     }
 }
@@ -103,7 +103,7 @@ fn test_linear_graph_for_dag() {
     assert_eq!(n * (n - 1) / 2, graph.edge_count());
     for i in 0..n as i64 {
         for j in i + 1..n as i64 {
-            assert!(graph.get_edge(&i, &j).is_some());
+            assert!(graph.edge_between(&i, &j).is_some());
         }
     }
 }

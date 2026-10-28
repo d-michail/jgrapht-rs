@@ -17,8 +17,8 @@ use std::borrow::Borrow;
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
 use jgrapht::alg::shortestpath::{
-    CHManyToManyShortestPaths, ContractionHierarchyPrecomputation, DefaultManyToManyShortestPaths,
-    Dijkstra, DijkstraManyToManyShortestPaths, DijkstraShortestPath, ManyToManyPaths,
+    ContractionHierarchyManyToMany, ContractionHierarchyPrecomputation,
+    DefaultManyToManyShortestPaths, Dijkstra, DijkstraManyToManyShortestPaths, ManyToManyPaths,
     ShortestPathAlgorithm, SingleSourcePaths,
 };
 use jgrapht::generate::{GnmRandomGraphGenerator, GraphGenerator};
@@ -48,15 +48,15 @@ where
     let targets = targets.into_iter().collect::<Vec<_>>();
     match kind {
         Kind::Default => {
-            DefaultManyToManyShortestPaths::new(graph).get_many_to_many_paths(sources, targets)
+            DefaultManyToManyShortestPaths::new(graph).many_to_many_paths(sources, targets)
         }
         Kind::Dijkstra => {
-            DijkstraManyToManyShortestPaths::new(graph).get_many_to_many_paths(sources, targets)
+            DijkstraManyToManyShortestPaths::new(graph).many_to_many_paths(sources, targets)
         }
         Kind::ContractionHierarchy => {
             let hierarchy =
-                ContractionHierarchyPrecomputation::new(graph).compute_contraction_hierarchy()?;
-            CHManyToManyShortestPaths::new(&hierarchy).many_to_many(sources, targets)
+                ContractionHierarchyPrecomputation::new(graph).contraction_hierarchy()?;
+            ContractionHierarchyManyToMany::new(&hierarchy).many_to_many(sources, targets)
         }
     }
 }
@@ -254,7 +254,7 @@ fn assert_correct_paths<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingG
     sources: &HashSet<usize>,
     targets: &HashSet<usize>,
 ) {
-    let dijkstra = DijkstraShortestPath::new(graph);
+    let dijkstra = Dijkstra::new(graph);
     for source in sources {
         let expected = dijkstra.single_source(source).unwrap();
         for target in targets {
@@ -310,9 +310,7 @@ fn assert_single_source<G: Graph<Vertex = usize, Edge = DefaultEdge> + OutgoingG
     actual: &SingleSourcePaths<usize, DefaultEdge>,
     source: usize,
 ) {
-    let expected = DijkstraShortestPath::new(graph)
-        .single_source(&source)
-        .unwrap();
+    let expected = Dijkstra::new(graph).single_source(&source).unwrap();
     assert_eq!(actual.source(), &source);
     for target in graph.vertices() {
         let target = target.borrow();
@@ -658,9 +656,9 @@ mod contraction_hierarchy_many_to_many {
     fn test_get_paths_matches_dijkstra_oracle() {
         let graph = simple_graph();
         let hierarchy = ContractionHierarchyPrecomputation::new(&graph)
-            .compute_contraction_hierarchy()
+            .contraction_hierarchy()
             .unwrap();
-        let paths = CHManyToManyShortestPaths::new(&hierarchy)
+        let paths = ContractionHierarchyManyToMany::new(&hierarchy)
             .single_source(&1)
             .unwrap();
         assert_single_source(&graph, &paths, 1);

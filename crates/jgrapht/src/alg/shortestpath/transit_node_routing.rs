@@ -15,8 +15,8 @@
 //! Transit-node routing built on top of a contraction hierarchy.
 
 use super::contraction_hierarchy::{
-    CHManyToManyShortestPaths, ContractionHierarchy, ContractionHierarchyBidirectionalDijkstra,
-    ManyToManyPaths, parallel_chunks,
+    ContractionHierarchy, ContractionHierarchyBidirectionalDijkstra,
+    ContractionHierarchyManyToMany, ManyToManyPaths, parallel_chunks,
 };
 use super::{ShortestPathAlgorithm, SingleSourcePaths};
 use crate::graph::Graph;
@@ -271,7 +271,7 @@ where
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
-    pub fn compute_transit_node_routing(&self) -> Result<TransitNodeRouting<'g, G>> {
+    pub fn transit_node_routing(&self) -> Result<TransitNodeRouting<'g, G>> {
         let h = self.hierarchy;
         let n = h.vertices().len();
 
@@ -295,7 +295,7 @@ where
         let voronoi_diagram = compute_voronoi_diagram(h, &transit_vertex_ids);
 
         // paths between the transit vertices
-        let transit_paths = CHManyToManyShortestPaths::new(h).many_to_many(
+        let transit_paths = ContractionHierarchyManyToMany::new(h).many_to_many(
             transit_vertices.iter().cloned(),
             transit_vertices.iter().cloned(),
         )?;
@@ -349,7 +349,7 @@ where
         let (backward_access, backward_cells) =
             hierarchy_bfs(h, v, is_transit, voronoi, |u| h.downward_incoming(u));
         let vertex = h.vertices()[v].vertex.clone();
-        let many_to_many = CHManyToManyShortestPaths::new(h);
+        let many_to_many = ContractionHierarchyManyToMany::new(h);
         let access = |ids: &[usize]| -> Vec<G::Vertex> {
             ids.iter()
                 .map(|&u| h.vertices()[u].vertex.clone())
@@ -650,10 +650,10 @@ where
                     *graph,
                     *parallelism,
                 )
-                .compute_contraction_hierarchy()?;
+                .contraction_hierarchy()?;
                 let computed = TransitNodeRoutingPrecomputation::new(&hierarchy)
                     .with_parallelism(*parallelism)
-                    .compute_transit_node_routing()?;
+                    .transit_node_routing()?;
                 Ok(routing.get_or_init(|| computed))
             }
         }

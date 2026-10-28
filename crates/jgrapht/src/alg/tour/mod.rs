@@ -14,8 +14,8 @@
 
 //! Travelling salesman heuristics, exact solvers and Hamiltonian path search.
 //!
-//! The heuristics ([`NearestInsertionHeuristicTSP`], [`FarthestInsertionHeuristicTSP`],
-//! [`ChristofidesThreeHalvesApproxMetricTSP`], [`TwoOptHeuristicTSP`], and the greedy, nearest-neighbour
+//! The heuristics ([`NearestInsertionHeuristicTsp`], [`FarthestInsertionHeuristicTsp`],
+//! [`Christofides`], [`TwoOptHeuristicTsp`], and the greedy, nearest-neighbour
 //! and random tours in `simple`) return a tour as a [`GraphWalk`](crate::GraphWalk). The exact Held-Karp
 //! solver is limited to small graphs and says so with
 //! [`GraphError::TooManyVertices`](crate::GraphError::TooManyVertices). Hamiltonian cycle and path
@@ -29,14 +29,14 @@ mod simple;
 mod two_opt;
 
 pub use base::{HamiltonianCycleAlgorithm, HamiltonianCycleImprovementAlgorithm};
-pub use christofides::ChristofidesThreeHalvesApproxMetricTSP;
-pub use insertion::{FarthestInsertionHeuristicTSP, NearestInsertionHeuristicTSP};
+pub use christofides::Christofides;
+pub use insertion::{FarthestInsertionHeuristicTsp, NearestInsertionHeuristicTsp};
 pub use path::{
     BacktrackingHamiltonianPath, DagHamiltonianPath, HamiltonianPathAlgorithm,
     HamiltonianPathSearchResult, HeldKarpHamiltonianPath, SearchStatus,
 };
 pub use simple::{
-    GreedyHeuristicTSP, HeldKarpTSP, NearestNeighborHeuristicTSP, PalmerHamiltonianCycle,
-    RandomTourTSP, TwoApproxMetricTSP,
+    GreedyHeuristicTsp, HeldKarpTsp, NearestNeighborHeuristicTsp, PalmerHamiltonianCycle,
+    RandomTourTsp, TwoApproxMetricTsp,
 };
-pub use two_opt::TwoOptHeuristicTSP;
+pub use two_opt::TwoOptHeuristicTsp;

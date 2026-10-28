@@ -87,15 +87,12 @@ fn matchings_against_brute_force() {
                 .unwrap();
         }
         let edges = weighted_edges(&g);
-        let m = DenseEdmondsMaximumCardinalityMatching::new(&g)
-            .unwrap()
-            .get_matching()
-            .unwrap();
+        let m = DenseEdmonds::new(&g).unwrap().matching().unwrap();
         assert!(matching_is_valid(&g, &m));
         assert_eq!(m.len() as f64, brute_max_matching(&edges, 0, 0, false));
         let greedy = GreedyWeightedMatching::new(&g, false)
             .unwrap()
-            .get_matching()
+            .matching()
             .unwrap();
         assert!(matching_is_valid(&g, &greedy));
         assert!(2.0 * greedy.weight() >= brute_max_matching(&edges, 0, 0, true) - 1e-9);
@@ -103,14 +100,7 @@ fn matchings_against_brute_force() {
     // odd cycle forces a blossom
     let mut g = UGraph::<usize>::simple();
     Ring(7).generate_indexed(&mut g).unwrap();
-    assert_eq!(
-        DenseEdmondsMaximumCardinalityMatching::new(&g)
-            .unwrap()
-            .get_matching()
-            .unwrap()
-            .len(),
-        3
-    );
+    assert_eq!(DenseEdmonds::new(&g).unwrap().matching().unwrap().len(), 3);
 }
 
 #[test]
@@ -134,14 +124,10 @@ fn bipartite_matchings() {
         }
         let edges = weighted_edges(&g);
         let (partition1, partition2) = bipartite_partition(&g).unwrap();
-        let hk = HopcroftKarpMaximumCardinalityBipartiteMatching::new(
-            &g,
-            partition1.clone(),
-            partition2.clone(),
-        )
-        .unwrap()
-        .get_matching()
-        .unwrap();
+        let hk = HopcroftKarp::new(&g, partition1.clone(), partition2.clone())
+            .unwrap()
+            .matching()
+            .unwrap();
         assert!(matching_is_valid(&g, &hk));
         assert_eq!(hk.len() as f64, brute_max_matching(&edges, 0, 0, false));
         let hu = MaximumWeightBipartiteMatching::new(
@@ -150,7 +136,7 @@ fn bipartite_matchings() {
             partition2.into_iter().collect(),
         )
         .unwrap()
-        .get_matching()
+        .matching()
         .unwrap();
         assert!(matching_is_valid(&g, &hu));
         assert_eq!(hu.weight(), brute_max_matching(&edges, 0, 0, true));

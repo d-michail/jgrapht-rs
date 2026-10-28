@@ -43,42 +43,42 @@ impl<V, E> NetworkInfo<V, E> {
     }
     /// The sources that are not transshipment sources.
     pub fn pure_sources(&self) -> &[V] {
-        self.range(0, self.config.pure_source_num())
+        self.range(0, self.config.pure_source_count())
     }
     /// The sources that also pass flow on from other nodes.
     pub fn transshipment_sources(&self) -> &[V] {
-        self.range(self.config.pure_source_num(), self.config.source_num())
+        self.range(self.config.pure_source_count(), self.config.source_count())
     }
     /// All sources: the pure sources followed by the transshipment sources.
     pub fn sources(&self) -> &[V] {
-        self.range(0, self.config.source_num())
+        self.range(0, self.config.source_count())
     }
     /// The nodes that are neither sources nor sinks.
     pub fn transshipment_nodes(&self) -> &[V] {
         self.range(
-            self.config.source_num(),
-            self.config.source_num() + self.config.transship_node_num(),
+            self.config.source_count(),
+            self.config.source_count() + self.config.transship_node_count(),
         )
     }
     /// The sinks that are not transshipment sinks.
     pub fn pure_sinks(&self) -> &[V] {
         self.range(
-            self.config.node_num() - self.config.pure_sink_num(),
-            self.config.node_num(),
+            self.config.node_count() - self.config.pure_sink_count(),
+            self.config.node_count(),
         )
     }
     /// The sinks that also send flow on to other nodes.
     pub fn transshipment_sinks(&self) -> &[V] {
         self.range(
-            self.config.node_num() - self.config.sink_num(),
-            self.config.node_num() - self.config.pure_sink_num(),
+            self.config.node_count() - self.config.sink_count(),
+            self.config.node_count() - self.config.pure_sink_count(),
         )
     }
     /// All sinks: the transshipment sinks followed by the pure sinks.
     pub fn sinks(&self) -> &[V] {
         self.range(
-            self.config.node_num() - self.config.sink_num(),
-            self.config.node_num(),
+            self.config.node_count() - self.config.sink_count(),
+            self.config.node_count(),
         )
     }
     /// Arcs of the initial chains / chain-to-sink skeleton.

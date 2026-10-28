@@ -36,8 +36,8 @@ use std::collections::VecDeque;
 ///
 /// # Rust notes
 ///
-/// `DinicMFImpl`: blocking flows on level graphs, `O(V² E)`.
-pub struct DinicMFImpl<'g, G: OutgoingGraph> {
+/// `Dinic`: blocking flows on level graphs, `O(V² E)`.
+pub struct Dinic<'g, G: OutgoingGraph> {
     net: FlowNet<'g, G>,
     /// current-arc pointer per vertex
     index: Vec<usize>,
@@ -45,7 +45,7 @@ pub struct DinicMFImpl<'g, G: OutgoingGraph> {
     level: Vec<i64>,
 }
 
-impl<'g, G: OutgoingGraph> DinicMFImpl<'g, G> {
+impl<'g, G: OutgoingGraph> Dinic<'g, G> {
     /// Constructor. Constructs a new network on which we will calculate the maximum flow, using
     /// Dinic algorithm.
     ///
@@ -68,7 +68,7 @@ impl<'g, G: OutgoingGraph> DinicMFImpl<'g, G> {
         }
         let net = FlowNet::new(network, epsilon)?;
         net.check_capacities(epsilon)?;
-        Ok(DinicMFImpl {
+        Ok(Dinic {
             net,
             index: Vec::new(),
             level: Vec::new(),
@@ -152,4 +152,4 @@ impl<'g, G: OutgoingGraph> DinicMFImpl<'g, G> {
     }
 }
 
-flow_algorithm_api!(DinicMFImpl, crate::graph::OutgoingGraph);
+flow_algorithm_api!(Dinic, crate::graph::OutgoingGraph);

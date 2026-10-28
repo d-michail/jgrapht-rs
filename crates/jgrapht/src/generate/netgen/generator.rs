@@ -15,7 +15,7 @@
 use super::config::NetworkGeneratorConfig;
 use super::distributor::Distributor;
 use super::problems::{BipartiteMatchingProblem, MaximumFlowProblem, NetworkInfo};
-use crate::alg::flow::MinimumCostFlowProblemImpl;
+use crate::alg::flow::MinimumCostFlowNetwork;
 use crate::graph::OutgoingGraph;
 use crate::graph::props::require_directed;
 use crate::graph::{Graph, GraphMut};
@@ -178,14 +178,14 @@ where
     >(
         &mut self,
         graph: &'g mut G,
-    ) -> Result<MinimumCostFlowProblemImpl<'g, G>>
+    ) -> Result<MinimumCostFlowNetwork<'g, G>>
     where
         V: 'g,
         E: 'g,
     {
         require_directed(graph)?;
         let run = self.generate(graph)?;
-        Ok(MinimumCostFlowProblemImpl::with_costs(
+        Ok(MinimumCostFlowNetwork::with_costs(
             graph,
             move |vertex| run.supply.get(vertex).copied().unwrap_or(0),
             move |edge| run.capacity[edge],
@@ -250,22 +250,22 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
             cost: HashMap::new(),
             skeleton: Vec::new(),
             ub: [
-                config.max_source_to_tsource_arc_num(),
-                config.max_source_to_tnode_arc_num(),
-                config.max_source_to_sink_arc_num(),
-                config.max_tnode_to_tsource_arc_num(),
-                config.max_tnode_to_tnode_arc_num(),
-                config.max_tnode_to_sink_arc_num(),
-                config.max_tsink_to_tsource_arc_num(),
-                config.max_tsink_to_tnode_arc_num(),
-                config.max_tsink_to_sink_arc_num(),
+                config.max_source_to_tsource_arc_count(),
+                config.max_source_to_tnode_arc_count(),
+                config.max_source_to_sink_arc_count(),
+                config.max_tnode_to_tsource_arc_count(),
+                config.max_tnode_to_tnode_arc_count(),
+                config.max_tnode_to_sink_arc_count(),
+                config.max_tsink_to_tsource_arc_count(),
+                config.max_tsink_to_tnode_arc_count(),
+                config.max_tsink_to_sink_arc_count(),
             ],
         };
-        run.create_nodes(config.pure_source_num(), NodeType::PureSource)?;
-        run.create_nodes(config.transship_source_num(), NodeType::TransshipSource)?;
-        run.create_nodes(config.transship_node_num(), NodeType::TransshipNode)?;
-        run.create_nodes(config.transship_sink_num(), NodeType::TransshipSink)?;
-        run.create_nodes(config.pure_sink_num(), NodeType::PureSink)?;
+        run.create_nodes(config.pure_source_count(), NodeType::PureSource)?;
+        run.create_nodes(config.transship_source_count(), NodeType::TransshipSource)?;
+        run.create_nodes(config.transship_node_count(), NodeType::TransshipNode)?;
+        run.create_nodes(config.transship_sink_count(), NodeType::TransshipSink)?;
+        run.create_nodes(config.pure_sink_count(), NodeType::PureSink)?;
         Ok(run)
     }
 
@@ -284,17 +284,17 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
     }
 
     fn create_supply(&mut self) {
-        let source_num = self.config.source_num();
+        let source_count = self.config.source_count();
         // supply per source is guaranteed to be at least 1
-        let supply_per_source = self.config.total_supply() / source_num;
-        for source_id in 0..source_num as usize {
+        let supply_per_source = self.config.total_supply() / source_count;
+        for source_id in 0..source_count as usize {
             let partial = self.rng.next_int_bound(supply_per_source as usize) as i32 + 1;
             self.nodes[source_id].supply += partial;
-            let random_source = self.rng.next_int_bound(source_num as usize);
+            let random_source = self.rng.next_int_bound(source_count as usize);
             self.nodes[random_source].supply += supply_per_source - partial;
         }
-        let random_source = self.rng.next_int_bound(source_num as usize);
-        self.nodes[random_source].supply += self.config.total_supply() % source_num;
+        let random_source = self.rng.next_int_bound(source_count as usize);
+        self.nodes[random_source].supply += self.config.total_supply() % source_count;
         for node in &self.nodes {
             if node.supply != 0 {
                 self.supply.insert(node.vertex.clone(), node.supply);
@@ -303,20 +303,20 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
     }
 
     fn init_chains(&mut self) {
-        for id in 0..self.config.source_num() as usize {
+        for id in 0..self.config.source_count() as usize {
             self.nodes[id].chain_nodes.push(id);
         }
     }
 
     fn generate_chains(&mut self) -> Result<()> {
-        let source_num = self.config.source_num() as usize;
-        let tnode_num = self.config.transship_node_num();
-        let sixty_percent = (6 * tnode_num) / 10;
+        let source_count = self.config.source_count() as usize;
+        let tnode_count = self.config.transship_node_count();
+        let sixty_percent = (6 * tnode_count) / 10;
         let mut tnodes = ElementsSequenceGenerator::new(self.transship_nodes());
         // chains from the sources using ~60% of the transshipment nodes
         let mut chain_source_id = 0;
         for _ in 0..sixty_percent {
-            if chain_source_id == source_num {
+            if chain_source_id == source_count {
                 chain_source_id = 0;
             }
             let head = tnodes.next(self.rng).unwrap();
@@ -326,7 +326,7 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
         }
         // randomly extend the chains with the remaining ~40%
         while let Some(head) = tnodes.next(self.rng) {
-            let source_id = self.rng.next_int_bound(source_num);
+            let source_id = self.rng.next_int_bound(source_count);
             let last = *self.nodes[source_id].chain_nodes.last().unwrap();
             self.add_skeleton_arc(source_id, last, head)?;
         }
@@ -334,28 +334,28 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
     }
 
     fn connect_chains_to_sinks(&mut self) -> Result<()> {
-        let remaining_arcs = self.config.arc_num() - self.graph.edge_count() as i32;
-        debug_assert!(remaining_arcs >= self.config.sink_num());
+        let remaining_arcs = self.config.arc_count() - self.graph.edge_count() as i32;
+        debug_assert!(remaining_arcs >= self.config.sink_count());
         let mut chain_to_sink_arcs =
-            remaining_arcs.min(2 * self.config.source_num().max(self.config.sink_num()));
+            remaining_arcs.min(2 * self.config.source_count().max(self.config.sink_count()));
         let chain_to_sink_arc_ub = (self.ub[S2S] + self.ub[TN2S]).min(MAX_ARC_NUM as i64) as i32;
         chain_to_sink_arcs = chain_to_sink_arc_ub.min(chain_to_sink_arcs);
         let sources = self.sources();
-        // this sum is at least max(source_num, sink_num)
-        let mut supply_and_sink_num_ub = 0i32;
+        // this sum is at least max(source_count, sink_count)
+        let mut supply_and_sink_count_ub = 0i32;
         for &s in &sources {
-            supply_and_sink_num_ub += self.config.sink_num().min(self.nodes[s].supply);
+            supply_and_sink_count_ub += self.config.sink_count().min(self.nodes[s].supply);
         }
-        chain_to_sink_arcs = chain_to_sink_arcs.min(supply_and_sink_num_ub);
+        chain_to_sink_arcs = chain_to_sink_arcs.min(supply_and_sink_count_ub);
 
         let sinks_per_source = {
             let nodes = &self.nodes;
-            let sink_num = self.config.sink_num();
+            let sink_count = self.config.sink_count();
             let mut distributor = Distributor::new();
             distributor.add_lower_bound(|_: &usize| 1);
             distributor.add_upper_bound(|s: &usize| nodes[*s].supply);
-            distributor.add_upper_bound(|_: &usize| sink_num);
-            distributor.get_distribution(self.rng, &sources, chain_to_sink_arcs)?
+            distributor.add_upper_bound(|_: &usize| sink_count);
+            distributor.distribution(self.rng, &sources, chain_to_sink_arcs)?
         };
 
         let sinks = self.sinks();
@@ -373,11 +373,7 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
             let supply_dist = {
                 let mut distributor = Distributor::new();
                 distributor.add_lower_bound(|_: &usize| 1);
-                distributor.get_distribution(
-                    self.rng,
-                    &chain_sinks,
-                    self.nodes[chain_source].supply,
-                )?
+                distributor.distribution(self.rng, &chain_sinks, self.nodes[chain_source].supply)?
             };
             for j in 0..count as usize {
                 let sink = chain_sinks[j];
@@ -395,7 +391,7 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
     }
 
     fn add_all_remaining_arcs(&mut self) -> Result<()> {
-        let remaining_arcs = self.config.arc_num() - self.graph.edge_count() as i32;
+        let remaining_arcs = self.config.arc_count() - self.graph.edge_count() as i32;
         debug_assert!(remaining_arcs >= 0);
         let upper_bounds = self.ub;
         let class_bounds_sum: i64 = upper_bounds.iter().sum();
@@ -412,7 +408,7 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
                 let weight_bound = (2.0 * class_weight * remaining_arcs as f64) as i32;
                 weight_bound.wrapping_add(1) // make this bound positive
             });
-            distributor.get_distribution(self.rng, &class_ids, remaining_arcs)?
+            distributor.distribution(self.rng, &class_ids, remaining_arcs)?
         };
         let sources = self.sources();
         let tsources = self.transship_sources();
@@ -428,7 +424,7 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
         self.generate_arcs(&tsinks, &tsources, distribution[TS2TS])?;
         self.generate_arcs(&tsinks, &tnodes, distribution[TS2TN])?;
         self.generate_arcs(&tsinks, &sinks, distribution[TS2S])?;
-        if self.config.arc_num() as usize != self.graph.edge_count() {
+        if self.config.arc_count() as usize != self.graph.edge_count() {
             return Err(GraphError::Internal(
                 "generated an unexpected number of arcs",
             ));
@@ -446,7 +442,7 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
         let heads_set: HashSet<usize> = heads.iter().copied().collect();
         let out_degrees: Vec<i32> = tails
             .iter()
-            .map(|&n| self.possible_arc_num(n, &heads_set))
+            .map(|&n| self.possible_arc_count(n, &heads_set))
             .collect::<Result<_>>()?;
         let degree_sum: i64 = out_degrees.iter().map(|&d| d as i64).sum();
         let tail_ids: Vec<usize> = (0..tails.len()).collect();
@@ -458,19 +454,19 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
                 let bound = (2.0 * tail_weight * arcs_to_generate as f64) as i32;
                 bound.wrapping_add(1)
             });
-            distributor.get_distribution(self.rng, &tail_ids, arcs_to_generate)?
+            distributor.distribution(self.rng, &tail_ids, arcs_to_generate)?
         };
         for (i, &tail) in tails.iter().enumerate() {
-            let mut tail_arc_num = distribution[i];
+            let mut tail_arc_count = distribution[i];
             let mut head_generator = ElementsSequenceGenerator::new(heads.iter().copied());
-            while tail_arc_num > 0 && head_generator.has_next() {
+            while tail_arc_count > 0 && head_generator.has_next() {
                 let head = head_generator.next(self.rng).unwrap();
                 if self.is_valid_arc(tail, head) {
-                    tail_arc_num -= 1;
+                    tail_arc_count -= 1;
                     self.add_arc(tail, head)?;
                 }
             }
-            if tail_arc_num != 0 {
+            if tail_arc_count != 0 {
                 return Err(GraphError::InvalidState(
                     "could not generate the requested number of arcs",
                 ));
@@ -479,7 +475,7 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
         Ok(())
     }
 
-    fn possible_arc_num(&self, node: usize, nodes: &HashSet<usize>) -> Result<i32> {
+    fn possible_arc_count(&self, node: usize, nodes: &HashSet<usize>) -> Result<i32> {
         let mut possible = nodes.len() as i32;
         if nodes.contains(&node) {
             possible -= 1;
@@ -582,26 +578,26 @@ impl<'a, G: GraphMut + OutgoingGraph, R: RandomSource> Run<'a, G, R> {
         (from as usize..to as usize).collect()
     }
     fn transship_sources(&self) -> Vec<usize> {
-        self.range(self.config.pure_source_num(), self.config.source_num())
+        self.range(self.config.pure_source_count(), self.config.source_count())
     }
     fn sources(&self) -> Vec<usize> {
-        self.range(0, self.config.source_num())
+        self.range(0, self.config.source_count())
     }
     fn transship_nodes(&self) -> Vec<usize> {
         self.range(
-            self.config.source_num(),
-            self.config.source_num() + self.config.transship_node_num(),
+            self.config.source_count(),
+            self.config.source_count() + self.config.transship_node_count(),
         )
     }
     fn transship_sinks(&self) -> Vec<usize> {
         self.range(
-            self.config.source_num() + self.config.transship_node_num(),
-            self.nodes.len() as i32 - self.config.pure_sink_num(),
+            self.config.source_count() + self.config.transship_node_count(),
+            self.nodes.len() as i32 - self.config.pure_sink_count(),
         )
     }
     fn sinks(&self) -> Vec<usize> {
         self.range(
-            self.config.source_num() + self.config.transship_node_num(),
+            self.config.source_count() + self.config.transship_node_count(),
             self.nodes.len() as i32,
         )
     }

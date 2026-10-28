@@ -32,7 +32,7 @@ fn weighted_path(weights: &[f64]) -> DiGraph<u32> {
     for (i, &w) in weights.iter().enumerate() {
         let (a, b) = (i as u32, i as u32 + 1);
         g.add_edge_with_vertices(a, b).unwrap();
-        let e = *g.get_edge(&a, &b).unwrap();
+        let e = *g.edge_between(&a, &b).unwrap();
         g.set_edge_weight(&e, w).unwrap();
     }
     g

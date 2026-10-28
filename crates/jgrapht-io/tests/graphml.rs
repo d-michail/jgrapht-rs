@@ -37,7 +37,7 @@ fn imports_typed_keys_defaults_and_weights() {
     let a = String::from("a");
     let b = String::from("b");
     assert_eq!(
-        graph.edge_weight(graph.get_edge(&a, &b).unwrap()),
+        graph.edge_weight(graph.edge_between(&a, &b).unwrap()),
         Some(2.5)
     );
 }

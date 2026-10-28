@@ -121,7 +121,7 @@ fn many_to_many_get_paths(c: &mut Criterion) {
                         .vertices()
                         .map(|target| {
                             algorithm
-                                .get_many_to_many_paths([*source], [*target])
+                                .many_to_many_paths([*source], [*target])
                                 .unwrap()
                                 .path(source, target)
                                 .cloned()

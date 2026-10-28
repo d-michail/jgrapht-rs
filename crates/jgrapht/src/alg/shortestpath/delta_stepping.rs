@@ -21,7 +21,7 @@ use std::collections::HashMap;
 /// Implementation of a single-source shortest path algorithm: the delta-stepping algorithm.
 /// The algorithm computes single source shortest paths in a graphs with non-negative edge weights.
 /// When using multiple threads, this implementation typically outperforms
-/// `DijkstraShortestPath` and `BellmanFordShortestPath`.
+/// `Dijkstra` and `BellmanFord`.
 ///
 /// The delta-stepping algorithm is described in the paper: U. Meyer, P. Sanders, $\Delta$-stepping:
 /// a parallelizable shortest path algorithm, Journal of Algorithms, Volume 49, Issue 1, 2003, Pages

@@ -43,7 +43,7 @@ fn k_shortest_paths(c: &mut Criterion) {
         b.iter(|| {
             black_box(
                 YenKShortestPath::new(&g)
-                    .get_paths(&0, &(n - 1), k)
+                    .paths(&0, &(n - 1), k)
                     .unwrap()
                     .len(),
             )
@@ -53,7 +53,7 @@ fn k_shortest_paths(c: &mut Criterion) {
         b.iter(|| {
             black_box(
                 BoundedPrunedYenKShortestPath::new(&g)
-                    .get_paths(&0, &(n - 1), k)
+                    .paths(&0, &(n - 1), k)
                     .unwrap()
                     .len(),
             )
@@ -63,7 +63,7 @@ fn k_shortest_paths(c: &mut Criterion) {
         b.iter(|| {
             black_box(
                 EppsteinKShortestPath::new(&g)
-                    .get_paths(&0, &(n - 1), k)
+                    .paths(&0, &(n - 1), k)
                     .unwrap()
                     .len(),
             )
@@ -116,7 +116,7 @@ fn all_directed_paths(c: &mut Criterion) {
         b.iter(|| {
             black_box(
                 AllDirectedPaths::new(&g)
-                    .get_all_paths(&s, &t, true, None)
+                    .all_paths(&s, &t, true, None)
                     .unwrap()
                     .len(),
             )
@@ -148,7 +148,7 @@ fn sandwich_prune(c: &mut Criterion) {
                     b.iter(|| {
                         black_box(
                             algorithm
-                                .get_all_paths(&0, &target, true, Some(CHAIN_LEN + 5))
+                                .all_paths(&0, &target, true, Some(CHAIN_LEN + 5))
                                 .unwrap(),
                         )
                     })
@@ -171,13 +171,7 @@ fn sandwich_prune(c: &mut Criterion) {
         let mut algorithm = AllDirectedPaths::new(&graph);
         algorithm.set_forward_pruning(forward_pruning);
         group.bench_function(format!("loss/pruning={forward_pruning}"), |b| {
-            b.iter(|| {
-                black_box(
-                    algorithm
-                        .get_all_paths(&0, &(N - 1), true, Some(3))
-                        .unwrap(),
-                )
-            })
+            b.iter(|| black_box(algorithm.all_paths(&0, &(N - 1), true, Some(3)).unwrap()))
         });
     }
     group.finish();
@@ -347,10 +341,10 @@ fn hamiltonian_path(c: &mut Criterion) {
                 |b| {
                     b.iter(|| match &graph {
                         HamiltonianGraph::Undirected(graph) => {
-                            black_box(BacktrackingHamiltonianPath::new().get_path(graph).unwrap())
+                            black_box(BacktrackingHamiltonianPath::new().path(graph).unwrap())
                         }
                         HamiltonianGraph::Directed(graph) => {
-                            black_box(BacktrackingHamiltonianPath::new().get_path(graph).unwrap())
+                            black_box(BacktrackingHamiltonianPath::new().path(graph).unwrap())
                         }
                     })
                 },
@@ -360,10 +354,10 @@ fn hamiltonian_path(c: &mut Criterion) {
                 |b| {
                     b.iter(|| match &graph {
                         HamiltonianGraph::Undirected(graph) => {
-                            black_box(HeldKarpHamiltonianPath::new().get_path(graph).unwrap())
+                            black_box(HeldKarpHamiltonianPath::new().path(graph).unwrap())
                         }
                         HamiltonianGraph::Directed(graph) => {
-                            black_box(HeldKarpHamiltonianPath::new().get_path(graph).unwrap())
+                            black_box(HeldKarpHamiltonianPath::new().path(graph).unwrap())
                         }
                     })
                 },
@@ -391,7 +385,7 @@ fn blossom_v(c: &mut Criterion) {
             black_box(
                 KolmogorovWeightedPerfectMatching::new(&g)
                     .unwrap()
-                    .get_matching()
+                    .matching()
                     .unwrap()
                     .weight(),
             )

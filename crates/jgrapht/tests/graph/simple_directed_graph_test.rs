@@ -221,17 +221,17 @@ fn test_get_all_edges() {
 #[test]
 fn test_get_edge() {
     let f = setup();
-    assert_eq!(f.g2.get_edge(&V1, &V2), Some(&f.e12_1));
-    assert_eq!(f.g2.get_edge(&V2, &V1), Some(&f.e21_1));
-    assert_eq!(f.g3.get_edge(&V1, &V2), Some(&f.e12_2));
-    assert_eq!(f.g3.get_edge(&V2, &V1), Some(&f.e21_2));
-    assert_eq!(f.g3.get_edge(&V3, &V2), Some(&f.e32_1));
-    assert_eq!(f.g3.get_edge(&V3, &V1), Some(&f.e31_1));
-    assert_eq!(f.g3.get_edge(&V1, &V3), Some(&f.e13_1));
-    assert_eq!(f.g4.get_edge(&V1, &V2), Some(&f.e12_3));
-    assert_eq!(f.g4.get_edge(&V2, &V3), Some(&f.e23_2));
-    assert_eq!(f.g4.get_edge(&V3, &V4), Some(&f.e34_1));
-    assert_eq!(f.g4.get_edge(&V4, &V1), Some(&f.e41_1));
+    assert_eq!(f.g2.edge_between(&V1, &V2), Some(&f.e12_1));
+    assert_eq!(f.g2.edge_between(&V2, &V1), Some(&f.e21_1));
+    assert_eq!(f.g3.edge_between(&V1, &V2), Some(&f.e12_2));
+    assert_eq!(f.g3.edge_between(&V2, &V1), Some(&f.e21_2));
+    assert_eq!(f.g3.edge_between(&V3, &V2), Some(&f.e32_1));
+    assert_eq!(f.g3.edge_between(&V3, &V1), Some(&f.e31_1));
+    assert_eq!(f.g3.edge_between(&V1, &V3), Some(&f.e13_1));
+    assert_eq!(f.g4.edge_between(&V1, &V2), Some(&f.e12_3));
+    assert_eq!(f.g4.edge_between(&V2, &V3), Some(&f.e23_2));
+    assert_eq!(f.g4.edge_between(&V3, &V4), Some(&f.e34_1));
+    assert_eq!(f.g4.edge_between(&V4, &V1), Some(&f.e41_1));
 }
 
 #[test]
@@ -316,7 +316,7 @@ fn test_remove_edge_edge_and_object_object() {
     f.g4.remove_edge_between(&V1, &V2);
     assert_eq!(f.g4.edge_count(), 3);
     assert!(!f.g4.remove_edge(&f.e_loop));
-    let e23 = *f.g4.get_edge(&V2, &V3).unwrap();
+    let e23 = *f.g4.edge_between(&V2, &V3).unwrap();
     assert!(f.g4.remove_edge(&e23));
     assert_eq!(f.g4.edge_count(), 2);
 }
@@ -377,9 +377,9 @@ fn test_reversed_view() {
         assert_eq!(set(g.vertices_cloned()), set(r.vertices_cloned()));
         assert_eq!(set(g.edges_cloned()), set(r.edges_cloned()));
         assert!(r.contains_edge_between(&V2, &V1));
-        assert_eq!(r.get_edge(&V2, &V1), Some(&e));
+        assert_eq!(r.edge_between(&V2, &V1), Some(&e));
         assert!(!r.contains_edge_between(&V1, &V2));
-        assert_eq!(r.get_edge(&V1, &V2), None);
+        assert_eq!(r.edge_between(&V1, &V2), None);
         assert_eq!(r.edges_between(&V1, &V2).count(), 0);
         assert_eq!(r.edges_between(&V2, &V1).copied().collect::<Vec<_>>(), [e]);
         assert_eq!(

@@ -84,7 +84,7 @@ impl TransitiveClosure {
                             // Its a simple graph, so no self loops.
                             continue;
                         }
-                        if graph.get_edge(v1, v3).is_some() {
+                        if graph.edge_between(v1, v3).is_some() {
                             // There is already an edge from v1 ---> v3, skip.
                             continue;
                         }
@@ -293,7 +293,7 @@ impl TransitiveReduction {
             while let Some(j) = next {
                 if !matrix[i].get(j) {
                     let e = directed_graph
-                        .get_edge(&vertices[i], &vertices[j])
+                        .edge_between(&vertices[i], &vertices[j])
                         .cloned()
                         .expect("original edge");
                     directed_graph.remove_edge(&e);

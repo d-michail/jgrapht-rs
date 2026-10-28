@@ -97,7 +97,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     ///
     /// Errors of the graph operations it performs are propagated.
     pub fn test_optimality(&mut self) -> Result<bool> {
-        Ok(self.get_error()? < BLOSSOM_V_EPSILON)
+        Ok(self.error()? < BLOSSOM_V_EPSILON)
     }
 
     /// Returns the numerical optimality error of the reduced perfect matching.
@@ -106,7 +106,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
     ///
     /// Returns [`GraphError::Internal`](crate::GraphError::Internal) if an internal invariant of the library is broken (a bug).
     /// Errors of the graph operations it performs are propagated.
-    pub fn get_error(&mut self) -> Result<f64> {
+    pub fn error(&mut self) -> Result<f64> {
         self.compute()?;
         self.error
             .ok_or(crate::GraphError::Internal("the computed error is missing"))
@@ -174,8 +174,8 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedMatching<'g, G> {
             self.options,
             self.objective_sense,
         )?;
-        let reduced = perfect.get_matching()?;
-        let error = perfect.get_error()?;
+        let reduced = perfect.matching()?;
+        let error = perfect.error()?;
         let mut edges = IndexSet::new();
         for internal in reduced.edges() {
             if *internal >= original_start {
@@ -194,7 +194,7 @@ impl<G: UndirectedGraph> MatchingAlgorithm<G::Vertex, G::Edge>
 {
     /// Computes and returns a matching of maximum or minimum weight in the `initialGraph`
     /// depending on the goal of the algorithm.
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         self.compute()?;
         self.matching.clone().ok_or(crate::GraphError::Internal(
             "the computed matching is missing",
@@ -295,8 +295,8 @@ mod tests {
         let mut maximum = KolmogorovWeightedMatching::new(&graph).unwrap();
         let mut minimum =
             KolmogorovWeightedMatching::with_objective(&graph, ObjectiveSense::Minimize).unwrap();
-        assert_eq!(maximum.get_matching().unwrap().weight(), 9.0);
-        assert_eq!(minimum.get_matching().unwrap().weight(), -6.0);
+        assert_eq!(maximum.matching().unwrap().weight(), 9.0);
+        assert_eq!(minimum.matching().unwrap().weight(), -6.0);
         assert!(maximum.test_optimality().unwrap());
         assert!(minimum.test_optimality().unwrap());
     }
@@ -328,13 +328,13 @@ mod tests {
                         &graph, options, objective,
                     )
                     .unwrap();
-                    let matching = algorithm.get_matching().unwrap();
+                    let matching = algorithm.matching().unwrap();
                     assert_eq!(
                         matching.weight(),
                         exact_weight(&weights, maximize),
                         "seed={seed}, options={options}, objective={objective:?}"
                     );
-                    let error = algorithm.get_error().unwrap();
+                    let error = algorithm.error().unwrap();
                     assert!(
                         error < BLOSSOM_V_EPSILON,
                         "error={error}, seed={seed}, options={options}, objective={objective:?}"
@@ -374,7 +374,7 @@ mod tests {
                         &graph, options, objective,
                     )
                     .unwrap();
-                    let matching = algorithm.get_matching().unwrap();
+                    let matching = algorithm.matching().unwrap();
                     assert_eq!(
                         matching.weight(),
                         exact_sparse_weight(&weights, maximize),

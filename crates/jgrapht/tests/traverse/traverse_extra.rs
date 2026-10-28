@@ -60,7 +60,7 @@ fn closest_first_and_radius() {
     let mut g = UGraph::<u32>::simple().weighted();
     for (a, b, w) in [(1, 2, 1.0), (2, 3, 1.0), (1, 3, 5.0), (3, 4, 1.0)] {
         g.add_edge_with_vertices(a, b).unwrap();
-        let e = *g.get_edge(&a, &b).unwrap();
+        let e = *g.edge_between(&a, &b).unwrap();
         g.set_edge_weight(&e, w).unwrap();
     }
     let r: Vec<_> = ClosestFirst::new(&g, &1)

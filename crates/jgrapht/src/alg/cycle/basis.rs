@@ -106,7 +106,7 @@ pub trait CycleBasisAlgorithm<E> {
     /// # Errors
     ///
     /// Returns an error if the graph is not undirected.
-    fn get_cycle_basis(&mut self) -> Result<CycleBasis<E>>;
+    fn cycle_basis(&mut self) -> Result<CycleBasis<E>>;
 }
 
 fn require_directed_or_undirected<G: Graph>(graph: &G) -> Result<()> {
@@ -231,7 +231,7 @@ macro_rules! fundamental_basis {
         }
 
         impl<'g, G: IncidenceGraph> CycleBasisAlgorithm<G::Edge> for $name<'g, G> {
-            fn get_cycle_basis(&mut self) -> Result<CycleBasis<G::Edge>> {
+            fn cycle_basis(&mut self) -> Result<CycleBasis<G::Edge>> {
                 let forest = self.compute_spanning_forest()?;
                 Ok(fundamental_cycle_basis(self.graph, &forest))
             }
@@ -287,7 +287,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> PatonCycleBase<'g, G> {
 impl<'g, G: IncidenceGraph> CycleBasisAlgorithm<G::Edge> for PatonCycleBase<'g, G> {
     /// Return an undirected cycle basis of a graph. Works only for undirected graphs which do not
     /// have multiple (parallel) edges.
-    fn get_cycle_basis(&mut self) -> Result<CycleBasis<G::Edge>> {
+    fn cycle_basis(&mut self) -> Result<CycleBasis<G::Edge>> {
         let graph = self.graph;
         if has_multiple_edges(graph) {
             return Err(GraphError::InvalidGraph(

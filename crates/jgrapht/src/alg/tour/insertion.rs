@@ -49,7 +49,7 @@ struct Closest<V> {
 /// (2003)
 ///
 /// This implementation can also be used in order to augment an existing partial tour. See
-/// constructor `NearestInsertionHeuristicTSP(GraphPath)`.
+/// constructor `NearestInsertionHeuristicTsp(GraphPath)`.
 ///
 /// The runtime complexity of this class is $O(V^2)$.
 ///
@@ -57,19 +57,19 @@ struct Closest<V> {
 ///
 /// # Rust notes
 ///
-/// `NearestInsertionHeuristicTSP`: grows a sub-tour by inserting the unvisited vertex nearest to
+/// `NearestInsertionHeuristicTsp`: grows a sub-tour by inserting the unvisited vertex nearest to
 /// it next to the tour vertex it is nearest to.
-pub struct NearestInsertionHeuristicTSP<G: Graph> {
+pub struct NearestInsertionHeuristicTsp<G: Graph> {
     subtour: Option<GraphWalk<G::Vertex, G::Edge>>,
 }
 
-impl<G: Graph> Default for NearestInsertionHeuristicTSP<G> {
+impl<G: Graph> Default for NearestInsertionHeuristicTsp<G> {
     fn default() -> Self {
-        NearestInsertionHeuristicTSP { subtour: None }
+        NearestInsertionHeuristicTsp { subtour: None }
     }
 }
 
-impl<G: Graph> NearestInsertionHeuristicTSP<G> {
+impl<G: Graph> NearestInsertionHeuristicTsp<G> {
     /// Starts from the shortest edge.
     pub fn new() -> Self {
         Self::default()
@@ -77,7 +77,7 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
 
     /// Starts from the given sub-tour.
     pub fn with_subtour(subtour: GraphWalk<G::Vertex, G::Edge>) -> Self {
-        NearestInsertionHeuristicTSP {
+        NearestInsertionHeuristicTsp {
             subtour: Some(subtour),
         }
     }
@@ -232,10 +232,10 @@ impl<G: Graph> NearestInsertionHeuristicTSP<G> {
 }
 
 impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
-    for NearestInsertionHeuristicTSP<G>
+    for NearestInsertionHeuristicTsp<G>
 {
     /// Computes a tour using the nearest insertion heuristic.
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {
             return Ok(Some(singleton_tour(graph)));
@@ -267,7 +267,7 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
 /// 369–443). Springer US. <https://doi.org/10.1007/0-306-48213-4_9>
 ///
 /// This implementation can also be used in order to augment an existing partial tour. See
-/// constructor `FarthestInsertionHeuristicTSP(GraphPath)`.
+/// constructor `FarthestInsertionHeuristicTsp(GraphPath)`.
 ///
 /// The runtime complexity of this class is $O(V^2)$.
 ///
@@ -275,21 +275,21 @@ impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
 ///
 /// # Rust notes
 ///
-/// `FarthestInsertionHeuristicTSP`: inserts the vertex farthest from the sub-tour at the position
+/// `FarthestInsertionHeuristicTsp`: inserts the vertex farthest from the sub-tour at the position
 /// that lengthens the tour least. Starts from the longest edge unless given a sub-tour.
-pub struct FarthestInsertionHeuristicTSP<G: Graph> {
+pub struct FarthestInsertionHeuristicTsp<G: Graph> {
     initial_subtour: Option<GraphWalk<G::Vertex, G::Edge>>,
 }
 
-impl<G: Graph> Default for FarthestInsertionHeuristicTSP<G> {
+impl<G: Graph> Default for FarthestInsertionHeuristicTsp<G> {
     fn default() -> Self {
-        FarthestInsertionHeuristicTSP {
+        FarthestInsertionHeuristicTsp {
             initial_subtour: None,
         }
     }
 }
 
-impl<G: Graph> FarthestInsertionHeuristicTSP<G> {
+impl<G: Graph> FarthestInsertionHeuristicTsp<G> {
     /// Constructor. By default a sub-tour is chosen based on the longest edge
     pub fn new() -> Self {
         Self::default()
@@ -297,17 +297,17 @@ impl<G: Graph> FarthestInsertionHeuristicTSP<G> {
 
     /// Creates an instance with the given subtour.
     pub fn with_subtour(subtour: GraphWalk<G::Vertex, G::Edge>) -> Self {
-        FarthestInsertionHeuristicTSP {
+        FarthestInsertionHeuristicTsp {
             initial_subtour: Some(subtour),
         }
     }
 }
 
 impl<G: OutgoingGraph + UndirectedGraph> HamiltonianCycleAlgorithm<G>
-    for FarthestInsertionHeuristicTSP<G>
+    for FarthestInsertionHeuristicTsp<G>
 {
     /// Computes a tour using the farthest insertion heuristic.
-    fn get_tour(&mut self, graph: &G) -> Tour<G> {
+    fn tour(&mut self, graph: &G) -> Tour<G> {
         check_graph(graph)?;
         if graph.vertex_count() == 1 {
             return Ok(Some(singleton_tour(graph)));

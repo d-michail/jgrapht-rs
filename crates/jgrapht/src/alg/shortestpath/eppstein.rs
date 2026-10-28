@@ -553,7 +553,7 @@ impl<'g, G: OutgoingGraph + IncomingGraph> EppsteinKShortestPath<'g, G> {
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
-    pub fn get_paths(
+    pub fn paths(
         &self,
         source: &G::Vertex,
         sink: &G::Vertex,

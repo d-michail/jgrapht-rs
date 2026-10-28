@@ -102,7 +102,7 @@ fn cycles() {
     // m - n + 1
     let basis = QueueBFSFundamentalCycleBasis::new(&k4)
         .unwrap()
-        .get_cycle_basis()
+        .cycle_basis()
         .unwrap();
     assert_eq!(basis.cycles().len(), 3);
     assert!(!jgrapht::graph::props::is_forest(&k4));
@@ -113,17 +113,13 @@ fn cycles() {
 fn eulerian() {
     let mut g = UGraph::<usize>::simple();
     Ring(5).generate_indexed(&mut g).unwrap();
-    let w = HierholzerEulerianCycle::new()
-        .get_eulerian_cycle(&g)
-        .unwrap();
+    let w = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
     assert_eq!(w.length(), 5);
     assert_eq!(w.start_vertex(), w.end_vertex());
     assert!(w.is_valid(&g));
     assert!(!HierholzerEulerianCycle::new().is_eulerian(&ug(&[(1, 2), (2, 3)])));
     let d = dg(&[(1, 2), (2, 3), (3, 1), (1, 4), (4, 1)]);
-    let w = HierholzerEulerianCycle::new()
-        .get_eulerian_cycle(&d)
-        .unwrap();
+    let w = HierholzerEulerianCycle::new().eulerian_cycle(&d).unwrap();
     assert_eq!(w.length(), 5);
     assert!(w.is_valid(&d));
     assert!(!HierholzerEulerianCycle::new().is_eulerian(&ug(&[(1, 2), (3, 4)])));

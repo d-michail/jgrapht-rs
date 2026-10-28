@@ -48,7 +48,7 @@ impl<V, E> NegativeCycleDetected<V, E> {
     }
 }
 
-/// Errors of [`BellmanFord::get_paths`] and [`BellmanFord::get_path`]: either a graph error or a
+/// Errors of [`BellmanFord::paths_from`] and [`BellmanFord::path_between`]: either a graph error or a
 /// negative cycle, which carries the cycle itself.
 ///
 /// The common [`ShortestPathAlgorithm`] interface reports a negative cycle as the payload-free
@@ -90,7 +90,7 @@ impl<V, E> BellmanFordError<V, E> {
 ///
 /// Bellman–Ford single-source shortest paths in `O(|V||E|)` time.
 ///
-/// [`BellmanFord::get_paths`] and [`BellmanFord::get_path`] return the negative cycle in their
+/// [`BellmanFord::paths_from`] and [`BellmanFord::path_between`] return the negative cycle in their
 /// [`BellmanFordError`]. The [`ShortestPathAlgorithm`] implementation maps that richer error to
 /// [`GraphError::NegativeCycle`] for the common algorithm interface.
 pub struct BellmanFord<'g, G> {
@@ -98,9 +98,6 @@ pub struct BellmanFord<'g, G> {
     epsilon: f64,
     max_hops: usize,
 }
-
-/// Java-compatible class name for [`BellmanFord`].
-pub type BellmanFordShortestPath<'g, G> = BellmanFord<'g, G>;
 
 impl<'g, G> BellmanFord<'g, G> {
     /// Construct a new instance.
@@ -200,7 +197,7 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
     /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph;
     /// [`GraphError::InvalidWeight`] if an edge weight is negative, NaN or not finite. Errors of
     /// the graph operations it performs are propagated.
-    pub fn get_paths(
+    pub fn paths_from(
         &self,
         source: &G::Vertex,
     ) -> std::result::Result<
@@ -280,7 +277,7 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
     ///
     /// Returns [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of
     /// the graph operations it performs are propagated.
-    pub fn get_path(
+    pub fn path_between(
         &self,
         source: &G::Vertex,
         sink: &G::Vertex,
@@ -291,13 +288,13 @@ impl<G: OutgoingGraph> BellmanFord<'_, G> {
         if !self.graph.contains_vertex(sink) {
             return Err(GraphError::VertexNotFound.into());
         }
-        Ok(self.get_paths(source)?.path(sink))
+        Ok(self.paths_from(source)?.path(sink))
     }
 }
 
 impl<G: OutgoingGraph> ShortestPathAlgorithm<G> for BellmanFord<'_, G> {
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
-        self.get_paths(source).map_err(|error| match error {
+        self.paths_from(source).map_err(|error| match error {
             BellmanFordError::Graph(error) => error,
             BellmanFordError::NegativeCycle(_) => GraphError::NegativeCycle,
         })

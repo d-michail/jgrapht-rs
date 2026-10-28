@@ -14,7 +14,7 @@
 
 //! Vertex cover.
 
-use super::matching::{HopcroftKarpMaximumCardinalityBipartiteMatching, MatchingAlgorithm};
+use super::matching::{HopcroftKarp, MatchingAlgorithm};
 use super::partition::two_color;
 use super::util::Indexed;
 use crate::graph::Graph;
@@ -184,8 +184,7 @@ pub fn bipartite_vertex_cover<G: IncidenceGraph + UndirectedGraph>(
         .filter(|&v| side[v])
         .map(|v| ix.vertex(v))
         .collect();
-    let matching = HopcroftKarpMaximumCardinalityBipartiteMatching::new(g, partition1, partition2)?
-        .get_matching()?;
+    let matching = HopcroftKarp::new(g, partition1, partition2)?.matching()?;
     let mut mate = vec![None; ix.n()];
     for edge in matching.edges() {
         let edge = edge.borrow();
@@ -441,22 +440,22 @@ impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for BarYehudaEvenTwoAppr
 
 /// Takes both endpoints of a maximal matching (`EdgeBasedTwoApproxVCImpl`); the weight is the
 /// number of vertices.
-pub struct EdgeBasedTwoApproxVcImpl<'g, G: Graph> {
+pub struct EdgeBasedTwoApproxVertexCover<'g, G: Graph> {
     graph: &'g G,
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph> EdgeBasedTwoApproxVcImpl<'g, G> {
+impl<'g, G: UndirectedGraph + IncidenceGraph> EdgeBasedTwoApproxVertexCover<'g, G> {
     /// Creates a new instance.
     ///
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
     pub fn new(graph: &'g G) -> Result<Self> {
-        Ok(EdgeBasedTwoApproxVcImpl { graph })
+        Ok(EdgeBasedTwoApproxVertexCover { graph })
     }
 }
 
-impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for EdgeBasedTwoApproxVcImpl<'_, G> {
+impl<G: IncidenceGraph> VertexCoverAlgorithm<G::Vertex> for EdgeBasedTwoApproxVertexCover<'_, G> {
     fn vertex_cover(&self) -> Result<VertexCover<G::Vertex>> {
         let g = self.graph;
         let mut removed: HashSet<G::Vertex> = HashSet::new();

@@ -47,7 +47,7 @@ fn graph3() -> UGraph<i32> {
     g.add_vertices(0..n);
     for i in 0..n - 1 {
         g.add_edge(&i, &(i + 1)).unwrap();
-        let e = g.get_edge(&i, &(i + 1)).cloned().unwrap();
+        let e = g.edge_between(&i, &(i + 1)).cloned().unwrap();
         g.set_edge_weight(&e, (50 + random.next_int_bound(50)) as f64)
             .unwrap();
     }
@@ -57,7 +57,7 @@ fn graph3() -> UGraph<i32> {
         if u != v {
             // an existing edge is kept, but its weight is still overwritten, as in Java
             let _ = g.add_edge(&u, &v);
-            let e = g.get_edge(&u, &v).cloned().unwrap();
+            let e = g.edge_between(&u, &v).cloned().unwrap();
             g.set_edge_weight(&e, (100 + random.next_int_bound(200)) as f64)
                 .unwrap();
         }

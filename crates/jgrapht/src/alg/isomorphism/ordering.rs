@@ -127,7 +127,7 @@ impl<'g, G: IncidenceGraph> GraphOrdering<'g, G> {
     pub fn edge(&self, v1: usize, v2: usize) -> Option<G::Edge> {
         let lookup = || {
             self.graph
-                .get_edge(&self.vertices[v1], &self.vertices[v2])
+                .edge_between(&self.vertices[v1], &self.vertices[v2])
                 .cloned()
         };
         if self.cache_edges {

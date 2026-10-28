@@ -39,6 +39,11 @@
 //! | Transformations (complement, line graph, contraction) | [`transform`], [`transitive`] |
 //! | Facility location and dense subgraphs | [`centers`], [`densest`] |
 //!
+//! Many algorithms come in two forms: a function for the common call (`greedy_coloring`,
+//! `kruskal`, `maximal_cliques`) and a struct for configuration, repeated queries or use through a
+//! trait (`GreedyColoring`, `BronKerboschCliqueFinder`). The function is a shortcut for the struct
+//! with default settings; both give the same result.
+//!
 //! The [user guide](crate::guide#algorithms) shows examples.
 
 pub mod capacitated;

@@ -266,7 +266,7 @@ mod isomorphic_graph_mapping_test {
             .vertex_correspondence(&"A".to_string(), true)
             .unwrap();
         let isomorphism =
-            AHURootedTreeIsomorphismInspector::new(&tree1, &"A".to_string(), &tree2, a).unwrap();
+            AhuRootedTreeIsomorphismInspector::new(&tree1, &"A".to_string(), &tree2, a).unwrap();
         assert!(isomorphism.isomorphism_exists());
         assert!(are_isomorphic_str(&tree1, &tree2, &identity));
     }
@@ -276,10 +276,10 @@ mod isomorphic_graph_mapping_test {
         let tree1 = str_graph(&["1", "2"], &[("1", "2")]);
         let tree2 = str_graph(&["a", "b"], &[("a", "b")]);
         let tree3 = str_graph(&["A", "B"], &[("A", "B")]);
-        let iso = AHUUnrootedTreeIsomorphismInspector::new(&tree1, &tree2).unwrap();
+        let iso = AhuUnrootedTreeIsomorphismInspector::new(&tree1, &tree2).unwrap();
         assert!(iso.isomorphism_exists());
         let mapping12 = iso.mapping().unwrap();
-        let iso = AHUUnrootedTreeIsomorphismInspector::new(&tree2, &tree3).unwrap();
+        let iso = AhuUnrootedTreeIsomorphismInspector::new(&tree2, &tree3).unwrap();
         assert!(iso.isomorphism_exists());
         let mapping23 = iso.mapping().unwrap();
         let mapping13 = mapping12.compose(&mapping23);
@@ -294,11 +294,11 @@ mod isomorphic_graph_mapping_test {
             let tree1 = generate_tree(n, StdRng::seed_from_u64(test));
             let tree2 = generate_isomorphic_graph(&tree1, &mut random).0;
             let tree3 = generate_isomorphic_graph(&tree2, &mut random).0;
-            let mapping12 = AHUUnrootedTreeIsomorphismInspector::new(&tree1, &tree2)
+            let mapping12 = AhuUnrootedTreeIsomorphismInspector::new(&tree1, &tree2)
                 .unwrap()
                 .mapping()
                 .unwrap();
-            let mapping23 = AHUUnrootedTreeIsomorphismInspector::new(&tree2, &tree3)
+            let mapping23 = AhuUnrootedTreeIsomorphismInspector::new(&tree2, &tree3)
                 .unwrap()
                 .mapping()
                 .unwrap();
@@ -318,8 +318,8 @@ mod ahu_rooted_tree_isomorphism_inspector_test {
         r1: i32,
         t2: &'g UGraph<i32>,
         r2: i32,
-    ) -> AHURootedTreeIsomorphismInspector<'g, UGraph<i32>> {
-        AHURootedTreeIsomorphismInspector::new(t1, &r1, t2, &r2).unwrap()
+    ) -> AhuRootedTreeIsomorphismInspector<'g, UGraph<i32>> {
+        AhuRootedTreeIsomorphismInspector::new(t1, &r1, t2, &r2).unwrap()
     }
 
     fn assert_iso(t1: &UGraph<i32>, r1: i32, t2: &UGraph<i32>, r2: i32) {
@@ -333,7 +333,7 @@ mod ahu_rooted_tree_isomorphism_inspector_test {
         let t1 = str_graph(&["1"], &[]);
         let t2 = str_graph(&["A"], &[]);
         let iso =
-            AHURootedTreeIsomorphismInspector::new(&t1, &"1".to_string(), &t2, &"A".to_string())
+            AhuRootedTreeIsomorphismInspector::new(&t1, &"1".to_string(), &t2, &"A".to_string())
                 .unwrap();
         assert!(iso.isomorphism_exists());
         assert!(are_isomorphic_str(&t1, &t2, &iso.mapping().unwrap()));
@@ -413,7 +413,7 @@ mod ahu_rooted_tree_isomorphism_inspector_test {
             &[("a", "b"), ("a", "c"), ("c", "f"), ("c", "d"), ("c", "e")],
         );
         let iso =
-            AHURootedTreeIsomorphismInspector::new(&t1, &"A".to_string(), &t2, &"a".to_string())
+            AhuRootedTreeIsomorphismInspector::new(&t1, &"A".to_string(), &t2, &"a".to_string())
                 .unwrap();
         assert!(!iso.isomorphism_exists());
         assert!(iso.mapping().is_none());
@@ -430,7 +430,7 @@ mod ahu_rooted_tree_isomorphism_inspector_test {
             &[("a", "b"), ("a", "c"), ("b", "e"), ("b", "d")],
         );
         let iso =
-            AHURootedTreeIsomorphismInspector::new(&t1, &"A".to_string(), &t2, &"a".to_string())
+            AhuRootedTreeIsomorphismInspector::new(&t1, &"A".to_string(), &t2, &"a".to_string())
                 .unwrap();
         assert!(iso.isomorphism_exists());
         assert!(are_isomorphic_str(&t1, &t2, &iso.mapping().unwrap()));
@@ -466,7 +466,7 @@ mod ahu_rooted_tree_isomorphism_inspector_test {
         let iso = rooted(&t1, 1, &t2, 11);
         assert!(!iso.isomorphism_exists());
         assert!(iso.mapping().is_none());
-        let forest = AHUForestIsomorphismInspector::new(&t1, [1, 3], &t2, [11, 31]).unwrap();
+        let forest = AhuForestIsomorphismInspector::new(&t1, [1, 3], &t2, [11, 31]).unwrap();
         assert!(forest.isomorphism_exists());
         assert!(are_isomorphic(&t1, &t2, &forest.mapping().unwrap()));
     }
@@ -476,7 +476,7 @@ mod ahu_rooted_tree_isomorphism_inspector_test {
         let t1 = str_graph(&["a", "A"], &[]);
         let t2 = str_graph(&[], &[]);
         assert!(
-            AHURootedTreeIsomorphismInspector::new(&t1, &"b".to_string(), &t2, &"A".to_string())
+            AhuRootedTreeIsomorphismInspector::new(&t1, &"b".to_string(), &t2, &"A".to_string())
                 .is_err()
         );
     }
@@ -506,7 +506,7 @@ mod ahu_unrooted_tree_isomorphism_inspector_test {
     use super::*;
 
     fn assert_iso(t1: &UGraph<i32>, t2: &UGraph<i32>) {
-        let iso = AHUUnrootedTreeIsomorphismInspector::new(t1, t2).unwrap();
+        let iso = AhuUnrootedTreeIsomorphismInspector::new(t1, t2).unwrap();
         assert!(iso.isomorphism_exists());
         assert!(are_isomorphic(t1, t2, &iso.mapping().unwrap()));
     }
@@ -514,14 +514,14 @@ mod ahu_unrooted_tree_isomorphism_inspector_test {
     #[test]
     fn empty_graph() {
         let t = str_graph(&[], &[]);
-        assert!(AHUUnrootedTreeIsomorphismInspector::new(&t, &t).is_err());
+        assert!(AhuUnrootedTreeIsomorphismInspector::new(&t, &t).is_err());
     }
 
     #[test]
     fn single_vertex() {
         let t1 = str_graph(&["1"], &[]);
         let t2 = str_graph(&["A"], &[]);
-        let iso = AHUUnrootedTreeIsomorphismInspector::new(&t1, &t2).unwrap();
+        let iso = AhuUnrootedTreeIsomorphismInspector::new(&t1, &t2).unwrap();
         assert!(iso.isomorphism_exists());
         assert!(are_isomorphic_str(&t1, &t2, &iso.mapping().unwrap()));
     }
@@ -530,7 +530,7 @@ mod ahu_unrooted_tree_isomorphism_inspector_test {
     fn unrooted_isomorphism() {
         let t1 = str_graph(&["1", "2", "3"], &[("1", "2"), ("2", "3")]);
         let t2 = str_graph(&["A", "B", "C"], &[("A", "B"), ("B", "C")]);
-        let iso = AHUUnrootedTreeIsomorphismInspector::new(&t1, &t2).unwrap();
+        let iso = AhuUnrootedTreeIsomorphismInspector::new(&t1, &t2).unwrap();
         assert!(iso.isomorphism_exists());
         assert!(are_isomorphic_str(&t1, &t2, &iso.mapping().unwrap()));
     }
@@ -603,11 +603,11 @@ mod ahu_unrooted_tree_isomorphism_inspector_test {
         let t1 = str_graph(&["A", "B", "C"], &[("A", "B"), ("B", "C")]);
         let t2 = str_graph(&["a", "b", "c"], &[("a", "b"), ("b", "c")]);
         let rooted =
-            AHURootedTreeIsomorphismInspector::new(&t1, &"A".to_string(), &t2, &"b".to_string())
+            AhuRootedTreeIsomorphismInspector::new(&t1, &"A".to_string(), &t2, &"b".to_string())
                 .unwrap();
         assert!(!rooted.isomorphism_exists());
         assert!(rooted.mapping().is_none());
-        let iso = AHUUnrootedTreeIsomorphismInspector::new(&t1, &t2).unwrap();
+        let iso = AhuUnrootedTreeIsomorphismInspector::new(&t1, &t2).unwrap();
         assert!(iso.isomorphism_exists());
         assert!(are_isomorphic_str(&t1, &t2, &iso.mapping().unwrap()));
     }
@@ -622,7 +622,7 @@ mod ahu_unrooted_tree_isomorphism_inspector_test {
             &["a", "b", "c", "d", "e"],
             &[("a", "b"), ("a", "c"), ("b", "e"), ("b", "d")],
         );
-        let iso = AHUUnrootedTreeIsomorphismInspector::new(&t1, &t2).unwrap();
+        let iso = AhuUnrootedTreeIsomorphismInspector::new(&t1, &t2).unwrap();
         assert!(iso.isomorphism_exists());
         assert!(are_isomorphic_str(&t1, &t2, &iso.mapping().unwrap()));
     }
@@ -654,10 +654,10 @@ mod ahu_unrooted_tree_isomorphism_inspector_test {
     fn disconnected_tree() {
         let t1 = int_graph(&[1, 2, 3], &[(1, 2)]);
         let t2 = int_graph(&[11, 21, 31], &[(11, 21)]);
-        let iso = AHUUnrootedTreeIsomorphismInspector::new(&t1, &t2).unwrap();
+        let iso = AhuUnrootedTreeIsomorphismInspector::new(&t1, &t2).unwrap();
         assert!(!iso.isomorphism_exists());
         assert!(iso.mapping().is_none());
-        let forest = AHUForestIsomorphismInspector::new(&t1, [1, 3], &t2, [11, 31]).unwrap();
+        let forest = AhuForestIsomorphismInspector::new(&t1, [1, 3], &t2, [11, 31]).unwrap();
         assert!(forest.isomorphism_exists());
         assert!(are_isomorphic(&t1, &t2, &forest.mapping().unwrap()));
     }
@@ -666,7 +666,7 @@ mod ahu_unrooted_tree_isomorphism_inspector_test {
     fn invalid_root() {
         let t1 = str_graph(&["a", "A"], &[]);
         let t2 = str_graph(&[], &[]);
-        assert!(AHUUnrootedTreeIsomorphismInspector::new(&t1, &t2).is_err());
+        assert!(AhuUnrootedTreeIsomorphismInspector::new(&t1, &t2).is_err());
     }
 
     #[test]
@@ -722,7 +722,7 @@ mod ahu_forest_isomorphism_inspector_test {
     }
 
     fn assert_iso(f1: &UGraph<i32>, r1: HashSet<i32>, f2: &UGraph<i32>, r2: HashSet<i32>) {
-        let iso = AHUForestIsomorphismInspector::new(f1, r1, f2, r2).unwrap();
+        let iso = AhuForestIsomorphismInspector::new(f1, r1, f2, r2).unwrap();
         assert!(iso.isomorphism_exists());
         assert!(are_isomorphic(f1, f2, &iso.mapping().unwrap()));
     }
@@ -730,7 +730,7 @@ mod ahu_forest_isomorphism_inspector_test {
     #[test]
     fn empty_graph() {
         let t = str_graph(&[], &[]);
-        assert!(AHUForestIsomorphismInspector::new(&t, [], &t, []).is_err());
+        assert!(AhuForestIsomorphismInspector::new(&t, [], &t, []).is_err());
     }
 
     #[test]
@@ -738,7 +738,7 @@ mod ahu_forest_isomorphism_inspector_test {
         let t1 = str_graph(&["1"], &[]);
         let t2 = str_graph(&["A"], &[]);
         let iso =
-            AHUForestIsomorphismInspector::new(&t1, ["1".to_string()], &t2, ["A".to_string()])
+            AhuForestIsomorphismInspector::new(&t1, ["1".to_string()], &t2, ["A".to_string()])
                 .unwrap();
         assert!(iso.isomorphism_exists());
         assert!(are_isomorphic_str(&t1, &t2, &iso.mapping().unwrap()));
@@ -749,7 +749,7 @@ mod ahu_forest_isomorphism_inspector_test {
         let t1 = str_graph(&["a", "A"], &[]);
         let t2 = str_graph(&[], &[]);
         assert!(
-            AHUForestIsomorphismInspector::new(&t1, ["b".to_string()], &t2, ["A".to_string()])
+            AhuForestIsomorphismInspector::new(&t1, ["b".to_string()], &t2, ["A".to_string()])
                 .is_err()
         );
     }
@@ -758,7 +758,7 @@ mod ahu_forest_isomorphism_inspector_test {
     fn small_forest() {
         let t1 = str_graph(&["a", "b", "c", "d"], &[("a", "b"), ("a", "c")]);
         let t2 = str_graph(&["A", "B", "C", "D"], &[("B", "A"), ("A", "C")]);
-        let iso = AHUForestIsomorphismInspector::new(
+        let iso = AhuForestIsomorphismInspector::new(
             &t1,
             ["b".to_string(), "d".to_string()],
             &t2,
@@ -1265,7 +1265,7 @@ mod vf2_subgraph_isomorphism_inspector_test {
 
     /// Asserts the iterator yields exactly the `expected` mappings, in any order.
     fn assert_mappings<'a, 'g, G: Graph + 'g + IncidenceGraph>(
-        mut iter: VF2MappingIterator<'a, 'g, G>,
+        mut iter: Vf2MappingIterator<'a, 'g, G>,
         expected: &[&str],
     ) where
         G::Vertex: std::fmt::Display,

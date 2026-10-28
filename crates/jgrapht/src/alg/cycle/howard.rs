@@ -32,9 +32,9 @@ use std::collections::{HashMap, VecDeque};
 /// `MinimumCycleMeanAlgorithm`: the cycle with the smallest mean edge weight.
 pub trait MinimumCycleMeanAlgorithm<G: Graph> {
     /// The smallest cycle mean; `None` if the graph has no cycle.
-    fn get_cycle_mean(&mut self) -> Option<f64>;
+    fn cycle_mean(&mut self) -> Option<f64>;
     /// A cycle attaining the smallest mean, `None` if the graph is acyclic.
-    fn get_cycle(&mut self) -> Option<GraphWalk<G::Vertex, G::Edge>>;
+    fn cycle(&mut self) -> Option<GraphWalk<G::Vertex, G::Edge>>;
 }
 
 /// Implementation of Howard's algorithm for finding minimum cycle mean in a graph.
@@ -294,13 +294,13 @@ impl<'g, G: DirectedGraph + IncomingGraph, S: StrongConnectivityAlgorithm<G = G>
     MinimumCycleMeanAlgorithm<G> for HowardMinimumMeanCycle<'g, G, S>
 {
     /// Computes minimum mean among all cycle; `None` if no cycle has been found.
-    fn get_cycle_mean(&mut self) -> Option<f64> {
-        self.get_cycle()
+    fn cycle_mean(&mut self) -> Option<f64> {
+        self.cycle()
             .map(|cycle| cycle.weight() / cycle.length() as f64)
     }
 
     /// Computes cycle with minimum mean. Returns `None` if no cycle has been found.
-    fn get_cycle(&mut self) -> Option<GraphWalk<G::Vertex, G::Edge>> {
+    fn cycle(&mut self) -> Option<GraphWalk<G::Vertex, G::Edge>> {
         let mut is_best_cycle_found = false;
         let mut best_cycle_weight = 0.0;
         let mut best_cycle_length = 1usize;

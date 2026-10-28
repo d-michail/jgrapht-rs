@@ -33,44 +33,43 @@ use jgrapht::*;
 #[test]
 fn matching_does_not_panic() {
     sweep("matching", undirected, &VALID, |g| {
-        let _ = GreedyMaximumCardinalityMatching::new(g, true).and_then(|mut m| m.get_matching());
-        let _ = GreedyMaximumCardinalityMatching::new(g, false).and_then(|mut m| m.get_matching());
-        let _ = GreedyWeightedMatching::new(g, true).and_then(|mut m| m.get_matching());
-        let _ = GreedyWeightedMatching::new(g, false).and_then(|mut m| m.get_matching());
-        let _ = PathGrowingWeightedMatching::new(g).and_then(|mut m| m.get_matching());
-        let _ = DenseEdmondsMaximumCardinalityMatching::new(g).and_then(|mut m| m.get_matching());
-        let _ = SparseEdmondsMaximumCardinalityMatching::new(g).and_then(|mut m| m.get_matching());
-        let _ = KolmogorovWeightedPerfectMatching::new(g).and_then(|mut m| m.get_matching());
-        let _ = KolmogorovWeightedMatching::new(g).and_then(|mut m| m.get_matching());
+        let _ = GreedyMaximumCardinalityMatching::new(g, true).and_then(|mut m| m.matching());
+        let _ = GreedyMaximumCardinalityMatching::new(g, false).and_then(|mut m| m.matching());
+        let _ = GreedyWeightedMatching::new(g, true).and_then(|mut m| m.matching());
+        let _ = GreedyWeightedMatching::new(g, false).and_then(|mut m| m.matching());
+        let _ = PathGrowingWeightedMatching::new(g).and_then(|mut m| m.matching());
+        let _ = DenseEdmonds::new(g).and_then(|mut m| m.matching());
+        let _ = SparseEdmonds::new(g).and_then(|mut m| m.matching());
+        let _ = KolmogorovWeightedPerfectMatching::new(g).and_then(|mut m| m.matching());
+        let _ = KolmogorovWeightedMatching::new(g).and_then(|mut m| m.matching());
         let vs: Vec<usize> = g.vertices_cloned().collect();
         let (a, b) = vs.split_at(vs.len() / 2);
         let (a, b): (IndexSet<usize>, IndexSet<usize>) =
             (a.iter().copied().collect(), b.iter().copied().collect());
-        let _ = HopcroftKarpMaximumCardinalityBipartiteMatching::new(g, a.clone(), b.clone())
-            .and_then(|mut m| m.get_matching());
+        let _ = HopcroftKarp::new(g, a.clone(), b.clone()).and_then(|mut m| m.matching());
         let _ = MaximumWeightBipartiteMatching::new(g, a.clone(), b.clone())
-            .and_then(|mut m| m.get_matching());
-        let _ = KuhnMunkresMinimalWeightBipartitePerfectMatching::new(g, a, b).get_matching();
+            .and_then(|mut m| m.matching());
+        let _ = KuhnMunkres::new(g, a, b).matching();
     });
     sweep("matching positive", undirected, &POSITIVE, |g| {
-        let _ = KolmogorovWeightedPerfectMatching::new(g).and_then(|mut m| m.get_matching());
-        let _ = KolmogorovWeightedMatching::new(g).and_then(|mut m| m.get_matching());
+        let _ = KolmogorovWeightedPerfectMatching::new(g).and_then(|mut m| m.matching());
+        let _ = KolmogorovWeightedMatching::new(g).and_then(|mut m| m.matching());
     });
 }
 
 #[test]
 fn tours_do_not_panic() {
     sweep("tours", undirected, &POSITIVE, |g| {
-        let _ = RandomTourTSP::new().get_tour(g);
-        let _ = NearestNeighborHeuristicTSP::new().get_tour(g);
-        let _ = NearestInsertionHeuristicTSP::new().get_tour(g);
-        let _ = FarthestInsertionHeuristicTSP::new().get_tour(g);
-        let _ = GreedyHeuristicTSP.get_tour(g);
-        let _ = TwoApproxMetricTSP.get_tour(g);
-        let _ = ChristofidesThreeHalvesApproxMetricTSP.get_tour(g);
-        let _ = HeldKarpTSP.get_tour(g);
-        let _ = TwoOptHeuristicTSP::new().get_tour(g);
-        let _ = PalmerHamiltonianCycle.get_tour(g);
+        let _ = RandomTourTsp::new().tour(g);
+        let _ = NearestNeighborHeuristicTsp::new().tour(g);
+        let _ = NearestInsertionHeuristicTsp::new().tour(g);
+        let _ = FarthestInsertionHeuristicTsp::new().tour(g);
+        let _ = GreedyHeuristicTsp.tour(g);
+        let _ = TwoApproxMetricTsp.tour(g);
+        let _ = Christofides.tour(g);
+        let _ = HeldKarpTsp.tour(g);
+        let _ = TwoOptHeuristicTsp::new().tour(g);
+        let _ = PalmerHamiltonianCycle.tour(g);
     });
 }
 
@@ -82,15 +81,15 @@ fn cycles_do_not_panic() {
         let _ = JohnsonSimpleCycles::new(g).and_then(|mut c| c.find_simple_cycles());
         let _ = SzwarcfiterLauerSimpleCycles::with_graph(g).find_simple_cycles();
         let _ = HawickJamesSimpleCycles::with_graph(g).find_simple_cycles();
-        let _ = HowardMinimumMeanCycle::new(g).get_cycle_mean();
-        let _ = HierholzerEulerianCycle::new().get_eulerian_cycle(g);
+        let _ = HowardMinimumMeanCycle::new(g).cycle_mean();
+        let _ = HierholzerEulerianCycle::new().eulerian_cycle(g);
     });
     sweep("undirected cycles", undirected, &VALID, |g| {
-        let _ = QueueBFSFundamentalCycleBasis::new(g).and_then(|mut c| c.get_cycle_basis());
-        let _ = StackBFSFundamentalCycleBasis::new(g).and_then(|mut c| c.get_cycle_basis());
-        let _ = PatonCycleBase::new(g).and_then(|mut c| c.get_cycle_basis());
-        let _ = ChinesePostman::new().get_cpp_solution(g);
-        let _ = HierholzerEulerianCycle::new().get_eulerian_cycle(g);
+        let _ = QueueBFSFundamentalCycleBasis::new(g).and_then(|mut c| c.cycle_basis());
+        let _ = StackBFSFundamentalCycleBasis::new(g).and_then(|mut c| c.cycle_basis());
+        let _ = PatonCycleBase::new(g).and_then(|mut c| c.cycle_basis());
+        let _ = ChinesePostman::new().cpp_solution(g);
+        let _ = HierholzerEulerianCycle::new().eulerian_cycle(g);
     });
 }
 
@@ -103,7 +102,7 @@ fn planarity_isomorphism_and_cuts_do_not_panic() {
         let _ = StoerWagnerMinimumCut::new(g).map(|c| c.min_cut_weight());
         let _ = GusfieldEquivalentFlowTree::new(g).and_then(|mut t| t.equivalent_flow_tree());
         let _ = GusfieldGomoryHuCutTree::new(g).and_then(|mut t| t.gomory_hu_tree());
-        let _ = AHUUnrootedTreeIsomorphismInspector::new(g, g).map(|i| i.mapping());
+        let _ = AhuUnrootedTreeIsomorphismInspector::new(g, g).map(|i| i.mapping());
         let _ = PadbergRaoOddMinimumCutset::new(g).and_then(|mut p| {
             let odd: indexmap::IndexSet<usize> = g.vertices_cloned().take(2).collect();
             p.minimum_odd_cut(odd, false)
@@ -151,12 +150,11 @@ mod regressions {
         g.add_edge(&2, &3).unwrap(); // to a vertex in neither partition
         let a: Vec<usize> = vec![0, 1];
         let b: Vec<usize> = vec![2];
-        let m = HopcroftKarpMaximumCardinalityBipartiteMatching::new(&g, a.clone(), b)
-            .and_then(|mut m| m.get_matching())
+        let m = HopcroftKarp::new(&g, a.clone(), b)
+            .and_then(|mut m| m.matching())
             .unwrap();
         assert_eq!(m.edges().len(), 1);
-        let r = HopcroftKarpMaximumCardinalityBipartiteMatching::new(&g, a.clone(), a)
-            .and_then(|mut m| m.get_matching());
+        let r = HopcroftKarp::new(&g, a.clone(), a).and_then(|mut m| m.matching());
         assert!(r.is_err(), "overlapping partitions");
     }
 
@@ -166,7 +164,7 @@ mod regressions {
         g.add_vertices(0..4);
         g.add_edge(&0, &1).unwrap();
         g.add_edge(&2, &3).unwrap();
-        assert!(ChinesePostman::new().get_cpp_solution(&g).is_err());
+        assert!(ChinesePostman::new().cpp_solution(&g).is_err());
     }
 
     #[test]
@@ -175,6 +173,6 @@ mod regressions {
         g.add_vertices(0..2);
         g.add_edge(&0, &1).unwrap();
         g.add_edge(&0, &1).unwrap();
-        assert!(AHUUnrootedTreeIsomorphismInspector::new(&g, &g).is_err());
+        assert!(AhuUnrootedTreeIsomorphismInspector::new(&g, &g).is_err());
     }
 }

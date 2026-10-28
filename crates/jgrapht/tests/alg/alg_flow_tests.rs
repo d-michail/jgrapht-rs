@@ -282,10 +282,10 @@ macro_rules! max_flow_suite {
     };
 }
 
-max_flow_suite!(edmonds_karp_mf_impl_test, EdmondsKarpMFImpl::new);
-max_flow_suite!(dinic_mf_impl_test, DinicMFImpl::new);
-max_flow_suite!(push_relabel_mf_impl_test, PushRelabelMFImpl::new);
-max_flow_suite!(boykov_kolmogorov_mf_impl_test, BoykovKolmogorovMFImpl::new);
+max_flow_suite!(edmonds_karp_mf_impl_test, EdmondsKarp::new);
+max_flow_suite!(dinic_mf_impl_test, Dinic::new);
+max_flow_suite!(push_relabel_mf_impl_test, PushRelabel::new);
+max_flow_suite!(boykov_kolmogorov_mf_impl_test, BoykovKolmogorov::new);
 
 mod edmonds_karp_extras {
     use super::*;
@@ -296,11 +296,11 @@ mod edmonds_karp_extras {
         simple.add_vertex(0);
         simple.add_vertex(1);
         let e = simple.add_edge(&0, &1).unwrap().unwrap();
-        assert!(EdmondsKarpMFImpl::with_epsilon(&simple, -0.1).is_err());
+        assert!(EdmondsKarp::with_epsilon(&simple, -0.1).is_err());
         simple.set_edge_weight(&e, -1.0).unwrap();
-        assert!(EdmondsKarpMFImpl::new(&simple).is_err());
+        assert!(EdmondsKarp::new(&simple).is_err());
         simple.set_edge_weight(&e, 1.0).unwrap();
-        let mut solver = EdmondsKarpMFImpl::new(&simple).unwrap();
+        let mut solver = EdmondsKarp::new(&simple).unwrap();
         assert!(solver.maximum_flow(&2, &0).is_err());
         assert!(solver.maximum_flow(&1, &2).is_err());
         assert!(solver.maximum_flow(&0, &0).is_err());
@@ -325,7 +325,7 @@ mod dinic_extras {
         g.add_vertex(s("v1"));
         g.add_vertex(s("v2"));
         g.add_weighted_edge(&s("v1"), &s("v2"), 100.0).unwrap();
-        let mut dinic = DinicMFImpl::new(&g).unwrap();
+        let mut dinic = Dinic::new(&g).unwrap();
         assert_eq!(100.0, dinic.maximum_flow_value(&s("v1"), &s("v2")).unwrap());
     }
 
@@ -337,7 +337,7 @@ mod dinic_extras {
         }
         g.add_weighted_edge(&s("v1"), &s("v2"), 100.0).unwrap();
         g.add_weighted_edge(&s("v2"), &s("v3"), 50.0).unwrap();
-        let mut dinic = DinicMFImpl::new(&g).unwrap();
+        let mut dinic = Dinic::new(&g).unwrap();
         assert_eq!(50.0, dinic.maximum_flow_value(&s("v1"), &s("v3")).unwrap());
     }
 
@@ -345,7 +345,7 @@ mod dinic_extras {
     fn exception_test1() {
         let mut g = graph();
         g.add_vertex(s("v1"));
-        let mut dinic = DinicMFImpl::new(&g).unwrap();
+        let mut dinic = Dinic::new(&g).unwrap();
         assert!(dinic.maximum_flow_value(&s("v1"), &s("v1")).is_err());
     }
 
@@ -354,7 +354,7 @@ mod dinic_extras {
         let mut g = graph();
         g.add_vertex(s("v1"));
         g.add_vertex(s("v2"));
-        let mut dinic = DinicMFImpl::new(&g).unwrap();
+        let mut dinic = Dinic::new(&g).unwrap();
         assert_eq!(0.0, dinic.maximum_flow_value(&s("v1"), &s("v2")).unwrap());
     }
 
@@ -373,7 +373,7 @@ mod dinic_extras {
         ] {
             g.add_weighted_edge(&s(a), &s(b), w).unwrap();
         }
-        let mut dinic = DinicMFImpl::new(&g).unwrap();
+        let mut dinic = Dinic::new(&g).unwrap();
         assert_eq!(2.0, dinic.maximum_flow_value(&s("v1"), &s("v2")).unwrap());
     }
 }
@@ -397,7 +397,7 @@ mod push_relabel_extras {
         ] {
             graph.add_weighted_edge(&a, &b, w).unwrap();
         }
-        let mut mf = PushRelabelMFImpl::new(&graph).unwrap();
+        let mut mf = PushRelabel::new(&graph).unwrap();
         assert!((2.0 - mf.minimum_cut(&-1, &-2).unwrap().capacity()).abs() <= 1e-9);
     }
 
@@ -417,7 +417,7 @@ mod push_relabel_extras {
         ] {
             g1.add_edge(&a.to_string(), &b.to_string()).unwrap();
         }
-        let mut mf1 = PushRelabelMFImpl::new(&g1).unwrap();
+        let mut mf1 = PushRelabel::new(&g1).unwrap();
         assert_eq!(
             0.0,
             mf1.maximum_flow_value(&"v3".to_string(), &"v0".to_string())
@@ -444,7 +444,7 @@ mod boykov_kolmogorov_extras {
         for (i, (edges, source, sink, directed, undirected)) in BK_CASES.iter().enumerate() {
             let d = build::<jgrapht::graph::Directed>(edges);
             let u = build::<jgrapht::graph::Undirected>(edges);
-            let got = BoykovKolmogorovMFImpl::new(&d)
+            let got = BoykovKolmogorov::new(&d)
                 .unwrap()
                 .maximum_flow_value(source, sink)
                 .unwrap();
@@ -453,7 +453,7 @@ mod boykov_kolmogorov_extras {
                 "test{} directed: {got}",
                 i + 1
             );
-            let got = BoykovKolmogorovMFImpl::new(&u)
+            let got = BoykovKolmogorov::new(&u)
                 .unwrap()
                 .maximum_flow_value(source, sink)
                 .unwrap();
@@ -676,13 +676,13 @@ macro_rules! min_cut_suite {
 
 min_cut_suite!(
     edmonds_karp_minimum_st_cut_test,
-    EdmondsKarpMFImpl::new,
-    PushRelabelMFImpl::new
+    EdmondsKarp::new,
+    PushRelabel::new
 );
 min_cut_suite!(
     push_relabel_minimum_st_cut_test,
-    PushRelabelMFImpl::new,
-    EdmondsKarpMFImpl::new
+    PushRelabel::new,
+    EdmondsKarp::new
 );
 
 mod push_relabel_cut_extras {
@@ -708,7 +708,7 @@ mod push_relabel_cut_extras {
         ] {
             network.add_edge(&a, &b).unwrap();
         }
-        let mut pr = PushRelabelMFImpl::new(&network).unwrap();
+        let mut pr = PushRelabel::new(&network).unwrap();
         assert_eq!(0.0, pr.minimum_cut(&0, &5).unwrap().capacity());
     }
 
@@ -719,7 +719,7 @@ mod push_relabel_cut_extras {
             network.add_vertex(v);
         }
         network.add_edge(&0, &1).unwrap();
-        let mut pr = PushRelabelMFImpl::new(&network).unwrap();
+        let mut pr = PushRelabel::new(&network).unwrap();
         assert_eq!(0.0, pr.minimum_cut(&0, &2).unwrap().capacity());
     }
 }
@@ -763,7 +763,10 @@ mod gusfield {
         let mut v = j;
         while v != i {
             let p = pred[&v];
-            weights.push(tree.edge_weight(tree.get_edge(&v, &p).unwrap()).unwrap());
+            weights.push(
+                tree.edge_weight(tree.edge_between(&v, &p).unwrap())
+                    .unwrap(),
+            );
             v = p;
         }
         weights
@@ -783,7 +786,7 @@ mod gusfield {
             StoerWagnerMinimumCut::new(net).unwrap().min_cut_weight(),
             min_weight(&tree)
         );
-        let mut st = PushRelabelMFImpl::new(net).unwrap();
+        let mut st = PushRelabel::new(net).unwrap();
         for i in net.vertices() {
             for j in net.vertices() {
                 if j <= i {
@@ -820,7 +823,7 @@ mod gusfield {
         assert_eq!(expected_min_cut, global.capacity());
         let partition = global.source_partition().clone();
         assert_eq!(expected_min_cut, cut_weight(net, &partition));
-        let mut st = PushRelabelMFImpl::new(net).unwrap();
+        let mut st = PushRelabel::new(net).unwrap();
         for i in net.vertices() {
             for j in net.vertices() {
                 if j <= i {
@@ -1189,7 +1192,7 @@ mod capacity_scaling_minimum_cost_flow_test {
                 upper.insert(edge, data[3] as i32);
             }
         }
-        let problem = MinimumCostFlowProblemImpl::with_lower_bounds(
+        let problem = MinimumCostFlowNetwork::with_lower_bounds(
             &graph,
             |v| supply.get(v).copied().unwrap_or(0),
             |e| upper[e],
@@ -1214,7 +1217,7 @@ mod capacity_scaling_minimum_cost_flow_test {
     fn check_flow_and_dual_solution(
         dual: &HashMap<i32, f64>,
         flow: &MinimumCostFlow<DefaultEdge>,
-        problem: &MinimumCostFlowProblemImpl<'_, DiGraph<i32>>,
+        problem: &MinimumCostFlowNetwork<'_, DiGraph<i32>>,
     ) -> bool {
         let graph = problem.graph();
         for vertex in graph.vertices() {
@@ -1268,27 +1271,27 @@ mod capacity_scaling_minimum_cost_flow_test {
     fn rejects_bad_problems() {
         // undirected network
         let g = UGraph::<i32>::simple().weighted();
-        let problem = MinimumCostFlowProblemImpl::new(&g, |_| 0, |_| 1);
+        let problem = MinimumCostFlowNetwork::new(&g, |_| 0, |_| 1);
         assert!(
             CapacityScalingMinimumCostFlow::new()
-                .get_minimum_cost_flow(&problem)
+                .solve_flow(&problem)
                 .is_err()
         );
         // supplies that do not sum to zero
         let mut g = DiGraph::<i32>::with_loops().weighted();
         g.add_vertex(0);
         g.add_vertex(1);
-        let problem = MinimumCostFlowProblemImpl::new(&g, |v| if *v == 0 { 1 } else { 0 }, |_| 1);
+        let problem = MinimumCostFlowNetwork::new(&g, |v| if *v == 0 { 1 } else { 0 }, |_| 1);
         assert!(
             CapacityScalingMinimumCostFlow::new()
-                .get_minimum_cost_flow(&problem)
+                .solve_flow(&problem)
                 .is_err()
         );
         // no feasible solution: supply 1 at an isolated vertex
-        let problem = MinimumCostFlowProblemImpl::new(&g, |v| if *v == 0 { 1 } else { -1 }, |_| 1);
+        let problem = MinimumCostFlowNetwork::new(&g, |v| if *v == 0 { 1 } else { -1 }, |_| 1);
         assert!(
             CapacityScalingMinimumCostFlow::new()
-                .get_minimum_cost_flow(&problem)
+                .solve_flow(&problem)
                 .is_err()
         );
     }

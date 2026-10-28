@@ -29,15 +29,11 @@ fn weighted_directed(edges: &[(u32, u32, f64)]) -> DiGraph<u32> {
 fn java_class_names_share_the_shortest_path_contract() {
     let graph = weighted_directed(&[(1, 2, 2.0), (1, 3, 1.0), (3, 2, 1.0), (2, 4, 1.0)]);
     assert_eq!(
-        DijkstraShortestPath::new(&graph)
-            .path_weight(&1, &4)
-            .unwrap(),
+        Dijkstra::new(&graph).path_weight(&1, &4).unwrap(),
         Some(3.0)
     );
     assert_eq!(
-        BellmanFordShortestPath::new(&graph)
-            .path_weight(&1, &4)
-            .unwrap(),
+        BellmanFord::new(&graph).path_weight(&1, &4).unwrap(),
         Some(3.0)
     );
 }

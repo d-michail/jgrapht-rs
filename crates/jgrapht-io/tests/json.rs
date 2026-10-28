@@ -33,7 +33,7 @@ fn imports_ids_weights_and_nested_attributes() {
     assert_eq!(graph.vertex_count(), 2);
     let one = String::from("1");
     let two = String::from("2");
-    let edge = graph.get_edge(&one, &two).unwrap();
+    let edge = graph.edge_between(&one, &two).unwrap();
     assert_eq!(graph.edge_weight(edge), Some(-2.5));
 }
 

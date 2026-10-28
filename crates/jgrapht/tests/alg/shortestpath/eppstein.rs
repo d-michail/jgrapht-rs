@@ -224,7 +224,7 @@ fn java_rest_heap_and_k_shortest_golden_weights() {
         (5, 4, 1.0),
     ]);
     let paths = EppsteinKShortestPath::new(&cyclic)
-        .get_paths(&1, &3, 6)
+        .paths(&1, &3, 6)
         .unwrap();
     assert_eq!(
         paths.iter().map(|path| path.weight()).collect::<Vec<_>>(),
@@ -238,18 +238,18 @@ fn java_k_shortest_facade_contracts() {
     disconnected.add_vertices([1, 2]);
     assert!(
         EppsteinKShortestPath::new(&disconnected)
-            .get_paths(&1, &2, 0)
+            .paths(&1, &2, 0)
             .unwrap()
             .is_empty()
     );
     assert!(
         EppsteinKShortestPath::new(&disconnected)
-            .get_paths(&0, &2, 1)
+            .paths(&0, &2, 1)
             .is_err()
     );
     assert!(
         EppsteinKShortestPath::new(&disconnected)
-            .get_paths(&1, &3, 1)
+            .paths(&1, &3, 1)
             .is_err()
     );
 
@@ -273,7 +273,7 @@ fn java_k_shortest_facade_contracts() {
         (11, 12, 11.0),
     ]);
     let paths = EppsteinKShortestPath::new(&graph)
-        .get_paths(&1, &12, 12)
+        .paths(&1, &12, 12)
         .unwrap();
     assert_eq!(
         paths.iter().map(|path| path.weight()).collect::<Vec<_>>(),

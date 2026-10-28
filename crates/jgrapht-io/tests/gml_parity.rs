@@ -131,11 +131,11 @@ mod importer_test {
         let b = "2".to_owned();
         let c = "3".to_owned();
         assert_eq!(
-            graph.edge_weight(graph.get_edge(&a, &b).unwrap()),
+            graph.edge_weight(graph.edge_between(&a, &b).unwrap()),
             Some(2.0)
         );
         assert_eq!(
-            graph.edge_weight(graph.get_edge(&c, &a).unwrap()),
+            graph.edge_weight(graph.edge_between(&c, &a).unwrap()),
             Some(3.0)
         );
     }

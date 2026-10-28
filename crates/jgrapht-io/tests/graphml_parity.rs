@@ -312,7 +312,7 @@ mod importer_test {
         i.import_str(&mut g, ATTRS).unwrap();
         let n1 = "n1".to_owned();
         let n2 = "n2".to_owned();
-        let e = g.get_edge(&n1, &n2).unwrap();
+        let e = g.edge_between(&n1, &n2).unwrap();
         assert_eq!(g.edge_weight(e), Some(3.0));
     }
     #[test]
@@ -324,7 +324,7 @@ mod importer_test {
         i.set_edge_weight_attribute_name("cost");
         i.import_str(&mut g, &x).unwrap();
         assert_eq!(
-            g.edge_weight(g.get_edge(&"n0".into(), &"n2".into()).unwrap()),
+            g.edge_weight(g.edge_between(&"n0".into(), &"n2".into()).unwrap()),
             Some(2.0)
         );
     }

@@ -447,9 +447,7 @@ impl<'g, G: IncidenceGraph> HeavyPathDecomposition<'g, G> {
 // Dulmage–Mendelsohn decomposition
 
 use super::connectivity::strongly_connected_components_kosaraju;
-use super::matching::{
-    HopcroftKarpMaximumCardinalityBipartiteMatching, Matching, MatchingAlgorithm,
-};
+use super::matching::{HopcroftKarp, Matching, MatchingAlgorithm};
 use crate::graph::{GraphMut, GraphMutExt};
 use crate::view::EdgeReversed;
 
@@ -527,12 +525,12 @@ where
     ///
     /// Errors of the graph operations it performs are propagated.
     pub fn decomposition(&self, fine: bool) -> Result<DmDecomposition<G::Vertex>> {
-        let matching = HopcroftKarpMaximumCardinalityBipartiteMatching::new(
+        let matching = HopcroftKarp::new(
             self.graph,
             self.partition1.iter().cloned(),
             self.partition2.iter().cloned(),
         )?
-        .get_matching()?;
+        .matching()?;
         self.decompose(&matching, fine)
     }
 

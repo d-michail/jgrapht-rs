@@ -275,7 +275,7 @@ impl<'g, G: Graph> ContractionHierarchyPrecomputation<'g, G> {
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
-    pub fn compute_contraction_hierarchy(&self) -> Result<ContractionHierarchy<'g, G>> {
+    pub fn contraction_hierarchy(&self) -> Result<ContractionHierarchy<'g, G>> {
         let (mut core, originals) = Core::fill(self.graph)?;
         let mut randoms: Vec<_> = (0..self.parallelism)
             .map(|_| (self.random_supplier)())
@@ -915,8 +915,8 @@ impl Frontier {
 /// no means to ensure that the specified contraction is correct, nor to fail-fast. If algorithm uses
 /// an incorrect contraction, the results of the search are unpredictable.
 ///
-/// Comparing to usual shortest path algorithm, as `DijkstraShortestPath`,
-/// `AStarShortestPath`, etc., this algorithm spends time for computing contraction hierarchy
+/// Comparing to usual shortest path algorithm, as `Dijkstra`,
+/// `AStar`, etc., this algorithm spends time for computing contraction hierarchy
 /// but offers significant speedup in shortest path query performance. Therefore it is efficient to
 /// use it in order to compute many shortest path on a single graph. Furthermore, on small graphs
 /// (i.e with less than 1.000 vertices) the overhead of precomputation is higher than the speed at
@@ -1177,14 +1177,14 @@ impl<V: Clone + Eq + std::hash::Hash, E: Clone> ManyToManyPaths<V, E> {
 /// a path from the search spaces when it is asked for; here all requested paths are unpacked once
 /// into a [`ManyToManyPaths`]. The iteration order of the vertex sets is the order of the
 /// hierarchy ids (Java: `HashSet` order), which only decides between equally long paths.
-pub struct CHManyToManyShortestPaths<'h, 'g, G: Graph> {
+pub struct ContractionHierarchyManyToMany<'h, 'g, G: Graph> {
     hierarchy: &'h ContractionHierarchy<'g, G>,
 }
 
 /// Distance and tree edge of the vertices reached by one search of the many-to-many algorithm.
 type SearchSpace = HashMap<usize, (f64, Option<usize>)>;
 
-impl<'h, 'g, G: Graph> CHManyToManyShortestPaths<'h, 'g, G> {
+impl<'h, 'g, G: Graph> ContractionHierarchyManyToMany<'h, 'g, G> {
     /// Constructs a new instance of the algorithm for a given contraction hierarchy.
     pub fn new(hierarchy: &'h ContractionHierarchy<'g, G>) -> Self {
         Self { hierarchy }
@@ -1372,7 +1372,7 @@ impl<'g, G: Graph> ContractionHierarchy<'g, G> {
     }
 }
 
-impl<G: Graph> ShortestPathAlgorithm<G> for CHManyToManyShortestPaths<'_, '_, G> {
+impl<G: Graph> ShortestPathAlgorithm<G> for ContractionHierarchyManyToMany<'_, '_, G> {
     fn single_source(&self, source: &G::Vertex) -> Result<SingleSourcePaths<G::Vertex, G::Edge>> {
         ContractionHierarchyBidirectionalDijkstra::new(self.hierarchy).single_source(source)
     }

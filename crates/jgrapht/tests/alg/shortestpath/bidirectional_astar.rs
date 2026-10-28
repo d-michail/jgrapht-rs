@@ -14,8 +14,7 @@
 
 use super::astar::{LABYRINTH_1, LABYRINTH_2, Node, labyrinth, manhattan};
 use jgrapht::alg::shortestpath::{
-    ALTAdmissibleHeuristic, BidirectionalAStarShortestPath, DijkstraShortestPath,
-    ShortestPathAlgorithm,
+    AltAdmissibleHeuristic, BidirectionalAStarShortestPath, Dijkstra, ShortestPathAlgorithm,
 };
 use jgrapht::graph::sparse::SparseIntUndirectedWeightedGraph;
 use jgrapht::{DiGraph, GraphMut, GraphMutExt, UGraph};
@@ -189,8 +188,8 @@ fn test_random_graphs() {
         while landmarks.len() < 5 {
             landmarks.insert(random.random_range(0..N));
         }
-        let heuristic = ALTAdmissibleHeuristic::new(&graph, landmarks).unwrap();
-        let dijkstra = DijkstraShortestPath::new(&graph);
+        let heuristic = AltAdmissibleHeuristic::new(&graph, landmarks).unwrap();
+        let dijkstra = Dijkstra::new(&graph);
         let bidirectional = BidirectionalAStarShortestPath::new(&graph, |source, target| {
             heuristic.cost_estimate(source, target)
         });

@@ -29,7 +29,7 @@ const INF: usize = usize::MAX;
 /// cardinality in a bipartite graph. The algorithm runs in $O(|E| \cdot \sqrt{|V|})$ time. This
 /// implementation accepts undirected graphs which may contain self-loops and multiple edges. To
 /// compute a maximum cardinality matching in general (non-bipartite) graphs, use
-/// `SparseEdmondsMaximumCardinalityMatching` instead.
+/// `SparseEdmonds` instead.
 ///
 /// The Hopcroft Karp matching algorithm computes augmenting paths of increasing length, until no
 /// augmenting path exists in the graph. At each iteration, the algorithm runs a Breadth First Search
@@ -43,9 +43,9 @@ const INF: usize = usize::MAX;
 ///
 /// # Rust notes
 ///
-/// `HopcroftKarpMaximumCardinalityBipartiteMatching`: a maximum cardinality matching of a
+/// `HopcroftKarp`: a maximum cardinality matching of a
 /// bipartite graph in `O(E sqrt(V))`.
-pub struct HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G: Graph> {
+pub struct HopcroftKarp<'g, G: Graph> {
     graph: &'g G,
     partition1: Vec<G::Vertex>,
     partition2: Vec<G::Vertex>,
@@ -64,9 +64,7 @@ struct State<'a, G: Graph> {
     queue: FixedSizeIntegerQueue,
 }
 
-impl<'g, G: UndirectedGraph + IncidenceGraph>
-    HopcroftKarpMaximumCardinalityBipartiteMatching<'g, G>
-{
+impl<'g, G: UndirectedGraph + IncidenceGraph> HopcroftKarp<'g, G> {
     /// `partition1` and `partition2` are the two sides of the bipartition. Fails if the graph is
     /// not undirected.
     ///
@@ -143,10 +141,8 @@ impl<'a, G: Graph> State<'a, G> {
     }
 }
 
-impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
-    for HopcroftKarpMaximumCardinalityBipartiteMatching<'_, G>
-{
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge> for HopcroftKarp<'_, G> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         let graph = self.graph;
         // init
         let mut vertices: Vec<Option<&G::Vertex>> = vec![None];
@@ -225,7 +221,7 @@ impl<G: IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
                 if let (Some(a), Some(b)) = (a, b) {
                     edges.insert(
                         graph
-                            .get_edge(a, b)
+                            .edge_between(a, b)
                             .expect("matched vertices are adjacent")
                             .clone(),
                     );

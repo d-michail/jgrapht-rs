@@ -329,7 +329,7 @@ mod yen_shortest_path_iterator_test {
         let e14 = graph.add_edge(&"21", &"1f").unwrap().unwrap();
 
         let paths = YenKShortestPath::new(&graph)
-            .get_paths(&"1e", &"18", 7)
+            .paths(&"1e", &"18", 7)
             .unwrap();
         assert_eq!(paths.len(), 3);
         let expected_1 = vec![e1, e6, e10, e12];
@@ -397,7 +397,7 @@ mod yen_error_reporting {
         graph.add_vertices([1, 2, 3]);
         for (a, b, w) in [(1, 2, 1.0), (2, 3, -1.0)] {
             graph.add_edge(&a, &b).unwrap();
-            let e = *graph.get_edge(&a, &b).unwrap();
+            let e = *graph.edge_between(&a, &b).unwrap();
             graph.set_edge_weight(&e, w).unwrap();
         }
         let mut iterator = YenShortestPathIterator::new(&graph, &1, &3).unwrap();
@@ -411,7 +411,7 @@ mod yen_error_reporting {
             .unwrap()
             .collect();
         assert!(collected.is_err());
-        assert!(YenKShortestPath::new(&graph).get_paths(&1, &3, 2).is_err());
+        assert!(YenKShortestPath::new(&graph).paths(&1, &3, 2).is_err());
     }
 }
 
@@ -426,7 +426,7 @@ mod yen_k_shortest_path_test {
         graph.add_vertices([1, 2]);
         assert!(
             YenKShortestPath::new(&graph)
-                .get_paths(&1, &2, 0)
+                .paths(&1, &2, 0)
                 .unwrap()
                 .is_empty()
         );
@@ -436,29 +436,27 @@ mod yen_k_shortest_path_test {
     fn test_no_source_graph() {
         let mut graph = DiGraph::<u32>::simple().weighted();
         graph.add_vertex(2);
-        assert!(YenKShortestPath::new(&graph).get_paths(&1, &2, 1).is_err());
+        assert!(YenKShortestPath::new(&graph).paths(&1, &2, 1).is_err());
     }
 
     #[test]
     fn test_no_sink_graph() {
         let mut graph = DiGraph::<u32>::simple().weighted();
         graph.add_vertex(1);
-        assert!(YenKShortestPath::new(&graph).get_paths(&1, &2, 1).is_err());
+        assert!(YenKShortestPath::new(&graph).paths(&1, &2, 1).is_err());
     }
 
     #[test]
     fn test_cyclic_graph() {
         let graph = directed(CYCLIC_GRAPH_3);
-        let paths = YenKShortestPath::new(&graph).get_paths(&1, &3, 1).unwrap();
+        let paths = YenKShortestPath::new(&graph).paths(&1, &3, 1).unwrap();
         assert_eq!(weights(&paths), [2.0]);
     }
 
     #[test]
     fn test_less_than_k_paths() {
         let graph = directed(SIMPLE_GRAPH_1);
-        let paths = YenKShortestPath::new(&graph)
-            .get_paths(&1, &12, 12)
-            .unwrap();
+        let paths = YenKShortestPath::new(&graph).paths(&1, &12, 12).unwrap();
         assert_eq!(
             weights(&paths),
             [55.0, 58.0, 59.0, 61.0, 62.0, 64.0, 65.0, 68.0, 68.0, 71.0]
@@ -494,12 +492,12 @@ mod yen_k_shortest_path_test {
                 forbidden.insert(edges[selection_random.next_int_bound(edges.len())]);
             }
             let all = YenKShortestPath::new(&graph)
-                .get_paths(&source, &target, usize::MAX)
+                .paths(&source, &target, usize::MAX)
                 .unwrap();
             let validator =
                 |_: &GraphWalk<u32, DefaultEdge>, edge: &DefaultEdge| !forbidden.contains(edge);
             let validated = YenKShortestPath::with_validator(&graph, validator)
-                .get_paths(&source, &target, usize::MAX)
+                .paths(&source, &target, usize::MAX)
                 .unwrap();
             let expected: Vec<_> = all
                 .into_iter()

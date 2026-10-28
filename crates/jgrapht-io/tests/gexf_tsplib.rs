@@ -48,7 +48,7 @@ fn tsplib_builds_complete_weighted_graph_and_tour() {
     assert_eq!(graph.vertex_count(), 3);
     assert_eq!(graph.edge_count(), 3);
     assert_eq!(
-        graph.edge_weight(graph.get_edge(&0, &1).unwrap()),
+        graph.edge_weight(graph.edge_between(&0, &1).unwrap()),
         Some(5.0)
     );
     let metadata = importer.metadata().unwrap();

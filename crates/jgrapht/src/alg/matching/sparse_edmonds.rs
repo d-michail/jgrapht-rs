@@ -99,7 +99,7 @@ impl VertexPartition {
     }
 }
 
-/// The matching state of one run (`SparseEdmondsMaximumCardinalityMatching.Algorithm`).
+/// The matching state of one run (`SparseEdmonds.Algorithm`).
 struct Algorithm<'a, G: Graph> {
     graph: &'a G,
     nodes: usize,
@@ -165,7 +165,7 @@ impl<'a, G: IncidenceGraph> Algorithm<'a, G> {
         let Some(initializer) = initializer else {
             return Ok(());
         };
-        for e in initializer.get_matching()?.edges() {
+        for e in initializer.matching()?.edges() {
             let e = e.borrow();
             let (u, v) = self
                 .graph
@@ -373,7 +373,7 @@ impl<'a, G: IncidenceGraph> Algorithm<'a, G> {
 /// matched. By definition, a perfect matching consists of exactly $\frac{1}{2}|V|$ edges. This
 /// algorithm will return a perfect matching if one exists. If no perfect matching exists, then the
 /// largest (non-perfect) matching is returned instead. In the special case that the input graph is
-/// bipartite, consider using `HopcroftKarpMaximumCardinalityBipartiteMatching` instead.
+/// bipartite, consider using `HopcroftKarp` instead.
 ///
 /// To compute a maximum cardinality matching, at most $n$ augmenting path computations are
 /// performed. Each augmenting path computation takes $O(m \alpha(m,n))$ time, where $\alpha(m,n)$ is
@@ -407,17 +407,17 @@ impl<'a, G: IncidenceGraph> Algorithm<'a, G> {
 ///
 /// # Rust notes
 ///
-/// `SparseEdmondsMaximumCardinalityMatching`: Edmonds' blossom algorithm for a maximum
+/// `SparseEdmonds`: Edmonds' blossom algorithm for a maximum
 /// cardinality matching in a general graph, in `O(V E log V)` (Gabow, with an odd set cover that
 /// certifies optimality), best for sparse graphs.
-pub struct SparseEdmondsMaximumCardinalityMatching<'g, G: Graph> {
+pub struct SparseEdmonds<'g, G: Graph> {
     graph: &'g G,
     initializer: Option<Box<dyn MatchingAlgorithm<G::Vertex, G::Edge> + 'g>>,
     result: Option<Matching<G::Vertex, G::Edge>>,
     odd_set_cover: Option<HashMap<G::Vertex, i64>>,
 }
 
-impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinalityMatching<'g, G> {
+impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmonds<'g, G> {
     /// Uses `GreedyMaximumCardinalityMatching` (unsorted) as the initializer. Fails if the graph is
     /// not undirected.
     ///
@@ -438,7 +438,7 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinali
         graph: &'g G,
         initializer: Option<Box<dyn MatchingAlgorithm<G::Vertex, G::Edge> + 'g>>,
     ) -> Result<Self> {
-        Ok(SparseEdmondsMaximumCardinalityMatching {
+        Ok(SparseEdmonds {
             graph,
             initializer,
             result: None,
@@ -452,8 +452,8 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinali
     ///
     /// Returns [`GraphError::Internal`](crate::GraphError::Internal) if an internal invariant of the library is broken (a bug).
     /// Errors of the graph operations it performs are propagated.
-    pub fn get_odd_set_cover(&mut self) -> Result<&HashMap<G::Vertex, i64>> {
-        self.get_matching()?;
+    pub fn odd_set_cover(&mut self) -> Result<&HashMap<G::Vertex, i64>> {
+        self.matching()?;
         self.odd_set_cover
             .as_ref()
             .ok_or(crate::GraphError::Internal(
@@ -513,9 +513,9 @@ impl<'g, G: UndirectedGraph + 'g + IncidenceGraph> SparseEdmondsMaximumCardinali
 }
 
 impl<'g, G: Graph + 'g + IncidenceGraph> MatchingAlgorithm<G::Vertex, G::Edge>
-    for SparseEdmondsMaximumCardinalityMatching<'g, G>
+    for SparseEdmonds<'g, G>
 {
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         if self.result.is_none() {
             let mut alg = Algorithm::new(self.graph);
             let matching_edges = alg.compute_matching(self.initializer.as_deref_mut())?;

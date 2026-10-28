@@ -136,14 +136,14 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>>
     /// # Errors
     ///
     /// Errors of the graph operations it performs are propagated.
-    pub fn get_all_paths(
+    pub fn all_paths(
         &self,
         source: &G::Vertex,
         target: &G::Vertex,
         simple_paths_only: bool,
         max_path_length: Option<usize>,
     ) -> Result<Vec<GraphWalk<G::Vertex, G::Edge>>> {
-        self.get_all_paths_between(
+        self.all_paths_between(
             std::iter::once(source),
             std::iter::once(target),
             simple_paths_only,
@@ -158,7 +158,7 @@ impl<G: DirectedGraph + IncomingGraph + OutgoingGraph, P: PathValidator<G>>
     /// Returns [`GraphError::MissingParameter`] if a required parameter was not supplied;
     /// [`GraphError::VertexNotFound`] if a vertex argument is not in the graph. Errors of the graph
     /// operations it performs are propagated.
-    pub fn get_all_paths_between<'a>(
+    pub fn all_paths_between<'a>(
         &self,
         source_vertices: impl IntoIterator<Item = &'a G::Vertex>,
         target_vertices: impl IntoIterator<Item = &'a G::Vertex>,

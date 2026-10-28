@@ -64,7 +64,7 @@ impl<'g, G: Graph> BlossomVDualSolution<'g, G> {
 /// two vertices can belong to the matching in the corresponding optimization problems. Currently,
 /// users are responsible for doing this reduction themselves before invoking the algorithm.
 ///
-/// Note that if the graph is unweighted and dense, `SparseEdmondsMaximumCardinalityMatching`
+/// Note that if the graph is unweighted and dense, `SparseEdmonds`
 /// may be a better choice.
 ///
 /// For more information about the algorithm see the following paper: *Kolmogorov, V. Math. Prog.
@@ -231,7 +231,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     ///
     /// Errors of the graph operations it performs are propagated.
     pub fn test_optimality(&mut self) -> Result<bool> {
-        Ok(self.get_error()? < BLOSSOM_V_EPSILON)
+        Ok(self.error()? < BLOSSOM_V_EPSILON)
     }
 
     /// Returns the accumulated numerical error in the dual and complementary-slackness checks.
@@ -244,7 +244,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     /// # Panics
     ///
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
-    pub fn get_error(&mut self) -> Result<f64> {
+    pub fn error(&mut self) -> Result<f64> {
         self.compute()?;
         let state = self
             .state
@@ -297,7 +297,7 @@ impl<'g, G: UndirectedGraph> KolmogorovWeightedPerfectMatching<'g, G> {
     /// # Panics
     ///
     /// Panics only if the graph breaks the integrity contract of [`Graph`] (an edge without endpoints or weight), or if an internal invariant is violated, which indicates a bug in this library.
-    pub fn get_dual_solution(&mut self) -> Result<BlossomVDualSolution<'g, G>> {
+    pub fn dual_solution(&mut self) -> Result<BlossomVDualSolution<'g, G>> {
         self.compute()?;
         let state = self
             .state
@@ -656,7 +656,7 @@ impl<G: UndirectedGraph> MatchingAlgorithm<G::Vertex, G::Edge>
 {
     /// Computes and returns a weighted perfect matching in the `graph`. See the class
     /// description for the relative definitions and algorithm description.
-    fn get_matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
+    fn matching(&mut self) -> Result<Matching<G::Vertex, G::Edge>> {
         self.compute()?;
         self.matching.clone().ok_or(crate::GraphError::Internal(
             "the computed matching is missing",
@@ -809,7 +809,7 @@ mod tests {
         let options = BlossomVOptions::with_initialization(super::super::InitializationType::None);
         let mut algorithm =
             KolmogorovWeightedPerfectMatching::with_options(&graph, options).unwrap();
-        let matching = algorithm.get_matching().unwrap();
+        let matching = algorithm.matching().unwrap();
         assert!(matching.is_perfect());
         assert_eq!(matching.weight(), 7.0);
     }
@@ -818,7 +818,7 @@ mod tests {
     fn invalid_dual_solution_is_rejected() {
         let graph = weighted_graph(4, &[(0, 1, 7.0), (1, 2, 4.0), (2, 3, 3.0), (3, 0, 4.0)]);
         let mut algorithm = KolmogorovWeightedPerfectMatching::new(&graph).unwrap();
-        algorithm.get_matching().unwrap();
+        algorithm.matching().unwrap();
         algorithm.state.as_mut().unwrap().arena.nodes[0].dual += 1.0;
         assert!(!algorithm.test_optimality().unwrap());
     }
@@ -849,8 +849,8 @@ mod tests {
             ObjectiveSense::Maximize,
         )
         .unwrap();
-        assert_eq!(minimum.get_matching().unwrap().weight(), 5.0);
-        assert_eq!(maximum.get_matching().unwrap().weight(), 15.0);
+        assert_eq!(minimum.matching().unwrap().weight(), 5.0);
+        assert_eq!(maximum.matching().unwrap().weight(), 15.0);
     }
 
     #[test]
@@ -866,8 +866,8 @@ mod tests {
         let mut maximum =
             KolmogorovWeightedPerfectMatching::with_objective(&graph, ObjectiveSense::Maximize)
                 .unwrap();
-        assert_eq!(minimum.get_matching().unwrap().weight(), -3.0);
-        assert_eq!(maximum.get_matching().unwrap().weight(), 7.0);
+        assert_eq!(minimum.matching().unwrap().weight(), -3.0);
+        assert_eq!(maximum.matching().unwrap().weight(), 7.0);
         assert!(minimum.test_optimality().unwrap());
         assert!(maximum.test_optimality().unwrap());
     }
@@ -899,23 +899,23 @@ mod tests {
                             &graph, options, objective,
                         )
                         .unwrap();
-                    let actual = algorithm.get_matching().unwrap().weight();
+                    let actual = algorithm.matching().unwrap().weight();
                     assert_eq!(
                         actual, expected,
                         "seed={seed}, options={options}, objective={objective:?}"
                     );
-                    let error = algorithm.get_error().unwrap();
+                    let error = algorithm.error().unwrap();
                     assert!(
                         error < BLOSSOM_V_EPSILON,
                         "error={error}, seed={seed}, options={options}, objective={objective:?}"
                     );
-                    let dual = algorithm.get_dual_solution().unwrap();
+                    let dual = algorithm.dual_solution().unwrap();
                     assert!(
                         dual.dual_variables()
                             .keys()
                             .all(|vertices| vertices.len() % 2 == 1)
                     );
-                    let matching = algorithm.get_matching().unwrap();
+                    let matching = algorithm.matching().unwrap();
                     assert_dual_solution(&graph, &matching, &dual, objective);
                 }
             }
@@ -952,7 +952,7 @@ mod tests {
                             &graph, options, objective,
                         )
                         .unwrap();
-                    let result = algorithm.get_matching();
+                    let result = algorithm.matching();
                     match expected {
                         Some(expected) => {
                             let matching = result.unwrap();

@@ -12,7 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::alg::shortestpath::{DijkstraShortestPath, ShortestPathAlgorithm};
+use jgrapht::alg::shortestpath::{Dijkstra, ShortestPathAlgorithm};
 use jgrapht::{DefaultEdge, DiGraph, GraphMutExt, UGraph};
 
 fn undirected_fixture() -> (UGraph<&'static str>, [DefaultEdge; 6]) {
@@ -38,7 +38,7 @@ fn undirected_fixture() -> (UGraph<&'static str>, [DefaultEdge; 6]) {
 #[test]
 fn test_path_between() {
     let (graph, [e12, e13, _, e24, _, e45]) = undirected_fixture();
-    let algorithm = DijkstraShortestPath::new(&graph);
+    let algorithm = Dijkstra::new(&graph);
 
     assert_eq!(
         algorithm.path(&"v1", &"v2").unwrap().unwrap().edge_list(),
@@ -61,7 +61,7 @@ fn test_path_between() {
 #[test]
 fn test_constructor() {
     let (graph, [e12, e13, _, e24, _, _]) = undirected_fixture();
-    let path = DijkstraShortestPath::new(&graph)
+    let path = Dijkstra::new(&graph)
         .radius(f64::INFINITY)
         .path(&"v3", &"v4")
         .unwrap()
@@ -70,7 +70,7 @@ fn test_constructor() {
     assert_eq!(path.weight(), 10.0);
 
     assert!(
-        DijkstraShortestPath::new(&graph)
+        Dijkstra::new(&graph)
             .radius(7.0)
             .path(&"v3", &"v4")
             .unwrap()
@@ -94,9 +94,7 @@ fn directed_fixture() -> (DiGraph<&'static str>, [DefaultEdge; 5]) {
 #[test]
 fn test_shortest_path_tree() {
     let (graph, [_, e24, e13, e32, _]) = directed_fixture();
-    let paths = DijkstraShortestPath::new(&graph)
-        .single_source(&"v1")
-        .unwrap();
+    let paths = Dijkstra::new(&graph).single_source(&"v1").unwrap();
 
     assert_eq!(paths.source(), &"v1");
     for (vertex, weight) in [
@@ -137,7 +135,7 @@ fn test_shortest_path_tree() {
 #[test]
 fn test_get_path_weight() {
     let (graph, _) = directed_fixture();
-    let algorithm = DijkstraShortestPath::new(&graph);
+    let algorithm = Dijkstra::new(&graph);
 
     for (target, weight) in [
         ("v1", 0.0),
@@ -159,9 +157,5 @@ fn test_non_negative_weights() {
     graph.add_vertices(["v1", "v2"]);
     graph.add_weighted_edge(&"v1", &"v2", -100.0).unwrap();
 
-    assert!(
-        DijkstraShortestPath::new(&graph)
-            .path(&"v1", &"v2")
-            .is_err()
-    );
+    assert!(Dijkstra::new(&graph).path(&"v1", &"v2").is_err());
 }

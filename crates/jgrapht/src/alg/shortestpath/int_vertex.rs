@@ -45,7 +45,7 @@ impl_int_vertex!(u8, u16, u32, u64, usize, i8, i16, i32, i64, isize);
 /// this range using an open addressing hash table (linear probing).
 ///
 /// This implementation should be faster than our more generic one which is
-/// `DijkstraShortestPath` since it avoids the extensive use of hash tables.
+/// `Dijkstra` since it avoids the extensive use of hash tables.
 ///
 /// By default a 4-ary heap is used. The user is free to use a custom heap implementation during
 /// construction time. Regarding the choice of heap, it is generally known that it depends on the

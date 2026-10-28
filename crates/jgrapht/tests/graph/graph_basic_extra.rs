@@ -22,7 +22,7 @@ fn undirected_simple() {
     g.add_edge_with_vertices("b", "c").unwrap();
     assert_eq!(g.vertex_count(), 3);
     assert_eq!(g.edge_count(), 2);
-    assert!(g.get_edge(&"b", &"a").is_some());
+    assert!(g.edge_between(&"b", &"a").is_some());
     assert_eq!(g.degree_of(&"b"), 2);
     assert_eq!(g.add_edge(&"a", &"b").unwrap(), None); // parallel refused
     assert_eq!(g.add_edge(&"a", &"a"), Err(GraphError::LoopsNotAllowed));
@@ -54,7 +54,7 @@ fn directed_weighted() {
     assert_eq!(g.in_degree_of(&2), 1);
     assert_eq!(g.successors_of(&1).collect::<Vec<_>>(), [&2]);
     assert_eq!(g.predecessors_of(&3).collect::<Vec<_>>(), [&2]);
-    assert!(g.get_edge(&2, &1).is_some() && g.get_edge(&3, &2).is_none());
+    assert!(g.edge_between(&2, &1).is_some() && g.edge_between(&3, &2).is_none());
     assert_eq!(g.total_weight(), 4.5);
     assert!(!props::is_dag(&g));
 }

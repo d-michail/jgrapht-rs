@@ -1770,7 +1770,7 @@ mod edge_betweenness_centrality {
         expected: [(i32, i32, f64); 4],
     ) {
         for (a, b, want) in expected {
-            let e = *g.get_edge(&a, &b).unwrap();
+            let e = *g.edge_between(&a, &b).unwrap();
             near(ebc.edge_score(&e).unwrap(), want, 1e-9);
         }
     }
@@ -1783,8 +1783,8 @@ mod edge_betweenness_centrality {
             g.add_edge(&s(a), &s(b)).unwrap();
         }
         let mut ebc = EdgeBetweennessCentrality::new(&g).unwrap();
-        let de = *g.get_edge(&s("D"), &s("E")).unwrap();
-        let eg = *g.get_edge(&s("E"), &s("G")).unwrap();
+        let de = *g.edge_between(&s("D"), &s("E")).unwrap();
+        let eg = *g.edge_between(&s("E"), &s("G")).unwrap();
         near(ebc.edge_score(&de).unwrap(), 16.0, 1e-9);
         near(ebc.edge_score(&eg).unwrap(), 7.5, 1e-9);
     }
@@ -1868,7 +1868,7 @@ mod edge_betweenness_centrality {
             ("E", "G", 1.5),
             ("F", "G", 5.0),
         ] {
-            let e = *g.get_edge(&s(a), &s(b)).unwrap();
+            let e = *g.edge_between(&s(a), &s(b)).unwrap();
             near(ebc.edge_score(&e).unwrap(), want, 1e-9);
         }
     }

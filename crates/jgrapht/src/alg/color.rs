@@ -792,7 +792,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphColoring<'g, G> {
         if self.coloring.is_none() && self.chordality_inspector.is_chordal() {
             let perfect_elimination_order: Vec<G::Vertex> = self
                 .chordality_inspector
-                .get_perfect_elimination_order()
+                .perfect_elimination_order()
                 .expect("chordal graph")
                 .to_vec();
             let mut vertex_coloring: HashMap<G::Vertex, usize> =
@@ -826,7 +826,7 @@ impl<'g, G: UndirectedGraph + IncidenceGraph> ChordalGraphColoring<'g, G> {
     /// The perfect elimination order, or `None` if the graph is not chordal.
     pub fn perfect_elimination_order(&mut self) -> Option<Vec<G::Vertex>> {
         self.chordality_inspector
-            .get_perfect_elimination_order()
+            .perfect_elimination_order()
             .map(<[_]>::to_vec)
     }
 }

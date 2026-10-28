@@ -89,7 +89,7 @@ mod importer_test {
         });
         i.import_str(&mut g, ATTRS).unwrap();
         assert_eq!(
-            g.edge_weight(g.get_edge(&"1".into(), &"2".into()).unwrap()),
+            g.edge_weight(g.edge_between(&"1".into(), &"2".into()).unwrap()),
             Some(0.1)
         );
         assert!(

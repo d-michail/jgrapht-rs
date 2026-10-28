@@ -195,7 +195,7 @@ impl<'g, G: IncidenceGraph> WeakChordalityInspector<'g, G> {
     }
 
     /// A hole or antihole (as a closed vertex list) if the graph is not weakly chordal.
-    pub fn get_certificate(&mut self) -> Option<&WeakChordalityCertificate<G::Vertex>> {
+    pub fn certificate(&mut self) -> Option<&WeakChordalityCertificate<G::Vertex>> {
         self.lazy_compute_weak_chordality();
         self.certificate.as_ref()
     }

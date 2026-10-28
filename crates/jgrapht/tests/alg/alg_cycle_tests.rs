@@ -16,7 +16,7 @@
 //! cycle enumerations (DirectedSimpleCyclesTest, JohnsonSimpleCyclesTest, HawickJamesSimpleCyclesTest),
 //! CycleDetectorTest and CyclesTest.
 
-use jgrapht::alg::cyclic_exchange::AhujaOrlinSharmaCyclicExchangeLocalAugmentation;
+use jgrapht::alg::cyclic_exchange::AhujaOrlinSharmaCyclicExchange;
 use jgrapht::*;
 use std::borrow::Borrow;
 use std::collections::HashMap;
@@ -55,7 +55,7 @@ mod chinese_postman_test {
     where
         G::Vertex: std::fmt::Debug,
     {
-        let path = ChinesePostman::new().get_cpp_solution(graph).unwrap();
+        let path = ChinesePostman::new().cpp_solution(graph).unwrap();
         assert_eq!(path.length(), expected_length);
         assert_eq!(path.edge_list().len(), expected_length);
         assert!((path.weight() - expected_weight).abs() < 1e-8);
@@ -91,7 +91,7 @@ mod chinese_postman_test {
     #[test]
     fn empty_single_loop_and_parallel_edge_graphs() {
         let empty = DiGraph::<i32>::simple();
-        assert!(ChinesePostman::new().get_cpp_solution(&empty).is_err());
+        assert!(ChinesePostman::new().cpp_solution(&empty).is_err());
 
         verify(
             &undirected(GraphType::simple(), &[0, 1], &[(0, 1, 10.)]),
@@ -361,7 +361,7 @@ mod ahuja_orlin_sharma_cyclic_exchange {
     }
 
     fn cycle_of(g: &G, bound: usize, labels: &HashMap<i32, i64>, best: bool) -> (Vec<i32>, f64) {
-        let c = AhujaOrlinSharmaCyclicExchangeLocalAugmentation::new(g, bound, labels, best)
+        let c = AhujaOrlinSharmaCyclicExchange::new(g, bound, labels, best)
             .unwrap()
             .local_augmentation_cycle();
         (c.vertex_list().to_vec(), c.weight())
@@ -377,7 +377,7 @@ mod ahuja_orlin_sharma_cyclic_exchange {
             for &v2 in &keys {
                 if labels[&v1] != labels[&v2] {
                     g.add_edge(&v1, &v2).unwrap();
-                    let e = *g.get_edge(&v1, &v2).unwrap();
+                    let e = *g.edge_between(&v1, &v2).unwrap();
                     g.set_edge_weight(&e, initial_weight).unwrap();
                     g.add_edge(&v2, &v1).unwrap();
                     g.set_edge_weight(&e, initial_weight).unwrap();
@@ -388,7 +388,7 @@ mod ahuja_orlin_sharma_cyclic_exchange {
     }
 
     fn set_weight(g: &mut G, a: i32, b: i32, w: f64) {
-        let e = *g.get_edge(&a, &b).unwrap();
+        let e = *g.edge_between(&a, &b).unwrap();
         g.set_edge_weight(&e, w).unwrap();
     }
 
@@ -463,7 +463,7 @@ mod ahuja_orlin_sharma_cyclic_exchange {
         edge(&mut g, 1, 4, 1.0);
         set_weight(&mut g, 1, 4, -3.0);
         set_weight(&mut g, 3, 4, -6.0);
-        let c = AhujaOrlinSharmaCyclicExchangeLocalAugmentation::new(&g, 6, &l, false)
+        let c = AhujaOrlinSharmaCyclicExchange::new(&g, 6, &l, false)
             .unwrap()
             .local_augmentation_cycle();
         assert!((c.weight() + 2.0).abs() < 1e-7);
@@ -1298,7 +1298,7 @@ mod cycle_basis_support {
     }
 
     pub fn ge<G: Graph<Vertex = i32>>(g: &G, a: i32, b: i32) -> G::Edge {
-        g.get_edge(&a, &b).unwrap().clone()
+        g.edge_between(&a, &b).unwrap().clone()
     }
 
     /// `assertCycle`: the edges form a closed chain (a closed walk for directed graphs).
@@ -1349,7 +1349,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 2, 0);
         let mut cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         assert_eq!(1, cb.cycles().len());
@@ -1364,7 +1364,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 3, 0);
         cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(2, cb.cycles().len());
@@ -1383,7 +1383,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 3, 1);
         cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(3, cb.cycles().len());
@@ -1408,7 +1408,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 4, 2);
         cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(4, cb.cycles().len());
@@ -1438,7 +1438,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 4, 5);
         cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(4, cb.cycles().len());
@@ -1468,7 +1468,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 5, 2);
         cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(5, cb.cycles().len());
@@ -1504,7 +1504,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 6, 4);
         cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(6, cb.cycles().len());
@@ -1571,7 +1571,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         let e77_3 = graph.add_edge(&7, &7).unwrap().unwrap();
         let cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         assert_eq!(13, cb.cycles().len());
@@ -1689,7 +1689,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         let e55_2 = graph.add_edge(&5, &5).unwrap().unwrap();
         let cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         assert_eq!(8, cb.cycles().len());
@@ -1738,7 +1738,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         let e2 = graph.add_edge(&0, &1).unwrap().unwrap();
         let cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         assert_eq!(1, cb.cycles().len());
@@ -1765,7 +1765,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         let e30 = graph.add_edge(&3, &0).unwrap().unwrap();
         let cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
         assert_eq!(3, cb.cycles().len());
@@ -1800,7 +1800,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         graph.add_edge(&2, &3).unwrap();
         let cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         assert_eq!(0, cb.cycles().len());
         assert_eq!(0, cb.length());
@@ -1812,7 +1812,7 @@ mod queue_bfs_fundamental_cycle_basis_test {
         let graph = UGraph::<i32>::pseudo();
         let cb = QueueBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         assert_eq!(0, cb.cycles().len());
         assert_eq!(0, cb.length());
@@ -1832,7 +1832,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 2, 0);
         let mut cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         assert_eq!(1, cb.cycles().len());
         let mut cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
@@ -1847,7 +1847,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 3, 0);
         cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(2, cb.cycles().len());
@@ -1866,7 +1866,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 3, 1);
         cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(3, cb.cycles().len());
@@ -1891,7 +1891,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 4, 2);
         cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(4, cb.cycles().len());
@@ -1921,7 +1921,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 4, 5);
         cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(4, cb.cycles().len());
@@ -1951,7 +1951,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 5, 2);
         cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(5, cb.cycles().len());
@@ -1989,7 +1989,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         add_ev(&mut graph, 6, 4);
         cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         cycles = cb.cycles().iter().cloned().collect();
         assert_eq!(6, cb.cycles().len());
@@ -2057,7 +2057,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         let e77_3 = graph.add_edge(&7, &7).unwrap().unwrap();
         let cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         assert_eq!(13, cb.cycles().len());
         let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
@@ -2156,7 +2156,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         let e55_2 = graph.add_edge(&5, &5).unwrap().unwrap();
         let cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         assert_eq!(8, cb.cycles().len());
         let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
@@ -2205,7 +2205,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         let e2 = graph.add_edge(&0, &1).unwrap().unwrap();
         let cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         assert_eq!(1, cb.cycles().len());
         let c1 = cb.cycles().first().unwrap().clone();
@@ -2231,7 +2231,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         let e30 = graph.add_edge(&3, &0).unwrap().unwrap();
         let cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         assert_eq!(3, cb.cycles().len());
         let cycles: Vec<Vec<DefaultEdge>> = cb.cycles().iter().cloned().collect();
@@ -2264,7 +2264,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         graph.add_edge(&2, &3).unwrap();
         let cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         assert_eq!(0, cb.cycles().len());
         assert_eq!(0, cb.length());
@@ -2276,7 +2276,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         let graph = UGraph::<i32>::pseudo();
         let cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         assert_eq!(0, cb.cycles().len());
         assert_eq!(0, cb.length());
@@ -2298,7 +2298,7 @@ mod stack_bfs_fundamental_cycle_basis_test {
         graph.add_edge(&4, &6).unwrap();
         let cb = StackBFSFundamentalCycleBasis::new(&graph)
             .unwrap()
-            .get_cycle_basis()
+            .cycle_basis()
             .unwrap();
         let cycles_sizes = [5, 6, 3];
         for (i, cycle) in cb.cycles().iter().take(3).enumerate() {
@@ -2333,7 +2333,7 @@ mod paton_cycle_base_test {
     }
 
     fn basis(g: &G) -> CycleBasis<DefaultEdge> {
-        PatonCycleBase::new(g).unwrap().get_cycle_basis().unwrap()
+        PatonCycleBase::new(g).unwrap().cycle_basis().unwrap()
     }
 
     fn check_result(g: &G, size: usize) {
@@ -2640,10 +2640,7 @@ mod paton_cycle_base_test {
         graph.add_vertices(0..4);
         graph.add_edge(&0, &1).unwrap();
         graph.add_edge(&2, &3).unwrap();
-        let cb = PatonCycleBase::new(&graph)
-            .unwrap()
-            .get_cycle_basis()
-            .unwrap();
+        let cb = PatonCycleBase::new(&graph).unwrap().cycle_basis().unwrap();
         assert_eq!(0, cb.cycles().len());
         assert_eq!(0, cb.length());
         assert!(cb.weight().abs() <= 1e-9);
@@ -2661,10 +2658,7 @@ mod paton_cycle_base_test {
         let e11 = graph.add_edge(&1, &1).unwrap().unwrap();
         let e22 = graph.add_edge(&2, &2).unwrap().unwrap();
         let e33 = graph.add_edge(&3, &3).unwrap().unwrap();
-        let cb = PatonCycleBase::new(&graph)
-            .unwrap()
-            .get_cycle_basis()
-            .unwrap();
+        let cb = PatonCycleBase::new(&graph).unwrap().cycle_basis().unwrap();
         let expected: [Vec<DefaultEdge>; 5] = [
             vec![e00],
             vec![e33],
@@ -2686,10 +2680,7 @@ mod paton_cycle_base_test {
         let mut graph = UGraph::<i32>::pseudo();
         graph.add_vertex(0);
         let e1 = graph.add_edge(&0, &0).unwrap().unwrap();
-        let cb = PatonCycleBase::new(&graph)
-            .unwrap()
-            .get_cycle_basis()
-            .unwrap();
+        let cb = PatonCycleBase::new(&graph).unwrap().cycle_basis().unwrap();
         let c = cb.cycles().first().unwrap();
         assert_cycle(&graph, c);
         assert_eq!(&vec![e1], c);
@@ -2704,12 +2695,7 @@ mod paton_cycle_base_test {
         graph.add_vertex(0);
         graph.add_edge(&0, &0).unwrap();
         graph.add_edge(&0, &0).unwrap();
-        assert!(
-            PatonCycleBase::new(&graph)
-                .unwrap()
-                .get_cycle_basis()
-                .is_err()
-        );
+        assert!(PatonCycleBase::new(&graph).unwrap().cycle_basis().is_err());
     }
 
     #[test]
@@ -2726,10 +2712,7 @@ mod paton_cycle_base_test {
         ] {
             add_w(&mut graph, a, b, w);
         }
-        let cb = PatonCycleBase::new(&graph)
-            .unwrap()
-            .get_cycle_basis()
-            .unwrap();
+        let cb = PatonCycleBase::new(&graph).unwrap().cycle_basis().unwrap();
         assert_eq!(2, cb.cycles().len());
         assert_eq!(6, cb.length());
         assert!((344.0 - cb.weight()).abs() <= 1e-9);
@@ -2951,9 +2934,7 @@ mod hierholzer_eulerian_cycle_test {
     fn test_empty_with_single_vertex_undirected() {
         let mut g = UGraph::<i32>::pseudo();
         g.add_vertex(1);
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -2965,9 +2946,7 @@ mod hierholzer_eulerian_cycle_test {
         g.add_vertex(3);
         g.add_vertex(4);
         g.add_vertex(5);
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -2975,9 +2954,7 @@ mod hierholzer_eulerian_cycle_test {
     fn test_empty_with_single_vertex_directed() {
         let mut g = DiGraph::<i32>::pseudo();
         g.add_vertex(1);
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -2989,9 +2966,7 @@ mod hierholzer_eulerian_cycle_test {
         g.add_vertex(3);
         g.add_vertex(4);
         g.add_vertex(5);
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -3007,9 +2982,7 @@ mod hierholzer_eulerian_cycle_test {
         g.add_edge(&6, &4).unwrap();
         g.add_edge(&3, &4).unwrap();
         g.add_edge(&3, &4).unwrap();
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -3035,9 +3008,7 @@ mod hierholzer_eulerian_cycle_test {
         g.add_edge(&8, &8).unwrap();
         g.add_edge(&3, &3).unwrap();
         g.add_edge(&3, &3).unwrap();
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -3063,9 +3034,7 @@ mod hierholzer_eulerian_cycle_test {
         g.add_edge(&8, &8).unwrap();
         g.add_edge(&3, &3).unwrap();
         g.add_edge(&3, &3).unwrap();
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -3081,9 +3050,7 @@ mod hierholzer_eulerian_cycle_test {
         g.add_edge(&6, &4).unwrap();
         g.add_edge(&3, &4).unwrap();
         g.add_edge(&4, &3).unwrap();
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -3108,9 +3075,7 @@ mod hierholzer_eulerian_cycle_test {
         g.add_edge(&8, &8).unwrap();
         g.add_edge(&8, &8).unwrap();
         g.add_edge(&8, &8).unwrap();
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -3129,9 +3094,7 @@ mod hierholzer_eulerian_cycle_test {
         g.add_edge(&6, &7).unwrap();
         g.add_edge(&7, &6).unwrap();
         g.add_edge(&8, &1).unwrap();
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -3147,9 +3110,7 @@ mod hierholzer_eulerian_cycle_test {
         g.add_edge(&6, &4).unwrap();
         g.add_edge(&3, &4).unwrap();
         g.add_edge(&4, &3).unwrap();
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -3227,9 +3188,7 @@ mod hierholzer_eulerian_cycle_test {
         ] {
             g.add_edge(&a, &b).unwrap();
         }
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eulerian(&g, &cycle);
     }
 
@@ -3254,9 +3213,7 @@ mod hierholzer_eulerian_cycle_test {
                     g.add_edge(&s, &t).unwrap();
                 }
             }
-            let cycle = HierholzerEulerianCycle::new()
-                .get_eulerian_cycle(&g)
-                .unwrap();
+            let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
             assert_eulerian(&g, &cycle);
         }
     }
@@ -3283,9 +3240,7 @@ mod hierholzer_eulerian_cycle_test {
                     g.add_edge(&t, &s).unwrap();
                 }
             }
-            let cycle = HierholzerEulerianCycle::new()
-                .get_eulerian_cycle(&g)
-                .unwrap();
+            let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
             assert_eulerian(&g, &cycle);
         }
     }
@@ -3325,9 +3280,7 @@ mod hierholzer_eulerian_cycle_test {
         let mut rng = StdRng::seed_from_u64(1);
         for i in 0..100 {
             let g = random_graph::<jgrapht::graph::Undirected>(&mut rng, i, true, true);
-            let cycle = HierholzerEulerianCycle::new()
-                .get_eulerian_cycle(&g)
-                .unwrap();
+            let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
             assert_eulerian(&g, &cycle);
         }
     }
@@ -3337,9 +3290,7 @@ mod hierholzer_eulerian_cycle_test {
         let mut rng = StdRng::seed_from_u64(17);
         for i in 0..100 {
             let g = random_graph::<jgrapht::graph::Undirected>(&mut rng, 17 + i, false, false);
-            let cycle = HierholzerEulerianCycle::new()
-                .get_eulerian_cycle(&g)
-                .unwrap();
+            let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
             assert_eulerian(&g, &cycle);
         }
     }
@@ -3349,9 +3300,7 @@ mod hierholzer_eulerian_cycle_test {
         let mut rng = StdRng::seed_from_u64(2);
         for i in 0..100 {
             let g = random_graph::<jgrapht::graph::Directed>(&mut rng, i, true, true);
-            let cycle = HierholzerEulerianCycle::new()
-                .get_eulerian_cycle(&g)
-                .unwrap();
+            let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
             assert_eulerian(&g, &cycle);
         }
     }
@@ -3361,9 +3310,7 @@ mod hierholzer_eulerian_cycle_test {
         let mut rng = StdRng::seed_from_u64(17);
         for i in 0..100 {
             let g = random_graph::<jgrapht::graph::Directed>(&mut rng, 17 + i, false, false);
-            let cycle = HierholzerEulerianCycle::new()
-                .get_eulerian_cycle(&g)
-                .unwrap();
+            let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
             assert_eulerian(&g, &cycle);
         }
     }
@@ -3375,9 +3322,7 @@ mod hierholzer_eulerian_cycle_test {
         let e42 = g.add_edge(&4, &2).unwrap().unwrap();
         let e34 = g.add_edge(&3, &4).unwrap().unwrap();
         let e32 = g.add_edge(&3, &2).unwrap().unwrap();
-        let cycle = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let cycle = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eq!(e32, cycle.edge_list()[0]);
         assert_eq!(e34, cycle.edge_list()[1]);
         assert_eq!(e42, cycle.edge_list()[2]);
@@ -3404,9 +3349,7 @@ mod hierholzer_eulerian_cycle_test {
         ] {
             g.add_weighted_edge(&a, &b, w).unwrap();
         }
-        let gp = HierholzerEulerianCycle::new()
-            .get_eulerian_cycle(&g)
-            .unwrap();
+        let gp = HierholzerEulerianCycle::new().eulerian_cycle(&g).unwrap();
         assert_eq!(Some(&'E'), gp.start_vertex());
         assert_eq!(
             &['E', 'B', 'E', 'D', 'A', 'D', 'C', 'B', 'A', 'C', 'E'],
@@ -3660,8 +3603,8 @@ mod howard_minimum_mean_cycle_test {
             GraphWalk::from_parts(vertices, edge_list, weight).unwrap()
         });
         let mut mmc = HowardMinimumMeanCycle::new(&graph);
-        let actual_path = mmc.get_cycle();
-        let actual_mean = mmc.get_cycle_mean();
+        let actual_path = mmc.cycle();
+        let actual_mean = mmc.cycle_mean();
         match (expected_mean.is_finite(), actual_mean) {
             (true, Some(actual)) => assert!((expected_mean - actual).abs() <= 1e-9),
             (false, None) => {}
@@ -3775,7 +3718,7 @@ mod chordality_inspector_test {
         }
         graph.add_edge(&0, &upper_bound).unwrap();
         let mut inspector = ChordalityInspector::new(&graph);
-        let path = inspector.get_hole().expect("a hole").clone();
+        let path = inspector.hole().expect("a hole").clone();
         assert_is_hole(&graph, &path);
     }
 
@@ -3785,17 +3728,17 @@ mod chordality_inspector_test {
             let graph = undirected(&[&[1, 2], &[1, 3], &[2, 3], &[2, 4], &[3, 4]]);
             let mut inspector = ChordalityInspector::with_order(&graph, order);
             let order1 = inspector
-                .get_perfect_elimination_order()
+                .perfect_elimination_order()
                 .expect("chordal")
                 .to_vec();
-            assert!(inspector.get_hole().is_none());
+            assert!(inspector.hole().is_none());
             // the result is cached, so asking again gives the same order
             let order2 = inspector
-                .get_perfect_elimination_order()
+                .perfect_elimination_order()
                 .expect("chordal")
                 .to_vec();
             assert_eq!(order1, order2);
-            assert!(inspector.get_hole().is_none());
+            assert!(inspector.hole().is_none());
         }
     }
 
@@ -3804,14 +3747,14 @@ mod chordality_inspector_test {
         let graph = UGraph::<i32>::with_loops();
         let mut inspector = ChordalityInspector::new(&graph);
         assert!(inspector.is_chordal());
-        assert!(inspector.get_perfect_elimination_order().is_some());
+        assert!(inspector.perfect_elimination_order().is_some());
     }
 
     fn chordal(graph: &UGraph<i32>) {
         let mut inspector = ChordalityInspector::new(graph);
         assert!(inspector.is_chordal());
-        assert!(inspector.get_hole().is_none());
-        assert!(inspector.get_perfect_elimination_order().is_some());
+        assert!(inspector.hole().is_none());
+        assert!(inspector.perfect_elimination_order().is_some());
     }
 
     fn not_chordal<G: IncidenceGraph>(graph: &G)
@@ -3820,9 +3763,9 @@ mod chordality_inspector_test {
     {
         let mut inspector = ChordalityInspector::new(graph);
         assert!(!inspector.is_chordal());
-        let path = inspector.get_hole().expect("a hole").clone();
+        let path = inspector.hole().expect("a hole").clone();
         assert_is_hole(graph, &path);
-        assert!(inspector.get_perfect_elimination_order().is_none());
+        assert!(inspector.perfect_elimination_order().is_none());
     }
     #[test]
     fn is_chordal2() {
@@ -4084,7 +4027,7 @@ mod chordality_inspector_test {
 
 mod chordal_graph_minimal_vertex_separator_finder_test {
     use super::*;
-    use jgrapht::alg::cycle::ChordalGraphMinimalVertexSeparatorFinder;
+    use jgrapht::alg::cycle::MinimalVertexSeparatorFinder;
     use std::collections::HashSet;
 
     type Separators = Vec<(HashSet<i32>, usize)>;
@@ -4101,8 +4044,8 @@ mod chordal_graph_minimal_vertex_separator_finder_test {
     }
 
     fn separators(graph: &UGraph<i32>) -> Option<(HashSet<Vec<i32>>, Separators)> {
-        let mut finder = ChordalGraphMinimalVertexSeparatorFinder::new(graph);
-        let keys: Option<HashSet<Vec<i32>>> = finder.get_minimal_separators().map(|s| {
+        let mut finder = MinimalVertexSeparatorFinder::new(graph);
+        let keys: Option<HashSet<Vec<i32>>> = finder.minimal_separators().map(|s| {
             s.into_iter()
                 .map(|v| {
                     let mut v = v.clone();
@@ -4111,14 +4054,11 @@ mod chordal_graph_minimal_vertex_separator_finder_test {
                 })
                 .collect()
         });
-        let with: Option<Separators> =
-            finder
-                .get_minimal_separators_with_multiplicities()
-                .map(|m| {
-                    m.iter()
-                        .map(|(k, c)| (k.iter().copied().collect(), *c))
-                        .collect()
-                });
+        let with: Option<Separators> = finder.minimal_separators_with_multiplicities().map(|m| {
+            m.iter()
+                .map(|(k, c)| (k.iter().copied().collect(), *c))
+                .collect()
+        });
         keys.zip(with)
     }
 
@@ -4298,7 +4238,7 @@ mod weak_chordality_inspector_test {
     fn check<G: IncidenceGraph>(graph: &G, weakly_chordal: bool) {
         let mut inspector = WeakChordalityInspector::new(graph);
         assert_eq!(weakly_chordal, inspector.is_weakly_chordal());
-        let certificate = inspector.get_certificate();
+        let certificate = inspector.certificate();
         if weakly_chordal {
             assert!(certificate.is_none());
         } else {
@@ -4543,7 +4483,7 @@ mod berge_graph_inspector_test {
     /// `verifyCertificate`: the certificate spans an odd cycle without chords, in the graph or in
     /// its complement.
     fn verify_certificate<G: IncidenceGraph>(g: &G, dut: &BergeGraphInspector<G::Vertex>) -> bool {
-        let Some(certificate) = dut.get_certificate() else {
+        let Some(certificate) = dut.certificate() else {
             return false;
         };
         let set: Vec<G::Vertex> = certificate.vertex_list().to_vec();
@@ -4952,7 +4892,7 @@ mod weak_chordality_certificate {
             c5.add_edge_with_vertices(i, (i + 1) % 5).unwrap();
         }
         let mut inspector = WeakChordalityInspector::new(&c5);
-        let certificate = inspector.get_certificate().cloned();
+        let certificate = inspector.certificate().cloned();
         match certificate {
             Some(WeakChordalityCertificate::Hole(v))
             | Some(WeakChordalityCertificate::Antihole(v)) => {
@@ -4961,7 +4901,7 @@ mod weak_chordality_certificate {
             }
             None => panic!("C5 is not weakly chordal"),
         }
-        let certificate = inspector.get_certificate().unwrap();
+        let certificate = inspector.certificate().unwrap();
         assert_eq!(certificate.vertex_list().len(), 6);
     }
 }
@@ -5000,7 +4940,7 @@ mod berge_certificate {
         let hole = cycle(7);
         let mut inspector = BergeGraphInspector::new();
         assert!(!inspector.is_berge_with_certificate(&hole, true).unwrap());
-        let certificate = inspector.get_certificate().unwrap();
+        let certificate = inspector.certificate().unwrap();
         assert!(matches!(certificate, BergeCertificate::OddHole(_)));
         assert!(certificate.is_hole());
         assert_eq!(certificate.vertex_list().len(), 8);
@@ -5012,7 +4952,7 @@ mod berge_certificate {
                 .is_berge_with_certificate(&antihole, true)
                 .unwrap()
         );
-        let certificate = inspector.get_certificate().unwrap();
+        let certificate = inspector.certificate().unwrap();
         assert!(matches!(certificate, BergeCertificate::OddAntihole(_)));
         assert!(!certificate.is_hole());
         assert_eq!(
@@ -5029,6 +4969,6 @@ mod berge_certificate {
                 .is_berge_with_certificate(&cycle(6), true)
                 .unwrap()
         );
-        assert!(inspector.get_certificate().is_none());
+        assert!(inspector.certificate().is_none());
     }
 }

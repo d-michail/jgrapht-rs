@@ -12,7 +12,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR LGPL-2.1-or-later
 
-use jgrapht::alg::shortestpath::BellmanFordShortestPath;
+use jgrapht::alg::shortestpath::BellmanFord;
 use jgrapht::{DefaultEdge, DiGraph, GraphMutExt, UGraph};
 
 type Edges = [DefaultEdge; 6];
@@ -72,11 +72,11 @@ fn negative_fixture() -> (DiGraph<&'static str>, Edges) {
 #[test]
 fn test_path_between() {
     let (graph, [e12, e13, _, e24, _, e45]) = undirected_fixture();
-    let algorithm = BellmanFordShortestPath::new(&graph);
+    let algorithm = BellmanFord::new(&graph);
 
     assert_eq!(
         algorithm
-            .get_path(&"v1", &"v2")
+            .path_between(&"v1", &"v2")
             .unwrap()
             .unwrap()
             .edge_list(),
@@ -84,7 +84,7 @@ fn test_path_between() {
     );
     assert_eq!(
         algorithm
-            .get_path(&"v1", &"v4")
+            .path_between(&"v1", &"v4")
             .unwrap()
             .unwrap()
             .edge_list(),
@@ -92,7 +92,7 @@ fn test_path_between() {
     );
     assert_eq!(
         algorithm
-            .get_path(&"v1", &"v5")
+            .path_between(&"v1", &"v5")
             .unwrap()
             .unwrap()
             .edge_list(),
@@ -100,7 +100,7 @@ fn test_path_between() {
     );
     assert_eq!(
         algorithm
-            .get_path(&"v3", &"v4")
+            .path_between(&"v3", &"v4")
             .unwrap()
             .unwrap()
             .edge_list(),
@@ -111,9 +111,7 @@ fn test_path_between() {
 #[test]
 fn test_undirected() {
     let (graph, [e12, e13, _, e24, _, e45]) = undirected_fixture();
-    let paths = BellmanFordShortestPath::new(&graph)
-        .get_paths(&"v3")
-        .unwrap();
+    let paths = BellmanFord::new(&graph).paths_from(&"v3").unwrap();
 
     assert_eq!(paths.path(&"v5").unwrap().edge_list(), [e13, e12, e24, e45]);
     for (vertex, weight) in [
@@ -133,11 +131,11 @@ fn test_undirected() {
 #[test]
 fn test_with_negative_edges() {
     let (graph, [_, e13, e15, _, e34, _]) = negative_fixture();
-    let algorithm = BellmanFordShortestPath::new(&graph);
+    let algorithm = BellmanFord::new(&graph);
 
     assert_eq!(
         algorithm
-            .get_path(&"v1", &"v4")
+            .path_between(&"v1", &"v4")
             .unwrap()
             .unwrap()
             .edge_list(),
@@ -145,7 +143,7 @@ fn test_with_negative_edges() {
     );
     assert_eq!(
         algorithm
-            .get_path(&"v1", &"v5")
+            .path_between(&"v1", &"v5")
             .unwrap()
             .unwrap()
             .edge_list(),
@@ -157,9 +155,7 @@ fn test_with_negative_edges() {
 fn test_no_path() {
     let mut graph = DiGraph::<&str>::pseudo().weighted();
     graph.add_vertices(["a", "b"]);
-    let paths = BellmanFordShortestPath::new(&graph)
-        .get_paths(&"a")
-        .unwrap();
+    let paths = BellmanFord::new(&graph).paths_from(&"a").unwrap();
 
     assert_eq!(paths.weight(&"b"), None);
     assert!(paths.path(&"b").is_none());
@@ -189,9 +185,7 @@ fn wikipedia_graph(y_to_z: f64) -> DiGraph<&'static str> {
 #[test]
 fn test_wikipedia_example_bellman_ford() {
     let graph = wikipedia_graph(5.0);
-    let paths = BellmanFordShortestPath::new(&graph)
-        .get_paths(&"s")
-        .unwrap();
+    let paths = BellmanFord::new(&graph).paths_from(&"s").unwrap();
 
     for (vertex, weight) in [
         ("s", 0.0),
@@ -210,9 +204,7 @@ fn test_wikipedia_example_bellman_ford() {
 #[test]
 fn test_negative_cycle_detection() {
     let graph = wikipedia_graph(3.0);
-    let error = BellmanFordShortestPath::new(&graph)
-        .get_paths(&"s")
-        .unwrap_err();
+    let error = BellmanFord::new(&graph).paths_from(&"s").unwrap_err();
 
     assert_eq!(error.to_string(), "graph contains a negative-weight cycle");
 }
@@ -220,9 +212,7 @@ fn test_negative_cycle_detection() {
 #[test]
 fn test_negative_cycle_detection_actual_cycle() {
     let graph = wikipedia_graph(3.0);
-    let error = BellmanFordShortestPath::new(&graph)
-        .get_paths(&"s")
-        .unwrap_err();
+    let error = BellmanFord::new(&graph).paths_from(&"s").unwrap_err();
     let cycle = error.cycle().unwrap();
 
     assert_eq!(cycle.start_vertex(), Some(&"x"));
@@ -244,19 +234,13 @@ fn undirected_negative_graph() -> UGraph<&'static str> {
 #[test]
 fn test_negative_edge_undirected_graph() {
     let graph = undirected_negative_graph();
-    assert!(
-        BellmanFordShortestPath::new(&graph)
-            .get_paths(&"w")
-            .is_err()
-    );
+    assert!(BellmanFord::new(&graph).paths_from(&"w").is_err());
 }
 
 #[test]
 fn test_negative_edge_undirected_graph_actual_cycle() {
     let graph = undirected_negative_graph();
-    let error = BellmanFordShortestPath::new(&graph)
-        .get_paths(&"w")
-        .unwrap_err();
+    let error = BellmanFord::new(&graph).paths_from(&"w").unwrap_err();
     let cycle = error.cycle().unwrap();
 
     assert_eq!(cycle.start_vertex(), Some(&"x"));
@@ -282,7 +266,7 @@ fn test_do_not_detect_non_reachable_negative_cycle() {
         graph.add_weighted_edge(&source, &target, weight).unwrap();
     }
 
-    assert!(BellmanFordShortestPath::new(&graph).get_paths(&1).is_ok());
+    assert!(BellmanFord::new(&graph).paths_from(&1).is_ok());
 }
 
 #[test]
@@ -304,9 +288,7 @@ fn test_negative_cycle() {
         graph.add_weighted_edge(&source, &target, weight).unwrap();
     }
 
-    let error = BellmanFordShortestPath::new(&graph)
-        .get_paths(&"1")
-        .unwrap_err();
+    let error = BellmanFord::new(&graph).paths_from(&"1").unwrap_err();
     let cycle = error.cycle().unwrap();
     assert_eq!(cycle.start_vertex(), Some(&"6"));
     assert_eq!(cycle.end_vertex(), Some(&"6"));
@@ -322,15 +304,15 @@ fn test_negative_cycle_with_max_hops() {
         graph.add_weighted_edge(&source, &target, weight).unwrap();
     }
 
-    let paths = BellmanFordShortestPath::with_options(&graph, 1e-16, 3)
+    let paths = BellmanFord::with_options(&graph, 1e-16, 3)
         .unwrap()
-        .get_paths(&1)
+        .paths_from(&1)
         .unwrap();
     assert_eq!(paths.weight(&3), Some(2.0));
 
-    let error = BellmanFordShortestPath::with_options(&graph, 1e-16, 4)
+    let error = BellmanFord::with_options(&graph, 1e-16, 4)
         .unwrap()
-        .get_paths(&1)
+        .paths_from(&1)
         .unwrap_err();
     let cycle = error.cycle().unwrap();
     assert_eq!(cycle.start_vertex(), Some(&1));
