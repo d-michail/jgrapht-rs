@@ -168,25 +168,35 @@ Criterion's HTML reports are in `target/criterion/report/index.html`.
 The benchmark files are in `crates/jgrapht/benches/` (`graph_perf`, `shortestpath_perf`,
 `algorithms_perf`, `structures_perf`, `pathsearch_perf`).
 
-## Citation
+## Cite
 
-jgrapht-rs is a port of JGraphT and builds on its design and algorithms. If you use it in academic
-work, please cite the JGraphT paper:
+jgrapht-rs is a port of JGraphT and builds on its design and algorithms. If you use this library
+please cite the following paper:
 
-```bibtex
+* D. Michail, J. Kinable, B. Naveh, J. V. Sichi. JGraphT—A Java Library for Graph Data Structures
+  and Algorithms. ACM Journal of Experimental Algorithmics, 24(1), 2019.
+  [web](https://doi.org/10.1145/3350513)
+
+```
 @article{michail2019jgrapht,
-  author  = {Michail, Dimitrios and Kinable, Joris and Naveh, Barak and Sichi, John V.},
-  title   = {{JGraphT}---A {Java} Library for Graph Data Structures and Algorithms},
-  journal = {ACM Journal of Experimental Algorithmics},
-  volume  = {24},
-  number  = {1},
-  year    = {2019},
-  doi     = {10.1145/3350513}
+      title={JGraphT---A Java Library for Graph Data Structures and Algorithms},
+      author={Michail, Dimitrios and Kinable, Joris and Naveh, Barak and Sichi, John V.},
+      journal={ACM Journal of Experimental Algorithmics},
+      volume={24},
+      number={1},
+      year={2019},
+      publisher={ACM},
+      doi={10.1145/3350513},
+      url={https://doi.org/10.1145/3350513},
 }
 ```
 
-and, if you want to refer to this implementation specifically, the repository
+To refer to this implementation specifically, also cite the repository
 (<https://github.com/d-michail/jgrapht-rs>) with the version or commit you used.
+
+Citing software is just as important as citing any other important sources in your research. If
+you're not sure whether or not to cite something,
+[Shouldacite](https://mr-c.github.io/shouldacite/index.html) can help you decide if you should.
 
 ## License
 
